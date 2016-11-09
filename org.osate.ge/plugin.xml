@@ -757,4 +757,10 @@
              class="org.osate.ge.internal.services.impl.InstanceReferenceResolver">
        </referenceResolver>
     </extension>
+    <extension
+          point="org.eclipse.elk.core.service.layoutConnectors">
+       <setup
+             class="org.osate.ge.internal.graphiti.elk.AgeGraphitiLayoutSetup">
+       </setup>
+    </extension>
 </plugin>
