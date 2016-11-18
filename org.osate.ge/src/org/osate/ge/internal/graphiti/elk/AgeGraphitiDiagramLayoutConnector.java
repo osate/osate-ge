@@ -139,10 +139,12 @@ public class AgeGraphitiDiagramLayoutConnector implements IDiagramLayoutConnecto
 	        nodeLayout.setHeight(shape.getGraphicsAlgorithm().getHeight());
 	        nodeLayout.resetModificationFlag();
 
-	        // TODO: Remove minimum size
-	        nodeLayout.setProperty(CoreOptions.NODE_SIZE_MINIMUM, new KVector(500, 500));
+	        // TODO: Remove minimum size? WIll need support for labels, etc. Otherwise the size will be set to a small size.
+	        nodeLayout.setProperty(CoreOptions.NODE_SIZE_MINIMUM, new KVector(100, 100));
 	        nodeLayout.setProperty(CoreOptions.NODE_SIZE_CONSTRAINTS, EnumSet.of(SizeConstraint.MINIMUM_SIZE));
 
+	        // TODO: Need to create label(s)
+	        
 	        return childNode;
 		} else {
 			// TODO: Major
@@ -163,7 +165,6 @@ public class AgeGraphitiDiagramLayoutConnector implements IDiagramLayoutConnecto
 	        portLayout.setXpos(shape.getGraphicsAlgorithm().getX());
 	        portLayout.setYpos(shape.getGraphicsAlgorithm().getY());
 	        
-	        // TODO: Ports are always positioned on outside in ELK.. Take that into account. However, not setting a size is not an option because
 	        // ports will overlap.
 	        portLayout.setWidth(shape.getGraphicsAlgorithm().getWidth());
 	        portLayout.setHeight(shape.getGraphicsAlgorithm().getHeight());
