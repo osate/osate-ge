@@ -5,7 +5,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
-@SuiteClasses({ BusinessObjectTreeFactoryTests.class })
+@SuiteClasses({ CreateAADLProjectTest.class,  BusinessObjectTreeFactoryTests.class })
 public class AllTests {
 
 }
