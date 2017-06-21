@@ -45,7 +45,7 @@ public class OpenDiagramHandler extends AbstractHandler {
 			}
 			Log.ok(getClass().getSimpleName() + " Finished");
 		} catch(RuntimeException e) {
-			MessageDialog.openError(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), Activator.PLUGIN_ID, "Error opening diagram: " + e.getMessage());
+			MessageDialog.openError(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), Activator.PLUGIN_ID, "Error opening diagramss: " + e.getMessage());
 			Log.error("Error opening classifier diagram", e);
 			throw e;
 		}

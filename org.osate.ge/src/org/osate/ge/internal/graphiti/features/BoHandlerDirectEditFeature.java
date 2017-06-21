@@ -51,7 +51,7 @@ public class BoHandlerDirectEditFeature extends AbstractDirectEditingFeature imp
 		this.propertyService = Objects.requireNonNull(propertyService, "propertyService must not be null");
 		this.connectionService = Objects.requireNonNull(connectionService, "connectionService must not be null");
 		this.aadlModService = Objects.requireNonNull(aadlModService, "aadlModService must not be null");
-		this.diagramModService = Objects.requireNonNull(diagramModService, "diaramModService must not be null");
+		this.diagramModService = Objects.requireNonNull(diagramModService, "diagramModService must not be null");
 		this.bor = Objects.requireNonNull(bor, "bor must not be null");
 	}
 

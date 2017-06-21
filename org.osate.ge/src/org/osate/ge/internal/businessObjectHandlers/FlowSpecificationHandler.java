@@ -54,11 +54,6 @@ class FlowSpecificationHandler {
 		return fs.getName();
 	}
 	
-	@CreateParentQuery
-	public DiagramElementQuery<FlowSpecification> createParentDiagramElementQuery(final @Named(Names.SOURCE_ROOT_QUERY) DiagramElementQuery<FlowSpecification> srcRootQuery) {
-		return srcRootQuery.ancestors().filter((fa) -> fa.getBusinessObject() instanceof ComponentType).first();
-	}
-	
 	// Rename and Editing
 	@CanRename
 	@CanDelete

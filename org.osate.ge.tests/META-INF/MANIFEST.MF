@@ -1,8 +1,15 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: OSATE Graphical Editor Tests
-Bundle-SymbolicName: org.osate.ge.tests
+Bundle-Vendor: CMU/SEI
+Bundle-SymbolicName: org.osate.ge.tests;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Fragment-Host: org.osate.ge;bundle-version="1.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Require-Bundle: org.eclipse.swtbot.eclipse.gef.finder
+Require-Bundle: org.eclipse.swtbot.eclipse.finder;bundle-version="2.5.0",
+ org.eclipse.swtbot.junit4_x;bundle-version="2.5.0",
+ org.eclipse.swtbot.eclipse.gef.finder;bundle-version="2.5.0",
+ org.hamcrest.core
+Import-Package: com.google.inject.matcher
+
+

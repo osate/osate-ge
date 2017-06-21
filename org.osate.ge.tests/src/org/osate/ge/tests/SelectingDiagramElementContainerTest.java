@@ -1,0 +1,56 @@
+package org.osate.ge.tests;
+
+import static org.junit.Assert.assertTrue;
+
+import java.util.List;
+
+import org.eclipse.gef.EditPart;
+import org.eclipse.graphiti.ui.platform.GraphitiShapeEditPart;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swtbot.eclipse.finder.waits.Conditions;
+import org.eclipse.swtbot.eclipse.gef.finder.SWTGefBot;
+import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditPart;
+import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
+import org.eclipse.swtbot.swt.finder.SWTBot;
+import org.eclipse.swtbot.swt.finder.waits.ICondition;
+import org.eclipse.swtbot.swt.finder.widgets.SWTBotShell;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.osate.aadl2.impl.AbstractImplementationImpl;
+import org.osate.aadl2.impl.AbstractTypeImpl;
+
+public class SelectingDiagramElementContainerTest {
+	private final SWTGefBot bot = new SWTGefBot();
+	private final Helper helper = new Helper(bot);
+
+	@Before
+	public void setUp() {
+		helper.createNewProjectAndPackage();
+		helper.openDiagram(new String[] { ElementNames.projectName, "packages" }, ElementNames.packageName + ".aadl");
+	}
+
+	@After
+	public void tearDown() {
+		helper.deleteProject();
+	}
+
+	@Test
+	public void selectDiagramElementContainer() {
+		final SWTBotGefEditor editor = bot.gefEditor(ElementNames.packageName);
+		helper.createToolItem(editor, ToolTypes.abstractType, new Point(0, 0));
+		RenameHelper.renameElement(editor, ElementNames.abstractTypeName, new Point(15, 15), AbstractTypeImpl.class);
+
+		helper.createToolItem(editor, ToolTypes.abstractImplementation, new Point(100, 100));
+		bot.waitUntil(Conditions.shellIsActive("Select a Classifier"));
+		
+		final SWTBotShell shell = bot.activeShell();
+		bot.button("OK").click();
+		bot.waitUntil(Conditions.shellCloses(shell));
+		
+		editor.select(ElementNames.abstractTypeName).clickContextMenu("Select Container");
+		final GraphitiShapeEditPart editPart = (GraphitiShapeEditPart)editor.getEditPart(ElementNames.abstractTypeName).part();
+		final GraphitiShapeEditPart diagram = (GraphitiShapeEditPart)editor.mainEditPart().part();
+		assertTrue(((GraphitiShapeEditPart)editPart.getParent()).getPictogramElement() == diagram.getFeatureProvider().getDiagramTypeProvider().getDiagramBehavior().getDiagramContainer().getSelectedPictogramElements()[0]);
+	}
+}
