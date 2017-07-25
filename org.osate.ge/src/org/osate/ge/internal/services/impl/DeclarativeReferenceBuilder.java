@@ -32,12 +32,16 @@ import org.osate.aadl2.SubprogramCall;
 import org.osate.aadl2.SubprogramCallSequence;
 import org.osate.aadl2.TypeExtension;
 import org.osate.annexsupport.AnnexUtil;
-import org.osate.ge.internal.patterns.SubprogramCallOrder;
+import org.osate.ge.internal.diagram.runtime.CanonicalBusinessObjectReference;
+import org.osate.ge.internal.model.SubprogramCallOrder;
+import org.osate.ge.services.ReferenceBuilderService;
 import org.osate.ge.di.Names;
-import org.osate.ge.di.BuildReference;
+import org.osate.ge.di.BuildCanonicalReference;
+import org.osate.ge.di.BuildRelativeReference;
 
 // Handles building references related to the AADL declarative model
 public class DeclarativeReferenceBuilder {
+	public final static String TYPE_PROJECT_OVERVIEW = "project_overview";
 	public final static String TYPE_PACKAGE = "package";
 	public final static String TYPE_CLASSIFIER = "classifier";
 	public final static String TYPE_SUBCOMPONENT = "subcomponent";
@@ -51,15 +55,103 @@ public class DeclarativeReferenceBuilder {
 	public final static String TYPE_FLOW_SPECIFICATION = "flow_specification";
 	public final static String TYPE_CONNECTION = "connection";
 	public final static String TYPE_MODE = "mode";
-	public final static String TYPE_MODE_TRANSITION = "mode_transition";
+	public final static String TYPE_MODE_TRANSITION_UNNAMED = "mode_transition";
+	public final static String TYPE_MODE_TRANSITION_NAMED = "mt";
+	public final static String TYPE_MODE_TRANSITION_TRIGGER = "mtt";
 	public final static String TYPE_SUBPROGRAM_CALL_SEQUENCE = "subprogram_call_sequence";
 	public final static String TYPE_SUBPROGRAM_CALL = "subprogram_call";
 	public final static String TYPE_SUBPROGRAM_CALL_ORDER = "subprogram_call_order";
 	public final static String TYPE_ANNEX_LIBRARY = "annex_library";
 	public final static String TYPE_ANNEX_SUBCLAUSE = "annex_subclause";
 
-	@BuildReference
-	public String[] getReference(final @Named(Names.BUSINESS_OBJECT) Object bo) {
+	public static CanonicalBusinessObjectReference buildPackageCanonicalReference(final String qualifiedName) {
+		return new CanonicalBusinessObjectReference(buildPackageReferenceSegments(qualifiedName));
+	}
+	
+	public static String[] buildPackageReferenceSegments(final String qualifiedName) {
+		return new String[] {TYPE_PACKAGE, qualifiedName};	
+	}
+	
+	@BuildRelativeReference 
+	public String[] getRelativeReference(final @Named(Names.BUSINESS_OBJECT) Object bo) {		
+		if(bo instanceof AadlPackage) {
+			return buildPackageReferenceSegments(((AadlPackage)bo).getQualifiedName());				
+		} if(bo instanceof Classifier) {
+			return buildSimpleRelativeReference(TYPE_CLASSIFIER, ((Classifier)bo));
+		} else if(bo instanceof Subcomponent) {
+			return buildSimpleRelativeReference(TYPE_SUBCOMPONENT, ((Subcomponent)bo));
+		} else if(bo instanceof Realization) {
+			return new String[] {TYPE_REALIZATION };
+		} else if(bo instanceof TypeExtension) {
+			return new String[] {TYPE_TYPE_EXTENSION };
+		} else if(bo instanceof ImplementationExtension) {
+			return new String[] {TYPE_IMPLEMENTATION_EXTENSION };
+		} else if(bo instanceof GroupExtension) {
+			return new String[] {TYPE_GROUP_EXTENSION };
+		} else if(bo instanceof Feature) {
+			return buildSimpleRelativeReference(TYPE_FEATURE, ((Feature)bo));
+		} else if(bo instanceof InternalFeature) {
+			return buildSimpleRelativeReference(TYPE_INTERNAL_FEATURE, ((InternalFeature)bo));
+		} else if(bo instanceof ProcessorFeature) {
+			return buildSimpleRelativeReference(TYPE_PROCESSOR_FEATURE, ((ProcessorFeature)bo));
+		} else if(bo instanceof FlowSpecification) {
+			return buildSimpleRelativeReference(TYPE_FLOW_SPECIFICATION, ((FlowSpecification)bo));
+		} else if(bo instanceof Connection) {
+			return buildSimpleRelativeReference(TYPE_CONNECTION, ((Connection)bo));
+		} else if(bo instanceof Mode) {
+			return buildSimpleRelativeReference(TYPE_MODE, ((Mode)bo));
+		} else if(bo instanceof ModeTransition) {
+			final ModeTransition mt = (ModeTransition)bo;
+			final String name = mt.getName();
+			if(name == null) {
+				return buildUnnamedModeTransitionRelativeReference((ModeTransition)bo);
+			} else {
+				return buildSimpleRelativeReference(TYPE_MODE_TRANSITION_NAMED, mt);
+			}
+		} else if(bo instanceof ModeTransitionTrigger) {
+			final ModeTransitionTrigger mtt = (ModeTransitionTrigger)bo;
+			return new String[] {TYPE_MODE_TRANSITION_TRIGGER, getNameForSerialization(mtt.getContext()), getNameForSerialization(mtt.getTriggerPort())};
+		} else if(bo instanceof SubprogramCallSequence) {
+			return buildSimpleRelativeReference(TYPE_SUBPROGRAM_CALL_SEQUENCE, ((SubprogramCallSequence)bo));
+		} else if(bo instanceof SubprogramCall) {
+			return buildSimpleRelativeReference(TYPE_SUBPROGRAM_CALL, ((SubprogramCall)bo));
+		} else if(bo instanceof SubprogramCallOrder) {
+			final SubprogramCallOrder sco = (SubprogramCallOrder)bo;
+			return new String[] {TYPE_SUBPROGRAM_CALL_ORDER, getNameForSerialization(sco.previousSubprogramCall), getNameForSerialization(sco.subprogramCall)};
+		} else if(bo instanceof AnnexLibrary) {
+			final AnnexLibrary annexLibrary = (AnnexLibrary)bo;					
+			final int index = getAnnexLibraryIndex(annexLibrary);
+			return new String[] {TYPE_ANNEX_LIBRARY, annexLibrary.getName(), Integer.toString(index)};
+
+		} else if(bo instanceof AnnexSubclause) {
+			final AnnexSubclause annexSubclause = (AnnexSubclause)bo;			
+			if(annexSubclause.getContainingClassifier() == null) {
+				throw new RuntimeException("Unable to retrieve containing classifier.");
+			}
+			
+			final int index = getAnnexSubclauseIndex(annexSubclause);
+			return new String[] {TYPE_ANNEX_SUBCLAUSE, annexSubclause.getName(), Integer.toString(index)};
+		} else {
+			return null;
+		}
+	}
+	
+	private String[] buildSimpleRelativeReference(final String type, final NamedElement bo) {
+		if(bo == null) {
+			return null;
+		}
+		
+		// Don't allow null or empty names for simple relative references
+		final String name = bo.getName();
+		if(name == null || name.length() == 0) {
+			return null;
+		}
+		
+		return new String[] {type, name};
+	}
+
+	@BuildCanonicalReference
+	public String[] getReference(final @Named(Names.BUSINESS_OBJECT) Object bo, final ReferenceBuilderService refBuilder) {
 		if(bo instanceof AadlPackage) {
 			return new String[] {TYPE_PACKAGE, ((AadlPackage)bo).getQualifiedName()};				
 		} else if(bo instanceof Classifier) {
@@ -87,7 +179,16 @@ public class DeclarativeReferenceBuilder {
 		} else if(bo instanceof Mode) {
 			return new String[] {TYPE_MODE, ((Mode)bo).getQualifiedName()};
 		} else if(bo instanceof ModeTransition) {
-			return buildModeTransitionKey((ModeTransition)bo);
+			final ModeTransition mt = (ModeTransition)bo;
+			final String name = mt.getName();
+			if(name == null) {
+				return buildUnnamedModeTransitionKey((ModeTransition)bo);
+			} else {
+				return new String[] {TYPE_MODE_TRANSITION_NAMED, refBuilder.getReference(mt.eContainer()), getNameForSerialization(mt)};
+			}
+		} else if(bo instanceof ModeTransitionTrigger) {
+			final ModeTransitionTrigger mtt = (ModeTransitionTrigger)bo;
+			return new String[] {TYPE_MODE_TRANSITION_TRIGGER, refBuilder.getReference(mtt.eContainer()), getNameForSerialization(mtt.getContext()), getNameForSerialization(mtt.getTriggerPort())};
 		} else if(bo instanceof SubprogramCallSequence) {
 			return new String[] {TYPE_SUBPROGRAM_CALL_SEQUENCE, ((SubprogramCallSequence)bo).getQualifiedName()};
 		} else if(bo instanceof SubprogramCall) {
@@ -103,7 +204,7 @@ public class DeclarativeReferenceBuilder {
 			}
 			
 			final int index = getAnnexLibraryIndex(annexLibrary);
-			return new String[] {TYPE_ANNEX_LIBRARY, annexPkg.getQualifiedName(), annexLibrary.getName().toLowerCase(), Integer.toString(index)};
+			return new String[] {TYPE_ANNEX_LIBRARY, annexPkg.getQualifiedName(), annexLibrary.getName(), Integer.toString(index)};
 		} else if(bo instanceof AnnexSubclause) {
 			final AnnexSubclause annexSubclause = (AnnexSubclause)bo;			
 			if(annexSubclause.getContainingClassifier() == null) {
@@ -112,21 +213,37 @@ public class DeclarativeReferenceBuilder {
 			
 			final Classifier annexSubclauseClassifier = annexSubclause.getContainingClassifier();	
 			final int index = getAnnexSubclauseIndex(annexSubclause);
-			return new String[] {TYPE_ANNEX_SUBCLAUSE, annexSubclauseClassifier.getQualifiedName(), annexSubclause.getName().toLowerCase(), Integer.toString(index)};
+			return new String[] {TYPE_ANNEX_SUBCLAUSE, annexSubclauseClassifier.getQualifiedName(), annexSubclause.getName(), Integer.toString(index)};
 		} else {
 			return null;
 		}
 	}
 
-	private static String getNameForSerialization(final NamedElement ne) {
+	static String[] buildUnnamedModeTransitionRelativeReference(final ModeTransition mt) {
+		final List<ModeTransitionTrigger> triggers = mt.getOwnedTriggers();
+		final String[] key = new String[4 + (triggers.size() * 2)];
+		int index = 0;
+		key[index++] = TYPE_MODE_TRANSITION_UNNAMED;
+		key[index++] = getNameForSerialization(mt);
+		key[index++] = getNameForSerialization(mt.getSource());
+		key[index++] = getNameForSerialization(mt.getDestination());
+		for(final ModeTransitionTrigger trigger : triggers) {
+			key[index++] = getNameForSerialization(trigger.getContext());
+			key[index++] = getNameForSerialization(trigger.getTriggerPort());
+		}
+
+		return key;
+	}
+	
+	public static String getNameForSerialization(final NamedElement ne) {
 		return (ne == null || ne.getName() == null) ? "<null>" : ne.getName();
 	}
 	
-	static String[] buildModeTransitionKey(final ModeTransition mt) {
+	static String[] buildUnnamedModeTransitionKey(final ModeTransition mt) {
 		final List<ModeTransitionTrigger> triggers = mt.getOwnedTriggers();
 		final String[] key = new String[5 + (triggers.size() * 2)];
 		int index = 0;
-		key[index++] = TYPE_MODE_TRANSITION;
+		key[index++] = TYPE_MODE_TRANSITION_UNNAMED;
 		key[index++] = mt.getContainingClassifier().getQualifiedName();
 		key[index++] = getNameForSerialization(mt);
 		key[index++] = getNameForSerialization(mt.getSource());
@@ -138,7 +255,7 @@ public class DeclarativeReferenceBuilder {
 
 		return key;
 	}
-			
+	
 	/**
 	 * Get the package in which the annex library is contained.
 	 * @param annex

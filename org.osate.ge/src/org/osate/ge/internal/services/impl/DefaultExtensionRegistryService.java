@@ -30,12 +30,10 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE DATA OR THE USE OR OTHER DEALINGS
 package org.osate.ge.internal.services.impl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IExtension;
@@ -46,6 +44,7 @@ import org.eclipse.e4.core.contexts.ContextInjectionFactory;
 import org.eclipse.e4.core.contexts.EclipseContextFactory;
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.osate.ge.Categories;
+import org.osate.ge.di.Activate;
 import org.osate.ge.di.IsApplicable;
 import org.osate.ge.di.Names;
 import org.osate.ge.internal.services.ExtensionRegistryService;
@@ -61,10 +60,10 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 		}		
 	}
 	
-	private static class TooltipContributorInfo {
+	private static class PrioritizedExtensionInfo {
 		final private int priority;
 		final private Object object;
-		public TooltipContributorInfo(final int priority, final Object object) {
+		public PrioritizedExtensionInfo(final int priority, final Object object) {
 			this.priority = priority;
 			this.object = object;
 		}
@@ -83,12 +82,14 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 	private static final String TOOLTIP_EXTENSION_POINT_ID = "org.osate.ge.tooltips";
 	private static final String COMMAND_EXTENSION_POINT_ID = "org.osate.ge.commands";
 	private static final String CATEGORIES_EXTENSION_POINT_ID = "org.osate.ge.categories";
+	private static final String BUSINESS_OBJECT_PROVIDERS_EXTENSION_POINT_ID = "org.osate.ge.businessObjectProviders";
 	
 	private final Collection<Object> tools;
 	private final Collection<Object> boHandlers;
 	private final Collection<Object> commands;	
 	private final List<Category> categories;
 	private final Collection<Object> tooltipContributors;
+	private final Collection<Object> businessObjectProviders;
 	
 	public DefaultExtensionRegistryService() {
 		final IExtensionRegistry registry = Platform.getExtensionRegistry();		
@@ -97,6 +98,7 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 		tooltipContributors = instantiateTooltipContributors(registry);
 		commands = instantiateCommands(registry);
 		categories = instantiateCategories(registry);
+		businessObjectProviders = instantiateBusinessObjectProviders(registry);
 	}
 
 	@Override
@@ -145,54 +147,47 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 	@Override
 	public Collection<Object> getCommands() {
 		return commands;
+	}	
+
+	@Override
+	public Collection<Object> getBusinessObjectProviders() {
+		return businessObjectProviders;
 	}
 	
 	private static Collection<Object> instantiateTools(final IExtensionRegistry registry) {
-		return instantiateSimpleExtensions(registry, TOOL_EXTENSION_POINT_ID, "tool");
+		return Collections.unmodifiableCollection(instantiateSimpleExtensions(registry, TOOL_EXTENSION_POINT_ID, "tool"));
 	}
 	
 	private static Collection<Object> instantiateBusinessObjectHandlers(final IExtensionRegistry registry) {
-		return instantiateSimpleExtensions(registry, BUSINESS_OBJECT_HANDLERS_EXTENSION_POINT_ID, "handler");
+		return Collections.unmodifiableCollection(instantiatePrioritizedExtensions(registry, BUSINESS_OBJECT_HANDLERS_EXTENSION_POINT_ID, "handler"));
+	}
+	
+	private static Collection<Object> instantiateBusinessObjectProviders(final IExtensionRegistry registry) {
+		return Collections.unmodifiableCollection(instantiateSimpleExtensions(registry, BUSINESS_OBJECT_PROVIDERS_EXTENSION_POINT_ID, "provider"));
 	}
 
 	private static Collection<Object> instantiateTooltipContributors(final IExtensionRegistry registry) {
-		final Comparator<TooltipContributorInfo> tooltipContributorPriorityComparator = new Comparator<TooltipContributorInfo>() {
-			@Override
-			public int compare(final TooltipContributorInfo tooltipContributor1, final TooltipContributorInfo tooltipContributor2) {
-				return Integer.compare(tooltipContributor1.getPriority(), tooltipContributor2.getPriority());
-			}
-		};
-		
-		final Collection<Object> tooltipContributors = new ArrayList<Object>();
-		final IExtensionPoint tooltipContributorsExtPoint = registry.getExtensionPoint(TOOLTIP_EXTENSION_POINT_ID);
-		if(tooltipContributorsExtPoint != null) {
-			final ArrayList<TooltipContributorInfo> tooltipContributorInfos = new ArrayList<TooltipContributorInfo>();
-			for(final IExtension extension : tooltipContributorsExtPoint.getExtensions()) {
-				for(final IConfigurationElement ce : extension.getConfigurationElements()) {
-					if(ce.getName().equals("tooltipContributor")) {
-						final int priority = Integer.parseInt(ce.getAttribute("priority"));
-						try {
-							final Object contributor = (Object)ce.createExecutableExtension("class");
-							final TooltipContributorInfo tooltipContributerInfo = new TooltipContributorInfo(priority, contributor);
-							tooltipContributorInfos.add(tooltipContributerInfo);
-						} catch (final CoreException e) {
-							throw new RuntimeException(e);
-						}
-					}
-				}
-			}
-			
-			tooltipContributorInfos.sort(tooltipContributorPriorityComparator);
-			for (final TooltipContributorInfo t : tooltipContributorInfos) {
-				tooltipContributors.add(t.getObject());
-			}
-		}
-		
-		return Collections.unmodifiableCollection(tooltipContributors);
+		return Collections.unmodifiableCollection(instantiatePrioritizedExtensions(registry, TOOLTIP_EXTENSION_POINT_ID, "tooltipContributor"));
 	}
 	
 	private static Collection<Object> instantiateCommands(final IExtensionRegistry registry) {
-		return instantiateSimpleExtensions(registry, COMMAND_EXTENSION_POINT_ID, "command");
+		final Collection<Object> commands = instantiateSimpleExtensions(registry, COMMAND_EXTENSION_POINT_ID, "command");
+		
+		// Activate command contributors to create commands
+		final IEclipseContext ctx = EclipseContextFactory.create();
+		try {
+			for(final Object commandContributor : instantiateSimpleExtensions(registry, COMMAND_EXTENSION_POINT_ID, "commandContributor")) {
+				@SuppressWarnings("unchecked")
+				final Collection<Object> contributedCommands = (Collection<Object>)ContextInjectionFactory.invoke(commandContributor, Activate.class, ctx);
+				if(contributedCommands != null) {
+					commands.addAll(contributedCommands);
+				}
+			}
+		} finally {
+			ctx.dispose();
+		}		
+		
+		return Collections.unmodifiableCollection(commands);
 	}
 	
 	// Returns an unmodifiable collection containing the objects created by instantiating class referenced by the "class" attribute of all configuration elements
@@ -217,7 +212,47 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 			}
 		}
 		
-		return Collections.unmodifiableCollection(extensions);
+		return extensions;
+	}
+	
+	// Extensions with a lower priority vlaues are sorted so that they are earlier in the resulting collection
+	private static Collection<Object> instantiatePrioritizedExtensions(final IExtensionRegistry registry, 
+			final String extensionPointId, 
+			final String elementName) {
+		final Comparator<PrioritizedExtensionInfo> priorityComparator = new Comparator<PrioritizedExtensionInfo>() {
+			@Override
+			public int compare(final PrioritizedExtensionInfo tooltipContributor1, final PrioritizedExtensionInfo tooltipContributor2) {
+				return Integer.compare(tooltipContributor1.getPriority(), tooltipContributor2.getPriority());
+			}
+		};
+		
+		final Collection<Object> extensions = new ArrayList<Object>();
+		final IExtensionPoint extPoint = registry.getExtensionPoint(extensionPointId);
+		if(extPoint != null) {
+			final ArrayList<PrioritizedExtensionInfo> prioritizedExtensionInfos = new ArrayList<>();
+			for(final IExtension extension : extPoint.getExtensions()) {
+				for(final IConfigurationElement ce : extension.getConfigurationElements()) {
+					if(ce.getName().equals(elementName)) {
+						final String priorityStr = ce.getAttribute("priority");
+						final int priority = priorityStr == null ? Integer.MAX_VALUE : Integer.parseInt(priorityStr);
+						try {
+							final Object contributor = (Object)ce.createExecutableExtension("class");
+							final PrioritizedExtensionInfo tooltipContributerInfo = new PrioritizedExtensionInfo(priority, contributor);
+							prioritizedExtensionInfos.add(tooltipContributerInfo);
+						} catch (final CoreException e) {
+							throw new RuntimeException(e);
+						}
+					}
+				}
+			}
+			
+			prioritizedExtensionInfos.sort(priorityComparator);
+			for (final PrioritizedExtensionInfo info : prioritizedExtensionInfos) {
+				extensions.add(info.getObject());
+			}
+		}
+		
+		return extensions;
 	}
 	
 	// Returns an unmodifiable collection containing the objects created by the id and name attribute of all configuration elements
@@ -226,15 +261,23 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 		final List<SimpleCategory> extensions = new ArrayList<SimpleCategory>();
 		final IExtensionPoint point = registry.getExtensionPoint(CATEGORIES_EXTENSION_POINT_ID);
 		if(point != null) {
+			// Build a list of category config elements from all extensions so that they can be sorted.
+			final List<IConfigurationElement> categoryConfigElements = new ArrayList<>();
 			for(final IExtension extension : point.getExtensions()) {
 				final IConfigurationElement[] tempConfigElements = extension.getConfigurationElements();
-				Arrays.sort(tempConfigElements, orderComparator);
 				for(final IConfigurationElement ce : tempConfigElements) {
-					final String categoryId = ce.getAttribute("id");
-					final String categoryName = ce.getAttribute("name");
-					final SimpleCategory category = new SimpleCategory(categoryId, categoryName);
-					extensions.add(category);
+					categoryConfigElements.add(ce);
 				}
+			}
+
+			categoryConfigElements.sort(orderComparator);
+			
+			// Create the category objects
+			for(final IConfigurationElement ce : categoryConfigElements) {
+				final String categoryId = ce.getAttribute("id");
+				final String categoryName = ce.getAttribute("name");
+				final SimpleCategory category = new SimpleCategory(categoryId, categoryName);
+				extensions.add(category);
 			}
 		}
 		

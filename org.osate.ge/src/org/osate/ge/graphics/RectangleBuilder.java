@@ -8,8 +8,8 @@
  *******************************************************************************/
 package org.osate.ge.graphics;
 
+import org.osate.ge.internal.graphics.LineStyle;
 import org.osate.ge.internal.graphics.Rectangle;
-import org.osate.ge.internal.graphics.RoundedRectangle;
 
 /**
  * Builder for creating rectangle graphics.
@@ -18,12 +18,14 @@ import org.osate.ge.internal.graphics.RoundedRectangle;
  */
 public class RectangleBuilder {
 	private boolean rounded = false;
+	private int lineWidth = 1;
+	private LineStyle lineStyle = LineStyle.SOLID;
 	
 	private RectangleBuilder() {}
 	
 	/**
 	 * Creates a rectangle builder.
-	 * @return a new rectangle builder
+	 * @return a rectangle builder
 	 */
 	public static RectangleBuilder create() {
 		return new RectangleBuilder();
@@ -39,10 +41,38 @@ public class RectangleBuilder {
 	}
 	
 	/**
+	 * Sets the line width to use to create the rectangle.
+	 * @param value the new value for the line width.
+	 * @return this builder to allow method chaining.
+	 */
+	public RectangleBuilder lineWidth(int value) {
+		this.lineWidth = value;
+		return this;
+	}
+	
+	/**
+	 * Configures the rectangle builder to use dashed lines.
+	 * @return this builder to allow method chaining.
+	 */
+	public RectangleBuilder dashed() {
+		this.lineStyle = LineStyle.DASHED;
+		return this;
+	}
+	
+	/**
+	 * Configures the rectangle builder to use dotted lines.
+	 * @return this builder to allow method chaining.
+	 */
+	public RectangleBuilder dotted() {
+		this.lineStyle = LineStyle.DASHED;
+		return this;
+	}
+	
+	/**
 	 * Creates a rectangle graphic based on the current state of the builder.
 	 * @return the newly created graphic
 	 */
 	public Graphic build() {
-		return rounded ? new RoundedRectangle() : new Rectangle();
+		return new Rectangle(lineWidth, lineStyle, rounded);
 	}
 }

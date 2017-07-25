@@ -31,7 +31,9 @@ Require-Bundle: org.eclipse.ui,
  org.osate.aadl2.instantiation,
  org.osate.annexsupport,
  org.eclipse.elk.core.service,
- org.eclipse.elk.graph;bundle-version="0.1.0"
+ org.eclipse.elk.graph;bundle-version="0.2.2",
+ org.osate.ge.diagram,
+ org.eclipse.ltk.ui.refactoring
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -41,14 +43,16 @@ Import-Package:
  org.eclipse.ui.views.contentoutline
 Service-Component: components/DefaultExtensionRegistryService.xml,
  components/DefaultDiagramService.xml,
- components/DefaultInternalReferenceBuilderService.xml,
+ components/DefaultReferenceService.xml,
  components/DefaultSystemInstanceLoadingService.xml,
  components/DefaultReferenceBuilderService.xml,
  components/DefaultSavedAadlPackageService.xml,
- components/DefaultGraphicalEditorService.xml
+ components/DefaultGraphicalEditorService.xml,
+ components/DefaultModelChangeNotifier.xml
 Export-Package: org.osate.ge,
  org.osate.ge.di,
  org.osate.ge.graphics,
  org.osate.ge.query,
  org.osate.ge.services
+Bundle-ClassPath: .
 

@@ -11,20 +11,19 @@ package org.osate.ge.errormodel.businessObjectHandlers;
 import javax.inject.Named;
 
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.osate.ge.GraphicalConfiguration;
+import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.PaletteEntry;
 import org.osate.ge.PaletteEntryBuilder;
 import org.osate.ge.di.CanDelete;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.Create;
-import org.osate.ge.di.GetCreateOwner;
-import org.osate.ge.di.GetGraphic;
+import org.osate.ge.di.GetGraphicalConfiguration;
 import org.osate.ge.di.GetName;
 import org.osate.ge.di.GetPaletteEntries;
 import org.osate.ge.di.IsApplicable;
-import org.osate.ge.di.SetName;
 import org.osate.ge.di.ValidateName;
 import org.osate.ge.errormodel.ErrorModelCategories;
-import org.osate.ge.errormodel.model.ErrorTypeLibrary;
 import org.osate.ge.errormodel.util.ErrorModelNamingHelper;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.RectangleBuilder;
@@ -43,22 +42,17 @@ public class ErrorTypeHandler {
 	}
 	
 	@GetPaletteEntries
-	public PaletteEntry[] getPaletteEntries(final @Named(Names.DIAGRAM_BO) ErrorTypeLibrary typeLib) {
+	public PaletteEntry[] getPaletteEntries() {
 		return new PaletteEntry[] { 
 			PaletteEntryBuilder.create().label("Error Type").category(ErrorModelCategories.ERROR_MODEL).build()
 		};
 	}
 	
 	@CanCreate
-	public boolean canCreate(final @Named(Names.TARGET_BO) ErrorTypeLibrary errorTypeLib) {
+	public boolean canCreate(final @Named(Names.TARGET_BO) ErrorModelLibrary errorModelLibrary) {
 		return true;
 	}
 
-	@GetCreateOwner
-	public Object getOwnerBusinessObject(final @Named(Names.TARGET_BO) ErrorTypeLibrary typeLib) {
-		return typeLib.getErrorModelLibrary();
-	}
-	
 	@Create
 	public Object createBusinessObject(@Named(Names.OWNER_BO) final ErrorModelLibrary errorModelLibrary) {				
 		// Create the ErrorType
@@ -72,9 +66,11 @@ public class ErrorTypeHandler {
 		return newErrorType;
 	}
 
-	@GetGraphic
-	public Graphic getGraphicalRepresentation() {
-		return graphic;
+	@GetGraphicalConfiguration
+	public GraphicalConfiguration getGraphicalConfiguration() {
+		return GraphicalConfigurationBuilder.create().
+			graphic(graphic).
+			build();
 	}
 	
 	@GetName
@@ -86,10 +82,5 @@ public class ErrorTypeHandler {
 	public String validateName(final @Named(Names.BUSINESS_OBJECT) ErrorType errorType, final @Named(Names.NAME) String value) {
 		final ErrorModelLibrary errorModelLibrary = (ErrorModelLibrary)errorType.eContainer();
 		return ErrorModelNamingHelper.validateName(errorModelLibrary, errorType.getName(), value);
-	}
-	
-	@SetName
-	public void setName(final @Named(Names.BUSINESS_OBJECT) ErrorType bo, final @Named(Names.NAME) String value) {
-		bo.setName(value);
 	}
 }

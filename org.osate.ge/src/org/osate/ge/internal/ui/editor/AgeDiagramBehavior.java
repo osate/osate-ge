@@ -29,12 +29,13 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE DATA OR THE USE OR OTHER DEALINGS
  *******************************************************************************/
 package org.osate.ge.internal.ui.editor;
 
+import java.awt.Color;
+import java.util.Collections;
 import java.util.EventObject;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-
 import org.eclipse.emf.common.command.BasicCommandStack;
 import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.common.command.CommandStackListener;
@@ -42,7 +43,6 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.transaction.NotificationFilter;
-import org.eclipse.emf.transaction.RecordingCommand;
 import org.eclipse.emf.transaction.ResourceSetChangeEvent;
 import org.eclipse.emf.transaction.ResourceSetListener;
 import org.eclipse.emf.transaction.RollbackException;
@@ -63,6 +63,7 @@ import org.eclipse.graphiti.mm.pictograms.Connection;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.mm.pictograms.Shape;
+import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.ui.editor.DefaultPaletteBehavior;
 import org.eclipse.graphiti.ui.editor.DefaultPersistencyBehavior;
 import org.eclipse.graphiti.ui.editor.DefaultRefreshBehavior;
@@ -70,8 +71,11 @@ import org.eclipse.graphiti.ui.editor.DefaultUpdateBehavior;
 import org.eclipse.graphiti.ui.editor.DiagramBehavior;
 import org.eclipse.graphiti.ui.editor.DiagramEditorContextMenuProvider;
 import org.eclipse.graphiti.ui.editor.IDiagramContainerUI;
+import org.eclipse.graphiti.ui.editor.IDiagramEditorInput;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.dialogs.ErrorDialog;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.swt.SWT;
@@ -87,47 +91,83 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IPartListener;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.EditorPart;
-import org.eclipse.xtext.resource.XtextResource;
-import org.eclipse.xtext.ui.editor.model.IXtextModelListener;
-import org.osate.aadl2.NamedElement;
 import org.osate.ge.di.Names;
-import org.osate.ge.internal.AadlElementWrapper;
-import org.osate.ge.internal.features.DiagramUpdateFeature;
-import org.osate.ge.internal.services.BusinessObjectResolutionService;
-import org.osate.ge.internal.services.CachingService;
+import org.osate.ge.internal.Activator;
+import org.osate.ge.internal.diagram.runtime.AgeDiagram;
+import org.osate.ge.internal.diagram.runtime.DiagramElement;
+import org.osate.ge.internal.diagram.runtime.DiagramLayoutUtil;
+import org.osate.ge.internal.diagram.runtime.DiagramModification;
+import org.osate.ge.internal.diagram.runtime.DiagramModifier;
+import org.osate.ge.internal.diagram.runtime.DiagramSerialization;
+import org.osate.ge.internal.graphiti.AgeDiagramTypeProvider;
+import org.osate.ge.internal.graphiti.AgeFeatureProvider;
+import org.osate.ge.internal.graphiti.GraphitiAgeDiagramProvider;
+import org.osate.ge.internal.graphiti.LegacyGraphitiDiagramConverter;
+import org.osate.ge.internal.graphiti.diagram.ColoringProvider;
+import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram;
+import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram.UpdaterListener;
+import org.osate.ge.internal.graphiti.features.UpdateDiagramFeature;
+import org.osate.ge.internal.services.ColoringService;
 import org.osate.ge.internal.services.DiagramService;
 import org.osate.ge.internal.services.ExtensionService;
-import org.osate.ge.internal.services.PropertyService;
-import org.osate.ge.internal.services.ShapeService;
-import org.osate.ge.internal.ui.util.GhostPurger;
-import org.osate.ge.internal.ui.xtext.AgeXtextUtil;
-import org.osate.ge.internal.util.Log;
+import org.osate.ge.internal.services.ModelChangeNotifier;
+import org.osate.ge.internal.services.ModelChangeNotifier.ChangeListener;
+import org.osate.ge.internal.util.DiagramUtil;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceChangeEvent;
+import org.eclipse.core.resources.IResourceChangeListener;
+import org.eclipse.core.resources.IResourceDelta;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.IncrementalProjectBuilder;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.e4.core.contexts.ContextInjectionFactory;
 import org.eclipse.e4.core.contexts.IEclipseContext;
-
 import java.util.Map;
 
-public class AgeDiagramBehavior extends DiagramBehavior {
-	public final static String AADL_DIAGRAM_TYPE_ID = "AADL Diagram";
-	private final GhostPurger ghostPurger;
-	private final DiagramService diagramService;
-	private final PropertyService propertyService;
+public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDiagramProvider {	
+	private GraphitiAgeDiagram graphitiAgeDiagram;
+	private IProject project = null;
 	private boolean updateInProgress = false;
 	private boolean updateWhenVisible = false;
+	private boolean updateQueued = false; // Only access by ui thread
+	private boolean updateQueuedRequireVisible = false;
 	private boolean forceNotDirty = false;
+	private volatile boolean dirtyModel = false;
+	private volatile boolean forceUpdateOnNextModelChange = false;
 	private boolean updatingFeatureWhileForcingNotDirty = false;
 	private ToolHandler toolHandler;
+	private IResourceChangeListener resourceChangeListener;
+	private AgeDiagram ageDiagram;
 	private PaintListener paintListener = new PaintListener() {
 		@Override
 		public void paintControl(PaintEvent e) {
 			if(updateWhenVisible) {
-				update();
+				updateDiagram(true);
 				updateWhenVisible = false;
 			}
 		}			
 	};
+	
+	private ChangeListener modelChangeListener = new ChangeListener() {		
+		@Override
+		public void afterModelChangeNotification() {
+			final boolean requireVisible = !forceUpdateOnNextModelChange;
+			forceUpdateOnNextModelChange = false; // Reset flag
+			dirtyModel = true;
+			updateDiagram(requireVisible);
+		}
+	};	
 	
 	// Diagram change listener which refreshes the entire diagram. This is needed because there are cases where graphiti does not 
 	// correctly update the diagram after shapes are moved.
@@ -161,11 +201,8 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 		}		
 	};
 	
-	public AgeDiagramBehavior(final IDiagramContainerUI diagramContainer, final GhostPurger ghostPurger, final DiagramService diagramService, final PropertyService propertyService) {
+	public AgeDiagramBehavior(final IDiagramContainerUI diagramContainer) {
 		super(diagramContainer);
-		this.ghostPurger = ghostPurger;
-		this.diagramService = diagramService;
-		this.propertyService = propertyService;
 	}	
 	
 	@Override
@@ -188,17 +225,12 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 			actionRegistry.registerAction(action);
 			selectionActions.add(action.getId());
 			
-			registerAction(new IncreaseNestingDepthAction(editor, propertyService));
-	 		registerAction(new DecreaseNestingDepthAction(editor, propertyService));
-
-			final BusinessObjectResolutionService bor = (BusinessObjectResolutionService)getAdapter(BusinessObjectResolutionService.class);		
 	 		final ExtensionService extService = (ExtensionService)getAdapter(ExtensionService.class);
 
 			// Register mouse listeners to handle tooltips
-			final ShapeService shapeService = (ShapeService)getAdapter(ShapeService.class);
 			class ToolTipHandler implements MouseMoveListener, MouseTrackListener, IPartListener {
 				private Shell tooltipShell = null;
-				private Object tooltipBo = null;
+				private DiagramElement tooltipElement = null;
 				private int tooltipCursorX = Integer.MIN_VALUE;
 				private int tooltipCursorY = Integer.MIN_VALUE;
 				private final int cursorMoveThreshold = 40;
@@ -210,56 +242,55 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 				public void mouseExit(MouseEvent e) {
 					disposeCurrentToolTip();
 				}
-				
+								
 				@Override
 				public void mouseHover(final MouseEvent e) {
 					final PictogramElement hoverPe = getPictogramElementByControlCoordinates(e.x, e.y);
-					
-					// Don't show tooltips for the diagram pictogram element
-					if(!(hoverPe instanceof Diagram)) {
-						final Object hoverBo = getClosestBusinessObject(hoverPe);						
-						if (hoverBo != null) {
-							if(!hoverBo.equals(tooltipBo) || exceedsCursorMoveThreshold(e.x, e.y)) {
-								disposeCurrentToolTip();
-								tooltipBo = hoverBo;
-																
-								// Create new tooltip shell
-								final Display display = Display.getCurrent();
-								tooltipShell = new Shell(display.getActiveShell(), SWT.ON_TOP | SWT.TOOL | SWT.CENTER);
-								tooltipShell.setVisible(false);
-								tooltipShell.setBackground(display.getSystemColor(SWT.COLOR_INFO_BACKGROUND));
-								tooltipShell.setBackgroundMode(SWT.INHERIT_FORCE);
-								
-								// Configure layout
-								final RowLayout rowLayout = new RowLayout();
-								rowLayout.fill = true;
-				                rowLayout.wrap = false;
-				                rowLayout.pack = true;
-				                rowLayout.type = SWT.VERTICAL;
-				                rowLayout.spacing = 0;
-				                tooltipShell.setLayout(rowLayout);
-				                
-								// Call tooltip contributors
-								final IEclipseContext context = extService.createChildContext();
-				                try {
-									context.set(Composite.class, tooltipShell);
-									context.set(Names.BUSINESS_OBJECT, tooltipBo);
-									for (final Object tooltipContributor : extService.getTooltipContributors()) {
-										ContextInjectionFactory.invoke(tooltipContributor, org.osate.ge.di.Activate.class, context);
-									}
-				                } finally {
-				                	context.dispose();
-				                }
-								
-								// Show tooltip shell if something was contributed
-								if (tooltipShell.getChildren().length > 0) {
-									final Point point = display.getCursorLocation();
-									tooltipShell.setLocation(point.x, point.y+20);
-									tooltipCursorX = e.x;
-									tooltipCursorY = e.y;
-									tooltipShell.pack(true);
-									tooltipShell.setVisible(true);
+					final DiagramElement hoverElement = hoverPe == null ? null : graphitiAgeDiagram.getClosestDiagramElement(hoverPe);
+
+					// Only show tooltips if a diagram element was found
+					if(hoverElement != null) {		
+						if(hoverElement != tooltipElement || exceedsCursorMoveThreshold(e.x, e.y)) {
+							disposeCurrentToolTip();
+							tooltipElement = hoverElement;
+															
+							// Create new tooltip shell
+							final Display display = Display.getCurrent();
+							tooltipShell = new Shell(display.getActiveShell(), SWT.ON_TOP | SWT.TOOL | SWT.CENTER);
+							tooltipShell.setVisible(false);
+							tooltipShell.setBackground(display.getSystemColor(SWT.COLOR_INFO_BACKGROUND));
+							tooltipShell.setBackgroundMode(SWT.INHERIT_FORCE);
+							
+							// Configure layout
+							final RowLayout rowLayout = new RowLayout();
+							rowLayout.fill = true;
+			                rowLayout.wrap = false;
+			                rowLayout.pack = true;
+			                rowLayout.type = SWT.VERTICAL;
+			                rowLayout.spacing = 0;
+			                tooltipShell.setLayout(rowLayout);
+			                
+							// Call tooltip contributors
+							final IEclipseContext context = extService.createChildContext();
+			                try {
+								context.set(Composite.class, tooltipShell);
+								context.set(Names.BUSINESS_OBJECT, tooltipElement.getBusinessObject());
+								context.set(Names.BUSINESS_OBJECT_CONTEXT, tooltipElement);
+								for (final Object tooltipContributor : extService.getTooltipContributors()) {
+									ContextInjectionFactory.invoke(tooltipContributor, org.osate.ge.di.Activate.class, context, null);
 								}
+			                } finally {
+			                	context.dispose();
+			                }
+							
+							// Show tooltip shell if something was contributed
+							if (tooltipShell.getChildren().length > 0) {
+								final Point point = display.getCursorLocation();
+								tooltipShell.setLocation(point.x, point.y+20);
+								tooltipCursorX = e.x;
+								tooltipCursorY = e.y;
+								tooltipShell.pack(true);
+								tooltipShell.setVisible(true);
 							}
 						}
 					}
@@ -268,8 +299,8 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 				@Override
 				public void mouseMove(final MouseEvent e) {
 					final PictogramElement movePe = getPictogramElementByControlCoordinates(e.x, e.y);
-					final Object moveBo = getClosestBusinessObject(movePe);
-					if (tooltipShell != null && (movePe instanceof Diagram || !moveBo.equals(tooltipBo) || exceedsCursorMoveThreshold(e.x, e.y))) {
+					final DiagramElement moveElement = movePe == null ? null : graphitiAgeDiagram.getClosestDiagramElement(movePe);
+					if (tooltipShell != null && (movePe instanceof Diagram || moveElement != tooltipElement || exceedsCursorMoveThreshold(e.x, e.y))) {
 						disposeCurrentToolTip();
 					}
 				}
@@ -280,7 +311,7 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 					}
 					
 					tooltipShell = null;
-					tooltipBo = null;
+					tooltipElement = null;
 					tooltipCursorX = Integer.MIN_VALUE;
 					tooltipCursorY = Integer.MIN_VALUE;
 				}
@@ -289,13 +320,6 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 					return (Math.abs(cursorX - tooltipCursorX) + Math.abs(cursorY - tooltipCursorY)) >= cursorMoveThreshold;
 				}
 				
-				private Object getClosestBusinessObject(final PictogramElement pe) {
-					if(pe == null) {
-						return null;
-					}
-					
-					return pe instanceof Shape ? shapeService.getClosestBusinessObjectOfType((Shape)pe, Object.class) : bor.getBusinessObjectForPictogramElement(pe);
-				}
 				@Override
 				public void partActivated(final IWorkbenchPart part) {
 				}
@@ -309,6 +333,16 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 				public void partClosed(final IWorkbenchPart part) {
 					 if(part == editor) {
 						 disposeCurrentToolTip();
+
+						 // Unregister listeners
+						 if(editor.getGraphicalViewer() != null && editor.getGraphicalViewer().getControl() != null) {
+							 editor.getGraphicalViewer().getControl().removeMouseMoveListener(this);
+							 editor.getGraphicalViewer().getControl().removeMouseTrackListener(this);
+						 }	
+ 
+						 if(editor.getSite() != null && editor.getSite().getWorkbenchWindow() != null && editor.getSite().getWorkbenchWindow().getPartService() != null) {
+							 editor.getSite().getWorkbenchWindow().getPartService().removePartListener(this);	 
+						 }				 
 					 }
 				}
 				
@@ -332,7 +366,7 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 			editor.getSite().getWorkbenchWindow().getPartService().addPartListener(toolTipHandler);
 
  			// Register an action for each tool
-	 		toolHandler = new ToolHandler(extService, getPaletteBehavior());
+	 		toolHandler = new ToolHandler(this, extService, getPaletteBehavior());
 	 		for(final Object tool : extService.getTools()) {
 	 			registerAction(new ActivateToolAction(editor, toolHandler, tool));
 	 		}
@@ -433,97 +467,93 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 		}
 	}
 	
-	private IXtextModelListener modelListener = new IXtextModelListener() {
+	private final Runnable updateNowIfModelHasChangedRunnable = new Runnable() {
 		@Override
-		public void modelChanged(final XtextResource resource) {
-			if(resource.getContents().size() > 0) {
-				// Invalidate the cache
-				final CachingService cachingService = (CachingService)getAdapter(CachingService.class);
-				if(cachingService != null) {
-					cachingService.invalidate();
-				}
-				
-				// Update the diagram
-				final EObject contents = resource.getContents().get(0);
-				if(contents instanceof NamedElement) {
-					updateIfDiagramResourceMatches(resource);
-				}
-			}					
-		}	
+		public void run() {
+			updateDiagram(false);
+		}		
 	};
-
-	private void updateIfDiagramResourceMatches(final Resource resource) {
-		// Ensure the method is called in the UI thread
-		if (Display.getCurrent() == null) {
-			Display.getDefault().asyncExec(new Runnable() {
-				public void run() {
-					updateIfDiagramResourceMatches(resource);
-				}
-			});
-			return;
-		}
-		
-		final Object bo = AadlElementWrapper.unwrap(getDiagramTypeProvider().getFeatureProvider().getBusinessObjectForPictogramElement(getDiagramTypeProvider().getDiagram()));
-		if(bo != null) {
-			final DiagramService diagramService = Objects.requireNonNull((DiagramService)getAdapter(DiagramService.class), "unable to retrieve diagram service");
-			final Resource diagramBoResource = diagramService.getResource(bo);
-
-			if(diagramBoResource == resource) {
-				update();
-			}
+	
+	public void updateNowIfModelHasChanged() {
+		if(dirtyModel) {
+			final Display display = Display.getDefault();
+			if(display == null || display.getThread() == Thread.currentThread()) {
+				updateNowIfModelHasChangedRunnable.run();
+			} else {
+				display.syncExec(updateNowIfModelHasChangedRunnable);
+			}			
 		}
 	}
 	
 	public void updateDiagramWhenVisible() {
-		update();
+		updateDiagram(true);
 	}
 	
-	private void update() {
-		final Runnable updateDiagramRunnable = new Runnable() {
-			private boolean updateQueued = false;
-			
-			public void run() {
-				// A mutex is not needed because this runnable and other code that access variables used by this runnable are ran in the display thread
-				// Don't update if update is already in progress
-				if(!updateInProgress) {
-					updateQueued = false;
-					updateInProgress = true;
-					
-					try {
-						// Don't update unless the diagram is visible
-						if(getContentEditPart().getViewer().getControl().isVisible()) {
-							// Update the entire diagram
-							getDiagramTypeProvider().getNotificationService().updatePictogramElements(new PictogramElement[] { getDiagramTypeProvider().getDiagram() });									
-						} else {
-							// Queue the update for when the control becomes visible
-							updateWhenVisible = true;
-						}
-						
-					} finally {
-						updateInProgress = false;
-					}
-					
-					// Check if an update has been queued
-					if(updateQueued) {
-						update();
-					}
-				
-				} else {
-					// Queue the update
-					updateQueued = true;
-				}								
-			}
-		};
+	final Runnable updateDiagramRequireVisibleRunnable = new Runnable() {
+		public void run() {
+			doUpdate(true);
+		}
+	};
+	
+	final Runnable updateDiagramNoRequireVisibleRunnable = new Runnable() {
+		public void run() {
+			doUpdate(false);
+		}
+	};
+	
+	public void forceDiagramUpdateOnNextModelChange() {
+		this.forceUpdateOnNextModelChange = true;
+	}
+	
+	// Updates the diagram in the current thread if it is the display thread or asynchronous if it isn't
+	private void updateDiagram(final boolean requireVisible) {
+		final Runnable updateDiagramRunnable = requireVisible ? updateDiagramRequireVisibleRunnable : updateDiagramNoRequireVisibleRunnable; 
 		
 		if(Display.getDefault().getThread() == Thread.currentThread()) {
-			Log.info("Updating diagram synchronously - current thread is the display thread");
 			updateDiagramRunnable.run();
 		} else {
-			Log.info("Updating diagram asynchronously - current thread is not the display thread");
 			Display.getDefault().asyncExec(updateDiagramRunnable);	
 		}
 	}
-
+	
+	private void doUpdate(final boolean requireVisible) {
+		if(Display.getDefault().getThread() != Thread.currentThread()) {
+			throw new RuntimeException("doUpdate() must be called from the UI thread");
+		}
+		
+		// A mutex is not needed because this runnable and other code that access variables used by this runnable are ran in the display thread
+		// Don't update if update is already in progress
+		if(!updateInProgress) {
+			updateQueued = false;
+			updateInProgress = true;
+			
+			try {
+				// Don't update unless the diagram is visible
+				if(!requireVisible || getContentEditPart().getViewer().getControl().isVisible()) {
+					// Update the entire diagram
+					updateWhenVisible = false;
+					dirtyModel = false;
+					getDiagramTypeProvider().getNotificationService().updatePictogramElements(new PictogramElement[] { getDiagramTypeProvider().getDiagram() });									
+				} else {
+					// Queue the update for when the control becomes visible
+					updateWhenVisible = true;
+				}
+				
+			} finally {
+				updateInProgress = false;
+			}
+			
+			// Check if an update has been queued
+			if(updateQueued) {
+				updateDiagram(updateQueuedRequireVisible);
+			}		
+		} else {
+			// Queue the update
+			updateQueued = true;
+			updateQueuedRequireVisible = updateQueuedRequireVisible && requireVisible;
+		}								
+	}
+	
 	@Override
 	protected DefaultUpdateBehavior createUpdateBehavior() {
 		return new AgeUpdateBehavior(this);
@@ -568,19 +598,28 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 			}
 		}
 	}
-	
+
 	@Override
 	protected void registerBusinessObjectsListener() {
 		// Do not call super method
 		
-		AgeXtextUtil.addModelListener(modelListener);
+		// Add listener
+		getModelChangeNotifier().addChangeListener(modelChangeListener);
 	}
 	
 	@Override
 	protected void unregisterBusinessObjectsListener() {
-		AgeXtextUtil.removeModelListener(modelListener);
-		
 		// Do not call super method
+		
+		// Remove listener. Notifier may be null if there was a problem during initialization.
+		final ModelChangeNotifier modelChangeNotifier = getModelChangeNotifier();
+		if(modelChangeNotifier != null) {
+			getModelChangeNotifier().removeChangeListener(modelChangeListener);
+		}
+	}
+	
+	private ModelChangeNotifier getModelChangeNotifier() {
+		return (ModelChangeNotifier)getAdapter(ModelChangeNotifier.class);
 	}
 	
 	@Override
@@ -662,7 +701,7 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 		// If we are forcing the diagram to not be seen as dirty, decide whether to start using the typical dirty check
 		if(forceNotDirty) {
 			// Prevent the initial diagram update from making the diagram dirty if the number of objects doesn't change.			
-			if(feature instanceof DiagramUpdateFeature) {
+			if(feature instanceof UpdateDiagramFeature) {
 				final int startCount = getVisibleObjectsInDiagram();
 				updatingFeatureWhileForcingNotDirty = true;
 				final Object retValue = super.executeFeature(feature, context);
@@ -699,56 +738,204 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 					}					
 				});
 				
-				// Since we have successfully creased a command stack listener, force the diagram to be seen as not dirty until there is a change
+				// Since we have successfully created a command stack listener, force the diagram to be seen as not dirty until there is a change
 				forceNotDirty = true;
 			}
 		}
 	}
 	
+	/**
+	 * Returns the project in which the diagram is contained.
+	 * @return
+	 */
+	public IProject getProject() {
+		return project;
+	}
+	
+	public IFile getFile() {
+		final IDiagramEditorInput input = getInput();
+		if(input == null) {
+			return null;
+		}
+		
+		final URI uri = input.getUri();
+		if(uri == null) {
+			return null;
+		}
+		
+		final IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(getPath(uri));
+		if(!(resource instanceof IFile)) {
+			return null;
+		}
+		
+		return (IFile)resource;
+	}
+	
+	private void updateProjectByUri(final URI uri) {
+		final IPath projectPath = new Path(uri.toPlatformString(true)).uptoSegment(1);
+		final IResource projectResource = ResourcesPlugin.getWorkspace().getRoot().findMember(projectPath);
+		if(!(projectResource instanceof IProject)) {
+			throw new RuntimeException("Unable to determine project");
+		}
+
+		project = (IProject)projectResource;
+	}
+	
+	// Prompts the user to convert the file if the input is a legacy(Graphiti) file.
+	private void handleLegacyDiagramConversion(final IDiagramEditorInput input) {
+		if(input != null) {
+			final IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(getPath(input.getUri()));
+			if(!(resource instanceof IFile)) {
+				throw new RuntimeException("Unable to retrieve file for resource.");
+			}
+
+			if(DiagramUtil.isLegacy((IFile)resource)) {
+				// Only prompt for converting if the workbench window is already visible. 
+				// The primary purpose is to be prevent confusion by not prompting for conversion on the first load of the workspace after upgrading.
+				if(PlatformUI.getWorkbench() !=  null &&
+					PlatformUI.getWorkbench().getActiveWorkbenchWindow() != null &&
+					PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell() != null &&
+					PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell().isVisible()) {
+					// The file is a legacy file
+					// Prompt user as to whether to convert the file
+					if(MessageDialog.openQuestion(null, "Conversion Required", "This diagram file uses a legacy file format which is not supported by this version of OSATE.\nDo you wish to convert the file to the latest format?\n\nConverted files will not be compatible with older versions of OSATE.\nThe original file will be removed after conversion.")) {								
+						final URI convertedDiagramUri = new LegacyGraphitiDiagramConverter().convertLegacyDiagram(input.getUri());
+						input.updateUri(convertedDiagramUri);
+						
+						// If the resource was converted, delete the old resource
+						try {
+							resource.delete(true, null);
+						} catch (CoreException e) {
+							throw new RuntimeException(e);
+						}
+					} else {
+						setEditorInitializationError("Unable to load diagram. This diagram file is stored in a legacy format. The diagram must be converted before it can be edited with this version of the OSATE Graphical Editor.");
+						return;
+					}
+				} else {
+					// Close the editor if the window isn't open. This usually occurs when eclipse is loading with legacy diagrams opened.
+					getDiagramContainer().close();
+				}
+			}
+		}				
+	}
+	
+	public boolean initializationFailed() {
+		return getEditorInitializationError() != null;
+	}
+	
+	@Override
+	public void setInput(final IDiagramEditorInput input) {
+		handleLegacyDiagramConversion(input);
+		
+		// Abort if initialization failed
+		if(initializationFailed()) {
+			return;
+		}
+		
+		super.setInput(input);
+		
+		if(resourceChangeListener == null) {
+			// Create and register a resource change listener. This listener is needed to handle moving and deleting of the resource file.
+			// Graphiti's built-in support cannot be used because the editor has a custom persistency behavior that doesn't use EMF
+			final IWorkspace workspace = ResourcesPlugin.getWorkspace();
+			resourceChangeListener = new IResourceChangeListener() {
+				public void resourceChanged(final IResourceChangeEvent event) {
+					if(event.getType() != IResourceChangeEvent.POST_CHANGE) {
+						return;
+					}
+					
+					final IResourceDelta rootDelta = event.getDelta();
+					final IResourceDelta diagramDelta = rootDelta.findMember(getPath(getInput().getUri()));
+					if (diagramDelta == null) {
+			            return;
+					}
+					
+					if(diagramDelta.getKind() == IResourceDelta.REMOVED) {
+						Display.getDefault().asyncExec(new Runnable() {							
+							@Override
+							public void run() {
+								if((diagramDelta.getFlags() & IResourceDelta.MOVED_TO) == 0) {
+									// Close editor
+									getDiagramContainer().close();
+								} else {
+									// Update the input's URI and refresh the title
+									final IPath newPath = diagramDelta.getMovedToPath();
+									final URI newUri = URI.createPlatformResourceURI(newPath.toString(), true);
+									getInput().updateUri(newUri);
+									updateProjectByUri(newUri);
+									getDiagramContainer().refreshTitle();								
+								}
+							}
+						});
+					} 
+				}
+		   };
+		   workspace.addResourceChangeListener(resourceChangeListener);
+		}
+	}
+	
+	@Override
+	protected void disposeBeforeGefDispose() {
+		// Unregister our resource change listener
+		if(resourceChangeListener != null) {
+			final IWorkspace workspace = ResourcesPlugin.getWorkspace();
+			workspace.removeResourceChangeListener(resourceChangeListener);
+		}
+		
+		super.disposeBeforeGefDispose();	
+	}
+
 	@Override
 	protected DefaultPersistencyBehavior createPersistencyBehavior() {
 		return new DefaultPersistencyBehavior(this) {
 			@Override
 			public Diagram loadDiagram(final URI uri) {
-				final Diagram diagram = super.loadDiagram(uri);
+				updateProjectByUri(uri);
+				ageDiagram = new AgeDiagram();
+				DiagramSerialization.read(ageDiagram, uri);
 				
-				if(diagram != null) {
-					// Check if the diagram type is a legacy type. If so, convert it to the newer diagram type ID
-					final String diagramTypeId = diagram.getDiagramTypeId();
-					if("AADL Package".equals(diagramTypeId) ||
-							"AADL Type".equals(diagramTypeId) ||
-							"AADL Component Implementation".equals(diagramTypeId)) {						
-						final TransactionalEditingDomain editingDomain = diagramBehavior.getEditingDomain();
-						editingDomain.getCommandStack().execute(new RecordingCommand(editingDomain) {
-							@Override
-							protected void doExecute() {
-								diagram.setDiagramTypeId(AADL_DIAGRAM_TYPE_ID);
-							}				
-						});	
-					}
-				}
-				
-				return diagram;
+				// Create an empty Graphiti diagram. It will be updated after in initDiagramTypeProvider() after the diagram type provider is initialized and 
+				// the required services are available.
+				return Graphiti.getPeService().createDiagram(GraphitiAgeDiagram.AADL_DIAGRAM_TYPE_ID, "", true);
 			}
 			
 			protected Set<Resource> save(final TransactionalEditingDomain editingDomain, final Map<Resource, Map<?, ?>> saveOptions, final IProgressMonitor monitor) {
-				final Diagram diagram = getDiagramTypeProvider().getDiagram();
+				try {
+					// Get the resource
+					final IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(new Path(getInput().getUri().toPlatformString(true)));
+					if(!(resource instanceof IFile)) {
+						throw new RuntimeException("Unable to retrieve file for resource.");
+					}
+					
+					// Save the file
+		            DiagramSerialization.write(ageDiagram, getInput().getUri());
+		            
+					// Clear legacy persistent properties
+					final DiagramService diagramService = Objects.requireNonNull((DiagramService)getAdapter(DiagramService.class), "unable to retrieve diagram service");
+					diagramService.clearLegacyPersistentProperties(resource);
+					
+					// Clear Ghosts
+					final AgeFeatureProvider fp = (AgeFeatureProvider)getDiagramTypeProvider().getFeatureProvider();
+					fp.getDiagramUpdater().clearGhosts();
 
-				editingDomain.getCommandStack().execute(new RecordingCommand(editingDomain) {
-					@Override
-					protected void doExecute() {
-						// Delete all the ghosts
-						ghostPurger.purgeGhosts(diagram);
-					}				
-				});				
-				
-				// Save the diagram				
-				final Set<Resource> retValue = super.save(editingDomain, saveOptions, monitor);
-
-				// Set the persistent properties
-				diagramService.savePersistentProperties(diagram);
-				
-				return retValue;
+					// Return a set containing the diagram resource
+					if(editingDomain.getResourceSet().getResources().size() == 1) {
+						return Collections.singleton(editingDomain.getResourceSet().getResources().get(0));
+					} else {
+						return Collections.emptySet();
+					}
+				} catch(final Exception e) {
+					Status errorStatus = new Status(IStatus.ERROR, Activator.PLUGIN_ID, 0, e.getMessage(), e);
+					Display.getDefault().asyncExec(new Runnable() {
+						@Override
+						public void run() {
+							new ErrorDialog(Display.getDefault().getActiveShell(), "Error Saving Diagram",
+									"Unable to save diagram.", errorStatus, IStatus.ERROR).open();
+						}
+					});
+					throw e;
+				}
 			}
 			
 			// Keep the forceNotDirty check
@@ -762,6 +949,63 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 			}
 		};
 	}
+	
+	@Override
+	protected IDiagramTypeProvider initDiagramTypeProvider(final Diagram diagram) {
+		final IDiagramTypeProvider dtp = super.initDiagramTypeProvider(diagram);
+
+		// Ensure the project is built. This prevents being unable to find the context due to the Xtext index not having completed.
+		try {
+			project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, new NullProgressMonitor());
+		} catch (CoreException e) {
+			throw new RuntimeException(e);
+		}
+		
+		// Update the diagram to finish initializing the diagram's fields before creating the GrpahitiAgeDiagram object
+		final AgeFeatureProvider fp = (AgeFeatureProvider)dtp.getFeatureProvider();
+		fp.getDiagramUpdater().updateDiagram(ageDiagram);
+		
+		// Perform incremental layout
+		ageDiagram.modify(new DiagramModifier() {
+			@Override
+			public void modify(final DiagramModification m) {
+				DiagramLayoutUtil.layout(ageDiagram, m, false);	
+			}						
+		});
+				
+		// Set the coloring service field. It is needed 
+		final ColoringProvider coloringProvider = new ColoringProvider() {
+			private ColoringService cs = ((AgeDiagramTypeProvider)dtp).getColoringService();
+			@Override
+			public Color getForegroundColor(final DiagramElement de) {
+				return cs.getForegroundColor(de);
+			}
+		};		
+		
+		// Create the Graphiti AGE diagram which will own a Graphiti diagram and keep it updated with any changes to the AGE diagram
+		graphitiAgeDiagram = new GraphitiAgeDiagram(ageDiagram, dtp.getDiagram(), getEditingDomain(), coloringProvider, 
+			new UpdaterListener() {
+				@Override
+				public void onUpdateFinished() {
+					// Refresh the selection. This prevents the editor from losing the selection in some cases such as aligning shapes.
+					final PictogramElement[] pes = getSelectedPictogramElements();
+					setPictogramElementsForSelection(pes);
+				}
+		});
+
+		// Prevent the diagram from being marked as dirty.
+		forceNotDirty = true;
+		
+		return dtp;
+	}
+	
+	/**
+	 * Method intended to allow getting the Graphiti Age Diagram from the Grpahiti Diagram Type Provider
+	 * @return
+	 */
+	public GraphitiAgeDiagram getGraphitiAgeDiagram() {
+		return graphitiAgeDiagram;
+	}
 
 	private final AgeDiagramEditor getDiagramEditor() {
 		return (AgeDiagramEditor)getParentPart();
@@ -771,5 +1015,9 @@ public class AgeDiagramBehavior extends DiagramBehavior {
 	@Override
 	protected boolean shouldRegisterContextMenu() {
 		return false;
+	}
+	
+	private static Path getPath(final URI uri) {
+		return new Path(uri.toPlatformString(true));
 	}
 }

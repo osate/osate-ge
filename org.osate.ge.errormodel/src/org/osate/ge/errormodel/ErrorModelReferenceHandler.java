@@ -16,11 +16,11 @@ import javax.inject.Named;
 import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.DefaultAnnexLibrary;
 import org.osate.aadl2.Element;
-import org.osate.ge.di.BuildReference;
+import org.osate.ge.di.BuildCanonicalReference;
+import org.osate.ge.di.BuildRelativeReference;
 import org.osate.ge.di.Names;
-import org.osate.ge.di.ResolveReference;
+import org.osate.ge.di.ResolveCanonicalReference;
 import org.osate.ge.errormodel.model.ErrorTypeExtension;
-import org.osate.ge.errormodel.model.ErrorTypeLibrary;
 import org.osate.ge.services.ReferenceBuilderService;
 import org.osate.ge.services.ReferenceResolutionService;
 import org.osate.xtext.aadl2.errormodel.errorModel.ErrorBehaviorEvent;
@@ -31,15 +31,34 @@ import org.osate.xtext.aadl2.errormodel.errorModel.ErrorModelLibrary;
 import org.osate.xtext.aadl2.errormodel.errorModel.ErrorType;
 
 public class ErrorModelReferenceHandler {
-	private final static String TYPE_BEHAVIOR_STATE_MACHINE = "emv2.behavior";
-	private final static String TYPE_BEHAVIOR_EVENT = "emv2.be";
-	private final static String TYPE_BEHAVIOR_STATE = "emv2.bs";
-	private final static String TYPE_BEHAVIOR_TRANSITION = "emv2.bt";
-	private final static String TYPE_ERROR_TYPE_LIBRARY = "emv2.etl";
-	private final static String TYPE_ERROR_TYPE = "emv2.et";
-	private final static String TYPE_ERROR_TYPE_EXT = "emv2.ete";
+	private final static String EMV2_REFERENCE_PREFIX = "emv2.";
+	private final static String TYPE_BEHAVIOR_STATE_MACHINE = EMV2_REFERENCE_PREFIX + "behavior";
+	private final static String TYPE_BEHAVIOR_EVENT = EMV2_REFERENCE_PREFIX + "be";
+	private final static String TYPE_BEHAVIOR_STATE = EMV2_REFERENCE_PREFIX + "bs";
+	private final static String TYPE_BEHAVIOR_TRANSITION = EMV2_REFERENCE_PREFIX + "bt";
+	private final static String TYPE_ERROR_TYPE = EMV2_REFERENCE_PREFIX + "et";
+	private final static String TYPE_ERROR_TYPE_EXT = EMV2_REFERENCE_PREFIX + "ete";
 	
-	@BuildReference
+	@BuildRelativeReference 
+	public String[] getRelativeReference(final @Named(Names.BUSINESS_OBJECT) Object bo) {
+		if(bo instanceof ErrorBehaviorStateMachine) {
+			return new String[] {TYPE_BEHAVIOR_STATE_MACHINE, ((ErrorBehaviorStateMachine)bo).getName()};				
+		} else if(bo instanceof ErrorBehaviorEvent) {
+			return new String[] {TYPE_BEHAVIOR_EVENT, ((ErrorBehaviorEvent)bo).getName()};				
+		} else if(bo instanceof ErrorBehaviorState) {
+			return new String[] {TYPE_BEHAVIOR_STATE, ((ErrorBehaviorState)bo).getName()};				
+		} else if(bo instanceof ErrorBehaviorTransition) {
+			return new String[] {TYPE_BEHAVIOR_TRANSITION, ((ErrorBehaviorTransition)bo).getName()};				
+		} else if(bo instanceof ErrorType) {
+			return new String[] {TYPE_ERROR_TYPE, ((ErrorType)bo).getName()};				
+		} else if(bo instanceof ErrorTypeExtension) {
+			return new String[] {TYPE_ERROR_TYPE_EXT };
+		}
+		
+		return null;
+	}
+	
+	@BuildCanonicalReference
 	public String[] getReference(final @Named(Names.BUSINESS_OBJECT) Object bo, final ReferenceBuilderService refBuilder) {
 		if(bo instanceof Element) {
 			final Element el = (Element)bo;
@@ -53,19 +72,13 @@ public class ErrorModelReferenceHandler {
 					return new String[] {TYPE_BEHAVIOR_EVENT, refBuilder.getReference(typedBo.eContainer()), typedBo.getName().toLowerCase()};				
 				} else if(bo instanceof ErrorBehaviorState) {
 					final ErrorBehaviorState typedBo = (ErrorBehaviorState)bo;
-					return new String[] {TYPE_BEHAVIOR_STATE, refBuilder.getReference(typedBo.eContainer()), ((ErrorBehaviorState)bo).getName().toLowerCase()};				
+					return new String[] {TYPE_BEHAVIOR_STATE, refBuilder.getReference(typedBo.eContainer()), typedBo.getName().toLowerCase()};				
 				} else if(bo instanceof ErrorBehaviorTransition) {
 					final ErrorBehaviorTransition typedBo = (ErrorBehaviorTransition)bo;
-					return new String[] {TYPE_BEHAVIOR_TRANSITION, refBuilder.getReference(typedBo.eContainer()), ((ErrorBehaviorTransition)bo).getName().toLowerCase()};				
+					return new String[] {TYPE_BEHAVIOR_TRANSITION, refBuilder.getReference(typedBo.eContainer()), typedBo.getName().toLowerCase()};				
 				} else if(bo instanceof ErrorType) {
 					return new String[] {TYPE_ERROR_TYPE, refBuilder.getReference(pkg), ((ErrorType)bo).getName().toLowerCase()};				
 				}  
-			}
-		} else if(bo instanceof ErrorTypeLibrary) {
-			final ErrorTypeLibrary etl = (ErrorTypeLibrary)bo;
-			if(etl.getErrorModelLibrary().getElementRoot() instanceof AadlPackage) {
-				final AadlPackage pkg = (AadlPackage)etl.getErrorModelLibrary().getElementRoot();
-				return new String[] {TYPE_ERROR_TYPE_LIBRARY, refBuilder.getReference(pkg)};
 			}
 		} else if(bo instanceof ErrorTypeExtension) {
 			final ErrorTypeExtension ete = (ErrorTypeExtension)bo;
@@ -79,29 +92,24 @@ public class ErrorModelReferenceHandler {
 		return null;
 	}
 	
-	@ResolveReference
+	@ResolveCanonicalReference
 	public Object getReferencedObject(final @Named(Names.REFERENCE) String[] ref, final ReferenceResolutionService refService) {
 		Objects.requireNonNull(ref, "ref must not be null");
 		// Handle references with 2 or more segments
 		if(ref.length < 2) {
 			return null;
 		}
-		
+
+		// Check that the type is an EMV2 type
 		final String type = ref[0];
-		final Object ref1 = refService.getReferencedObject(ref[1]);
-		
-		if(ref1 == null) {
+		if(!type.startsWith(EMV2_REFERENCE_PREFIX)) {
 			return null;
 		}
-
-		if(type.equals(TYPE_ERROR_TYPE_LIBRARY)) {
-			final AadlPackage pkg = (AadlPackage)ref1;
-			final Optional<ErrorModelLibrary> errorModelLibrary = pkg.getOwnedPublicSection().getOwnedAnnexLibraries().stream(). // Get annex libraries
-					filter(lib -> lib instanceof DefaultAnnexLibrary && ((DefaultAnnexLibrary)lib).getParsedAnnexLibrary() instanceof ErrorModelLibrary). // Filter non EMV2 Libraries
-					map(lib -> ((ErrorModelLibrary)((DefaultAnnexLibrary)lib).getParsedAnnexLibrary())). // Get parsed annex library
-					findAny();
-			
-			return errorModelLibrary.isPresent() ? new ErrorTypeLibrary(errorModelLibrary.get()) : null;
+		
+		// Retrieve the referenced object
+		final Object ref1 = refService.getReferencedObject(ref[1]);		
+		if(ref1 == null) {
+			return null;
 		}
 		
 		// Handle types which require 3 reference segments

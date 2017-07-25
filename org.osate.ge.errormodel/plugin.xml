@@ -19,9 +19,6 @@
             class="org.osate.ge.errormodel.businessObjectHandlers.ErrorModelSubclauseHandler">
       </handler>
       <handler
-            class="org.osate.ge.errormodel.businessObjectHandlers.ErrorTypeLibraryHandler">
-      </handler>
-      <handler
             class="org.osate.ge.errormodel.businessObjectHandlers.ErrorBehaviorEventHandler">
       </handler>
       <handler
@@ -47,6 +44,12 @@
       <referenceResolver
             class="org.osate.ge.errormodel.ErrorModelReferenceHandler">
       </referenceResolver>
+   </extension>
+   <extension
+         point="org.osate.ge.businessObjectProviders">
+      <provider
+            class="org.osate.ge.errormodel.ErrorModelBusinessObjectProvider">
+      </provider>
    </extension>
   
 </plugin>

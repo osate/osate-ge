@@ -1,3 +1,5 @@
+**The extension points used for adding support for new business objects are experimental. The following documentation is out of date. These APIs will be changed while the extension points are refined.**
+
 # Adding Support for a new Business Object
 Extending the graphical editor with support for a new type of business object requires multiple extensions. A business object is a generic term used to refer to any object which is represented by a diagram element inside of a diagram. For example, a business object may be an element in the AADL declarative model or an element in an annex library.
 
@@ -46,9 +48,8 @@ Business object handlers are classes which provide business object specific func
 * [IsApplicable](../api/org/osate/ge/di/IsApplicable.html)
 
 ##### General
-* [GetGraphic](../api/org/osate/ge/di/GetGraphic.html)
+* [GetGraphicalConfiguration](../api/org/osate/ge/GetGraphicalConfiguration.html)
 * [GetChildren](../api/org/osate/ge/di/GetChildren.html)
-* [GetDiagramName](../api/org/osate/ge/di/GetDiagramName.html)
 * [HandleDoubleClick](../api/org/osate/ge/di/HandleDoubleClick.html)
 
 ##### Business Object Creation
@@ -57,11 +58,6 @@ Business object handlers are classes which provide business object specific func
 * [GetCreateOwner](../api/org/osate/ge/di/GetCreateOwner.html)
 * [CanStartConnection](../api/org/osate/ge/di/CanStartConnection.html)
 * [Create](../api/org/osate/ge/di/Create.html)
-
-##### Connections
-* [CreateSourceQuery](../api/org/osate/ge/di/CreateSourceQuery.html)
-* [CreateDestinationQuery](../api/org/osate/ge/di/CreateDestinationQuery.html)
-* [CreateParentQuery](../api/org/osate/ge/di/CreateParentQuery.html)
 
 ##### Business Object Deletion
 * [CanDelete](../api/org/osate/ge/di/CanDelete.html)

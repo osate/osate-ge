@@ -11,16 +11,17 @@ package org.osate.ge.errormodel.businessObjectHandlers;
 import javax.inject.Named;
 
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.osate.ge.GraphicalConfiguration;
+import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.PaletteEntry;
 import org.osate.ge.PaletteEntryBuilder;
 import org.osate.ge.di.CanDelete;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.Create;
-import org.osate.ge.di.GetGraphic;
+import org.osate.ge.di.GetGraphicalConfiguration;
 import org.osate.ge.di.GetName;
 import org.osate.ge.di.GetPaletteEntries;
 import org.osate.ge.di.IsApplicable;
-import org.osate.ge.di.SetName;
 import org.osate.ge.di.ValidateName;
 import org.osate.ge.errormodel.ErrorModelCategories;
 import org.osate.ge.errormodel.util.ErrorModelNamingHelper;
@@ -41,7 +42,7 @@ public class ErrorBehaviorStateHandler {
 	}
 	
 	@GetPaletteEntries
-	public PaletteEntry[] getPaletteEntries(final @Named(Names.DIAGRAM_BO) ErrorBehaviorStateMachine stateMachine) {
+	public PaletteEntry[] getPaletteEntries() {
 		return new PaletteEntry[] { 
 			PaletteEntryBuilder.create().label("State").category(ErrorModelCategories.ERROR_MODEL).build()
 		};
@@ -64,10 +65,12 @@ public class ErrorBehaviorStateHandler {
 		
 		return newState;
 	}
-
-	@GetGraphic
-	public Graphic getGraphicalRepresentation() {
-		return graphic;
+	
+	@GetGraphicalConfiguration
+	public GraphicalConfiguration getGraphicalConfiguration() {
+		return GraphicalConfigurationBuilder.create().
+			graphic(graphic).
+			build();
 	}
 	
 	@GetName
@@ -79,10 +82,5 @@ public class ErrorBehaviorStateHandler {
 	public String validateName(final @Named(Names.BUSINESS_OBJECT) ErrorBehaviorState state, final @Named(Names.NAME) String value) {
 		final ErrorBehaviorStateMachine stateMachine = (ErrorBehaviorStateMachine)state.eContainer();
 		return ErrorModelNamingHelper.validateName(stateMachine, state.getName(), value);
-	}
-	
-	@SetName
-	public void setName(final @Named(Names.BUSINESS_OBJECT) ErrorBehaviorState bo, final @Named(Names.NAME) String value) {
-		bo.setName(value);
 	}
 }

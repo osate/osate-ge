@@ -4,9 +4,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map.Entry;
-
-import org.eclipse.elk.core.klayoutdata.KLayoutData;
-import org.eclipse.elk.core.klayoutdata.KShapeLayout;
+// TODO: Cleanup
+//import org.eclipse.elk.core.klayoutdata.KLayoutData;
+//import org.eclipse.elk.core.klayoutdata.KShapeLayout;
 import org.eclipse.elk.core.math.KVector;
 import org.eclipse.elk.core.options.Alignment;
 import org.eclipse.elk.core.options.CoreOptions;
@@ -19,11 +19,7 @@ import org.eclipse.elk.core.service.IDiagramLayoutConnector;
 import org.eclipse.elk.core.service.LayoutMapping;
 import org.eclipse.elk.core.util.ElkUtil;
 import org.eclipse.ui.IWorkbenchPart;
-import org.osate.ge.internal.services.PropertyService;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
-import org.eclipse.elk.graph.KGraphElement;
-import org.eclipse.elk.graph.KNode;
-import org.eclipse.elk.graph.KPort;
 import org.eclipse.elk.graph.properties.IPropertyHolder;
 import org.eclipse.emf.transaction.RecordingCommand;
 import org.eclipse.emf.transaction.TransactionalEditingDomain;
@@ -54,6 +50,7 @@ public class AgeGraphitiDiagramLayoutConnector implements IDiagramLayoutConnecto
 			throw new RuntimeException("Unhandled case. Only laying out the entire editor is supported.");
 		}
 		
+		/*
 		// Get the root shape
 		final AgeDiagramEditor editor = ((AgeDiagramEditor)workbenchPart);
 		final EditPart editorContent = editor.getGraphicalViewer().getContents();
@@ -98,8 +95,11 @@ public class AgeGraphitiDiagramLayoutConnector implements IDiagramLayoutConnecto
 		// TODO: Connections
 		
 		return mapping;
+		*/
+		// TODO
+		return null;
 	}
-	
+	/*
 	// TODO: Render parameters for consistency?
 	protected void buildLayoutGraphRecursively(final LayoutMapping mapping, final PropertyService propertyService, final ContainerShape parentElement, final KNode parentNode) {
         for (final Shape shape : parentElement.getChildren()) {        	
@@ -115,7 +115,8 @@ public class AgeGraphitiDiagramLayoutConnector implements IDiagramLayoutConnecto
         	}
         }
     }
-	
+	*/
+	/*
 	protected KGraphElement createChild(final LayoutMapping mapping, final PropertyService propertyService, final KNode parentNode, final Shape shape) {
 		final String dockArea = propertyService.getDockArea(shape);
 
@@ -178,7 +179,7 @@ public class AgeGraphitiDiagramLayoutConnector implements IDiagramLayoutConnecto
 		}
         
 	}
-
+*/
 	@Override
 	public void applyLayout(final LayoutMapping mapping, final IPropertyHolder settings) {
 		// TODO Auto-generated method stub
@@ -191,7 +192,7 @@ public class AgeGraphitiDiagramLayoutConnector implements IDiagramLayoutConnecto
 			protected void doExecute() {
 				// TODO Auto-generated method stub
 				System.err.println("TADA");
-				
+				/*
 				// TODO: Graphiti ELK plugin has a coordinate offset that it adds to all the direct children of the layout graph. Prevent everything from being offset?
 				
 				final IFeatureProvider fp = editor.getDiagramTypeProvider().getFeatureProvider();
@@ -224,6 +225,8 @@ public class AgeGraphitiDiagramLayoutConnector implements IDiagramLayoutConnecto
 					//System.err.println(ge + " : " + pe);
 		         //   command.add(entry.getKey(), (PictogramElement) entry.getValue());
 		        }
+		        		          
+		          */
 			}
 		});
        // editingDomain.getCommandStack().execute(mapping.getProperty(LAYOUT_COMMAND));

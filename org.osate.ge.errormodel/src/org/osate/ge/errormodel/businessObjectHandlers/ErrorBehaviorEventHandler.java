@@ -14,28 +14,29 @@ import javax.inject.Named;
 
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.osate.ge.GraphicalConfiguration;
+import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.PaletteEntry;
 import org.osate.ge.PaletteEntryBuilder;
 import org.osate.ge.di.CanDelete;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.Create;
-import org.osate.ge.di.GetGraphic;
+import org.osate.ge.di.GetGraphicalConfiguration;
 import org.osate.ge.di.GetName;
 import org.osate.ge.di.GetPaletteEntries;
 import org.osate.ge.di.IsApplicable;
-import org.osate.ge.di.SetName;
 import org.osate.ge.di.ValidateName;
 import org.osate.ge.errormodel.ErrorModelCategories;
 import org.osate.ge.errormodel.util.ErrorModelNamingHelper;
 import org.osate.ge.graphics.Graphic;
-import org.osate.ge.graphics.PolygonBuilder;
+import org.osate.ge.graphics.PolyBuilder;
 import org.osate.ge.di.Names;
 import org.osate.xtext.aadl2.errormodel.errorModel.ErrorBehaviorEvent;
 import org.osate.xtext.aadl2.errormodel.errorModel.ErrorBehaviorStateMachine;
 import org.osate.xtext.aadl2.errormodel.errorModel.ErrorModelPackage;
 
 public class ErrorBehaviorEventHandler {
-	private static final Graphic graphic = PolygonBuilder.create().points(new Point2D.Double(0.0, 1.0), new Point2D.Double(1.0, 1.0), new Point2D.Double(0.5, 0.0)).build();
+	private static final Graphic graphic = PolyBuilder.create().points(new Point2D.Double(0.0, 1.0), new Point2D.Double(1.0, 1.0), new Point2D.Double(0.5, 0.0)).build();
 	
 	@IsApplicable
 	@CanDelete
@@ -44,7 +45,7 @@ public class ErrorBehaviorEventHandler {
 	}
 	
 	@GetPaletteEntries
-	public PaletteEntry[] getPaletteEntries(final @Named(Names.DIAGRAM_BO) ErrorBehaviorStateMachine stateMachine) {
+	public PaletteEntry[] getPaletteEntries() {
 		return new PaletteEntry[] { 
 			PaletteEntryBuilder.create().label("Error Event").category(ErrorModelCategories.ERROR_MODEL).context(ErrorModelPackage.eINSTANCE.getErrorEvent()).build(),
 			PaletteEntryBuilder.create().label("Repair Event").category(ErrorModelCategories.ERROR_MODEL).context(ErrorModelPackage.eINSTANCE.getRepairEvent()).build(),
@@ -70,11 +71,13 @@ public class ErrorBehaviorEventHandler {
 		return newEvent;
 	}
 
-	@GetGraphic
-	public Graphic getGraphicalRepresentation() {
-		return graphic;
+	@GetGraphicalConfiguration
+	public GraphicalConfiguration getGraphicalConfiguration() {
+		return GraphicalConfigurationBuilder.create().
+			graphic(graphic).
+			build();
 	}
-	
+		
 	@GetName
 	public String getName(final @Named(Names.BUSINESS_OBJECT) ErrorBehaviorEvent bo) {
 		return bo.getName();
@@ -84,10 +87,5 @@ public class ErrorBehaviorEventHandler {
 	public String validateName(final @Named(Names.BUSINESS_OBJECT) ErrorBehaviorEvent event, final @Named(Names.NAME) String value) {
 		final ErrorBehaviorStateMachine stateMachine = (ErrorBehaviorStateMachine)event.eContainer();
 		return ErrorModelNamingHelper.validateName(stateMachine, event.getName(), value);
-	}
-	
-	@SetName
-	public void setName(final @Named(Names.BUSINESS_OBJECT) ErrorBehaviorEvent bo, final @Named(Names.NAME) String value) {
-		bo.setName(value);
 	}
 }

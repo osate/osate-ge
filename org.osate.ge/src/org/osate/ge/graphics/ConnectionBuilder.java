@@ -8,9 +8,9 @@
  *******************************************************************************/
 package org.osate.ge.graphics;
 
-import org.osate.ge.internal.graphics.ConnectionStyle;
+import org.osate.ge.internal.graphics.LineStyle;
+import org.osate.ge.internal.graphics.AgeConnection;
 import org.osate.ge.internal.graphics.AgeConnectionTerminator;
-import org.osate.ge.internal.graphics.FreeFormConnection;
 
 /**
  * Builder for creating connection graphics. Currently all connections are straight line connections which do not support bend-points.
@@ -20,13 +20,14 @@ import org.osate.ge.internal.graphics.FreeFormConnection;
 public class ConnectionBuilder {
 	private AgeConnectionTerminator srcTerminator = null;
 	private AgeConnectionTerminator dstTerminator = null;
-	private ConnectionStyle connectionStyle = ConnectionStyle.SOLID;
+	private LineStyle lineStyle = LineStyle.SOLID;
+	private boolean isCurved = false;
 	
 	private ConnectionBuilder() {}
 	
 	/**
 	 * Creates a connection builder.
-	 * @return a new connection builder
+	 * @return a connection builder
 	 */
 	public static ConnectionBuilder create() {
 		return new ConnectionBuilder();
@@ -57,15 +58,33 @@ public class ConnectionBuilder {
 	 * @return this builder to allow method chaining.
 	 */
 	public ConnectionBuilder dashed() {
-		this.connectionStyle = ConnectionStyle.DASHED;
+		this.lineStyle = LineStyle.DASHED;
 		return this;
 	}
+	
+	/**
+	 * Configures the connection builder to create a dotted connection.
+	 * @return this builder to allow method chaining.
+	 */
+	public ConnectionBuilder dotted() {
+		this.lineStyle = LineStyle.DOTTED;
+		return this;
+	}
+	
+	/**
+	 * Configures the connection builder to create a curved connection.
+	 * @return this builder to allow method chaining.
+	 */
+	public ConnectionBuilder curved() {
+		this.isCurved = true;
+		return this;
+	}	
 	
 	/**
 	 * Creates a connection based on the current state of the builder.
 	 * @return the newly created graphic
 	 */
 	public Graphic build() {
-		return new FreeFormConnection(connectionStyle, srcTerminator, dstTerminator);
+		return AgeConnection.createNormal(lineStyle, srcTerminator, dstTerminator, isCurved);
 	}
 }

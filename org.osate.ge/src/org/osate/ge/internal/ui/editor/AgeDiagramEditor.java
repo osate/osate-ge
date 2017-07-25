@@ -29,28 +29,30 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE DATA OR THE USE OR OTHER DEALINGS
  *******************************************************************************/
 package org.osate.ge.internal.ui.editor;
 
-import org.eclipse.graphiti.mm.pictograms.PictogramElement;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.graphiti.ui.editor.DiagramBehavior;
 import org.eclipse.graphiti.ui.editor.DiagramEditor;
-import org.eclipse.ui.PlatformUI;
-import org.osate.ge.internal.services.DiagramService;
+import org.eclipse.graphiti.ui.editor.IDiagramEditorInput;
+import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 import org.osate.ge.GraphicalEditor;
-import org.osate.ge.internal.services.PropertyService;
-import org.osate.ge.internal.services.impl.DefaultPropertyService;
-import org.osate.ge.internal.ui.util.impl.DefaultGhostPurger;
+import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram;
 
 public class AgeDiagramEditor extends DiagramEditor implements GraphicalEditor {
 	public static final String DIAGRAM_EDITOR_ID = "org.osate.ge.editor.AgeDiagramEditor";
 	public static final String EXTENSION_NO_DOT = "aadl_diagram";
 	public static final String EXTENSION = "." + EXTENSION_NO_DOT;
+	private AgeContentOutlinePage outlinePage = null;
 	
 	public AgeDiagramEditor() {
 	}
 	
 	protected DiagramBehavior createDiagramBehavior() {
-		final PropertyService propertyService = new DefaultPropertyService();
-		final DiagramService diagramService = (DiagramService)PlatformUI.getWorkbench().getActiveWorkbenchWindow().getService(DiagramService.class);
-		return new AgeDiagramBehavior(this, new DefaultGhostPurger(propertyService), diagramService, propertyService);
+		return new AgeDiagramBehavior(this);
+	}
+	
+	// Update the diagram. This call is synchronous and will switch to display thread as necessary.
+	public void updateNowIfModelHasChanged() {
+		((AgeDiagramBehavior)getDiagramBehavior()).updateNowIfModelHasChanged();
 	}
 	
 	/*
@@ -60,14 +62,52 @@ public class AgeDiagramEditor extends DiagramEditor implements GraphicalEditor {
 		((AgeDiagramBehavior)getDiagramBehavior()).updateDiagramWhenVisible();
 	}
 	
+	public void forceDiagramUpdateOnNextModelChange() {
+		((AgeDiagramBehavior)getDiagramBehavior()).forceDiagramUpdateOnNextModelChange();
+	}
+	
 	@Override
 	public void selectDiagramElementsForBusinessObject(final Object bo) {
-		final PictogramElement pe = getDiagramTypeProvider().getFeatureProvider().getPictogramElementForBusinessObject(bo);
+		// Select all pictogram elements associated with the business object
+		selectPictogramElements(getDiagramTypeProvider().getFeatureProvider().getAllPictogramElementsForBusinessObject(bo));
+	}
+	
+	@Override
+	public Object getAdapter(@SuppressWarnings("rawtypes") Class required) {
+		if(IContentOutlinePage.class.equals(required)) {
+			if(outlinePage == null) {
+				outlinePage = new AgeContentOutlinePage(this);
+			}
+			return outlinePage;
+		} else if(required == org.eclipse.ui.views.properties.IPropertySheetPage.class) {
+			// Return null if initialization failed. This is a workaround for an exception being thrown by the super implementation of getAdapter() in cases where initialization isn't completed
+			if(((AgeDiagramBehavior)getDiagramBehavior()).initializationFailed()) {
+				return null;
+			}
+		};
 		
-		// Select and reveal the pictogram element
-		if(pe != null) {
-			getDiagramBehavior().setPictogramElementForSelection(pe);					
-			getDiagramBehavior().selectBufferedPictogramElements();
+		return super.getAdapter(required);
+	}
+	
+	@Override
+	public void refreshTitle() {
+		final IDiagramEditorInput input = getDiagramEditorInput();
+		String name = null;
+		if(input != null) {
+			final URI uri = input.getUri();
+			if(uri != null) {
+				name = URI.decode(uri.lastSegment());
+			}
 		}
+		
+		if(name == null) {
+			name = "";
+		}
+
+		setPartName(name);
+	}
+	
+	public GraphitiAgeDiagram getGraphitiAgeDiagram() {
+		return ((AgeDiagramBehavior)getDiagramBehavior()).getGraphitiAgeDiagram();
 	}
 }

@@ -41,8 +41,6 @@
          <topic href="user_guide_output/eam_connections.html#editing-connections" label="Editing Connections">
             <topic href="user_guide_output/eam_connections.html#connection_pattern-property-visualization" label="Using the Context Menu to Edit Connections">
             </topic>
-            <topic href="user_guide_output/eam_connections.html#using-the-properties-diagram-view-to-edit-connections" label="Using the Properties Diagram View to Edit Connections">
-            </topic>
          </topic>
          <topic href="user_guide_output/eam_connections.html#connection_pattern-property-visualization" label="Connection_Pattern Property Visualization">
          </topic>
@@ -132,8 +130,6 @@
             <topic href="user_guide_output/eam_bindings.html#using-the-context-menu-to-set-bindings" label="Using the Context Menu to Set Bindings">
             </topic>
          </topic>
-         <topic href="user_guide_output/eam_bindings.html#bindings-diagram-properties" label="Bindings Diagram Properties">
-         </topic>
       </topic>
       <topic href="user_guide_output/eam_arrays.html" label="Arrays">
          <topic href="user_guide_output/eam_arrays.html#creating-arrays" label="Creating Arrays">
@@ -161,17 +157,6 @@
       </topic>
    </topic>
    <topic href="user_guide_output/ts.html" label="Troubleshooting">
-      <topic href="user_guide_output/ts_build.html" label="Build Automatically">
-      </topic>
-      <topic href="user_guide_output/ts_font.html" label="Inconsistent Font Sizes Across Machines">
-      </topic>
-      <topic href="user_guide_output/ts_exception.html" label="Out of Handles Exception">
-      </topic>
-      <topic href="user_guide_output/ts_txtmodel.html" label="Unable to Set Properties Unless Text Model is Open">
-      </topic>
-      <topic href="user_guide_output/ts_updating.html" label="Updating a Diagram">
-      </topic>
-      <topic href="user_guide_output/ts_reporting.html" label="Reporting Bugs">
-      </topic>
    </topic>
+   <topic label="Notices" href="user_guide_output/notices.html"/>
 </toc>
