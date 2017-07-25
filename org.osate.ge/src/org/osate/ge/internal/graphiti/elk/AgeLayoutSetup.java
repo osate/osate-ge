@@ -10,9 +10,9 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
 
-public class AgeGraphitiLayoutSetup implements ILayoutSetup {
+public class AgeLayoutSetup implements ILayoutSetup {
 
-	public AgeGraphitiLayoutSetup() {
+	public AgeLayoutSetup() {
 		// TODO Auto-generated constructor stub
 	}
 
@@ -39,13 +39,13 @@ public class AgeGraphitiLayoutSetup implements ILayoutSetup {
 	
 	@Override
 	public Injector createInjector(final Module defaultModule) {
-		return Guice.createInjector(Modules.override(defaultModule).with(new AgeGraphitiLayoutModule()));
+		return Guice.createInjector(Modules.override(defaultModule).with(new AgeLayoutModule()));
 	}
 
-    public static class AgeGraphitiLayoutModule implements Module {
+    public static class AgeLayoutModule implements Module {
         @Override
         public void configure(final Binder binder) {
-            binder.bind(IDiagramLayoutConnector.class).to(AgeGraphitiDiagramLayoutConnector.class);
+            binder.bind(IDiagramLayoutConnector.class).to(AgeLayoutConnector.class);
         }        
     }
 

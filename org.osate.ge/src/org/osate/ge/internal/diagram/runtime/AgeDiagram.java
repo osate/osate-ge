@@ -247,7 +247,11 @@ public class AgeDiagram implements DiagramNode, ModifiableDiagramElementContaine
 
 		@Override
 		public void setBendpoints(final DiagramElement e, final List<Point> value) {
-			if(!value.equals(e.getBendpoints())) {
+			if(value == null && e.getBendpoints().size() == 0) {
+				return;
+			}
+			
+			if(value == null || !value.equals(e.getBendpoints())) {
 				// Make copy of values because lists are not immutable.
 				storeChange(e, DiagramElementField.BENDPOINTS, new ArrayList<>(e.getBendpoints()), value == null ? Collections.emptyList() : new ArrayList<>(value));
 				e.setBendpoints(value);
