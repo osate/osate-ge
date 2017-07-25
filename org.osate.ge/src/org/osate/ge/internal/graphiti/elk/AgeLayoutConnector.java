@@ -69,11 +69,11 @@ import org.eclipse.graphiti.ui.internal.parts.IPictogramElementEditPart;
 
 // TODO: Labels
 // TODO: Insets
-// TODO: User configuration using hte layout view
+// TODO: User configuration using the layout view
 public class AgeLayoutConnector implements IDiagramLayoutConnector {
 	@Override
 	public LayoutMapping buildLayoutGraph(final IWorkbenchPart workbenchPart, final Object diagramPart) {
-		System.err.println("CREATING GRAPH LAYOUT");
+		//System.err.println("CREATING GRAPH LAYOUT");
 
 		// TODO: Support part of the diagram. 
 		if(diagramPart != null) {
@@ -133,11 +133,13 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 					newNode.setY(de.getY());
 					newNode.setWidth(de.getWidth());
 					newNode.setHeight(de.getHeight());
+					newNode.setProperty(LayeredOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.free()); // TODO: Should be configurable. Allows layout algorithm to shrink items
 					mapping.getGraphMap().put(newNode, de); // TODO: Do this for all graph elements
 					
 					//newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.mrtree");
 					
 					// If parent is fixed then children are not layed out..
+					/*
 					if(de.getBusinessObject() instanceof AadlPackage) {
 						newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.layered");
 						//newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.fixed");
@@ -152,7 +154,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 							//newNode.setProperty(LayeredOptions.POSITION, new KVector(de.getX(), de.getY()));
 						}
 					}
-					
+					*/
 					// TODO: Configure label spacing.
 					
 					// TODO: Features and feature groups
@@ -161,9 +163,12 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 					final ElkLabel newLabel = ElkGraphUtil.createLabel(newNode);
 					newLabel.setX(0);
 					newLabel.setY(0);
-					newLabel.setWidth(de.getWidth()); // TODO: Need to be smaller
-					newLabel.setHeight(14); // TODO: Based on lable size
+					newLabel.setWidth(100); // TODO: Need to be actual label width. Otherwise the algorithm will reserve too much or too little room.
+					newLabel.setHeight(14); // TODO: Based on label size
 					newLabel.setProperty(CoreOptions.NODE_LABELS_PLACEMENT, NodeLabelPlacement.insideTopCenter()); // TODO:
+
+					// TOOD: Set minimum size of node based on label size
+					// TODO: Take label size into account when sizing nodes.
 					
 					// TODO: Unpositionable child shapes(extra labels, etc)
 					//newLabel.setProperty(LayeredOptions.CROSSING_MINIMIZATION_STRATEGY, CrossingMinimizationStrategy.LAYER_SWEEP
@@ -211,7 +216,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 	@Override
 	public void applyLayout(final LayoutMapping mapping, final IPropertyHolder settings) {
 		// TODO Auto-generated method stub
-		System.err.println("TODO: Apply layout");
+		//System.err.println("TODO: Apply layout");
 				
 		final AgeDiagramEditor editor = ((AgeDiagramEditor)mapping.getWorkbenchPart());
 		final TransactionalEditingDomain editingDomain = editor.getEditingDomain();
@@ -219,7 +224,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 			@Override
 			protected void doExecute() {
 				// TODO Auto-generated method stub
-				System.err.println("TADA");
+				//System.err.println("TADA");
 				
 				final AgeDiagram diagram = getDiagram(mapping.getWorkbenchPart());
 				diagram.modify(new DiagramModifier() {				
@@ -249,7 +254,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 										// TODO: For testing
 										if(elkElement instanceof ElkShape) {
 											final ElkShape elkShape = (ElkShape)elkElement;
-											System.err.println(elkShape.getX() + " : "  + elkShape.getWidth());
+											//System.err.println(elkShape.getX() + " : "  + elkShape.getWidth());
 										}
 									}
 								}
@@ -317,7 +322,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 							}
 						}
 						
-						System.err.println("CCOUNT: " + cCount + " : " + cwsCount);
+						//System.err.println("CCOUNT: " + cCount + " : " + cwsCount);
 					}
 				});
 			}
