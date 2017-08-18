@@ -224,6 +224,13 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 			action = new DistributeVerticallyAction(editor);
 			actionRegistry.registerAction(action);
 			selectionActions.add(action.getId());
+			action = new RadialLayoutAction(editor);
+			actionRegistry.registerAction(action);
+			selectionActions.add(action.getId());
+			action = new GridLayoutAction(editor);
+			actionRegistry.registerAction(action);
+			selectionActions.add(action.getId());
+			
 			
 	 		final ExtensionService extService = (ExtensionService)getAdapter(ExtensionService.class);
 
@@ -892,8 +899,13 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 			@Override
 			public Diagram loadDiagram(final URI uri) {
 				updateProjectByUri(uri);
-				ageDiagram = new AgeDiagram();
-				DiagramSerialization.read(ageDiagram, uri);
+				final org.osate.ge.diagram.Diagram mmDiagram = DiagramSerialization.readMetaModelDiagram(uri);				
+				ageDiagram = DiagramSerialization.createAgeDiagram(mmDiagram);
+				
+				// Display warning if the diagram is stored with a newer version of the diagram file format.
+				if(mmDiagram.getFormatVersion() > DiagramSerialization.FORMAT_VERSION) {
+					MessageDialog.openWarning(Display.getCurrent().getActiveShell(), "Diagram Created with Newer Version of OSATE", "The diagram '" + uri.lastSegment() + "' was created with a newer version of the OSATE. Saving the diagram with the running version of OSATE may result in the loss of diagram information.");
+				}
 				
 				// Create an empty Graphiti diagram. It will be updated after in initDiagramTypeProvider() after the diagram type provider is initialized and 
 				// the required services are available.
@@ -1006,6 +1018,10 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 	public GraphitiAgeDiagram getGraphitiAgeDiagram() {
 		return graphitiAgeDiagram;
 	}
+	
+	public AgeDiagram getAgeDiagram() {
+		return ageDiagram;
+	}
 
 	private final AgeDiagramEditor getDiagramEditor() {
 		return (AgeDiagramEditor)getParentPart();
@@ -1020,4 +1036,8 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 	private static Path getPath(final URI uri) {
 		return new Path(uri.toPlatformString(true));
 	}
+	
+	public void clearSelection() {
+		selectPictogramElements(new PictogramElement[0]);
+	}	
 }
