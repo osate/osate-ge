@@ -113,6 +113,11 @@
             id="org.osate.ge.commands.properties"
             name="Properties...">
       </command>
+      <command
+            categoryId="org.osate.ge.commands.categories.layout"
+            id="org.osate.ge.layoutDiagram"
+            name="Layout Diagram">
+      </command>
    </extension>
  <extension
        point="org.eclipse.ui.handlers">
@@ -312,6 +317,15 @@
     <handler
           class="org.osate.ge.internal.ui.handlers.OpenPropertiesHandler"
           commandId="org.osate.ge.commands.properties">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.LayoutDiagramHandler"
+          commandId="org.osate.ge.layoutDiagram">
+       <enabledWhen>
+          <reference
+                definitionId="org.osate.ge.expresions.editorIsActive">
+          </reference>
+       </enabledWhen>
     </handler>
  </extension>
        
@@ -574,17 +588,15 @@
                    </reference>
                 </visibleWhen>
              </command>
-             <separator
-                   name="org.osate.ge.separator2">
-             </separator>
-             <separator
-                   name="org.osate.ge.separator2">
-             </separator>
           </toolbar>
        </menuContribution>
  <menuContribution
        allPopups="false"
        locationURI="popup:org.osate.ge.editor.AgeDiagramEditor">
+    <command
+          commandId="org.osate.ge.layoutDiagram"
+          style="push">
+    </command>
     <command
           commandId="org.osate.ge.commands.properties"
           style="push">
@@ -1456,12 +1468,12 @@
              </with></enablement>
        </renameParticipant>
     </extension>
-    <!--<extension
+    <extension
           point="org.eclipse.elk.core.service.layoutConnectors">
        <setup
              class="org.osate.ge.internal.graphiti.elk.AgeLayoutSetup">
        </setup>
-    </extension>-->
+    </extension>
     <extension
          point="org.eclipse.ui.views.properties.tabbed.propertyContributor">
       <propertyContributor

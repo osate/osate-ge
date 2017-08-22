@@ -98,7 +98,6 @@ import org.osate.ge.internal.graphiti.features.BoHandlerDeleteFeature;
 import org.osate.ge.internal.graphiti.features.BoHandlerDirectEditFeature;
 import org.osate.ge.internal.graphiti.features.CommandCustomFeature;
 import org.osate.ge.internal.graphiti.features.ConfigureDiagramFeature;
-import org.osate.ge.internal.graphiti.features.LayoutDiagramFeature;
 import org.osate.ge.internal.graphiti.features.SelectAncestorFeature;
 import org.osate.ge.internal.graphiti.features.SetAutoContentFilterFeature;
 import org.osate.ge.internal.graphiti.features.UpdateDiagramCustomFeature;
@@ -302,7 +301,6 @@ public class AgeFeatureProvider extends DefaultFeatureProvider {
 	protected void addCustomFeatures(final List<ICustomFeature> features) {
 		features.add(configureDiagramFeature);
 		features.add(make(UpdateDiagramCustomFeature.class));
-		features.add(make(LayoutDiagramFeature.class));
 		features.add(make(SelectAncestorFeature.class));
 		features.add(new SetAutoContentFilterFeature(this, graphitiService, BuiltinContentsFilter.ALLOW_FUNDAMENTAL));
 		features.add(new SetAutoContentFilterFeature(this, graphitiService, BuiltinContentsFilter.ALLOW_TYPE));

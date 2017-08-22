@@ -6,7 +6,9 @@ import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.services.IGaService;
 import org.eclipse.graphiti.util.IColorConstant;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Device;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Display;
 
 public class TextUtil {
@@ -18,12 +20,16 @@ public class TextUtil {
 		text.setVerticalAlignment(Orientation.ALIGNMENT_CENTER);
 		text.setFont(gaService.manageFont(diagram, "Arial", getScaledFontPointSize(10.0), false, true));
 	}
-	
+
 	private static int getScaledFontPointSize(final double unscaledFontSize) {
 		final Device device = Display.getCurrent();
-		// Round to 1 decimal point before casting to int. 
+		// Round to 1 decimal point before casting to int.
 		// This ensures that the value is rounded up only in cases where the value is within .1 of a whole number
 		final int fontSizeInPoints = (int)(Math.round(unscaledFontSize*96.0/device.getDPI().y*10.0)/10.0);
 		return fontSizeInPoints;
+	}
+
+	public static FontData getFontData() {
+		return new FontData("Arial", getScaledFontPointSize(10.0), SWT.NONE);
 	}
 }

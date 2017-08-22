@@ -41,8 +41,8 @@ import org.osate.ge.internal.labels.LabelPosition;
  * Helper class for performing layout. Layout includes positioning child shapes and updating the graphics algorithm.
  *
  */
-class LayoutUtil {
-	private final static int labelPadding = 3;
+public class LayoutUtil {
+	public final static int labelPadding = 3;
 	private final static AgeLabelConfiguration defaultLabelConfiguration = (AgeLabelConfiguration)LabelConfigurationBuilder.create().build();
 
 	private static class LayoutMetrics {
