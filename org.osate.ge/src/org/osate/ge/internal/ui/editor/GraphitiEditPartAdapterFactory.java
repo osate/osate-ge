@@ -50,10 +50,6 @@ public class GraphitiEditPartAdapterFactory implements IAdapterFactory {
 		}
 
 		final AgeDiagramEditor diagramEditor = (AgeDiagramEditor)editorPart;
-		if(AgeDiagramEditor.class.equals(adapterType)) {
-			return adapterType.cast(diagramEditor);
-		}
-
 		final AgeDiagram ageDiagram = diagramEditor.getGraphitiAgeDiagram().getAgeDiagram();
 		if(ageDiagram == null) {
 			return null;
@@ -95,6 +91,7 @@ public class GraphitiEditPartAdapterFactory implements IAdapterFactory {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public Class[] getAdapterList() {
-		return new Class[] { AgeDiagramEditor.class, IAadlPropertySource.class, DiagramElement.class };
+		return new Class[] { IAadlPropertySource.class, BusinessObjectContext.class,
+				DiagramElement.class };
 	}
 }

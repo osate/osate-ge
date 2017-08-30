@@ -1,6 +1,5 @@
 package org.osate.ge.internal.diagram.runtime;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -10,10 +9,10 @@ import java.util.Objects;
 
 import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.graphics.Graphic;
-import org.osate.ge.internal.AgeGraphicalConfiguration;
-import org.osate.ge.internal.DockArea;
+import org.osate.ge.graphics.Point;
+import org.osate.ge.graphics.Style;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
-import org.osate.ge.internal.labels.AgeLabelConfiguration;
+import org.osate.ge.internal.graphics.AgeGraphicalConfiguration;
 import org.osate.ge.internal.query.Queryable;
 
 public class DiagramElement implements DiagramNode, ModifiableDiagramElementContainer, BusinessObjectContext {
@@ -29,6 +28,7 @@ public class DiagramElement implements DiagramNode, ModifiableDiagramElementCont
 	private final DiagramElementCollection children = new DiagramElementCollection();
 	private String name;
 	private AgeGraphicalConfiguration graphicalConfig; // Required after initialization.
+	private Style style = Style.EMPTY; // Will never be null
 
 	// Shape Specific
 	private Point position; // Optional. Relative to container.
@@ -175,7 +175,7 @@ public class DiagramElement implements DiagramNode, ModifiableDiagramElementCont
 	 *
 	 * @return 0 if the element does not have a position
 	 */
-	public final int getX() {
+	public final double getX() {
 		return position == null ? 0 : position.x;
 	}
 
@@ -183,7 +183,7 @@ public class DiagramElement implements DiagramNode, ModifiableDiagramElementCont
 	 *
 	 * @return 0 if the element does not have a position
 	 */
-	public final int getY() {
+	public final double getY() {
 		return position == null ? 0 : position.y;
 	}
 
@@ -193,6 +193,14 @@ public class DiagramElement implements DiagramNode, ModifiableDiagramElementCont
 
 	public boolean hasSize() {
 		return size != null;
+	}
+
+	public final Style getStyle() {
+		return style;
+	}
+
+	public final void setStyle(final Style value) {
+		this.style = Objects.requireNonNull(value, "value must not be null");
 	}
 
 	/**
@@ -207,7 +215,7 @@ public class DiagramElement implements DiagramNode, ModifiableDiagramElementCont
 	 *
 	 * @return 0 if the element does not have a size
 	 */
-	public final int getWidth() {
+	public final double getWidth() {
 		return size == null ? 0 : size.width;
 	}
 
@@ -215,7 +223,7 @@ public class DiagramElement implements DiagramNode, ModifiableDiagramElementCont
 	 *
 	 * @return 0 if the element does not have a size
 	 */
-	public final int getHeight() {
+	public final double getHeight() {
 		return size == null ? 0 : size.height;
 	}
 
@@ -232,11 +240,7 @@ public class DiagramElement implements DiagramNode, ModifiableDiagramElementCont
 	}
 
 	public final Graphic getGraphic() {
-		return graphicalConfig.graphic;
-	}
-
-	public final Color getDefaultForeground() {
-		return graphicalConfig.defaultForeground;
+		return graphicalConfig == null ? null : graphicalConfig.graphic;
 	}
 
 	public final boolean isDecoration() {
@@ -249,10 +253,6 @@ public class DiagramElement implements DiagramNode, ModifiableDiagramElementCont
 
 	final void setDockArea(final DockArea value) {
 		this.dockArea = value;
-	}
-
-	public final AgeLabelConfiguration getLabelConfiguration() {
-		return graphicalConfig.defaultLabelConfiguration;
 	}
 
 	public final DiagramElement getStartElement() {
@@ -336,6 +336,13 @@ public class DiagramElement implements DiagramNode, ModifiableDiagramElementCont
 			sb.append(innerIndention);
 			sb.append("bendpoints: ");
 			sb.append(Arrays.toString(bendpoints.toArray(new Point[bendpoints.size()])));
+			sb.append(System.lineSeparator());
+		}
+
+		if (style != null) {
+			sb.append(innerIndention);
+			sb.append("style: ");
+			sb.append(style);
 			sb.append(System.lineSeparator());
 		}
 

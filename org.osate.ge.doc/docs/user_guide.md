@@ -89,7 +89,7 @@ Configuring a diagram allows customizing the contents of the diagram. To configu
 |------------|------------------------------------|
 | *Minimal* | Enables a minimum set of children. This includes generalizations. |
 | *Type* | Enables children which are related to classifier types. These include generalizations, features, flow specifications, mode, mode transitions, and subcomponent type labels. |
-| *App* | Enables all children. | 
+| *All* | Enables all children. | 
 
 Table: Auto Children Setting {#tbl:auto_children_setting}
 
@@ -175,6 +175,39 @@ Under some circumstances, it is difficult to select the desired diagram element 
 When creating a new diagram from an AADL model, the editor lays out the diagram automatically. The layout of the diagram can be redone by right-clicking inside the diagram and select *Layout Diagram*. Doing so will adjust the positions of all the shapes in the diagram.
 
 ![](../images/LayoutDiagram.png)
+
+### Editing a Diagram Element's Appearance
+The appearance of diagram elements can be edited by using the *Appearance* tab of the *Properties* view.
+
+An element's appearance can be changed using the following steps.
+
+1. Open the *Properties* view by double-clicking on an element or by selecting *Properties...* from the context menu..
+
+2. Select the diagram element(s) to be edited.
+
+3. Select the *Appearance* tab.
+
+4. Select desired appearance options.
+
+Font size can be edited by selecting the font size drop-down menu.
+
+![](../images/FontSize.png)
+
+Line width can be edited by selecting the line width drop-down menu.
+
+![](../images/LineWidth.png)
+
+Outline color can be edited by clicking the outline button and selecting the desired color.
+
+![](../images/OutlineColor.png)
+
+Font color can be edited by clicking the font color button and selecting the desired color.
+
+![](../images/FontColor.png)
+
+Background color can be edited by clicking the background color button and selecting the desired color.
+
+![](../images/BackgroundColor.png)
 
 ## Connections
 The graphical editor allows editing AADL connections such as access, feature, feature group, parameter, and port.

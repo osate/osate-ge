@@ -22,20 +22,19 @@ import org.eclipse.elk.graph.ElkNode;
 import org.eclipse.elk.graph.ElkShape;
 import org.eclipse.elk.graph.properties.IPropertyHolder;
 import org.eclipse.elk.graph.util.ElkGraphUtil;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.ui.IWorkbenchPart;
+import org.osate.ge.graphics.Point;
 import org.osate.ge.internal.AgeDiagramProvider;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.Dimension;
-import org.osate.ge.internal.diagram.runtime.Point;
 import org.osate.ge.internal.graphics.AgeConnection;
 import org.osate.ge.internal.graphics.AgeShape;
 import org.osate.ge.internal.graphics.Label;
-import org.osate.ge.internal.graphiti.TextUtil;
-import org.osate.ge.internal.graphiti.diagram.LabelUtil;
-import org.osate.ge.internal.graphiti.diagram.LayoutUtil;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 
 // TODO: Labels
@@ -134,20 +133,27 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 					newLabel.setX(0);
 					newLabel.setY(0);
 
+					// TODO: Cleanup
+					final int labelPadding = 3;
+					final int extraPaddingX = 5; // TODO: Should be based on the text
+					final int extraPaddingY = 5; // TODO: Should be based on the text
+
 					// TODO: Instead of repeatedly creating fonts.. Store fonts and then dispose at the end?
 					// TODO: Cleanup. Constants and methods. Avoid calling methods specific to the graphiti implementation.
 
-					final Font font = new Font(null, TextUtil.getFontData());
+					final Font font = new Font(null, new FontData("Arial", 12, SWT.NONE)); // TODO: Need to use style, scaled font size, etc. Avoid SWT if
+																							// possible?
+					// Have interface that provides this?
 					// TODO: What if de.getName is null?
 					final String labelTxt = de.getName() == null ? "" : de.getName();
 					final org.eclipse.draw2d.geometry.Dimension labelDimension = TextUtilities.INSTANCE
 							.getTextExtents(labelTxt, font);
 
-					final int labelWidth = labelDimension.width + LabelUtil.getPaddingX(labelTxt)
-					+ 2 * LayoutUtil.labelPadding; // TODO: There is padding somewhere that is'nt being
+					final int labelWidth = labelDimension.width + extraPaddingX + 2 * labelPadding; // TODO: There is padding somewhere that
+					// is'nt being
 					// considered
-					final int labelHeight = labelDimension.height + LabelUtil.getPaddingY()
-					+ 2 * LayoutUtil.labelPadding;
+					final int labelHeight = labelDimension.height + extraPaddingY
+							+ 2 * labelPadding;
 					font.dispose();
 
 					newLabel.setWidth(labelWidth); // TODO: Need to be actual label width. Otherwise the algorithm will reserve too much or too
@@ -232,8 +238,8 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 								// TODO: Only set appropriate fields
 								// TODO: Should runtime diagram use doubles?
 								// System.err.println("POSITION: (" + de.getX() + ", " + de.getY() + ") -> (" + elkShape.getX() + ", " + elkShape.getY() + ")");
-								m.setPosition(de1, new Point((int) elkShape1.getX(), (int) elkShape1.getY()));
-								m.setSize(de1, new Dimension((int) elkShape1.getWidth(), (int) elkShape1.getHeight()));
+								m.setPosition(de1, new Point(elkShape1.getX(), elkShape1.getY()));
+								m.setSize(de1, new Dimension(elkShape1.getWidth(), elkShape1.getHeight()));
 							}
 						} else {
 							// TODO: For testing
@@ -277,8 +283,8 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 								final Point parentPosition = getAbsolutePosition(de2.getContainer());
 								final Point elkContainerPosition = getAbsolutePosition(
 										(DiagramNode) mapping.getGraphMap().get(edge.getContainingNode()));
-								final int offsetX = elkContainerPosition.x;// - parentPosition.x; // TODO: Double
-								final int offsetY = elkContainerPosition.y;// - parentPosition.y; // TODO: Double
+								final double offsetX = elkContainerPosition.x;// - parentPosition.x; // TODO: Double
+								final double offsetY = elkContainerPosition.y;// - parentPosition.y; // TODO: Double
 								/*
 								 * System.err.println("BENDPOINTS " + es.getBendPoints().size());
 								 * System.err.println(es.getStartX() + " : " + es.getStartY() + " : " + offsetX + ", " + offsetY + " : " +
@@ -297,9 +303,9 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 									// newBendpoints.add(new Point((int)es.getStartX() + offsetX, (int)es.getStartY() + offsetY)); // TODO: doubles
 
 									newBendpoints = es.getBendPoints().stream()
-											.map(bp -> new Point((int) bp.getX() + offsetX, (int) bp.getY() + offsetY)). // TODO: Use doubles for points and
-																															// dimensions
-									collect(Collectors.toList());
+											.map(bp -> new Point(bp.getX() + offsetX, bp.getY() + offsetY)). // TODO: Use doubles for points and
+											// dimensions
+											collect(Collectors.toList());
 
 									// newBendpoints.add(new Point((int)es.getEndX() + offsetX, (int)es.getEndY() + offsetY)); // TODO: doubles
 								}
