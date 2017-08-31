@@ -19,6 +19,7 @@ import org.eclipse.elk.graph.ElkEdgeSection;
 import org.eclipse.elk.graph.ElkGraphElement;
 import org.eclipse.elk.graph.ElkLabel;
 import org.eclipse.elk.graph.ElkNode;
+import org.eclipse.elk.graph.ElkPort;
 import org.eclipse.elk.graph.ElkShape;
 import org.eclipse.elk.graph.properties.IPropertyHolder;
 import org.eclipse.elk.graph.util.ElkGraphUtil;
@@ -96,82 +97,121 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 					// There is a fixed option but that doens't appear to work properly.
 					// TODO: Labels are not moveable but if this is configured properly, it will likely be good enough
 				} else {
-					final ElkNode newNode = ElkGraphUtil.createNode(parent);
-					// TODO: Check if shape has position or size
-					newNode.setX(de.getX());
-					newNode.setY(de.getY());
-					newNode.setWidth(de.getWidth());
-					newNode.setHeight(de.getHeight());
-					newNode.setProperty(LayeredOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.free()); // TODO: Should be configurable. Allows layout algorithm to shrink items
-					mapping.getGraphMap().put(newNode, de); // TODO: Do this for all graph elements
+					if(de.getDockArea() == null) {
+						final ElkNode newNode = ElkGraphUtil.createNode(parent);
+						// TODO: Check if shape has position or size
+						newNode.setX(de.getX());
+						newNode.setY(de.getY());
+						newNode.setWidth(de.getWidth());
+						newNode.setHeight(de.getHeight());
+						newNode.setProperty(LayeredOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.free()); // TODO: Should be configurable. Allows layout
+						newNode.setProperty(CoreOptions.INSIDE_SELF_LOOPS_ACTIVATE, true);
+						// algorithm to shrink items
+						mapping.getGraphMap().put(newNode, de); // TODO: Do this for all graph elements
 
-					//newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.mrtree");
+						// newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.mrtree");
 
-					// If parent is fixed then children are not layed out..
-					/*
-					if(de.getBusinessObject() instanceof AadlPackage) {
-						newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.layered");
-						//newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.fixed");
+						// If parent is fixed then children are not layed out..
+						/*
+						 * if(de.getBusinessObject() instanceof AadlPackage) {
+						 * newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.layered");
+						 * //newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.fixed");
+						 * } else {
+						 * final String name = de.getBusinessObject() instanceof NamedElement ? ((NamedElement)de.getBusinessObject()).getQualifiedName() : "";
+						 * if("binding_test::top.impl".equalsIgnoreCase(name)) {
+						 * newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.layered");
+						 * System.err.println("FOUND IT");
+						 * } else {
+						 * //newNode.setProperty(LayeredOptions.NO_LAYOUT, true);
+						 * //newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.fixed");
+						 * //newNode.setProperty(LayeredOptions.POSITION, new KVector(de.getX(), de.getY()));
+						 * }
+						 * }
+						 */
+						// TODO: Configure label spacing.
+
+						// TODO: Features and feature groups
+						// TODO: Labels. Shouldn't duplicate code. Share with code that is above
+						// TODO: Only do this is the node has a label
+						final ElkLabel newLabel = ElkGraphUtil.createLabel(newNode);
+						newLabel.setX(0);
+						newLabel.setY(0);
+
+						// TODO: Cleanup
+						final int labelPadding = 3;
+						final int extraPaddingX = 5; // TODO: Should be based on the text
+						final int extraPaddingY = 5; // TODO: Should be based on the text
+
+						// TODO: Instead of repeatedly creating fonts.. Store fonts and then dispose at the end?
+						// TODO: Cleanup. Constants and methods. Avoid calling methods specific to the graphiti implementation.
+
+						final Font font = new Font(null, new FontData("Arial", 12, SWT.NONE)); // TODO: Need to use style, scaled font size, etc. Avoid SWT if
+						// possible?
+						// Have interface that provides this?
+						// TODO: What if de.getName is null?
+						final String labelTxt = de.getName() == null ? "" : de.getName();
+						final org.eclipse.draw2d.geometry.Dimension labelDimension = TextUtilities.INSTANCE
+								.getTextExtents(labelTxt, font);
+
+						final int labelWidth = labelDimension.width + extraPaddingX + 2 * labelPadding; // TODO: There is padding somewhere that
+						// is'nt being
+						// considered
+						final int labelHeight = labelDimension.height + extraPaddingY + 2 * labelPadding;
+						font.dispose();
+
+						newLabel.setWidth(labelWidth); // TODO: Need to be actual label width. Otherwise the algorithm will reserve too much or too
+						// little room.
+						newLabel.setHeight(labelHeight); // TODO: Based on label size
+						newLabel.setProperty(CoreOptions.NODE_LABELS_PLACEMENT, NodeLabelPlacement.insideTopCenter()); // TODO:
+
+						// TOOD: Set minimum size of node based on label size
+						// TODO: Take label size into account when sizing nodes.
+
+						// TODO: Unpositionable child shapes(extra labels, etc)
+						// newLabel.setProperty(LayeredOptions.CROSSING_MINIMIZATION_STRATEGY, CrossingMinimizationStrategy.LAYER_SWEEP
+						// newLabel.setProperty(LayeredOptions.CROSSING_MINIMIZATION_GREEDY_SWITCH_TYPE, GreedySwitchType.OFF);
+
+						// LayeredOptions.POSITION
+						// LayeredOptions.
+
+						createElkGraphElementsForShapes(de, newNode, mapping);
 					} else {
-						final String name = de.getBusinessObject() instanceof NamedElement ? ((NamedElement)de.getBusinessObject()).getQualifiedName() : "";
-						if("binding_test::top.impl".equalsIgnoreCase(name)) {
-							newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.layered");
-							System.err.println("FOUND IT");
-						} else {
-							//newNode.setProperty(LayeredOptions.NO_LAYOUT, true);
-							//newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.fixed");
-							//newNode.setProperty(LayeredOptions.POSITION, new KVector(de.getX(), de.getY()));
-						}
+						final ElkPort newPort = ElkGraphUtil.createPort(parent);
+
+						// TODO: Check if shape has position or size
+						newPort.setX(de.getX());
+						newPort.setY(de.getY());
+						newPort.setWidth(de.getWidth());
+						newPort.setHeight(de.getHeight());
+
+						// LayeredOptions.D
+						// Position the ports inside of the the container
+						newPort.setProperty(LayeredOptions.PORT_BORDER_OFFSET, -de.getWidth());
+						// TODO: Need to specify port position offset?
+
+						// TODO: Use CoreOptions instead of LayeredOPtions when available?
+
+						// TODO: Flow Paths need to be routed inside container... not around
+						// TODO: Self loops
+						// CoreOptions.INSIDE_SELF_LOOPS_YO
+						// LayeredOptions.INSIDE_SELF_LOOPS_ACTIVATE.getDefault();
+						// LayeredOptions.INSIDE_SELF_LOOPS_YO
+
+						// newNode.setProperty(LayeredOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.free()); // TODO: Should be configurable. Allows layout
+						// algorithm to shrink items
+						mapping.getGraphMap().put(newPort, de); // TODO: Do this for all graph elements
+
+						// TODO: Label
+
+
+						// TODO: Add port children..
+						// TODO: Need to be fixed position?
+						// TODO: Label children
+
+						//LayeredOptions.PORT_CONSTRAINTS
+						// TODO: Will need to fix position of feature group children.. And feature groups too if they contain childrne?
+						// TODO: FIXED_POS and FIXED_RATIO?
 					}
-					 */
-					// TODO: Configure label spacing.
-
-					// TODO: Features and feature groups
-					// TODO: Labels. Shouldn't duplicate code. Share with code that is above
-					// TODO: Only do this is the node has a label
-					final ElkLabel newLabel = ElkGraphUtil.createLabel(newNode);
-					newLabel.setX(0);
-					newLabel.setY(0);
-
-					// TODO: Cleanup
-					final int labelPadding = 3;
-					final int extraPaddingX = 5; // TODO: Should be based on the text
-					final int extraPaddingY = 5; // TODO: Should be based on the text
-
-					// TODO: Instead of repeatedly creating fonts.. Store fonts and then dispose at the end?
-					// TODO: Cleanup. Constants and methods. Avoid calling methods specific to the graphiti implementation.
-
-					final Font font = new Font(null, new FontData("Arial", 12, SWT.NONE)); // TODO: Need to use style, scaled font size, etc. Avoid SWT if
-																							// possible?
-					// Have interface that provides this?
-					// TODO: What if de.getName is null?
-					final String labelTxt = de.getName() == null ? "" : de.getName();
-					final org.eclipse.draw2d.geometry.Dimension labelDimension = TextUtilities.INSTANCE
-							.getTextExtents(labelTxt, font);
-
-					final int labelWidth = labelDimension.width + extraPaddingX + 2 * labelPadding; // TODO: There is padding somewhere that
-					// is'nt being
-					// considered
-					final int labelHeight = labelDimension.height + extraPaddingY
-							+ 2 * labelPadding;
-					font.dispose();
-
-					newLabel.setWidth(labelWidth); // TODO: Need to be actual label width. Otherwise the algorithm will reserve too much or too
-					// little room.
-					newLabel.setHeight(labelHeight); // TODO: Based on label size
-					newLabel.setProperty(CoreOptions.NODE_LABELS_PLACEMENT, NodeLabelPlacement.insideTopCenter()); // TODO:
-
-					// TOOD: Set minimum size of node based on label size
-					// TODO: Take label size into account when sizing nodes.
-
-					// TODO: Unpositionable child shapes(extra labels, etc)
-					//newLabel.setProperty(LayeredOptions.CROSSING_MINIMIZATION_STRATEGY, CrossingMinimizationStrategy.LAYER_SWEEP
-					//newLabel.setProperty(LayeredOptions.CROSSING_MINIMIZATION_GREEDY_SWITCH_TYPE, GreedySwitchType.OFF);
-
-					//LayeredOptions.POSITION
-					//LayeredOptions.
-
-					createElkGraphElementsForShapes(de, newNode, mapping);
 				}
 			}
 		}
@@ -189,6 +229,8 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 				if(edgeStart instanceof ElkConnectableShape &&
 						edgeEnd instanceof ElkConnectableShape) {
 					final ElkEdge newEdge = ElkGraphUtil.createSimpleEdge((ElkConnectableShape)edgeStart, (ElkConnectableShape)edgeEnd);//ElkGraphUtil.createEdge(elkParentNode); // TODO: Coordinate system. Read documentation
+					newEdge.setProperty(CoreOptions.INSIDE_SELF_LOOPS_YO, true);
+					// TODO: Disable bendpoints for curved edges.
 					mapping.getGraphMap().put(newEdge, de); // TODO: Do this for all graph elements
 
 					// TODO: Primary label. Position. Size.
@@ -205,6 +247,8 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 
 					// TODO: Features and feature groups
 				}
+
+				// TODO: Connection to Connections ...
 			}
 
 			createElkGraphElementsForConnections(de, mapping);
