@@ -1,15 +1,18 @@
-package org.osate.ge.internal.graphiti.elk;
+package org.osate.ge.internal.elk;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import org.eclipse.draw2d.TextUtilities;
 import org.eclipse.elk.alg.layered.properties.LayeredOptions;
 import org.eclipse.elk.core.options.CoreOptions;
 import org.eclipse.elk.core.options.HierarchyHandling;
 import org.eclipse.elk.core.options.NodeLabelPlacement;
+import org.eclipse.elk.core.options.PortConstraints;
 import org.eclipse.elk.core.options.SizeConstraint;
 import org.eclipse.elk.core.service.IDiagramLayoutConnector;
 import org.eclipse.elk.core.service.LayoutMapping;
@@ -23,9 +26,7 @@ import org.eclipse.elk.graph.ElkPort;
 import org.eclipse.elk.graph.ElkShape;
 import org.eclipse.elk.graph.properties.IPropertyHolder;
 import org.eclipse.elk.graph.util.ElkGraphUtil;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.ui.IWorkbenchPart;
 import org.osate.ge.graphics.Point;
 import org.osate.ge.internal.AgeDiagramProvider;
@@ -33,18 +34,21 @@ import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.Dimension;
+import org.osate.ge.internal.diagram.runtime.DockArea;
 import org.osate.ge.internal.graphics.AgeConnection;
 import org.osate.ge.internal.graphics.AgeShape;
 import org.osate.ge.internal.graphics.Label;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
+import org.osate.ge.internal.ui.handlers.LayoutDiagramHandler;
 
 // TODO: Labels
 // TODO: Insets
 // TODO: User configuration using the layout view
 public class AgeLayoutConnector implements IDiagramLayoutConnector {
+	// TODO: Rename
 	@Override
 	public LayoutMapping buildLayoutGraph(final IWorkbenchPart workbenchPart, final Object diagramPart) {
-		//System.err.println("CREATING GRAPH LAYOUT");
+		System.err.println("CREATING GRAPH LAYOUT");
 
 		// TODO: Support part of the diagram.
 		if(diagramPart != null) {
@@ -57,6 +61,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		final LayoutMapping mapping = new LayoutMapping(workbenchPart);
 
 		final ElkNode rootNode = ElkGraphUtil.createGraph();
+		// rootNode.setProperty(LayeredOptions.DIRECTION, Direction.RIGHT); // TODO: Does this have any affect?
 
 		// Prevents exception in some cases but breaks connection layout. Something to do with empty elements? Similiar exception experienced with empty nodes..
 		// TODO: Experiment with dummy nodes?
@@ -66,7 +71,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 
 		//	How to set. Algorithm... on the config store? (CoreOptions.ALGORITHM, "org.eclipse.elk.layered"); // TODO: Is this the proper way to do it?
 
-		createElkGraphElementsForShapes(diagram, rootNode, mapping);
+		createElkGraphElementsForNonLabelChildShapes(diagram, rootNode, mapping);
 
 		// TODO: Creature features? Create feature groups as unmoveable ports.
 
@@ -77,144 +82,196 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 
 		mapping.setLayoutGraph(rootNode);
 
+
+//		if (LayoutDiagramHandler.firstPass) {
+//			// TODO: Take away all docked diagram elmeents which are docked to parents (such as feature group children)
+//			final TestPropertyValue testValue = new TestPropertyValue();
+//			testValue.layoutMapping = mapping;
+//			testProcessPorts(rootNode, testValue);
+//			testProcessEdges(rootNode, testValue);
+//			rootNode.setProperty(LayoutDiagramHandler.TEST_PROPERTY, testValue);
+//		}
+
+		// TODO: Another hack.. Need null check).
+		// rootNode.getChildren().get(0).setProperty(LayoutDiagramHandler.TEST_PROPERTY, testValue);
 		return mapping;
 	}
 
-	private void createElkGraphElementsForShapes(final DiagramNode dn, final ElkNode parent, final LayoutMapping mapping) {
-		// TODO: This function doesn't handle connection labels.. need to do that in this function or in teh connection function
-		for(final DiagramElement de : dn.getDiagramElements()) {
-			if(de.getGraphic() instanceof AgeShape) {
-				if(de.getGraphic() instanceof Label) {
-					// TODO: Handle labels
-					final ElkLabel newLabel = ElkGraphUtil.createLabel(parent);
-					newLabel.setX(de.getX());
-					newLabel.setY(de.getY());
-					newLabel.setWidth(de.getWidth());
-					newLabel.setHeight(de.getHeight());
-					mapping.getGraphMap().put(newLabel, de); // TODO: Do this for all graph elements
-					newLabel.setProperty(CoreOptions.NODE_LABELS_PLACEMENT, NodeLabelPlacement.insideTopCenter()); // TODO:
+	private static void testProcessPorts(final ElkNode parentNode, final TestPropertyValue testValue) {
+		for (final ElkNode child : parentNode.getChildren()) {
+			testProcessPorts(child, testValue);
+		}
 
-					// There is a fixed option but that doens't appear to work properly.
-					// TODO: Labels are not moveable but if this is configured properly, it will likely be good enough
-				} else {
-					if(de.getDockArea() == null) {
-						final ElkNode newNode = ElkGraphUtil.createNode(parent);
-						// TODO: Check if shape has position or size
-						newNode.setX(de.getX());
-						newNode.setY(de.getY());
-						newNode.setWidth(de.getWidth());
-						newNode.setHeight(de.getHeight());
-						newNode.setProperty(LayeredOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.free()); // TODO: Should be configurable. Allows layout
-						newNode.setProperty(CoreOptions.INSIDE_SELF_LOOPS_ACTIVATE, true);
-						// algorithm to shrink items
-						mapping.getGraphMap().put(newNode, de); // TODO: Do this for all graph elements
-
-						// newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.mrtree");
-
-						// If parent is fixed then children are not layed out..
-						/*
-						 * if(de.getBusinessObject() instanceof AadlPackage) {
-						 * newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.layered");
-						 * //newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.fixed");
-						 * } else {
-						 * final String name = de.getBusinessObject() instanceof NamedElement ? ((NamedElement)de.getBusinessObject()).getQualifiedName() : "";
-						 * if("binding_test::top.impl".equalsIgnoreCase(name)) {
-						 * newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.layered");
-						 * System.err.println("FOUND IT");
-						 * } else {
-						 * //newNode.setProperty(LayeredOptions.NO_LAYOUT, true);
-						 * //newNode.setProperty(CoreOptions.ALGORITHM, "org.eclipse.elk.fixed");
-						 * //newNode.setProperty(LayeredOptions.POSITION, new KVector(de.getX(), de.getY()));
-						 * }
-						 * }
-						 */
-						// TODO: Configure label spacing.
-
-						// TODO: Features and feature groups
-						// TODO: Labels. Shouldn't duplicate code. Share with code that is above
-						// TODO: Only do this is the node has a label
-						final ElkLabel newLabel = ElkGraphUtil.createLabel(newNode);
-						newLabel.setX(0);
-						newLabel.setY(0);
-
-						// TODO: Cleanup
-						final int labelPadding = 3;
-						final int extraPaddingX = 5; // TODO: Should be based on the text
-						final int extraPaddingY = 5; // TODO: Should be based on the text
-
-						// TODO: Instead of repeatedly creating fonts.. Store fonts and then dispose at the end?
-						// TODO: Cleanup. Constants and methods. Avoid calling methods specific to the graphiti implementation.
-
-						final Font font = new Font(null, new FontData("Arial", 12, SWT.NONE)); // TODO: Need to use style, scaled font size, etc. Avoid SWT if
-						// possible?
-						// Have interface that provides this?
-						// TODO: What if de.getName is null?
-						final String labelTxt = de.getName() == null ? "" : de.getName();
-						final org.eclipse.draw2d.geometry.Dimension labelDimension = TextUtilities.INSTANCE
-								.getTextExtents(labelTxt, font);
-
-						final int labelWidth = labelDimension.width + extraPaddingX + 2 * labelPadding; // TODO: There is padding somewhere that
-						// is'nt being
-						// considered
-						final int labelHeight = labelDimension.height + extraPaddingY + 2 * labelPadding;
-						font.dispose();
-
-						newLabel.setWidth(labelWidth); // TODO: Need to be actual label width. Otherwise the algorithm will reserve too much or too
-						// little room.
-						newLabel.setHeight(labelHeight); // TODO: Based on label size
-						newLabel.setProperty(CoreOptions.NODE_LABELS_PLACEMENT, NodeLabelPlacement.insideTopCenter()); // TODO:
-
-						// TOOD: Set minimum size of node based on label size
-						// TODO: Take label size into account when sizing nodes.
-
-						// TODO: Unpositionable child shapes(extra labels, etc)
-						// newLabel.setProperty(LayeredOptions.CROSSING_MINIMIZATION_STRATEGY, CrossingMinimizationStrategy.LAYER_SWEEP
-						// newLabel.setProperty(LayeredOptions.CROSSING_MINIMIZATION_GREEDY_SWITCH_TYPE, GreedySwitchType.OFF);
-
-						// LayeredOptions.POSITION
-						// LayeredOptions.
-
-						createElkGraphElementsForShapes(de, newNode, mapping);
-					} else {
-						final ElkPort newPort = ElkGraphUtil.createPort(parent);
-
-						// TODO: Check if shape has position or size
-						newPort.setX(de.getX());
-						newPort.setY(de.getY());
-						newPort.setWidth(de.getWidth());
-						newPort.setHeight(de.getHeight());
-
-						// LayeredOptions.D
-						// Position the ports inside of the the container
-						newPort.setProperty(LayeredOptions.PORT_BORDER_OFFSET, -de.getWidth());
-						// TODO: Need to specify port position offset?
-
-						// TODO: Use CoreOptions instead of LayeredOPtions when available?
-
-						// TODO: Flow Paths need to be routed inside container... not around
-						// TODO: Self loops
-						// CoreOptions.INSIDE_SELF_LOOPS_YO
-						// LayeredOptions.INSIDE_SELF_LOOPS_ACTIVATE.getDefault();
-						// LayeredOptions.INSIDE_SELF_LOOPS_YO
-
-						// newNode.setProperty(LayeredOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.free()); // TODO: Should be configurable. Allows layout
-						// algorithm to shrink items
-						mapping.getGraphMap().put(newPort, de); // TODO: Do this for all graph elements
-
-						// TODO: Label
-
-
-						// TODO: Add port children..
-						// TODO: Need to be fixed position?
-						// TODO: Label children
-
-						//LayeredOptions.PORT_CONSTRAINTS
-						// TODO: Will need to fix position of feature group children.. And feature groups too if they contain childrne?
-						// TODO: FIXED_POS and FIXED_RATIO?
-					}
+		// TODO: Cleanup
+		final ArrayList<ElkPort> portsToRemove = new ArrayList<>();
+		for (final ElkPort port : parentNode.getPorts()) {
+			final Object potentialDe = testValue.layoutMapping.getGraphMap().get(port);
+			if (potentialDe instanceof DiagramElement) {
+				final DiagramElement de = (DiagramElement) potentialDe;
+				if(de.getDockArea() == DockArea.GROUP) {
+					portsToRemove.add(port);
 				}
 			}
 		}
+
+		// Avoid concurrent modification
+		for (final ElkPort port : portsToRemove) {
+			testValue.portInfoMap.put(port, new TestInfo(port, parentNode));
+			EcoreUtil.remove(port);
+			System.err.println("REMOVED PORT");
+		}
+	}
+
+	// TODO: Assumes port info map has been populated
+	private static void testProcessEdges(final ElkNode parentNode, final TestPropertyValue testValue) {
+		for (final ElkNode child : parentNode.getChildren()) {
+			testProcessEdges(child, testValue);
+		}
+
+		// TODO: What is a contained edge?
+		final List<ElkEdge> edgesToRemove = new ArrayList<>();
+		for (final ElkEdge edge : parentNode.getContainedEdges()) {
+			if (Stream.concat(edge.getSources().stream(), edge.getTargets().stream())
+					.anyMatch(cs -> testValue.portInfoMap.containsKey(cs))) {
+				edgesToRemove.add(edge);
+			}
+		}
+
+		for (final ElkEdge edge : edgesToRemove) {
+			testValue.edgeInfoMap.put(edge, new TestInfo(edge, edge.getContainingNode()));
+			EcoreUtil.remove(edge);
+			System.err.println("REMOVED EDGE");
+		}
+	}
+
+
+	private static void createElkGraphElementsForNonLabelChildShapes(final DiagramNode parentNode, final ElkNode parent,
+			final LayoutMapping mapping) {
+		// TODO: Share predicate
+		parentNode.getDiagramElements().stream()
+		.filter(de -> de.getGraphic() instanceof AgeShape && !(de.getGraphic() instanceof Label))
+		.forEachOrdered(de -> {
+			createElkGraphElementForNonLabelShape(de, parent, mapping)
+			.ifPresent(newLayoutElement -> createElkLabels(de, newLayoutElement, mapping));
+		});
+	}
+
+	private static Optional<ElkGraphElement> createElkGraphElementForNonLabelShape(final DiagramElement de,
+			final ElkNode layoutParent,
+			final LayoutMapping mapping) {
+		if (de.getDockArea() == null) {
+			final ElkNode newNode = ElkGraphUtil.createNode(layoutParent);
+			mapping.getGraphMap().put(newNode, de);
+			setShapePositionAndSize(newNode, de);
+
+			if (!LayoutDiagramHandler.firstPass) {
+				newNode.setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS);
+				// newNode.setProperty(CoreOptions.NO_LAYOUT, true);
+			}
+
+			newNode.setProperty(LayeredOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.free()); // TODO: Should be configurable. Allows layout
+			newNode.setProperty(CoreOptions.INSIDE_SELF_LOOPS_ACTIVATE, true);
+
+			// Create Children
+			createElkGraphElementsForNonLabelChildShapes(de, newNode, mapping);
+
+			return Optional.ofNullable(newNode);
+		} else {
+			// Docked
+			// TODO: Share predicate
+			final boolean hasNonLabelChildren = de.getDiagramElements().stream()
+					.anyMatch(c -> !(c.getGraphic() instanceof Label));
+
+			if (hasNonLabelChildren) {
+				// TODO: Special handling. Will need create several ports which have a fixed position.
+				// TODO: Will need to manually specify position
+
+				// TODO: Share between other branch
+				final ElkPort newPort = ElkGraphUtil.createPort(layoutParent);
+				mapping.getGraphMap().put(newPort, de);
+				setShapePositionAndSize(newPort, de);
+				newPort.setProperty(CoreOptions.PORT_BORDER_OFFSET, -de.getWidth());
+
+				// PortLabelPlacement.INSIDE
+
+				// TODO: This sets it for all ports.. Possible to set it for single port
+				// newPort.setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS);
+
+				if (!LayoutDiagramHandler.firstPass) {
+					createElkGraphElementsForNonLabelChildShapes(de, layoutParent, mapping);
+				}
+
+				// TODO: labels for children
+			} else {
+				// TODO: Need to set a minimize size....
+
+				// Create Port
+				final ElkPort newPort = ElkGraphUtil.createPort(layoutParent);
+				mapping.getGraphMap().put(newPort, de);
+				setShapePositionAndSize(newPort, de);
+
+				// Position the ports inside of the the container
+				newPort.setProperty(CoreOptions.PORT_BORDER_OFFSET, -de.getWidth());
+				// TODO: Need to specify port position offset?
+
+				// LayeredOptions.PORT_CONSTRAINTS
+				// TODO: Will need to fix position of feature group children.. And feature groups too if they contain childrne?
+				// TODO: FIXED_POS and FIXED_RATIO?
+
+				return Optional.ofNullable(newPort);
+			}
+
+		}
+
+		return Optional.empty();
+	}
+
+	private static void setShapePositionAndSize(final ElkShape shape, final DiagramElement de) {
+		if (de.hasPosition()) {
+			shape.setLocation(de.getX(), de.getY());
+		}
+
+		if (de.hasSize()) {
+			shape.setDimensions(de.getWidth(), de.getHeight());
+		}
+	}
+
+	private static void createElkLabels(final DiagramElement parentElement, final ElkGraphElement parentLayoutElement,
+			final LayoutMapping mapping) {
+		// TODO: Sizing
+		// TODO: Connection labels are in incorrect position
+		// TODO: Feature labels are in incorrect position. PortLabelPosition property...
+
+		// Create Primary Label
+		if (parentElement.getName() != null) {
+			createElkLabel(parentLayoutElement);
+			// TODO: Need some sort of mapping. Will be needed for connection labels
+		}
+
+		// Create Secondary Labels
+		parentElement.getDiagramElements().stream().filter(c -> c.getGraphic() instanceof Label)
+		.forEachOrdered(labelElement -> {
+			mapping.getGraphMap().put(createElkLabel(parentLayoutElement), labelElement);
+		});
+	}
+
+	private static ElkLabel createElkLabel(final ElkGraphElement parentLayoutElement) {
+		final ElkLabel newLabel = ElkGraphUtil.createLabel(parentLayoutElement);
+
+		// TODO
+		newLabel.setX(0);
+		newLabel.setY(0);
+
+		// TODO:
+		newLabel.setWidth(100);
+		newLabel.setHeight(20);
+
+		// TODO:
+		newLabel.setProperty(CoreOptions.NODE_LABELS_PLACEMENT, NodeLabelPlacement.insideTopCenter());
+
+		// TOOD: Set minimum size of node based on label size
+
+		return newLabel;
 	}
 
 	private void createElkGraphElementsForConnections(final DiagramNode dn, final LayoutMapping mapping) {
@@ -228,24 +285,33 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 				final Object edgeEnd = mapping.getGraphMap().inverse().get(de.getEndElement());
 				if(edgeStart instanceof ElkConnectableShape &&
 						edgeEnd instanceof ElkConnectableShape) {
-					final ElkEdge newEdge = ElkGraphUtil.createSimpleEdge((ElkConnectableShape)edgeStart, (ElkConnectableShape)edgeEnd);//ElkGraphUtil.createEdge(elkParentNode); // TODO: Coordinate system. Read documentation
-					newEdge.setProperty(CoreOptions.INSIDE_SELF_LOOPS_YO, true);
-					// TODO: Disable bendpoints for curved edges.
-					mapping.getGraphMap().put(newEdge, de); // TODO: Do this for all graph elements
+					final ElkConnectableShape start = (ElkConnectableShape) edgeStart;
+					final ElkConnectableShape end = (ElkConnectableShape) edgeEnd;
 
-					// TODO: Primary label. Position. Size.
-//					final ElkLabel newLabel = ElkGraphUtil.createLabel(newEdge);
-//					// newLabel.setX(de.getX());
-//					// newLabel.setY(de.getY());
-//					newLabel.setWidth(100);
-//					newLabel.setHeight(15);
-					// TODO: Need to have an option that can be used to represent the label in the mapping or something. Let ELK move label
-					// mapping.getGraphMap().put(newLabel, de); // TODO: Do this for all graph elements
-					//newLabel.setProperty(CoreOptions.NODE_LABELS_PLACEMENT, NodeLabelPlacement.insideTopCenter()); // TODO:
+//					final ElkEdge newEdge = ElkGraphUtil.createEdge(null);
+//					newEdge.getSources().add(start);
+//					newEdge.getTargets().add(end);
+//
+//					final ElkEdgeSection s = ElkGraphUtil.createEdgeSection(newEdge);
+//					// TODO: Backwards?
+//					s.setOutgoingShape(start);
+//					s.setIncomingShape(end);
+//					ElkGraphUtil.updateContainment(newEdge);
 
-					// TODO: Unpositionable child shapes(secondary labels, etc)
+					// TODO: Remove this. This is ignores node to node connections
+					if (start instanceof ElkPort && end instanceof ElkPort) {
+						final ElkEdge newEdge = ElkGraphUtil.createSimpleEdge(start, end);// ElkGraphUtil.createEdge(elkParentNode); // TODO: Coordinate system.
+						// Read documentation
+						newEdge.setProperty(CoreOptions.INSIDE_SELF_LOOPS_YO, true); // TODO: SHould be set on the edge?
 
-					// TODO: Features and feature groups
+						// System.err
+						// .println("SECTIONS: " + newEdge.getSections().size() + " : " + edgeStart + " : " + edgeEnd);
+						// TODO: Disable bendpoints for curved edges.
+						mapping.getGraphMap().put(newEdge, de);
+
+						createElkLabels(de, newEdge, mapping);
+					}
+
 				}
 
 				// TODO: Connection to Connections ...
@@ -277,12 +343,27 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 					if (de1.getGraphic() instanceof AgeShape) {
 						// TODO: Handle labels. At least handle connection labels. Other labels aren't positionable.
 						if (!(de1.getGraphic() instanceof Label)) {
+							// TODO: Check if things are sizable
 							if (elkElement1 instanceof ElkShape) {
 								final ElkShape elkShape1 = (ElkShape) elkElement1;
 								// TODO: Only set appropriate fields
 								// TODO: Should runtime diagram use doubles?
 								// System.err.println("POSITION: (" + de.getX() + ", " + de.getY() + ") -> (" + elkShape.getX() + ", " + elkShape.getY() + ")");
-								m.setPosition(de1, new Point(elkShape1.getX(), elkShape1.getY()));
+
+								// TODO: Need to handle nested shapes and need to set parent first?
+								if (de1.getDockArea() == DockArea.GROUP) {
+									// TODO: Fix. This assumes parent is a non-docked element
+									// TODO: Fix cast
+									final ElkPort parentPort = (ElkPort) mapping.getGraphMap().inverse()
+											.get(de1.getParent());
+
+									System.err.println(elkShape1.getY() + " : " + parentPort.getY());
+
+									m.setPosition(de1, new Point(elkShape1.getX() - parentPort.getX(),
+											elkShape1.getY() - parentPort.getY()));
+								} else {
+									m.setPosition(de1, new Point(elkShape1.getX(), elkShape1.getY()));
+								}
 								m.setSize(de1, new Dimension(elkShape1.getWidth(), elkShape1.getHeight()));
 							}
 						} else {

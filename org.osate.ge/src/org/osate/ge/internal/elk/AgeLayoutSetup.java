@@ -1,4 +1,4 @@
-package org.osate.ge.internal.graphiti.elk;
+package org.osate.ge.internal.elk;
 
 import org.eclipse.elk.core.service.IDiagramLayoutConnector;
 import org.eclipse.elk.core.service.ILayoutSetup;
@@ -11,11 +11,6 @@ import com.google.inject.Module;
 import com.google.inject.util.Modules;
 
 public class AgeLayoutSetup implements ILayoutSetup {
-
-	public AgeLayoutSetup() {
-		// TODO Auto-generated constructor stub
-	}
-
 	@Override
 	public boolean supports(final Object object) {
 		/*
@@ -32,8 +27,6 @@ public class AgeLayoutSetup implements ILayoutSetup {
                 || object instanceof PictogramElement;
 		 */
 		// TODO: Support edit parts but only do so if the editor is an AgeDiagramEditor
-		System.err.println("TEST: " + object);
-		// TODO Auto-generated method stub
 		return object instanceof AgeDiagramEditor;
 	}
 	
