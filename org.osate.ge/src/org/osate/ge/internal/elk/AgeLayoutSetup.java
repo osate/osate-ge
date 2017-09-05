@@ -29,17 +29,17 @@ public class AgeLayoutSetup implements ILayoutSetup {
 		// TODO: Support edit parts but only do so if the editor is an AgeDiagramEditor
 		return object instanceof AgeDiagramEditor;
 	}
-	
+
 	@Override
 	public Injector createInjector(final Module defaultModule) {
 		return Guice.createInjector(Modules.override(defaultModule).with(new AgeLayoutModule()));
 	}
 
-    public static class AgeLayoutModule implements Module {
-        @Override
-        public void configure(final Binder binder) {
-            binder.bind(IDiagramLayoutConnector.class).to(AgeLayoutConnector.class);
-        }        
-    }
+	public static class AgeLayoutModule implements Module {
+		@Override
+		public void configure(final Binder binder) {
+			binder.bind(IDiagramLayoutConnector.class).to(AgeLayoutConnector.class);
+		}
+	}
 
 }

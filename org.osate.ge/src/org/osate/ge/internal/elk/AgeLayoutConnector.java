@@ -8,11 +8,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.eclipse.elk.alg.layered.properties.LayeredOptions;
+import org.eclipse.elk.core.math.KVector;
 import org.eclipse.elk.core.options.CoreOptions;
-import org.eclipse.elk.core.options.HierarchyHandling;
+import org.eclipse.elk.core.options.Direction;
 import org.eclipse.elk.core.options.NodeLabelPlacement;
-import org.eclipse.elk.core.options.PortConstraints;
+import org.eclipse.elk.core.options.PortSide;
 import org.eclipse.elk.core.options.SizeConstraint;
 import org.eclipse.elk.core.service.IDiagramLayoutConnector;
 import org.eclipse.elk.core.service.LayoutMapping;
@@ -61,12 +61,23 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		final LayoutMapping mapping = new LayoutMapping(workbenchPart);
 
 		final ElkNode rootNode = ElkGraphUtil.createGraph();
+
+		// rootNode.setProperty(CoreOptions.SPACING_COMPONENT_COMPONENT, 100.0);
+
+		// rootNode.setProperty(org.eclipse.elk.alg.layered.properties.LayeredOptions.SPACING_NODE_NODE_BETWEEN_LAYERS,
+		// 400.0);
+		// rootNode.setProperty(org.eclipse.elk.alg.layered.properties.LayeredOptions.SPACING_NODE_NODE, 400.0);
+
+		rootNode.setProperty(CoreOptions.DIRECTION, Direction.RIGHT);
+
+		// rootNode.setProperty(CoreOptions.SPACING_NODE_NODE, 300.0);
 		// rootNode.setProperty(LayeredOptions.DIRECTION, Direction.RIGHT); // TODO: Does this have any affect?
 
 		// Prevents exception in some cases but breaks connection layout. Something to do with empty elements? Similiar exception experienced with empty nodes..
 		// TODO: Experiment with dummy nodes?
 		//rootNode.setProperty(LayeredOptions.CROSSING_MINIMIZATION_GREEDY_SWITCH_TYPE, GreedySwitchType.OFF);
-		rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.INCLUDE_CHILDREN);
+		// rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.INCLUDE_CHILDREN); // TODO: Needed but enabling causes exceptions in some
+		// cases.
 		mapping.getGraphMap().put(rootNode, diagram);
 
 		//	How to set. Algorithm... on the config store? (CoreOptions.ALGORITHM, "org.eclipse.elk.layered"); // TODO: Is this the proper way to do it?
@@ -75,6 +86,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 
 		// TODO: Creature features? Create feature groups as unmoveable ports.
 
+		// System.err.println("CREATING CONNECTIONS...");
 		createElkGraphElementsForConnections(diagram, mapping);
 
 		// TODO: Connections. Could be a separate pass. Or could eagerly create things. eager may be better because connections could connect to connections?
@@ -82,15 +94,14 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 
 		mapping.setLayoutGraph(rootNode);
 
-
-//		if (LayoutDiagramHandler.firstPass) {
-//			// TODO: Take away all docked diagram elmeents which are docked to parents (such as feature group children)
-//			final TestPropertyValue testValue = new TestPropertyValue();
-//			testValue.layoutMapping = mapping;
-//			testProcessPorts(rootNode, testValue);
-//			testProcessEdges(rootNode, testValue);
-//			rootNode.setProperty(LayoutDiagramHandler.TEST_PROPERTY, testValue);
-//		}
+//	if (LayoutDiagramHandler.firstPass) {
+		// TODO: Take away all docked diagram elmeents which are docked to parents (such as feature group children)
+		final TestPropertyValue testValue = new TestPropertyValue();
+		testValue.layoutMapping = mapping;
+		testProcessPorts(rootNode, testValue);
+		testProcessEdges(rootNode, testValue);
+		rootNode.setProperty(LayoutDiagramHandler.TEST_PROPERTY, testValue);
+		// }
 
 		// TODO: Another hack.. Need null check).
 		// rootNode.getChildren().get(0).setProperty(LayoutDiagramHandler.TEST_PROPERTY, testValue);
@@ -118,7 +129,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		for (final ElkPort port : portsToRemove) {
 			testValue.portInfoMap.put(port, new TestInfo(port, parentNode));
 			EcoreUtil.remove(port);
-			System.err.println("REMOVED PORT");
+			// System.err.println("REMOVED PORT");
 		}
 	}
 
@@ -140,7 +151,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		for (final ElkEdge edge : edgesToRemove) {
 			testValue.edgeInfoMap.put(edge, new TestInfo(edge, edge.getContainingNode()));
 			EcoreUtil.remove(edge);
-			System.err.println("REMOVED EDGE");
+			// System.err.println("REMOVED EDGE");
 		}
 	}
 
@@ -165,11 +176,18 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 			setShapePositionAndSize(newNode, de);
 
 			if (!LayoutDiagramHandler.firstPass) {
-				newNode.setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS);
-				// newNode.setProperty(CoreOptions.NO_LAYOUT, true);
+				// newNode.setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS);
 			}
 
-			newNode.setProperty(LayeredOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.free()); // TODO: Should be configurable. Allows layout
+			// newNode.setProperty(LayeredOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.free()); // TODO: Should be configurable. Allows layout
+			newNode.setProperty(CoreOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.minimumSizeWithPorts()); // TODO: Should include port labels?
+
+			// TODO: MInimum size may not be an Issue
+			// TODO: SHouldn't have to set minimum size if ports are being taken into account and labels are the correct size
+			newNode.setProperty(CoreOptions.NODE_SIZE_MINIMUM, new KVector(200, 100));
+
+			System.err.println("SET MINIMUM SIZE: " + newNode);
+
 			newNode.setProperty(CoreOptions.INSIDE_SELF_LOOPS_ACTIVATE, true);
 
 			// Create Children
@@ -190,18 +208,16 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 				final ElkPort newPort = ElkGraphUtil.createPort(layoutParent);
 				mapping.getGraphMap().put(newPort, de);
 				setShapePositionAndSize(newPort, de);
+				newPort.setProperty(CoreOptions.PORT_SIDE, getPortSide(de));
 				newPort.setProperty(CoreOptions.PORT_BORDER_OFFSET, -de.getWidth());
-
-				// PortLabelPlacement.INSIDE
-
-				// TODO: This sets it for all ports.. Possible to set it for single port
-				// newPort.setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS);
+				// newPort.setProperty(CoreOptions.PORT_LABELS_PLACEMENT, PortLabelPlacement.INSIDE);
+// PortLabelPlacement.INSIDE
 
 				if (!LayoutDiagramHandler.firstPass) {
 					createElkGraphElementsForNonLabelChildShapes(de, layoutParent, mapping);
 				}
 
-				// TODO: labels for children
+// TODO: labels for children
 			} else {
 				// TODO: Need to set a minimize size....
 
@@ -226,6 +242,37 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		return Optional.empty();
 	}
 
+	private static PortSide getPortSide(final DiagramNode dn) {
+		if (!(dn instanceof DiagramElement)) {
+			return null;
+		}
+
+		final DiagramElement de = ((DiagramElement) dn);
+		final DockArea dockArea = de.getDockArea();
+		if (dockArea == null) {
+			return null;
+		}
+
+		switch (dockArea) {
+		case TOP:
+			return PortSide.NORTH;
+
+		case BOTTOM:
+			return PortSide.SOUTH;
+
+		case LEFT:
+			return PortSide.WEST;
+
+		case RIGHT:
+			return PortSide.EAST;
+
+		case GROUP:
+			return getPortSide(de.getParent());
+
+		default:
+			return null; // TODO: Proper behavior? Exception?
+		}
+	}
 	private static void setShapePositionAndSize(final ElkShape shape, final DiagramElement de) {
 		if (de.hasPosition()) {
 			shape.setLocation(de.getX(), de.getY());
@@ -299,18 +346,18 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 //					ElkGraphUtil.updateContainment(newEdge);
 
 					// TODO: Remove this. This is ignores node to node connections
-					if (start instanceof ElkPort && end instanceof ElkPort) {
-						final ElkEdge newEdge = ElkGraphUtil.createSimpleEdge(start, end);// ElkGraphUtil.createEdge(elkParentNode); // TODO: Coordinate system.
-						// Read documentation
-						newEdge.setProperty(CoreOptions.INSIDE_SELF_LOOPS_YO, true); // TODO: SHould be set on the edge?
+					// if (start instanceof ElkPort && end instanceof ElkPort) {
+					final ElkEdge newEdge = ElkGraphUtil.createSimpleEdge(start, end);// ElkGraphUtil.createEdge(elkParentNode); // TODO: Coordinate system.
+					// Read documentation
+					newEdge.setProperty(CoreOptions.INSIDE_SELF_LOOPS_YO, true); // TODO: SHould be set on the edge?
 
-						// System.err
-						// .println("SECTIONS: " + newEdge.getSections().size() + " : " + edgeStart + " : " + edgeEnd);
-						// TODO: Disable bendpoints for curved edges.
-						mapping.getGraphMap().put(newEdge, de);
+					// System.err
+					// .println("SECTIONS: " + newEdge.getSections().size() + " : " + edgeStart + " : " + edgeEnd);
+					// TODO: Disable bendpoints for curved edges.
+					mapping.getGraphMap().put(newEdge, de);
 
-						createElkLabels(de, newEdge, mapping);
-					}
+					createElkLabels(de, newEdge, mapping);
+					// }
 
 				}
 
@@ -336,6 +383,9 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 				final ElkGraphElement elkElement1 = entry1.getKey();
 				final DiagramNode dn1 = (DiagramNode) entry1.getValue();
 
+				if (elkElement1 instanceof ElkEdge) {
+					System.err.println("APPLY TO EDGE: " + dn1.getBusinessObject());
+				}
 				// TODO: Is there a modified flag for elk element. One appeared to be mentioned
 
 				if (dn1 instanceof DiagramElement) {
@@ -350,6 +400,13 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 								// TODO: Should runtime diagram use doubles?
 								// System.err.println("POSITION: (" + de.getX() + ", " + de.getY() + ") -> (" + elkShape.getX() + ", " + elkShape.getY() + ")");
 
+								if (de1.getDockArea() == null) {
+									System.err.println("WIDTH: " + elkShape1.getWidth() + " : "
+											+ elkShape1.getProperties().get(CoreOptions.NODE_SIZE_MINIMUM) + " : "
+											+ elkShape1.getProperties().get(CoreOptions.NODE_SIZE_CONSTRAINTS) + " : "
+											+ elkShape1);
+								}
+
 								// TODO: Need to handle nested shapes and need to set parent first?
 								if (de1.getDockArea() == DockArea.GROUP) {
 									// TODO: Fix. This assumes parent is a non-docked element
@@ -357,7 +414,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 									final ElkPort parentPort = (ElkPort) mapping.getGraphMap().inverse()
 											.get(de1.getParent());
 
-									System.err.println(elkShape1.getY() + " : " + parentPort.getY());
+									// System.err.println(elkShape1.getY() + " : " + parentPort.getY());
 
 									m.setPosition(de1, new Point(elkShape1.getX() - parentPort.getX(),
 											elkShape1.getY() - parentPort.getY()));
