@@ -31,6 +31,21 @@ public class Style {
 		this.verticalLabelPosition = verticalLabelPosition;
 	}
 
+	/**
+	 * Returns whether all of the style's fields are non-null.
+	 * @return
+	 */
+	public boolean isComplete() {
+		return background !=null &&
+				outline != null &&
+				fontColor != null &&
+				fontSize != null &&
+				lineWidth != null &&
+				lineStyle != null &&
+				horizontalLabelPosition != null &&
+				verticalLabelPosition != null;
+	}
+
 	public final Color getBackgroundColor() {
 		return background;
 	}
