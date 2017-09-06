@@ -70,4 +70,32 @@ to the terms of the license set forth at http://www.aadl.info/OSATELicense.html.
          version="1.0.0.qualifier"
          unpack="false"/>
 
+   <plugin
+         id="org.osate.ge.gef"
+         download-size="0"
+         install-size="0"
+         version="1.0.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="org.osate.ge.gef.ui"
+         download-size="0"
+         install-size="0"
+         version="1.0.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="org.osate.ge.graphics.fx"
+         download-size="0"
+         install-size="0"
+         version="1.0.0.qualifier"
+         unpack="false"/>
+
+   <plugin
+         id="org.osate.ge.fx"
+         download-size="0"
+         install-size="0"
+         version="1.0.0.qualifier"
+         unpack="false"/>
+
 </feature>

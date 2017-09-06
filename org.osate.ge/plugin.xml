@@ -617,12 +617,13 @@
    <extension
 	    point = "org.eclipse.ui.editors">
 		<editor
-	  	   id = "org.osate.ge.editor.AgeDiagramEditor"
-	  	   name="AADL Diagram Editor"
-      	   class="org.osate.ge.internal.ui.editor.AgeDiagramEditor"
-		   extensions="aadl_diagram"
-           contributorClass="org.osate.ge.internal.ui.editor.AgeDiagramEditorActionBarContributor"
-           matchingStrategy="org.eclipse.graphiti.ui.editor.DiagramEditorMatchingStrategy">
+        class="org.osate.ge.internal.ui.editor.AgeDiagramEditor"
+        contributorClass="org.osate.ge.internal.ui.editor.AgeDiagramEditorActionBarContributor"
+        default="true"
+        extensions="aadl_diagram"
+        id="org.osate.ge.editor.AgeDiagramEditor"
+        matchingStrategy="org.eclipse.graphiti.ui.editor.DiagramEditorMatchingStrategy"
+        name="AADL Diagram Editor">
 		</editor>
 	</extension>
 

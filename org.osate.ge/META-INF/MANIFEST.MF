@@ -53,6 +53,7 @@ Export-Package: org.osate.ge,
  org.osate.ge.di,
  org.osate.ge.graphics,
  org.osate.ge.graphics.internal;x-friends:="org.osate.ge.graphics.fx",
+ org.osate.ge.internal.diagram.runtime;x-friends:="org.osate.ge.gef,org.osate.ge.gef.ui",
  org.osate.ge.query,
  org.osate.ge.services
 Bundle-ClassPath: .
