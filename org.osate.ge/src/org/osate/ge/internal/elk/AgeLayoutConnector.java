@@ -29,15 +29,15 @@ import org.eclipse.elk.graph.util.ElkGraphUtil;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.ui.IWorkbenchPart;
 import org.osate.ge.graphics.Point;
+import org.osate.ge.graphics.internal.AgeConnection;
+import org.osate.ge.graphics.internal.AgeShape;
+import org.osate.ge.graphics.internal.Label;
 import org.osate.ge.internal.AgeDiagramProvider;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.Dimension;
 import org.osate.ge.internal.diagram.runtime.DockArea;
-import org.osate.ge.internal.graphics.AgeConnection;
-import org.osate.ge.internal.graphics.AgeShape;
-import org.osate.ge.internal.graphics.Label;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 import org.osate.ge.internal.ui.handlers.LayoutDiagramHandler;
 
@@ -327,7 +327,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 			// TODO: Understand edge vs edge section
 			// TODO: Read Edge documentation. GraphUtil needed to assign to appropriate container?
 
-			if(de.getGraphic() instanceof AgeConnection) {
+			if (de.getGraphic() instanceof AgeConnection) {
 				final Object edgeStart = mapping.getGraphMap().inverse().get(de.getStartElement());
 				final Object edgeEnd = mapping.getGraphMap().inverse().get(de.getEndElement());
 				if(edgeStart instanceof ElkConnectableShape &&
