@@ -759,7 +759,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		final IGaService gaService = Graphiti.getGaService();
 		switch (size) {
 		case REGULAR:
-			return gaService.createPlainPolyline(gaContainer, new int[] { -14, 8, 2, 0, -14, -8 });
+			return gaService.createPlainPolyline(gaContainer, new int[] { -10, 6, 2, 0, -10, -6 });
 		case SMALL:
 			return gaService.createPlainPolyline(gaContainer, new int[] { -6, 5, 2, 0, -6, -5 });
 		}
@@ -772,7 +772,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		final IGaService gaService = Graphiti.getGaService();
 		switch (size) {
 		case REGULAR:
-			return gaService.createPlainPolygon(gaContainer, new int[] { -14, 8, 2, 0, -14, -8 });
+			return gaService.createPlainPolygon(gaContainer, new int[] { -10, 6, 2, 0, -10, -6 });
 		case SMALL:
 			return gaService.createPlainPolygon(gaContainer, new int[] { -6, 4, 2, 0, -6, -4 });
 		}

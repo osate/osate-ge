@@ -5,6 +5,7 @@ import java.util.Objects;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.elk.alg.layered.options.LayeredOptions;
 import org.eclipse.elk.core.LayoutConfigurator;
 import org.eclipse.elk.core.options.CoreOptions;
 import org.eclipse.elk.core.options.Direction;
@@ -59,20 +60,6 @@ public class LayoutDiagramHandler extends AbstractHandler {
 		params.addLayoutRun().configure(ElkGraphElement.class).setProperty(CoreOptions.ALGORITHM,
 				"org.eclipse.elk.layered");
 
-
-		// TODO: Execute twice. Need to have different parameters
-		// DiagramLayoutEngine.invokeLayout(editorPart, null, params);
-
-		// TODO: Other users of IGraphElementVisitor?
-
-		// LayeredOptions.DIRECTION
-
-		// TODO: Better way.. Is there a way to completely ignore some features?
-
-		// params.addLayoutRun().configure(ElkNode.class).setProperty(CoreOptions.ALGORITHM,
-		// "org.eclipse.elk.algorithm.layered");
-		// .setProperty(LayeredOptions.SPACING_LABEL_NODE, 0.0);
-
 		params.addLayoutRun(new LayoutConfigurator() {
 			@Override
 			public void visit(final ElkGraphElement element) {
@@ -84,19 +71,19 @@ public class LayoutDiagramHandler extends AbstractHandler {
 				if (element instanceof ElkNode) {
 					element.setProperty(CoreOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.minimumSizeWithPorts());
 
-					// TODO: Use node -> node spacing for spacing between objects inside a layer. When is that usesd?
+					// TODO: Use node -> node spacing for spacing between objects inside a layer. When is that used?
 					element.setProperty(CoreOptions.DIRECTION, Direction.RIGHT);
 					element.setProperty(
-							org.eclipse.elk.alg.layered.properties.LayeredOptions.SPACING_NODE_NODE_BETWEEN_LAYERS,
+							LayeredOptions.SPACING_NODE_NODE_BETWEEN_LAYERS,
 							100.0);
 					element.setProperty(
-							org.eclipse.elk.alg.layered.properties.LayeredOptions.SPACING_NODE_NODE,
+							LayeredOptions.SPACING_NODE_NODE,
 							100.0);
 
 					// element.setProperty(CoreOptions.SPACING_COMPONENT_COMPONENT, 100.0);
 				}
 
-				System.err.println(element.getProperty(CoreOptions.NO_LAYOUT));
+				// System.err.println(element.getProperty(CoreOptions.NO_LAYOUT));
 				element.setProperty(CoreOptions.NO_LAYOUT, false);
 
 				if (test != null) {
@@ -175,10 +162,10 @@ public class LayoutDiagramHandler extends AbstractHandler {
 		// TODO: Wrap in single modification.
 		// TODO: Use algorithms directly instead of connector, etc?
 
-		firstPass = false;// true;
+		firstPass = true;
 		DiagramLayoutEngine.invokeLayout(editorPart, null, params);
-		// firstPass = false;
-		// DiagramLayoutEngine.invokeLayout(editorPart, null, params);
+		firstPass = false;
+		DiagramLayoutEngine.invokeLayout(editorPart, null, params);
 
 		return null;
 	}

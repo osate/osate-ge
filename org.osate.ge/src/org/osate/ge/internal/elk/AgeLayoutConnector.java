@@ -1,11 +1,11 @@
 package org.osate.ge.internal.elk;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.elk.core.math.KVector;
@@ -27,8 +27,14 @@ import org.eclipse.elk.graph.ElkShape;
 import org.eclipse.elk.graph.properties.IPropertyHolder;
 import org.eclipse.elk.graph.util.ElkGraphUtil;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IWorkbenchPart;
 import org.osate.ge.graphics.Point;
+import org.osate.ge.graphics.Style;
+import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.AgeConnection;
 import org.osate.ge.graphics.internal.AgeShape;
 import org.osate.ge.graphics.internal.Label;
@@ -51,7 +57,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		System.err.println("CREATING GRAPH LAYOUT");
 
 		// TODO: Support part of the diagram.
-		if(diagramPart != null) {
+		if (diagramPart != null) {
 			// TODO
 			throw new RuntimeException("Unhandled case. Only laying out the entire editor is supported.");
 		}
@@ -75,12 +81,12 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 
 		// Prevents exception in some cases but breaks connection layout. Something to do with empty elements? Similiar exception experienced with empty nodes..
 		// TODO: Experiment with dummy nodes?
-		//rootNode.setProperty(LayeredOptions.CROSSING_MINIMIZATION_GREEDY_SWITCH_TYPE, GreedySwitchType.OFF);
+		// rootNode.setProperty(LayeredOptions.CROSSING_MINIMIZATION_GREEDY_SWITCH_TYPE, GreedySwitchType.OFF);
 		// rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.INCLUDE_CHILDREN); // TODO: Needed but enabling causes exceptions in some
 		// cases.
 		mapping.getGraphMap().put(rootNode, diagram);
 
-		//	How to set. Algorithm... on the config store? (CoreOptions.ALGORITHM, "org.eclipse.elk.layered"); // TODO: Is this the proper way to do it?
+		// How to set. Algorithm... on the config store? (CoreOptions.ALGORITHM, "org.eclipse.elk.layered"); // TODO: Is this the proper way to do it?
 
 		createElkGraphElementsForNonLabelChildShapes(diagram, rootNode, mapping);
 
@@ -119,7 +125,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 			final Object potentialDe = testValue.layoutMapping.getGraphMap().get(port);
 			if (potentialDe instanceof DiagramElement) {
 				final DiagramElement de = (DiagramElement) potentialDe;
-				if(de.getDockArea() == DockArea.GROUP) {
+				if (de.getDockArea() == DockArea.GROUP) {
 					portsToRemove.add(port);
 				}
 			}
@@ -155,7 +161,6 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		}
 	}
 
-
 	private static void createElkGraphElementsForNonLabelChildShapes(final DiagramNode parentNode, final ElkNode parent,
 			final LayoutMapping mapping) {
 		// TODO: Share predicate
@@ -168,8 +173,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 	}
 
 	private static Optional<ElkGraphElement> createElkGraphElementForNonLabelShape(final DiagramElement de,
-			final ElkNode layoutParent,
-			final LayoutMapping mapping) {
+			final ElkNode layoutParent, final LayoutMapping mapping) {
 		if (de.getDockArea() == null) {
 			final ElkNode newNode = ElkGraphUtil.createNode(layoutParent);
 			mapping.getGraphMap().put(newNode, de);
@@ -186,7 +190,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 			// TODO: SHouldn't have to set minimum size if ports are being taken into account and labels are the correct size
 			newNode.setProperty(CoreOptions.NODE_SIZE_MINIMUM, new KVector(200, 100));
 
-			System.err.println("SET MINIMUM SIZE: " + newNode);
+			// System.err.println("SET MINIMUM SIZE: " + newNode);
 
 			newNode.setProperty(CoreOptions.INSIDE_SELF_LOOPS_ACTIVATE, true);
 
@@ -273,6 +277,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 			return null; // TODO: Proper behavior? Exception?
 		}
 	}
+
 	private static void setShapePositionAndSize(final ElkShape shape, final DiagramElement de) {
 		if (de.hasPosition()) {
 			shape.setLocation(de.getX(), de.getY());
@@ -291,38 +296,143 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 
 		// Create Primary Label
 		if (parentElement.getName() != null) {
-			createElkLabel(parentLayoutElement);
+			// TODO: Need completeness indicator.. Share with GraphitiAgeDiagram
+			createElkLabel(parentLayoutElement, parentElement.getName());
 			// TODO: Need some sort of mapping. Will be needed for connection labels
 		}
 
 		// Create Secondary Labels
 		parentElement.getDiagramElements().stream().filter(c -> c.getGraphic() instanceof Label)
 		.forEachOrdered(labelElement -> {
-			mapping.getGraphMap().put(createElkLabel(parentLayoutElement), labelElement);
+			mapping.getGraphMap().put(createElkLabel(parentLayoutElement, labelElement.getName()),
+					labelElement);
 		});
+
+		;
+
+		// TODO: Should be part of creating node?
+		System.err.println("PARENT: " + parentElement.getName());
+
+		// TODO: Have helper?
+		final Style style = StyleBuilder
+				.create(parentElement.getStyle(), parentElement.getGraphicalConfiguration().style, Style.DEFAULT)
+				.build();
+		// TODO: Need to get final style
+		parentLayoutElement.setProperty(CoreOptions.NODE_LABELS_PLACEMENT,
+				getNodeLabelPlacement(style));
+		// newLabel.setProperty(CoreOptions.PORT_LABELS_PLACEMENT, PortLabelPlacement.INSIDE);
+		// parentLayoutElement.setProperty(CoreOptions.NODE_LABELS_PLACEMENT, NodeLabelPlacement.insideTopCenter());
 	}
 
-	private static ElkLabel createElkLabel(final ElkGraphElement parentLayoutElement) {
+	private static EnumSet<NodeLabelPlacement> getNodeLabelPlacement(final Style s) {
+		final EnumSet<NodeLabelPlacement> nodeLabelPlacement = EnumSet.noneOf(NodeLabelPlacement.class);
+
+		// TODO: Adjust API and AFTER_GRAPHIC and BEFORE_GRAPHIC to align with ELK's INSIDE and OUTSIDE
+		// TOOD: Check for null
+		System.err.println(s.getHorizontalLabelPosition());
+		System.err.println(s.getVerticalLabelPosition());
+
+		// TODO: Have some sort of default if one or both are null?
+
+		if (s.getHorizontalLabelPosition() != null) {
+			switch (s.getHorizontalLabelPosition()) {
+			case BEFORE_GRAPHIC:
+				nodeLabelPlacement.add(NodeLabelPlacement.H_LEFT);
+				nodeLabelPlacement.add(NodeLabelPlacement.OUTSIDE); // TODO: Not orientation specific
+				break;
+			case GRAPHIC_BEGINNING:
+				nodeLabelPlacement.add(NodeLabelPlacement.H_LEFT);
+				nodeLabelPlacement.add(NodeLabelPlacement.INSIDE); // TODO: Not orientation specific
+				break;
+			case GRAPHIC_CENTER:
+				nodeLabelPlacement.add(NodeLabelPlacement.H_CENTER);
+				nodeLabelPlacement.add(NodeLabelPlacement.INSIDE); // TODO: Not orientation specific
+				break;
+			case GRAPHIC_END:
+				nodeLabelPlacement.add(NodeLabelPlacement.H_RIGHT);
+				nodeLabelPlacement.add(NodeLabelPlacement.INSIDE); // TODO: Not orientation specific
+				break;
+			case AFTER_GRAPHIC:
+				nodeLabelPlacement.add(NodeLabelPlacement.H_RIGHT);
+				nodeLabelPlacement.add(NodeLabelPlacement.OUTSIDE); // TODO: Not orientation specific
+				break;
+			default:
+				break;
+			}
+		}
+
+		// TOOD: Check for null
+		if (s.getVerticalLabelPosition() != null) {
+			switch (s.getVerticalLabelPosition()) {
+			case BEFORE_GRAPHIC:
+				nodeLabelPlacement.add(NodeLabelPlacement.V_TOP);
+				nodeLabelPlacement.add(NodeLabelPlacement.OUTSIDE);
+				break;
+			case GRAPHIC_BEGINNING:
+				nodeLabelPlacement.add(NodeLabelPlacement.V_TOP);
+				nodeLabelPlacement.add(NodeLabelPlacement.INSIDE); // TODO: Not orientation specific
+				break;
+			case GRAPHIC_CENTER:
+				nodeLabelPlacement.add(NodeLabelPlacement.V_CENTER);
+				nodeLabelPlacement.add(NodeLabelPlacement.INSIDE); // TODO: Not orientation specific
+				break;
+			case GRAPHIC_END:
+				nodeLabelPlacement.add(NodeLabelPlacement.V_BOTTOM);
+				nodeLabelPlacement.add(NodeLabelPlacement.INSIDE); // TODO: Not orientation specific
+				break;
+			case AFTER_GRAPHIC:
+				nodeLabelPlacement.add(NodeLabelPlacement.V_BOTTOM);
+				nodeLabelPlacement.add(NodeLabelPlacement.OUTSIDE); // TODO: Not orientation specific
+				break;
+			default:
+				break;
+			}
+		}
+
+		return nodeLabelPlacement;
+	}
+
+	private static ElkLabel createElkLabel(final ElkGraphElement parentLayoutElement, final String txt) {
 		final ElkLabel newLabel = ElkGraphUtil.createLabel(parentLayoutElement);
 
 		// TODO
 		newLabel.setX(0);
 		newLabel.setY(0);
 
-		// TODO:
 		newLabel.setWidth(100);
 		newLabel.setHeight(20);
 
 		// TODO:
-		newLabel.setProperty(CoreOptions.NODE_LABELS_PLACEMENT, NodeLabelPlacement.insideTopCenter());
+		// TODO: Require running in UI Thread?
 
-		// TOOD: Set minimum size of node based on label size
+		// Display.getDefault().
+		// TODO: Use appropriate font. Only initialize once for entire layout process.. Abstract out into handler.. Need to map style to font
+		final Font f = new Font(Display.getDefault(), "Arial", 14, SWT.NONE);
+		GC gc = null;
+		try {
+			gc = new GC(Display.getDefault());
+			gc.setFont(f);
+			final org.eclipse.swt.graphics.Point p = gc.stringExtent(txt);
+			// System.err.println("SIZE: " + p.x + " : " + p.y);
+			newLabel.setWidth(p.x);
+			newLabel.setHeight(p.y);
+		} finally {
+			if (gc != null) {
+				gc.dispose();
+			}
+
+			if(f != null) {
+				f.dispose();
+			}
+		}
+
+		newLabel.setText(txt); // TODO
 
 		return newLabel;
 	}
 
 	private void createElkGraphElementsForConnections(final DiagramNode dn, final LayoutMapping mapping) {
-		for(final DiagramElement de : dn.getDiagramElements()) {
+		for (final DiagramElement de : dn.getDiagramElements()) {
 			// TODO: Understand the multiple sources and targets... Need to group connections from the same element together?
 			// TODO: Understand edge vs edge section
 			// TODO: Read Edge documentation. GraphUtil needed to assign to appropriate container?
@@ -330,8 +440,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 			if (de.getGraphic() instanceof AgeConnection) {
 				final Object edgeStart = mapping.getGraphMap().inverse().get(de.getStartElement());
 				final Object edgeEnd = mapping.getGraphMap().inverse().get(de.getEndElement());
-				if(edgeStart instanceof ElkConnectableShape &&
-						edgeEnd instanceof ElkConnectableShape) {
+				if (edgeStart instanceof ElkConnectableShape && edgeEnd instanceof ElkConnectableShape) {
 					final ElkConnectableShape start = (ElkConnectableShape) edgeStart;
 					final ElkConnectableShape end = (ElkConnectableShape) edgeEnd;
 
@@ -369,8 +478,9 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 	}
 
 	private static AgeDiagram getDiagram(final IWorkbenchPart workbenchPart) {
-		final AgeDiagramEditor editor = ((AgeDiagramEditor)workbenchPart);
-		final AgeDiagramProvider diagramProvider = (AgeDiagramProvider)Objects.requireNonNull(editor.getAdapter(AgeDiagramProvider.class), "Unable to get Age Diagram Provider");
+		final AgeDiagramEditor editor = ((AgeDiagramEditor) workbenchPart);
+		final AgeDiagramProvider diagramProvider = (AgeDiagramProvider) Objects
+				.requireNonNull(editor.getAdapter(AgeDiagramProvider.class), "Unable to get Age Diagram Provider");
 		return Objects.requireNonNull(diagramProvider.getAgeDiagram(), "Unable to retrieve diagram");
 	}
 
@@ -384,7 +494,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 				final DiagramNode dn1 = (DiagramNode) entry1.getValue();
 
 				if (elkElement1 instanceof ElkEdge) {
-					System.err.println("APPLY TO EDGE: " + dn1.getBusinessObject());
+					// System.err.println("APPLY TO EDGE: " + dn1.getBusinessObject());
 				}
 				// TODO: Is there a modified flag for elk element. One appeared to be mentioned
 
@@ -401,10 +511,10 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 								// System.err.println("POSITION: (" + de.getX() + ", " + de.getY() + ") -> (" + elkShape.getX() + ", " + elkShape.getY() + ")");
 
 								if (de1.getDockArea() == null) {
-									System.err.println("WIDTH: " + elkShape1.getWidth() + " : "
-											+ elkShape1.getProperties().get(CoreOptions.NODE_SIZE_MINIMUM) + " : "
-											+ elkShape1.getProperties().get(CoreOptions.NODE_SIZE_CONSTRAINTS) + " : "
-											+ elkShape1);
+//									System.err.println("WIDTH: " + elkShape1.getWidth() + " : "
+//											+ elkShape1.getProperties().get(CoreOptions.NODE_SIZE_MINIMUM) + " : "
+//											+ elkShape1.getProperties().get(CoreOptions.NODE_SIZE_CONSTRAINTS) + " : "
+//											+ elkShape1);
 								}
 
 								// TODO: Need to handle nested shapes and need to set parent first?
@@ -460,8 +570,6 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 								// TODO: Understand edge section fields.
 								// TODO: Coordinate transformations.
 
-
-
 								final Point parentPosition = getAbsolutePosition(de2.getContainer());
 								final Point elkContainerPosition = getAbsolutePosition(
 										(DiagramNode) mapping.getGraphMap().get(edge.getContainingNode()));
@@ -475,24 +583,31 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 								 * System.err.println("BP: " + bp.getX() + " : " + bp.getY());
 								 * }
 								 */
+
+//								System.err.println(es.getStartX() + " : " + es.getStartY() + " : " + es.getEndX()
+//								+ " : " + es.getEndY());
+
 								final List<Point> newBendpoints;
-								if (es.getBendPoints().size() == 0) {
-									newBendpoints = null;
-								} else {
-									// TODO: Starting and ending points. Usage allows more accurately using ELK layout but causes problems with connection
-									// endings
-									// newBendpoints = new ArrayList<>(es.getBendPoints().size()+2);
-									// newBendpoints.add(new Point((int)es.getStartX() + offsetX, (int)es.getStartY() + offsetY)); // TODO: doubles
+								newBendpoints = new ArrayList<>(2 + es.getBendPoints().size());
+								// TODO: Could have no bendpoints but have a start and end point..
+								// TODO: Starting and ending points. Usage allows more accurately using ELK layout but causes problems with connection
+								// endings. Fix!
 
-									newBendpoints = es.getBendPoints().stream()
-											.map(bp -> new Point(bp.getX() + offsetX, bp.getY() + offsetY)). // TODO: Use doubles for points and
-											// dimensions
-											collect(Collectors.toList());
+// TODO: Need to have a offset for the start and end points... Need to work if there are no bendpoints.
 
-									// newBendpoints.add(new Point((int)es.getEndX() + offsetX, (int)es.getEndY() + offsetY)); // TODO: doubles
-								}
+								newBendpoints.add(new Point(es.getStartX() + offsetX, es.getStartY() + offsetY));
 
+								es.getBendPoints().stream()
+								.map(bp -> new Point(bp.getX() + offsetX, bp.getY() + offsetY))
+								.forEachOrdered(newBendpoints::add);
+
+								newBendpoints.add(new Point(es.getEndX() + offsetX, es.getEndY() + offsetY));
+								newBendpoints.set(0, getAdjacentPoint(newBendpoints.get(0), newBendpoints.get(1), 4));
+								newBendpoints.set(newBendpoints.size() - 1,
+										getAdjacentPoint(newBendpoints.get(newBendpoints.size() - 1),
+												newBendpoints.get(newBendpoints.size() - 2), 4));
 								m.setBendpoints(de2, newBendpoints);
+
 								cwsCount++;
 							}
 						}
@@ -504,12 +619,29 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		});
 	}
 
+	/**
+	 * Returns a point next to p1 which is on the line segment between p2 and p1.
+	 * @param p1
+	 * @param p2
+	 * @return
+	 */
+	private static Point getAdjacentPoint(final Point p1, final Point p2, final double d) {
+		final double dx = p2.x - p1.x;
+		final double dy = p2.y - p1.y;
+		final double l = Math.sqrt(dx * dx + dy * dy);
+		final double ux = dx / l;
+		final double uy = dy / l;
+		// TODO: Adjust d to be the minimum the spacing between the points?
+
+		return new Point(p1.x + d * ux, p1.y + d * uy);
+	}
+
 	private static Point getAbsolutePosition(final DiagramNode dn) {
 		int x = 0;
 		int y = 0;
-		for(DiagramNode tmp = dn ; tmp instanceof DiagramElement; tmp = tmp.getParent()) {
-			final DiagramElement tmpDe = (DiagramElement)tmp;
-			if(tmpDe.getGraphic() instanceof AgeShape) { // Ignore connections in case the X and Y values are not 0.
+		for (DiagramNode tmp = dn; tmp instanceof DiagramElement; tmp = tmp.getParent()) {
+			final DiagramElement tmpDe = (DiagramElement) tmp;
+			if (tmpDe.getGraphic() instanceof AgeShape) { // Ignore connections in case the X and Y values are not 0.
 				x += tmpDe.getX();
 				y += tmpDe.getY();
 			}

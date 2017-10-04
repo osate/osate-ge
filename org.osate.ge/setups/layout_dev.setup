@@ -18,7 +18,6 @@
             name="org.eclipse.elk.sdk.feature.feature.group"/>
         <requirement
             name="org.eclipse.elk.ui.feature.feature.group"/>
-        <repositoryList/>
       </targlet>
     </setupTask>
   </stream>
