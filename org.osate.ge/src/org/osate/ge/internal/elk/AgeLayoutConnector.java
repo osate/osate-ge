@@ -184,7 +184,10 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 			}
 
 			// newNode.setProperty(LayeredOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.free()); // TODO: Should be configurable. Allows layout
-			newNode.setProperty(CoreOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.minimumSizeWithPorts()); // TODO: Should include port labels?
+			final EnumSet<SizeConstraint> nodeSizeConstraints = EnumSet.of(SizeConstraint.PORTS,
+					SizeConstraint.MINIMUM_SIZE,
+					SizeConstraint.NODE_LABELS);
+			newNode.setProperty(CoreOptions.NODE_SIZE_CONSTRAINTS, nodeSizeConstraints); // TODO: Should include port labels?
 
 			// TODO: MInimum size may not be an Issue
 			// TODO: SHouldn't have to set minimum size if ports are being taken into account and labels are the correct size

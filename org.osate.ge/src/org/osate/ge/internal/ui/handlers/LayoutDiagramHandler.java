@@ -1,5 +1,6 @@
 package org.osate.ge.internal.ui.handlers;
 
+import java.util.EnumSet;
 import java.util.Objects;
 
 import org.eclipse.core.commands.AbstractHandler;
@@ -69,7 +70,9 @@ public class LayoutDiagramHandler extends AbstractHandler {
 				// TODO: Needed because first pass removes properties?
 				// TODO: Could be set as part of the layout run's options?
 				if (element instanceof ElkNode) {
-					element.setProperty(CoreOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.minimumSizeWithPorts());
+					final EnumSet<SizeConstraint> nodeSizeConstraints = EnumSet.of(SizeConstraint.PORTS,
+							SizeConstraint.MINIMUM_SIZE, SizeConstraint.NODE_LABELS);
+					element.setProperty(CoreOptions.NODE_SIZE_CONSTRAINTS, nodeSizeConstraints);
 
 					// TODO: Use node -> node spacing for spacing between objects inside a layer. When is that used?
 					element.setProperty(CoreOptions.DIRECTION, Direction.RIGHT);
