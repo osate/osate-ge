@@ -152,7 +152,7 @@ public class LayoutUtil {
 			return null;
 		}
 
-		return ((ElkNode) root).getProperty(AgeProperties.LAYOUT_MAPPING);
+		return ((ElkNode) root).getProperty(AgeElkProperties.LAYOUT_MAPPING);
 	}
 
 	/**

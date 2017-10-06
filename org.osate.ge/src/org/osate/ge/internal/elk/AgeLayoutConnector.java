@@ -74,7 +74,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		// Create the graph
 		final LayoutMapping mapping = new LayoutMapping(workbenchPart);
 		final ElkNode rootNode = ElkGraphUtil.createGraph();
-		rootNode.setProperty(AgeProperties.LAYOUT_MAPPING, mapping);
+		rootNode.setProperty(AgeElkProperties.LAYOUT_MAPPING, mapping);
 		rootNode.setProperty(CoreOptions.DIRECTION, Direction.RIGHT);
 		rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.INCLUDE_CHILDREN);
 
