@@ -35,11 +35,11 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.elk.core,
  org.eclipse.elk.graph,
  org.eclipse.elk.alg.layered,
- org.eclipse.elk.core.service
+ org.eclipse.elk.core.service,
+ com.google.guava;bundle-version="21.0.0"
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- com.google.common.collect,
  org.eclipse.draw2d.graph,
  org.eclipse.ui,
  org.eclipse.ui.part,

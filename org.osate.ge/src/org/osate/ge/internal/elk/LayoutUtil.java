@@ -1,6 +1,7 @@
 package org.osate.ge.internal.elk;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -11,15 +12,20 @@ import org.eclipse.elk.alg.layered.options.NodePlacementStrategy;
 import org.eclipse.elk.core.LayoutConfigurator;
 import org.eclipse.elk.core.options.CoreOptions;
 import org.eclipse.elk.core.options.PortConstraints;
+import org.eclipse.elk.core.options.PortSide;
 import org.eclipse.elk.core.service.DiagramLayoutEngine;
+import org.eclipse.elk.core.service.LayoutMapping;
 import org.eclipse.elk.graph.ElkGraphElement;
 import org.eclipse.elk.graph.ElkNode;
+import org.eclipse.elk.graph.ElkPort;
 import org.eclipse.elk.graph.properties.IPropertyHolder;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.ui.IEditorPart;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramElementPredicates;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
+import org.osate.ge.internal.diagram.runtime.DockArea;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 
 public class LayoutUtil {
@@ -29,33 +35,53 @@ public class LayoutUtil {
 			throw new RuntimeException("Editor must be an " + AgeDiagramEditor.class.getName());
 		}
 
-		// TODO: Filter out connections. Have a setEnabled() implementation that checks for shapes?
-		// Only pass in top level objects to algorithm.. Don't pass in children...
-
-		// TODO: Handle options
-
-		// TODO: Should set port constraints option regardless...
-		System.err.println("ZZZ: " + options.lockTopLevelPorts);
-
+		// Create configurators which will change the graph based on layout options
 		final String layoutAlgorithm = "org.eclipse.elk.layered";
 		final DiagramLayoutEngine.Parameters params = new DiagramLayoutEngine.Parameters();
 
-//		params.addLayoutRun().configure(ElkGraphElement.class)
-//		.setProperty(CoreOptions.ALGORITHM, layoutAlgorithm);
-
 		// Call setOverrideDiagramConfig(false) so that the specified layout configurator won't be replaced by the diagram one.
-
 		final LayoutConfigurator config = params.setOverrideDiagramConfig(false).addLayoutRun(new LayoutConfigurator() {
 			@Override
 			public void visit(final ElkGraphElement element) {
 				// Fix the position of the top level ports if the lock top level ports option is set.
-				if (options.lockTopLevelPorts) {
-					if (element instanceof ElkNode) {
-						final ElkNode n = (ElkNode) element;
+				if(element instanceof ElkNode) {
+					final ElkNode n = (ElkNode) element;
+					PortConstraints portConstraints = PortConstraints.FIXED_SIDE;
+					if (options.lockTopLevelPorts) {
 						final boolean isRoot = n.getParent() == null || n.getParent().getParent() == null; // TODO: Share with layout connector
 						if (isRoot) {
-							n.setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS);
+							portConstraints = PortConstraints.FIXED_POS;
 						}
+					}
+
+					n.setProperty(CoreOptions.PORT_CONSTRAINTS, portConstraints);
+				} else if (element instanceof ElkPort) {
+					final ElkPort p = (ElkPort) element;
+					final LayoutMapping layoutMapping = getLayoutMapping(p);
+					final DiagramElement de = (DiagramElement) layoutMapping.getGraphMap().get(p);
+
+					// These properties are set here instead of in the layout connector because they need to be set based on the specific layout being
+					// performed.
+
+					// TODO: When handling feature groups, will need to populate these properties for added ports.
+					// Determine the port side
+					final PortSide portSide;
+					if (options.interactive || isTopLevel(p)) {
+						// Don't change port sides if trying to avoid significant changes.
+						portSide = getPortSide(de);
+					} else {
+						// Otherwise change the port side based on the diagram element's default docking configuration
+						portSide = getPortSideForNonGroupDockArea(
+								de.getGraphicalConfiguration().defaultDockingPosition.getDockArea());
+					}
+
+					p.setProperty(CoreOptions.PORT_SIDE, portSide);
+
+					// Set the port border offset based on the port side
+					if (PortSide.SIDES_NORTH_SOUTH.contains(portSide)) {
+						p.setProperty(CoreOptions.PORT_BORDER_OFFSET, -de.getHeight());
+					} else {
+						p.setProperty(CoreOptions.PORT_BORDER_OFFSET, -de.getWidth());
 					}
 				}
 			}
@@ -71,23 +97,8 @@ public class LayoutUtil {
 			// ph.setProperty(LayeredOptions.CROSSING_MINIMIZATION_STRATEGY, CrossingMinimizationStrategy.INTERACTIVE);
 		}
 
-//		if(options.lockTopLevelPorts) {
-//			System.err.println(config + " : " + params);
-//			config.addFilter((e, p) -> {
-//				if(e instanceof ElkNode) {
-//					final ElkNode n = (ElkNode)e;
-//					final boolean isRoot = n.getParent() == null || n.getParent().getParent() == null; // TODO: Share with layout connector
-//					final boolean apply = p != CoreOptions.PORT_CONSTRAINTS || isRoot;
-//					return apply;
-//				}
-//
-//				return true;
-//			});
-//
-//			config.configure(ElkNode.class).setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS); // TODO: Limit scope
-//		}
-
-		// TODO: Need a check to determine whether a run is actually needed
+		// TODO: Need a check to determine whether a second layout is actually needed. Only used for feature groups
+		// TODO: Will need to share some of the property setting behavior with the first configurator. Such as setting port sides, etc
 
 		// TODO: Second layout causing issues?
 //		// The second layout pass. This pass is responsible for expanding feature groups.
@@ -101,24 +112,47 @@ public class LayoutUtil {
 		// TODO: Need to deicde whether to clear the properties.. What properties are those? Wouldn't that overrite the ones we are using to transfer
 		// information?
 
-		final AgeDiagram diagram = ((AgeDiagramEditor) editor).getAgeDiagram();
-
 		// Modify the diagram.
+		final AgeDiagram diagram = ((AgeDiagramEditor) editor).getAgeDiagram();
 		diagram.modify(label, m -> {
-			// Passing the modification isn't necessary because new modifications are automatically part of the active modification
+			// Determine the diagram nodes to layout
+			final List<DiagramNode> nodesToLayout;
 			if (diagramElements == null) {
-				DiagramLayoutEngine.invokeLayout(editor, diagram, params);
+				nodesToLayout = Collections.singletonList(diagram);
 			} else {
 				// Only layout shapes. Also filter out any descendants of specified diagram elements
-				final List<DiagramElement> elementsToLayout = diagramElements.stream()
+				nodesToLayout = diagramElements.stream()
 						.filter(de -> DiagramElementPredicates.isShape(de) && !containsAnyAncestor(diagramElements, de))
 						.collect(Collectors.toList());
-				for (final DiagramElement de : elementsToLayout) {
-					DiagramLayoutEngine.invokeLayout(editor, de, params);
-				}
+			}
+
+			// Passing the modification isn't necessary because new modifications are automatically part of the active modification
+			for (final DiagramNode dn : nodesToLayout) {
+				DiagramLayoutEngine.invokeLayout(editor, dn, params);
 			}
 		});
-		// TODO: Multipass
+	}
+
+	private static boolean isTopLevel(final ElkPort port) {
+		return isTopLevel(port.getParent());
+	}
+
+	private static boolean isTopLevel(final ElkNode n) {
+		return n.getParent() == null || n.getParent() == null;
+	}
+
+	private static LayoutMapping getLayoutMapping(final ElkGraphElement ge) {
+		// Get the root element
+		EObject root = ge;
+		while(root.eContainer() != null) {
+			root = root.eContainer();
+		}
+
+		if (!(root instanceof ElkNode)) {
+			return null;
+		}
+
+		return ((ElkNode) root).getProperty(AgeProperties.LAYOUT_MAPPING);
 	}
 
 	/**
@@ -136,20 +170,60 @@ public class LayoutUtil {
 
 		return false;
 	}
-// OLD: CLEANUP
-	// General Idea:
-	// TODO: Cleanup
-	// ELK doesn't support nested features. In order to properly support feature groups, the diagram is layed out twice.
-	// The first does not include feature group children but *will*(TODO) contain dummy connections between there parents. This will ensure
-	// that nodes are sized properly and allow the layout algorithm to set the position of the ports.
-	// After the first pass, the location of ports will be locked and ports and edges will be added for nested features. Dummy
-	// connections will be removed. The second layout will do the actual layout which is used.
-	// Layout the diagram in multiple passes.
-	// The first pass will
 
-	// Open questions:
-	// Understand what clear layout does. If set to true on the second pass, the spacing properties set as part of visit() doesn't seem to be processed.
-	// Why?
+	private static PortSide getPortSide(final DiagramNode dn) {
+		if (!(dn instanceof DiagramElement)) {
+			return null;
+		}
+
+		final DiagramElement de = ((DiagramElement) dn);
+		final DockArea dockArea = de.getDockArea();
+		if (dockArea == null) {
+			return null;
+		}
+
+		switch (dockArea) {
+		case GROUP:
+			return getPortSide(de.getParent());
+
+		default:
+			return getPortSideForNonGroupDockArea(dockArea);
+		}
+	}
+
+	private static PortSide getPortSideForNonGroupDockArea(final DockArea dockArea) {
+		switch (dockArea) {
+		case TOP:
+			return PortSide.NORTH;
+
+		case BOTTOM:
+			return PortSide.SOUTH;
+
+		case LEFT:
+			return PortSide.WEST;
+
+		case RIGHT:
+			return PortSide.EAST;
+
+		default:
+			throw new RuntimeException("Unexpected dock area: " + dockArea);
+		}
+	}
+
+// OLD: CLEANUP
+// General Idea:
+// TODO: Cleanup
+// ELK doesn't support nested features. In order to properly support feature groups, the diagram is layed out twice.
+// The first does not include feature group children but *will*(TODO) contain dummy connections between there parents. This will ensure
+// that nodes are sized properly and allow the layout algorithm to set the position of the ports.
+// After the first pass, the location of ports will be locked and ports and edges will be added for nested features. Dummy
+// connections will be removed. The second layout will do the actual layout which is used.
+// Layout the diagram in multiple passes.
+// The first pass will
+
+// Open questions:
+// Understand what clear layout does. If set to true on the second pass, the spacing properties set as part of visit() doesn't seem to be processed.
+// Why?
 //public final static IProperty<TestPropertyValue> TEST_PROPERTY = new Property<>(
 //	"org.osate.ge.elk.nodesToProcess");
 //

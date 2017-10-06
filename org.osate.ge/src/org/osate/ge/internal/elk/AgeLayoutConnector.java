@@ -16,7 +16,6 @@ import org.eclipse.elk.core.options.Direction;
 import org.eclipse.elk.core.options.HierarchyHandling;
 import org.eclipse.elk.core.options.NodeLabelPlacement;
 import org.eclipse.elk.core.options.PortLabelPlacement;
-import org.eclipse.elk.core.options.PortSide;
 import org.eclipse.elk.core.options.SizeConstraint;
 import org.eclipse.elk.core.service.IDiagramLayoutConnector;
 import org.eclipse.elk.core.service.LayoutMapping;
@@ -75,6 +74,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		// Create the graph
 		final LayoutMapping mapping = new LayoutMapping(workbenchPart);
 		final ElkNode rootNode = ElkGraphUtil.createGraph();
+		rootNode.setProperty(AgeProperties.LAYOUT_MAPPING, mapping);
 		rootNode.setProperty(CoreOptions.DIRECTION, Direction.RIGHT);
 		rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.INCLUDE_CHILDREN);
 
@@ -214,8 +214,6 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 				final ElkPort newPort = ElkGraphUtil.createPort(layoutParent);
 				mapping.getGraphMap().put(newPort, de);
 				setShapePositionAndSize(newPort, de);
-				newPort.setProperty(CoreOptions.PORT_SIDE, getPortSide(de));
-				newPort.setProperty(CoreOptions.PORT_BORDER_OFFSET, -de.getWidth());
 // PortLabelPlacement.INSIDE
 
 //				if (!LayoutDiagramHandler.firstPass) {
@@ -230,11 +228,6 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 				final ElkPort newPort = ElkGraphUtil.createPort(layoutParent);
 				mapping.getGraphMap().put(newPort, de);
 				setShapePositionAndSize(newPort, de);
-
-				// Position the ports inside of the the container
-				System.err.println("PORT SIDE: " + getPortSide(de));
-				newPort.setProperty(CoreOptions.PORT_SIDE, getPortSide(de));
-				newPort.setProperty(CoreOptions.PORT_BORDER_OFFSET, -de.getWidth());
 				// TODO: Need to specify port position offset?
 
 				// LayeredOptions.PORT_CONSTRAINTS
@@ -247,39 +240,6 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		}
 
 		return Optional.empty();
-	}
-
-	private static PortSide getPortSide(final DiagramNode dn) {
-		if (!(dn instanceof DiagramElement)) {
-			return null;
-		}
-
-		final DiagramElement de = ((DiagramElement) dn);
-		final DockArea dockArea = de.getDockArea();
-		if (dockArea == null) {
-			return null;
-		}
-
-		// TODO: Need to swap north and south for some reason?
-		switch (dockArea) {
-		case TOP:
-			return PortSide.SOUTH;
-
-		case BOTTOM:
-			return PortSide.NORTH;
-
-		case LEFT:
-			return PortSide.WEST;
-
-		case RIGHT:
-			return PortSide.EAST;
-
-		case GROUP:
-			return getPortSide(de.getParent());
-
-		default:
-			return null; // TODO: Proper behavior? Exception?
-		}
 	}
 
 	private static void setShapePositionAndSize(final ElkShape shape, final DiagramElement de) {
