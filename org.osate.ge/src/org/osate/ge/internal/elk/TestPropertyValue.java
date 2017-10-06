@@ -9,7 +9,7 @@ import org.eclipse.elk.graph.ElkPort;
 
 // TODO: Rework, rename, etc
 // Immutable. Constructors, etc..
-public class TestPropertyValue {
+class TestPropertyValue {
 	public LayoutMapping layoutMapping;
 	public final Map<ElkPort, TestInfo> portInfoMap = new HashMap<>();
 	public final Map<ElkEdge, TestInfo> edgeInfoMap = new HashMap<>();

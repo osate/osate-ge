@@ -31,13 +31,13 @@
 		</command>
       <command
             categoryId="org.osate.ge.commands.categories.layout"
-            id="org.osate.ge.commands.gridLayout"
-            name="Grid Layout">
+            id="org.osate.ge.commands.arrangeAsGrid"
+            name="Arrange as Grid">
       </command>
       <command
             categoryId="org.osate.ge.commands.categories.layout"
-            id="org.osate.ge.commands.radialLayout"
-            name="Radial Layout">
+            id="org.osate.ge.commands.arrangeAsCircle"
+            name="Arrange as Circle">
       </command>
       <command
             categoryId="org.osate.ge.commands.categories.layout"
@@ -118,12 +118,27 @@
             id="org.osate.ge.layoutDiagram"
             name="Layout Diagram">
       </command>
+      <command
+            categoryId="org.osate.ge.commands.categories.layout"
+            id="org.osate.ge.layoutDiagramInteractive"
+            name="Layout Diagram Interactive">
+      </command>
+      <command
+            categoryId="org.osate.ge.commands.categories.layout"
+            id="org.osate.ge.layoutContentsWithoutTopLevelPorts"
+            name="Layout Contents (Ignore Top-Level Ports)">
+      </command>
+      <command
+            categoryId="org.osate.ge.commands.categories.layout"
+            id="org.osate.ge.layoutContentsWithTopLevelPorts"
+            name="Layout Contents (Include All Ports)">
+      </command>
    </extension>
  <extension
        point="org.eclipse.ui.handlers">
     <handler
-          class="org.osate.ge.internal.ui.handlers.GridLayoutHandler"
-          commandId="org.osate.ge.commands.gridLayout">
+          class="org.osate.ge.internal.ui.handlers.ArrangeAsGridHandler"
+          commandId="org.osate.ge.commands.arrangeAsGrid">
        <enabledWhen>
           <reference
                 definitionId="org.osate.ge.expresions.undockedMoveableShapesWithSameParent">
@@ -131,8 +146,8 @@
        </enabledWhen>
     </handler>
     <handler
-          class="org.osate.ge.internal.ui.handlers.RadialLayoutHandler"
-          commandId="org.osate.ge.commands.radialLayout">
+          class="org.osate.ge.internal.ui.handlers.ArrangeAsCircleHandler"
+          commandId="org.osate.ge.commands.arrangeAsCircle">
        <enabledWhen>
           <reference
                 definitionId="org.osate.ge.expresions.undockedMoveableShapesWithSameParent">
@@ -327,6 +342,33 @@
           </reference>
        </enabledWhen>
     </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.LayoutDiagramInteractive"
+          commandId="org.osate.ge.layoutDiagramInteractive">
+       <enabledWhen>
+          <reference
+                definitionId="org.osate.ge.expresions.editorIsActive">
+          </reference>
+       </enabledWhen>
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.LayoutContentsWithoutTopLevelPorts"
+          commandId="org.osate.ge.layoutContentsWithoutTopLevelPorts">
+       <enabledWhen>
+          <reference
+                definitionId="org.osate.ge.expresions.editorIsActive">
+          </reference>
+       </enabledWhen>
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.LayoutContentsWithTopLevelPorts"
+          commandId="org.osate.ge.layoutContentsWithTopLevelPorts">
+       <enabledWhen>
+          <reference
+                definitionId="org.osate.ge.expresions.editorIsActive">
+          </reference>
+       </enabledWhen>
+    </handler>
  </extension>
        
    <extension
@@ -489,7 +531,7 @@
                    name="org.osate.ge.separator3" visible="true">
              </separator>
              <command
-                   commandId="org.osate.ge.commands.gridLayout"
+                   commandId="org.osate.ge.commands.arrangeAsGrid"
                    disabledIcon="icons/GridLayout_Disabled.gif"
                    icon="icons/GridLayout.gif"
                    style="push">
@@ -501,9 +543,10 @@
                 </visibleWhen>
              </command>
              <command
-                   commandId="org.osate.ge.commands.radialLayout"
+                   commandId="org.osate.ge.commands.arrangeAsCircle"
                    disabledIcon="icons/RadialLayout_Disabled.gif"
                    icon="icons/RadialLayout.gif"
+                   label="Arrange as Circle"
                    style="push">
                     <visibleWhen
 	                   checkEnabled="false">
@@ -593,10 +636,121 @@
  <menuContribution
        allPopups="false"
        locationURI="popup:org.osate.ge.editor.AgeDiagramEditor">
-    <command
-          commandId="org.osate.ge.layoutDiagram"
-          style="push">
-    </command>
+    <menu
+          id="org.osate.ge.layoutMenu"
+          label="Layout">
+       <command
+             commandId="org.osate.ge.layoutDiagram"
+             style="push">
+       </command>
+       <command
+             commandId="org.osate.ge.layoutDiagramInteractive"
+             style="push">
+       </command>
+       <command
+             commandId="org.osate.ge.layoutContentsWithTopLevelPorts"
+             style="push">
+       </command>
+       <command
+             commandId="org.osate.ge.layoutContentsWithoutTopLevelPorts"
+             style="push">
+       </command>
+       <separator
+             name="org.osate.ge.separator1" visible="true">
+       </separator>
+	   <command
+           commandId="org.osate.ge.commands.alignLeft"
+           icon="./icons/gef/alignleft.gif"
+           disabledIcon="./icons/gef/alignleft_d.gif"
+           style="push">
+     </command>
+     <command
+           commandId="org.osate.ge.commands.alignCenter"
+           icon="./icons/gef/aligncenter.gif"
+           disabledIcon="./icons/gef/aligncenter_d.gif"
+           style="push">
+     </command>
+     <command
+           commandId="org.osate.ge.commands.alignRight"
+           icon="./icons/gef/alignright.gif"
+           disabledIcon="./icons/gef/alignright_d.gif"
+           style="push">
+     </command>
+     <separator
+           name="org.osate.ge.separator2" visible="true">
+     </separator>
+     <command
+           commandId="org.osate.ge.commands.alignTop"
+           icon="./icons/gef/aligntop.gif"
+           disabledIcon="./icons/gef/aligntop_d.gif"
+           style="push">
+     </command>
+     <command
+           commandId="org.osate.ge.commands.alignMiddle"
+           icon="./icons/gef/alignmid.gif"
+           disabledIcon="./icons/gef/alignmid_d.gif"
+           style="push">
+     </command>
+     <command
+           commandId="org.osate.ge.commands.alignBottom"
+           icon="./icons/gef/alignbottom.gif"
+           disabledIcon="./icons/gef/alignbottom_d.gif"
+           style="push">
+     </command>
+     <separator
+           name="org.osate.ge.separator3" visible="true">
+     </separator>
+     <command
+           commandId="org.osate.ge.commands.distributeHorizontally"
+           disabledIcon="icons/DistributeHorizontally_Disabled.gif"
+           icon="icons/DistributeHorizontally.gif"
+           style="push">
+     </command>
+     <command
+           commandId="org.osate.ge.commands.distributeVertically"
+           disabledIcon="icons/DistributeVertically_Disabled.gif"
+           icon="icons/DistributeVertically.gif"
+           style="push">
+     </command>
+	 <separator
+           name="org.osate.ge.separator4" visible="true">
+     </separator>
+     <command
+           commandId="org.osate.ge.commands.arrangeAsGrid"
+           disabledIcon="icons/GridLayout_Disabled.gif"
+           icon="icons/GridLayout.gif"
+           label="Arrange as Grid"
+           style="push">
+     </command>
+     <command
+           commandId="org.osate.ge.commands.arrangeAsCircle"
+           disabledIcon="icons/RadialLayout_Disabled.gif"
+           icon="icons/RadialLayout.gif"
+           label="Arrange as Circle"
+           style="push">
+     </command>
+     <separator
+           name="org.osate.ge.separator5" visible="true">
+     </separator>
+     <command
+           commandId="org.osate.ge.commands.matchWidth"
+           icon="./icons/gef/matchwidth.gif"
+           disabledIcon="./icons/gef/matchwidth_d.gif"
+           style="push">
+     </command>
+     <command
+           commandId="org.osate.ge.commands.matchHeight"
+           icon="./icons/gef/matchheight.gif"
+           disabledIcon="./icons/gef/matchheight_d.gif"
+           style="push">
+     </command>
+     <command
+           commandId="org.osate.ge.commands.matchSize"
+           icon="./icons/gef/matchsize.gif"
+           disabledIcon="./icons/gef/matchsize_d.gif"
+           style="push">
+     </command>
+    </menu>
     <command
           commandId="org.osate.ge.commands.properties"
           style="push">

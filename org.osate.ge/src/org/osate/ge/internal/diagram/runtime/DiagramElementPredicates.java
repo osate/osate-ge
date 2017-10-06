@@ -8,13 +8,17 @@ public class DiagramElementPredicates {
 		final Graphic graphic = de.getGraphic();
 		return graphic instanceof AgeShape && ((AgeShape)graphic).isResizeable();
 	}
-	
+
 	public static boolean isMoveable(final DiagramElement de) {
 		final Graphic graphic = de.getGraphic();
 		return graphic instanceof AgeShape && ((AgeShape)graphic).isMoveable();
 	}
-	
+
 	public static boolean isUndocked(final DiagramElement de) {
 		return de.getDockArea() == null;
+	}
+
+	public static boolean isShape(final DiagramElement de) {
+		return de.getGraphic() instanceof AgeShape;
 	}
 }

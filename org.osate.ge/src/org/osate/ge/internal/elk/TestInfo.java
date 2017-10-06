@@ -3,7 +3,7 @@ package org.osate.ge.internal.elk;
 import org.eclipse.elk.graph.ElkGraphElement;
 
 // TODO: Rename
-public class TestInfo {
+class TestInfo {
 	public final ElkGraphElement layoutElement;
 	public final ElkGraphElement layoutParent;
 
