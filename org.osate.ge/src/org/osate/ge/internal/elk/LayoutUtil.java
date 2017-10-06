@@ -43,25 +43,22 @@ public class LayoutUtil {
 //		params.addLayoutRun().configure(ElkGraphElement.class)
 //		.setProperty(CoreOptions.ALGORITHM, layoutAlgorithm);
 
-		final LayoutConfigurator config = params.addLayoutRun(new LayoutConfigurator() {
-//			@Override
-//			public void visit(final ElkGraphElement element) {
-//				System.err.println("Z");
-//				// Fix the position of the top level ports if the lock top level ports option is set.
-//				if (options.lockTopLevelPorts) {
-//					System.err.println("A");
-//					if (element instanceof ElkNode) {
-//						System.err.println("B");
-//						final ElkNode n = (ElkNode) element;
-//						final boolean isRoot = n.getParent() == null || n.getParent().getParent() == null; // TODO: Share with layout connector
-//						System.err.println("C: " + isRoot);
-//						if (isRoot) {
-//							System.err.println("SETTING");
-//							n.setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS);
-//						}
-//					}
-//				}
-//			}
+		// Call setOverrideDiagramConfig(false) so that the specified layout configurator won't be replaced by the diagram one.
+
+		final LayoutConfigurator config = params.setOverrideDiagramConfig(false).addLayoutRun(new LayoutConfigurator() {
+			@Override
+			public void visit(final ElkGraphElement element) {
+				// Fix the position of the top level ports if the lock top level ports option is set.
+				if (options.lockTopLevelPorts) {
+					if (element instanceof ElkNode) {
+						final ElkNode n = (ElkNode) element;
+						final boolean isRoot = n.getParent() == null || n.getParent().getParent() == null; // TODO: Share with layout connector
+						if (isRoot) {
+							n.setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS);
+						}
+					}
+				}
+			}
 		});// configure(ElkGraphElement.class).setProperty(CoreOptions.ALGORITHM, layoutAlgorithm);
 		// final IPropertyHolder ph =
 		final IPropertyHolder ph = config.configure(ElkGraphElement.class).setProperty(CoreOptions.ALGORITHM,
@@ -74,7 +71,21 @@ public class LayoutUtil {
 			// ph.setProperty(LayeredOptions.CROSSING_MINIMIZATION_STRATEGY, CrossingMinimizationStrategy.INTERACTIVE);
 		}
 
-		config.configure(ElkNode.class).setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS); // TODO: Limit scope
+//		if(options.lockTopLevelPorts) {
+//			System.err.println(config + " : " + params);
+//			config.addFilter((e, p) -> {
+//				if(e instanceof ElkNode) {
+//					final ElkNode n = (ElkNode)e;
+//					final boolean isRoot = n.getParent() == null || n.getParent().getParent() == null; // TODO: Share with layout connector
+//					final boolean apply = p != CoreOptions.PORT_CONSTRAINTS || isRoot;
+//					return apply;
+//				}
+//
+//				return true;
+//			});
+//
+//			config.configure(ElkNode.class).setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS); // TODO: Limit scope
+//		}
 
 		// TODO: Need a check to determine whether a run is actually needed
 

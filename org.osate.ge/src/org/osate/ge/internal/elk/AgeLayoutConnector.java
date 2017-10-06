@@ -15,7 +15,7 @@ import org.eclipse.elk.core.options.CoreOptions;
 import org.eclipse.elk.core.options.Direction;
 import org.eclipse.elk.core.options.HierarchyHandling;
 import org.eclipse.elk.core.options.NodeLabelPlacement;
-import org.eclipse.elk.core.options.PortConstraints;
+import org.eclipse.elk.core.options.PortLabelPlacement;
 import org.eclipse.elk.core.options.PortSide;
 import org.eclipse.elk.core.options.SizeConstraint;
 import org.eclipse.elk.core.service.IDiagramLayoutConnector;
@@ -61,7 +61,6 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		System.err.println("CREATING GRAPH LAYOUT");
 
 		// TODO: Move setting properties to the util handler?
-
 		// Determine the root node to layout
 		final DiagramNode rootDiagramNode;
 		if (diagramPart == null) {
@@ -177,7 +176,7 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 			mapping.getGraphMap().put(newNode, de);
 			setShapePositionAndSize(newNode, de);
 
-			newNode.setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS);
+			newNode.setProperty(CoreOptions.PORT_LABELS_PLACEMENT, PortLabelPlacement.INSIDE);
 
 //			if (!LayoutDiagramHandler.firstPass) {
 //				// newNode.setProperty(CoreOptions.PORT_CONSTRAINTS, PortConstraints.FIXED_POS);
@@ -217,7 +216,6 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 				setShapePositionAndSize(newPort, de);
 				newPort.setProperty(CoreOptions.PORT_SIDE, getPortSide(de));
 				newPort.setProperty(CoreOptions.PORT_BORDER_OFFSET, -de.getWidth());
-				// newPort.setProperty(CoreOptions.PORT_LABELS_PLACEMENT, PortLabelPlacement.INSIDE);
 // PortLabelPlacement.INSIDE
 
 //				if (!LayoutDiagramHandler.firstPass) {
@@ -234,6 +232,8 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 				setShapePositionAndSize(newPort, de);
 
 				// Position the ports inside of the the container
+				System.err.println("PORT SIDE: " + getPortSide(de));
+				newPort.setProperty(CoreOptions.PORT_SIDE, getPortSide(de));
 				newPort.setProperty(CoreOptions.PORT_BORDER_OFFSET, -de.getWidth());
 				// TODO: Need to specify port position offset?
 
@@ -260,12 +260,13 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 			return null;
 		}
 
+		// TODO: Need to swap north and south for some reason?
 		switch (dockArea) {
 		case TOP:
-			return PortSide.NORTH;
+			return PortSide.SOUTH;
 
 		case BOTTOM:
-			return PortSide.SOUTH;
+			return PortSide.NORTH;
 
 		case LEFT:
 			return PortSide.WEST;
@@ -287,7 +288,11 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		}
 
 		if (de.hasSize()) {
-			shape.setDimensions(de.getWidth(), de.getHeight());
+			if (shape instanceof ElkPort) {
+				shape.setDimensions(de.getWidth(), de.getHeight());
+			} else {
+				shape.setDimensions(de.getWidth() + 500, de.getHeight() + 500); // TODO: Padding seems to help when using fixed ports
+			}
 		}
 	}
 
@@ -400,7 +405,6 @@ public class AgeLayoutConnector implements IDiagramLayoutConnector {
 		// TODO:
 		// TODO: Require running in UI Thread?
 
-		System.err.println("CREATE LABEL: " + txt);
 		// Display.getDefault().
 		// TODO: Use appropriate font. Only initialize once for entire layout process.. Abstract out into handler.. Need to map style to font
 		final Font f = new Font(Display.getDefault(), "Arial", 14, SWT.NONE);
