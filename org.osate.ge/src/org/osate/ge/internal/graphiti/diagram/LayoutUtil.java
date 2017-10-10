@@ -368,39 +368,67 @@ class LayoutUtil {
 
 						// Create an anchor which is used for flow specifications
 						if (shapeDockArea != null) {
-							final int flowSpecAnchorX;
-							final int flowSpecAnchorOffsetY;
+							org.osate.ge.graphics.Point interiorAnchorPosition;
+							org.osate.ge.graphics.Point exteriorAnchorPosition;
+							final org.osate.ge.graphics.Point flowSpecAnchorPosition;
 							final int flowSpecOffsetLength = 50;
+							final int interiorExteriorOffset = 0; // Adjustment so that connections will reach all the way to the appropriate connection point.
 							switch (shapeDockArea) {
 							case LEFT:
-								flowSpecAnchorX = innerGa.getX() + innerGa.getWidth() + flowSpecOffsetLength;
-								flowSpecAnchorOffsetY = 0;
+								interiorAnchorPosition = new org.osate.ge.graphics.Point(
+										innerGa.getX() + innerGa.getWidth() - interiorExteriorOffset,
+										innerGa.getY() + (innerGa.getHeight() / 2));
+								exteriorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + interiorExteriorOffset,
+										interiorAnchorPosition.y);
+								flowSpecAnchorPosition = new org.osate.ge.graphics.Point(
+										interiorAnchorPosition.x + flowSpecOffsetLength, interiorAnchorPosition.y);
 								break;
 
 							case RIGHT:
-								flowSpecAnchorX = innerGa.getX() - flowSpecOffsetLength;
-								flowSpecAnchorOffsetY = 0;
+								interiorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + interiorExteriorOffset,
+										innerGa.getY() + (innerGa.getHeight() / 2));
+								exteriorAnchorPosition = new org.osate.ge.graphics.Point(
+										innerGa.getX() + innerGa.getWidth() - interiorExteriorOffset, interiorAnchorPosition.y);
+								flowSpecAnchorPosition = new org.osate.ge.graphics.Point(
+										interiorAnchorPosition.x - flowSpecOffsetLength, interiorAnchorPosition.y);
 								break;
 
 							case TOP:
-								flowSpecAnchorX = innerGa.getX() + (innerGa.getWidth() / 2);
-								flowSpecAnchorOffsetY = flowSpecOffsetLength;
+								interiorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + (innerGa.getWidth() / 2),
+										innerGa.getY() + innerGa.getHeight() - interiorExteriorOffset);
+								exteriorAnchorPosition = new org.osate.ge.graphics.Point(interiorAnchorPosition.x,
+										innerGa.getY() + interiorExteriorOffset);
+								flowSpecAnchorPosition = new org.osate.ge.graphics.Point(interiorAnchorPosition.x,
+										interiorAnchorPosition.y + flowSpecOffsetLength);
 								break;
 
 							case BOTTOM:
-								flowSpecAnchorX = innerGa.getX() + (innerGa.getWidth() / 2);
-								flowSpecAnchorOffsetY = -flowSpecOffsetLength;
+								interiorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + (innerGa.getWidth() / 2),
+										innerGa.getY() + interiorExteriorOffset);
+								exteriorAnchorPosition = new org.osate.ge.graphics.Point(interiorAnchorPosition.x,
+										innerGa.getY() + innerGa.getHeight() - interiorExteriorOffset);
+								flowSpecAnchorPosition = new org.osate.ge.graphics.Point(interiorAnchorPosition.x,
+										interiorAnchorPosition.y - flowSpecOffsetLength);
 								break;
 
 							default:
-								flowSpecAnchorX = 0;
-								flowSpecAnchorOffsetY = 0;
+								interiorAnchorPosition = new org.osate.ge.graphics.Point(
+										innerGa.getX() + innerGa.getWidth() - interiorExteriorOffset,
+										innerGa.getY() + (innerGa.getHeight() / 2));
+								exteriorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + interiorExteriorOffset,
+										interiorAnchorPosition.y);
+								flowSpecAnchorPosition = new org.osate.ge.graphics.Point(0, 0);
 								break;
 							}
 
-							AnchorUtil.createOrUpdateFixPointAnchor(shape, AnchorNames.FLOW_SPECIFICATION, flowSpecAnchorX,
-									innerGa.getY() + (innerGa.getHeight() / 2) + flowSpecAnchorOffsetY, true);
+							AnchorUtil.createOrUpdateFixPointAnchor(shape, AnchorNames.FLOW_SPECIFICATION,
+									(int) flowSpecAnchorPosition.x, (int) flowSpecAnchorPosition.y, true);
 
+							AnchorUtil.createOrUpdateFixPointAnchor(shape, AnchorNames.INTERIOR_ANCHOR, (int) interiorAnchorPosition.x,
+									(int) interiorAnchorPosition.y, true);
+
+							AnchorUtil.createOrUpdateFixPointAnchor(shape, AnchorNames.EXTERIOR_ANCHOR, (int) exteriorAnchorPosition.x,
+									(int) exteriorAnchorPosition.y, true);
 						}
 
 						// Determine the Y position for the labels
@@ -447,7 +475,9 @@ class LayoutUtil {
 							// Only update the child's position if it already has a position. Otherwise, it may not have been layed out yet.
 							if (child.hasPosition() && childPe instanceof Shape && childPe.getGraphicsAlgorithm() != null) {
 								final GraphicsAlgorithm childGa = childPe.getGraphicsAlgorithm();
+								final DockArea oldDockArea = child.getDockArea();
 								mod.setPosition(child, new org.osate.ge.graphics.Point(childGa.getX(), childGa.getY()));
+								mod.setDockArea(child, oldDockArea); // Prevent changing the dock area when positioning the shape.
 							}
 						}
 
@@ -774,8 +804,7 @@ class LayoutUtil {
 
 							if (labelBackgroundDiagramElement != null) {
 								final org.osate.ge.graphics.Color geLabelBackground = getFinalStyle(labelBackgroundDiagramElement,
-										coloringProvider)
-										.getBackgroundColor();
+										coloringProvider).getBackgroundColor();
 								labelBackground = Graphiti.getGaService().manageColor(graphitiDiagram, geLabelBackground.getRed(),
 										geLabelBackground.getGreen(), geLabelBackground.getBlue());
 							}
