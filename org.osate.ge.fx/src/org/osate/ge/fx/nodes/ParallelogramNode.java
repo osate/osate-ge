@@ -51,4 +51,8 @@ public class ParallelogramNode extends Region implements HasBackgroundColor, Has
 	public final void setLineWidth(final double value) {
 		poly.setStrokeWidth(value);
 	}
+
+	public static void main(final String[] args) {
+		NodeApplication.run(new ParallelogramNode(20));
+	}
 }

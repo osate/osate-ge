@@ -48,4 +48,8 @@ public class EllipseNode extends Region implements HasBackgroundColor, HasOutlin
 	public final void setLineWidth(final double value) {
 		ellipse.setStrokeWidth(value);
 	}
+
+	public static void main(final String[] args) {
+		NodeApplication.run(new EllipseNode());
+	}
 }

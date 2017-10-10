@@ -8,10 +8,15 @@ import java.util.stream.DoubleStream;
 import org.osate.ge.fx.nodes.BusNode;
 import org.osate.ge.fx.nodes.DeviceNode;
 import org.osate.ge.fx.nodes.EllipseNode;
+import org.osate.ge.fx.nodes.FeatureGroupTypeNode;
 import org.osate.ge.fx.nodes.FolderNode;
+import org.osate.ge.fx.nodes.LabelNode;
+import org.osate.ge.fx.nodes.MemoryNode;
+import org.osate.ge.fx.nodes.ModeNode;
 import org.osate.ge.fx.nodes.ParallelogramNode;
 import org.osate.ge.fx.nodes.PolygonNode;
 import org.osate.ge.fx.nodes.PolylineNode;
+import org.osate.ge.fx.nodes.ProcessorNode;
 import org.osate.ge.fx.nodes.RectangleNode;
 import org.osate.ge.fx.styling.HasBackgroundColor;
 import org.osate.ge.fx.styling.HasFontColor;
@@ -23,9 +28,14 @@ import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.internal.BusGraphic;
 import org.osate.ge.graphics.internal.DeviceGraphic;
 import org.osate.ge.graphics.internal.Ellipse;
+import org.osate.ge.graphics.internal.FeatureGroupTypeGraphic;
 import org.osate.ge.graphics.internal.FolderGraphic;
+import org.osate.ge.graphics.internal.Label;
+import org.osate.ge.graphics.internal.MemoryGraphic;
+import org.osate.ge.graphics.internal.ModeGraphic;
 import org.osate.ge.graphics.internal.Parallelogram;
 import org.osate.ge.graphics.internal.Poly;
+import org.osate.ge.graphics.internal.ProcessorGraphic;
 import org.osate.ge.graphics.internal.Rectangle;
 
 import com.google.common.collect.ImmutableMap;
@@ -45,10 +55,10 @@ public class AgeToFx {
 
 	static {
 		final ImmutableMap.Builder<Class<? extends Graphic>, Function<? extends Graphic, Node>> mapBuilder = new ImmutableMap.Builder<>();
-		addCreator(mapBuilder, Rectangle.class, AgeToFx::createNodeForRectangle);
-		addCreator(mapBuilder, Ellipse.class, AgeToFx::createNodeForEllipse);
-		addCreator(mapBuilder, FolderGraphic.class, AgeToFx::createNodeForFolder);
-		addCreator(mapBuilder, DeviceGraphic.class, AgeToFx::createNodeForDevice);
+		addCreator(mapBuilder, Rectangle.class, rg -> new RectangleNode(rg.rounded));
+		addCreator(mapBuilder, Ellipse.class, eg -> new EllipseNode());
+		addCreator(mapBuilder, FolderGraphic.class, fg -> new FolderNode());
+		addCreator(mapBuilder, DeviceGraphic.class, dg -> new DeviceNode());
 		addCreator(mapBuilder, Poly.class, poly -> {
 			final double[] points = Arrays.stream(poly.getPoints()).flatMapToDouble(p -> DoubleStream.of(p.x, p.y)).toArray();
 			switch (poly.type) {
@@ -62,17 +72,17 @@ public class AgeToFx {
 				throw new RuntimeException("Unhandled type: " + poly.type);
 			}
 		});
-		addCreator(mapBuilder, Parallelogram.class, AgeToFx::createNodeForParallelogram);
+		addCreator(mapBuilder, Parallelogram.class, pg -> new ParallelogramNode(pg.horizontalOffset));
 		addCreator(mapBuilder, BusGraphic.class, bg -> new BusNode());
-//		addGraphicsAlgorithmCreator(map, ProcessorGraphic.class,
-//				AgeGraphitiGraphicsUtil::createGraphicsAlgorithmForProcessor);
-//		addGraphicsAlgorithmCreator(map, MemoryGraphic.class,
-//				AgeGraphitiGraphicsUtil::createGraphicsAlgorithmForMemory);
-//		addGraphicsAlgorithmCreator(map, FeatureGroupTypeGraphic.class,
-//				AgeGraphitiGraphicsUtil::createGraphicsAlgorithmForFeatureGroupType);
-
-//		addGraphicsAlgorithmCreator(map, ModeGraphic.class, AgeGraphitiGraphicsUtil::createGraphicsAlgorithmForMode);
-//		addGraphicsAlgorithmCreator(map, Label.class, AgeGraphitiGraphicsUtil::createGraphicsAlgorithmForLabel);
+		addCreator(mapBuilder, ProcessorGraphic.class, pg -> new ProcessorNode());
+		addCreator(mapBuilder, MemoryGraphic.class, pg -> new MemoryNode());
+		addCreator(mapBuilder, FeatureGroupTypeGraphic.class, fgtg -> new FeatureGroupTypeNode());
+		addCreator(mapBuilder, ModeGraphic.class, mg -> {
+			final ModeNode mn = new ModeNode();
+			mn.setIsInitialMode(mg.isInitialMode);
+			return mn;
+		});
+		addCreator(mapBuilder, Label.class, lg -> new LabelNode());
 //		addGraphicsAlgorithmCreator(map, FeatureGraphic.class,
 
 		creatorMap = mapBuilder.build();
@@ -88,59 +98,6 @@ public class AgeToFx {
 		}
 
 		return c.apply(graphic);
-	}
-
-	// TODO: Cleanup. Some of this should be handled outside.. Such as setting the stroke type
-	private static Node createNodeForEllipse(final Ellipse e) {
-		final EllipseNode node = new EllipseNode();
-		// TODO: Support initial style... Should be unified with other methods... Graphics could return a default style...
-		// TODO: In most cases fields will be null. Line width and dash array might be different
-
-//		shape.setStrokeWidth(r.lineWidth);
-//		shape.getStrokeDashArray().setAll(20.0, 20.0); // TODO: Need to handle line style
-//		// public final LineStyle lineStyle;
-//
-
-		return node;
-	}
-
-	private static Node createNodeForRectangle(final Rectangle r) {
-		final RectangleNode node = new RectangleNode();
-		node.setRounded(r.rounded);
-
-		// TODO: Support initial style... Should be unified with other methods... Graphics could return a default style...
-		// TODO: In most cases fields will be null. Line width and dash array might be different
-
-//		shape.setStrokeWidth(r.lineWidth);
-//		shape.getStrokeDashArray().setAll(20.0, 20.0); // TODO: Need to handle line style
-//		// public final LineStyle lineStyle;
-//
-
-		return node;
-	}
-
-	private static Node createNodeForFolder(final FolderGraphic fg) {
-		// TODO: Cleanup
-		final FolderNode node = new FolderNode();
-		// TODO: Set settings based on folder graphic
-//		shape.setStrokeWidth(r.lineWidth);
-//		shape.getStrokeDashArray().setAll(20.0, 20.0); // TODO: Need to handle line style
-
-		return node;
-	}
-
-	private static Node createNodeForDevice(final DeviceGraphic dg) {
-		// TODO: Cleanup
-		final DeviceNode node = new DeviceNode();
-		// TODO: Set settings based on folder graphic
-//		shape.setStrokeWidth(r.lineWidth);
-//		shape.getStrokeDashArray().setAll(20.0, 20.0); // TODO: Need to handle line style
-
-		return node;
-	}
-
-	private static Node createNodeForParallelogram(final Parallelogram parallelogram) {
-		return new ParallelogramNode(parallelogram.horizontalOffset);
 	}
 
 	// TODO

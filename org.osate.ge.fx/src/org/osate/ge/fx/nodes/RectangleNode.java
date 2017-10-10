@@ -13,11 +13,16 @@ public class RectangleNode extends Region implements HasBackgroundColor, HasOutl
 	private final javafx.scene.shape.Rectangle rect = new Rectangle();
 
 	public RectangleNode() {
+		this(false);
+	}
+
+	public RectangleNode(final boolean rounded) {
 		this.getChildren().addAll(rect);
 
 		setLineWidth(2);
 		setBackgroundColor(Color.WHITE);
 		setOutlineColor(Color.BLACK);
+		setRounded(rounded);
 	}
 
 	public void setRounded(final boolean value) {
@@ -51,5 +56,9 @@ public class RectangleNode extends Region implements HasBackgroundColor, HasOutl
 	@Override
 	public final void setLineWidth(final double value) {
 		rect.setStrokeWidth(value);
+	}
+
+	public static void main(final String[] args) {
+		NodeApplication.run(new RectangleNode(), new RectangleNode(true));
 	}
 }

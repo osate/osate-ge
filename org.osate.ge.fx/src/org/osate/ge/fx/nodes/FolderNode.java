@@ -62,4 +62,7 @@ public class FolderNode extends Region implements HasBackgroundColor, HasOutline
 //	public final void setFontSize(final double size) {
 //	}
 
+	public static void main(final String[] args) {
+		NodeApplication.run(new FolderNode());
+	}
 }

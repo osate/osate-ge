@@ -24,7 +24,7 @@ public class DeviceNode extends Region implements HasBackgroundColor, HasOutline
 
 	public DeviceNode() {
 		lineSegments.setStrokeLineCap(StrokeLineCap.BUTT);
-		this.getChildren().addAll(outline, shadedPath, path, lineSegments);// outline, innerRect, line1, line2, line3, line4);
+		this.getChildren().addAll(outline, shadedPath, path, lineSegments);
 
 		setLineWidth(2);
 		setBackgroundColor(Color.WHITE);
@@ -79,4 +79,7 @@ public class DeviceNode extends Region implements HasBackgroundColor, HasOutline
 		lineSegments.setStrokeWidth(value);
 	}
 
+	public static void main(final String[] args) {
+		NodeApplication.run(new DeviceNode());
+	}
 }

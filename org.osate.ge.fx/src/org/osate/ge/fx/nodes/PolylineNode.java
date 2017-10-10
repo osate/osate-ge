@@ -52,4 +52,8 @@ public class PolylineNode extends Region implements HasOutlineColor, HasLineWidt
 	public final void setLineWidth(final double value) {
 		poly.setStrokeWidth(value);
 	}
+
+	public static void main(final String[] args) {
+		NodeApplication.run(new PolylineNode(0.5, 0.0, 0.0, 1.0, 1.0, 1.0));
+	}
 }

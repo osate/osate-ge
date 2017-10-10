@@ -50,4 +50,8 @@ public class BusNode extends Region implements HasBackgroundColor, HasOutlineCol
 	public final void setLineWidth(final double value) {
 		poly.setStrokeWidth(value);
 	}
+
+	public static void main(final String[] args) {
+		NodeApplication.run(new BusNode());
+	}
 }
