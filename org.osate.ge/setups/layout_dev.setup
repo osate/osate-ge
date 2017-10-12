@@ -16,8 +16,6 @@
           name="ELK SDK">
         <requirement
             name="org.eclipse.elk.sdk.feature.feature.group"/>
-        <requirement
-            name="org.eclipse.elk.ui.feature.feature.group"/>
       </targlet>
     </setupTask>
   </stream>

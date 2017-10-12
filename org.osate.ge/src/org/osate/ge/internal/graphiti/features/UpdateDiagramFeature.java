@@ -13,9 +13,7 @@ import org.eclipse.graphiti.features.impl.AbstractUpdateFeature;
 import org.eclipse.graphiti.features.impl.Reason;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
-import org.osate.ge.internal.diagram.runtime.DiagramModification;
-import org.osate.ge.internal.diagram.runtime.DiagramModifier;
-import org.osate.ge.internal.diagram.runtime.layout.DiagramLayoutUtil;
+import org.osate.ge.internal.diagram.runtime.layout.IncrementalLayoutUtil;
 import org.osate.ge.internal.diagram.runtime.updating.DiagramUpdater;
 import org.osate.ge.internal.graphiti.GraphitiAgeDiagramProvider;
 
@@ -50,12 +48,7 @@ public class UpdateDiagramFeature extends AbstractUpdateFeature implements ICust
 		diagramUpdater.updateDiagram(ageDiagram);		
 		
 		// Perform the layout as a separate operation because the sizes for the shapes are assigned by the Graphiti modification listener.
-		ageDiagram.modify("Update Diagram", new DiagramModifier() {
-			@Override
-			public void modify(final DiagramModification m) {
-				DiagramLayoutUtil.layout(ageDiagram, m, false);
-			}
-		});
+		ageDiagram.modify("Update Diagram", m -> IncrementalLayoutUtil.layout(ageDiagram, m));
 		
 		return true;
 	}

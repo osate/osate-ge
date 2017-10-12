@@ -19,7 +19,6 @@ import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramModification;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
-import org.osate.ge.internal.diagram.runtime.Dimension;
 import org.osate.ge.internal.diagram.runtime.DockArea;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
 import org.osate.ge.internal.diagram.runtime.boTree.BusinessObjectNode;
@@ -118,11 +117,6 @@ public class DiagramUpdater {
 						continue;
 					}
 					element = new DiagramElement(container, n.getBusinessObject(), boh, n.getRelativeReference());
-
-					// Set the size of the new element if it is the only top level element. This prevents having a tiny initial diagram area.
-					if(bos.size() == 1 && container instanceof AgeDiagram) {
-						m.setSize(element, new Dimension(500, 500));
-					}
 				} else {
 					element = removedGhost;
 					m.updateBusinessObjectWithSameRelativeReference(element, n.getBusinessObject());

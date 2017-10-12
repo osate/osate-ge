@@ -120,18 +120,8 @@
       </command>
       <command
             categoryId="org.osate.ge.commands.categories.layout"
-            id="org.osate.ge.layoutDiagramInteractive"
-            name="Layout Diagram Interactive">
-      </command>
-      <command
-            categoryId="org.osate.ge.commands.categories.layout"
-            id="org.osate.ge.layoutContentsWithoutTopLevelPorts"
-            name="Layout Contents (Ignore Top-Level Ports)">
-      </command>
-      <command
-            categoryId="org.osate.ge.commands.categories.layout"
-            id="org.osate.ge.layoutContentsWithTopLevelPorts"
-            name="Layout Contents (Include All Ports)">
+            id="org.osate.ge.layoutContents"
+            name="Layout Contents">
       </command>
    </extension>
  <extension
@@ -343,26 +333,8 @@
        </enabledWhen>
     </handler>
     <handler
-          class="org.osate.ge.internal.ui.handlers.LayoutDiagramInteractive"
-          commandId="org.osate.ge.layoutDiagramInteractive">
-       <enabledWhen>
-          <reference
-                definitionId="org.osate.ge.expresions.editorIsActive">
-          </reference>
-       </enabledWhen>
-    </handler>
-    <handler
-          class="org.osate.ge.internal.ui.handlers.LayoutContentsWithoutTopLevelPorts"
-          commandId="org.osate.ge.layoutContentsWithoutTopLevelPorts">
-       <enabledWhen>
-          <reference
-                definitionId="org.osate.ge.expresions.editorIsActive">
-          </reference>
-       </enabledWhen>
-    </handler>
-    <handler
-          class="org.osate.ge.internal.ui.handlers.LayoutContentsWithTopLevelPorts"
-          commandId="org.osate.ge.layoutContentsWithTopLevelPorts">
+          class="org.osate.ge.internal.ui.handlers.LayoutContentsHandler"
+          commandId="org.osate.ge.layoutContents">
        <enabledWhen>
           <reference
                 definitionId="org.osate.ge.expresions.editorIsActive">
@@ -644,15 +616,7 @@
              style="push">
        </command>
        <command
-             commandId="org.osate.ge.layoutDiagramInteractive"
-             style="push">
-       </command>
-       <command
-             commandId="org.osate.ge.layoutContentsWithTopLevelPorts"
-             style="push">
-       </command>
-       <command
-             commandId="org.osate.ge.layoutContentsWithoutTopLevelPorts"
+             commandId="org.osate.ge.layoutContents"
              style="push">
        </command>
        <separator
@@ -1636,12 +1600,6 @@
        </renameParticipant>
     </extension>
     <extension
-          point="org.eclipse.elk.core.service.layoutConnectors">
-       <setup
-             class="org.osate.ge.internal.elk.AgeLayoutSetup">
-       </setup>
-    </extension>
-    <extension
          point="org.eclipse.ui.views.properties.tabbed.propertyContributor">
       <propertyContributor
             contributorId="org.osate.ge.editor.AgeDiagramEditor">
@@ -1756,5 +1714,20 @@
             </equals>
          </with>
       </definition>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            category="org.osate.internal.ui.preferences.OsatePreferencePage"
+            class="org.osate.ge.internal.ui.AgePreferencePage"
+            id="org.osate.ge.ui.preferences"
+            name="Diagrams">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="org.osate.ge.internal.preferences.PreferenceInitializer">
+      </initializer>
    </extension>
 </plugin>

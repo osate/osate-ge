@@ -2,7 +2,9 @@ package org.osate.ge.internal.graphiti.features;
 
 import java.util.LinkedList;
 import java.util.Objects;
+
 import javax.inject.Inject;
+
 import org.eclipse.graphiti.features.ICustomUndoRedoFeature;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.IContext;
@@ -11,13 +13,11 @@ import org.eclipse.graphiti.features.custom.AbstractCustomFeature;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
-import org.osate.ge.internal.diagram.runtime.DiagramModification;
-import org.osate.ge.internal.diagram.runtime.DiagramModifier;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.boTree.BusinessObjectNode;
 import org.osate.ge.internal.diagram.runtime.boTree.DiagramToBusinessObjectTreeConverter;
 import org.osate.ge.internal.diagram.runtime.boTree.TreeUpdater;
-import org.osate.ge.internal.diagram.runtime.layout.DiagramLayoutUtil;
+import org.osate.ge.internal.diagram.runtime.layout.IncrementalLayoutUtil;
 import org.osate.ge.internal.diagram.runtime.updating.DiagramUpdater;
 import org.osate.ge.internal.graphiti.GraphitiAgeDiagramProvider;
 import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram;
@@ -101,13 +101,7 @@ public class ConfigureDiagramFeature extends AbstractCustomFeature implements IC
 				// Clear ghosts triggered by this update to prevent them from being unghosted during the next update.
 				diagramUpdater.clearGhosts();
 				
-				// Perform the layout as a separate operation because the sizes for the shapes are assigned by the Graphiti modification listener.
-				diagram.modify("Layout", new DiagramModifier() {
-					@Override
-					public void modify(final DiagramModification m) {
-						DiagramLayoutUtil.layout(diagram, m, false);
-					}
-				});
+				diagram.modify("Layout", m -> IncrementalLayoutUtil.layout(diagram, m));
 			}
 		}
 	}

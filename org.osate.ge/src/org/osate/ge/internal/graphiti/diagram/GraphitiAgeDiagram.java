@@ -491,16 +491,19 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		// and because there are issues when recreating the graphics algorithm of connections. Upon update, the connections may disappear.
 		if (pe instanceof Shape) {
 			final Shape shape = (Shape) pe;
-			final int width = Math.max(10, (int) Math.round(de.getWidth()));
-			final int height = Math.max(10, (int) Math.round(de.getHeight()));
-
 			// Set the position of the refreshed graphics algorithm
 			final IGaService gaService = Graphiti.getGaService();
 			final GraphicsAlgorithm newGa = gaService.createInvisibleRectangle(shape);
 			PropertyUtil.setIsStylingContainer(newGa, true);
 
-			// Set Size
-			gaService.setSize(newGa, width, height);
+			// Only set the size if it already has one assigned. Otherwise, leave it to the layout algorithm.
+			if (de.hasSize()) {
+				final int width = Math.max(10, (int) Math.round(de.getWidth()));
+				final int height = Math.max(10, (int) Math.round(de.getHeight()));
+
+				// Set Size
+				gaService.setSize(newGa, width, height);
+			}
 
 			// Set Position
 			final org.osate.ge.graphics.Point position = de.getPosition();
