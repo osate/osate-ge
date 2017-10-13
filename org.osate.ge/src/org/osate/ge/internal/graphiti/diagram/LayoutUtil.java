@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 import org.eclipse.graphiti.datatypes.IDimension;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.Text;
-import org.eclipse.graphiti.mm.algorithms.styles.Color;
 import org.eclipse.graphiti.mm.algorithms.styles.Point;
 import org.eclipse.graphiti.mm.pictograms.Connection;
 import org.eclipse.graphiti.mm.pictograms.ConnectionDecorator;
@@ -26,8 +25,6 @@ import org.eclipse.graphiti.ui.services.GraphitiUi;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.LabelPosition;
 import org.osate.ge.graphics.Style;
-import org.osate.ge.graphics.StyleBuilder;
-import org.osate.ge.graphics.internal.AgeShape;
 import org.osate.ge.graphics.internal.Label;
 import org.osate.ge.graphics.internal.Poly;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
@@ -39,7 +36,6 @@ import org.osate.ge.internal.diagram.runtime.DockArea;
 import org.osate.ge.internal.graphiti.AnchorNames;
 import org.osate.ge.internal.graphiti.ShapeNames;
 import org.osate.ge.internal.graphiti.graphics.AgeGraphitiGraphicsUtil;
-import org.osate.ge.internal.ui.editor.StyleUtil;
 
 /**
  * Helper class for performing layout. Layout includes positioning child shapes and updating the graphics algorithm.
@@ -152,13 +148,8 @@ class LayoutUtil {
 						throw new RuntimeException(
 								"Unsupported connection child graphic: " + decorationElement.getGraphic());
 					}
-
-					refreshStyle(graphitiDiagram, cd, decorationElement, coloringProvider, mapping);
 				}
 			}
-
-			// Set the color
-			refreshStyle(graphitiDiagram, pe, element, coloringProvider, mapping);
 		}
 	}
 
@@ -323,7 +314,6 @@ class LayoutUtil {
 							mod.setSize(element,
 									new org.osate.ge.internal.diagram.runtime.Dimension(shapeGa.getWidth(), shapeGa.getHeight()));
 						}
-
 						// Position docked shapes
 						for (final Entry<DockArea, List<Shape>> dockAreaToShapesEntry : dockAreaToShapesMap.entrySet()) {
 							for (final Shape childShape : dockAreaToShapesEntry.getValue()) {
@@ -355,7 +345,6 @@ class LayoutUtil {
 										childGa.setY(innerBottom - dockedShapeOffset - childGa.getHeight());
 										break;
 									}
-
 								}
 							}
 						}
@@ -459,8 +448,6 @@ class LayoutUtil {
 							}
 						}
 
-						// Set the color
-						refreshStyle(graphitiDiagram, shape, element, coloringProvider, diagramNodeProvider);
 	}
 
 	/**
@@ -752,68 +739,5 @@ class LayoutUtil {
 		}
 
 		return results;
-	}
-
-	public static void refreshStyle(final Diagram graphitiDiagram, final PictogramElement pe,
-			final DiagramElement element, final ColoringProvider coloringProvider, final NodePictogramBiMap mapping) {
-		final Style finalStyle = getFinalStyle(element, coloringProvider);
-		final org.osate.ge.graphics.Color finalOutline = finalStyle.getOutlineColor();
-		final org.osate.ge.graphics.Color finalBackground = finalStyle.getBackgroundColor();
-		final org.osate.ge.graphics.Color finalFontColor = finalStyle.getFontColor();
-
-		final Color foreground = Graphiti.getGaService().manageColor(graphitiDiagram, finalOutline.getRed(),
-				finalOutline.getGreen(), finalOutline.getBlue());
-		final Color background = Graphiti.getGaService().manageColor(graphitiDiagram, finalBackground.getRed(),
-				finalBackground.getGreen(), finalBackground.getBlue());
-		final Color fontColor = Graphiti.getGaService().manageColor(graphitiDiagram, finalFontColor.getRed(),
-				finalFontColor.getGreen(), finalFontColor.getBlue());
-
-		// Background color is not supported for label diagram elements. Get the first containing diagram element that is represented by a shape
-		final DiagramElement labelContainerShape = element.getGraphic() instanceof Label
-				? getContainingUndockedShapeDiagramElement(element)
-						: element;
-
-				Color labelBackground = background;
-				if (labelContainerShape != null) {
-					final boolean labelsAreOutside = finalStyle.getHorizontalLabelPosition().isOutside()
-							|| finalStyle.getVerticalLabelPosition().isOutside();
-
-					// Get the diagram element which is behind the label.
-					final DiagramElement labelBackgroundDiagramElement = labelsAreOutside
-							? getContainingUndockedShapeDiagramElement(labelContainerShape)
-									: labelContainerShape;
-
-							if (labelBackgroundDiagramElement != null) {
-								final org.osate.ge.graphics.Color geLabelBackground = getFinalStyle(labelBackgroundDiagramElement,
-										coloringProvider).getBackgroundColor();
-								labelBackground = Graphiti.getGaService().manageColor(graphitiDiagram, geLabelBackground.getRed(),
-										geLabelBackground.getGreen(), geLabelBackground.getBlue());
-							}
-				}
-
-				StyleUtil.overrideStyle(pe, background, foreground, labelBackground, fontColor,
-						(int) Math.round(finalStyle.getLineWidth()), element.getGraphic() instanceof Label);
-	}
-
-	private static DiagramElement getContainingUndockedShapeDiagramElement(final DiagramElement de) {
-		for (DiagramNode tmp = de.getParent(); tmp instanceof DiagramElement; tmp = tmp.getParent()) {
-			final DiagramElement tmpElement = (DiagramElement) tmp;
-			if (tmpElement.getGraphic() instanceof AgeShape && tmpElement.getDockArea() == null) {
-				return tmpElement;
-			}
-		}
-
-		return null;
-	}
-
-	private static Style getFinalStyle(final DiagramElement de, final ColoringProvider coloringProvider) {
-		final StyleBuilder sb = StyleBuilder.create(de.getStyle(), de.getGraphicalConfiguration().style, Style.DEFAULT);
-
-		org.osate.ge.graphics.Color foregroundColor = coloringProvider.getForegroundColor(de);
-		if (foregroundColor != null) {
-			sb.foregroundColor(foregroundColor);
-		}
-
-		return sb.build();
 	}
 }
