@@ -29,11 +29,12 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE DATA OR THE USE OR OTHER DEALINGS
  *******************************************************************************/
 package org.osate.ge.internal.diagram.runtime.layout;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.osate.ge.DockingPosition;
@@ -46,6 +47,7 @@ import org.osate.ge.internal.diagram.runtime.DiagramModification;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.DockArea;
 import org.osate.ge.internal.preferences.Preferences;
+import org.osate.ge.internal.query.Queryable;
 
 /**
  * Performs incremental layout on the diagram.
@@ -85,7 +87,7 @@ public class IncrementalLayoutUtil {
 
 		final boolean preferLayoutContainer = currentLayoutMode != IncrementalLayoutMode.LAYOUT_CONTENTS;
 		final List<DiagramNode> nodesToLayout = DiagramElementLayoutUtil
-				.filterUnusedNodes(getDiagramNodesToLayout(diagram, preferLayoutContainer, new ArrayList<>()));
+				.filterUnusedNodes(getDiagramNodesToLayout(diagram, preferLayoutContainer, new HashSet<>()));
 
 		if (nodesToLayout.size() == 0) {
 			return;
@@ -158,13 +160,12 @@ public class IncrementalLayoutUtil {
 
 	// TODO: Rename. Similar to what is in LayoutUtil
 	// TODO: Document what alwaysLayoutContainer is. Could pass mode instead? Rename? prefer?
-	private static List<DiagramNode> getDiagramNodesToLayout(final DiagramNode node,
+	private static Set<DiagramNode> getDiagramNodesToLayout(final DiagramNode node,
 			final boolean alwaysLayoutContainer,
-			final List<DiagramNode> results) {
+			final Set<DiagramNode> results) {
 
 		for (final DiagramElement child : node.getDiagramElements()) {
 			// TODO: Handle case there the node is added after the child is.. Don't want to layout both the child and the parent.
-
 			if (DiagramElementPredicates.isShape(child)) {
 				// TODO: Rename
 				final boolean positionIsSet = child.hasPosition() || !DiagramElementPredicates.isMoveable(child);
@@ -179,7 +180,7 @@ public class IncrementalLayoutUtil {
 						getDiagramNodesToLayout(child, alwaysLayoutContainer, results);
 					} else {
 						// If always layout container is specified, layout container
-						// If container does not have any layed outshapes, layout container.
+						// If container does not have any layed out shapes, layout container.
 						final boolean layoutContainer = alwaysLayoutContainer
 								|| !hasLayedOutShapes(node.getDiagramElements());
 						if (layoutContainer) {
@@ -188,6 +189,16 @@ public class IncrementalLayoutUtil {
 						} else {
 							results.add(child);
 						}
+					}
+				}
+			} else if (DiagramElementPredicates.isConnection(child) && alwaysLayoutContainer
+					&& child.getStartElement() != null && child.getEndElement() != null) {
+				// Only layout the connection if its bendpoints have not been set regardless of whether it has any bendpoints.
+				if (!child.isBendpointsSet()) {
+					final Optional<Queryable> ancestor = Queryable.getFirstCommonAncestor(
+							child.getStartElement().getContainer(), child.getEndElement().getContainer());
+					if (ancestor.isPresent()) {
+						results.add((DiagramNode) ancestor.get());
 					}
 				}
 			}

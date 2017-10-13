@@ -177,14 +177,17 @@ public class DiagramElementLayoutUtil {
 			if(element instanceof ElkNode) {
 				final ElkNode n = (ElkNode) element;
 
-				PortConstraints portConstraints = PortConstraints.FIXED_SIDE;
-				if(n.getPorts().size() == 0) {
-					// Don't constrain ports if there aren't any. As of 2017-10-11, FIXED_POS can affect the layout even if the node does not contain ports.
-					// TODO: What about FIXED_SIDE?
-					portConstraints = PortConstraints.FREE;
-				}
+//				PortConstraints portConstraints = PortConstraints.FIXED_SIDE;
+//				if(n.getPorts().size() == 0) {
+//					// Don't constrain ports if there aren't any. As of 2017-10-11, FIXED_POS can affect the layout even if the node does not contain ports.
+//					// TODO: What about FIXED_SIDE?
+//					portConstraints = PortConstraints.FREE;
+//				}
+				// TODO: Don't fix side? Algorithm seems to do it automatically and this allows for exceptions in the case of provides and requires.
+				PortConstraints portConstraints = PortConstraints.FREE;
 
 				n.setProperty(CoreOptions.PORT_CONSTRAINTS, portConstraints);
+
 			} else if (element instanceof ElkPort) {
 				final ElkPort p = (ElkPort) element;
 				final DiagramElement de = (DiagramElement) layoutMapping.getGraphMap().get(p);
@@ -227,6 +230,7 @@ public class DiagramElementLayoutUtil {
 		}
 	}
 
+	// TODO: Rename? Takes any collection. Creates list.
 	/**
 	 * Returns a list which contains the specified diagram nodes with unused nodes removed. It removes nodes which are not shapes or that have an ancestor in the specified list.
 	 * @param diagramNodes
@@ -284,8 +288,8 @@ public class DiagramElementLayoutUtil {
 		final LayoutMapping mapping = new LayoutMapping(null);
 		final ElkNode rootNode = ElkGraphUtil.createGraph();
 		rootNode.setProperty(CoreOptions.DIRECTION, Direction.RIGHT);
-		// rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.INCLUDE_CHILDREN);
-		rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.SEPARATE_CHILDREN);
+		rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.INCLUDE_CHILDREN);
+		// rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.SEPARATE_CHILDREN);
 
 		if (rootDiagramNode instanceof AgeDiagram) {
 			final ElkNode diagramElkNode = ElkGraphUtil.createNode(rootNode);
@@ -611,31 +615,35 @@ public class DiagramElementLayoutUtil {
 							// TODO: Understand edge section fields.
 							// TODO: Coordinate transformations.
 
-							final Point parentPosition = getAbsolutePosition(de2.getContainer());
-							final Point elkContainerPosition = getAbsolutePosition(
-									(DiagramNode) mapping.getGraphMap().get(edge.getContainingNode()));
-							final double offsetX = elkContainerPosition.x;// - parentPosition.x; // TODO: Double
-							final double offsetY = elkContainerPosition.y;// - parentPosition.y; // TODO: Double
+							if(es.getBendPoints().size() == 0)  {
+								m.setBendpoints(de2, Collections.emptyList());
+							} else {
+								final Point parentPosition = getAbsolutePosition(de2.getContainer());
+								final Point elkContainerPosition = getAbsolutePosition(
+										(DiagramNode) mapping.getGraphMap().get(edge.getContainingNode()));
+								final double offsetX = elkContainerPosition.x;// - parentPosition.x; // TODO: Double
+								final double offsetY = elkContainerPosition.y;// - parentPosition.y; // TODO: Double
 
-							final List<Point> newBendpoints;
-							newBendpoints = new ArrayList<>(2 + es.getBendPoints().size());
-							// TODO: Could have no bendpoints but have a start and end point..
-							// TODO: Starting and ending points. Usage allows more accurately using ELK layout but causes problems with connection
-							// endings. Fix!
+								final List<Point> newBendpoints;
+								newBendpoints = new ArrayList<>(2 + es.getBendPoints().size());
+								// TODO: Could have no bendpoints but have a start and end point..
+								// TODO: Starting and ending points. Usage allows more accurately using ELK layout but causes problems with connection
+								// endings. Fix!
 
-							// TODO: Need to have a offset for the start and end points... Need to work if there are no bendpoints.
+								// TODO: Need to have a offset for the start and end points... Need to work if there are no bendpoints.
 
-							newBendpoints.add(new Point(es.getStartX() + offsetX, es.getStartY() + offsetY));
+								newBendpoints.add(new Point(es.getStartX() + offsetX, es.getStartY() + offsetY));
 
-							es.getBendPoints().stream().map(bp -> new Point(bp.getX() + offsetX, bp.getY() + offsetY))
-							.forEachOrdered(newBendpoints::add);
+								es.getBendPoints().stream().map(bp -> new Point(bp.getX() + offsetX, bp.getY() + offsetY))
+								.forEachOrdered(newBendpoints::add);
 
-							newBendpoints.add(new Point(es.getEndX() + offsetX, es.getEndY() + offsetY));
-							newBendpoints.set(0, getAdjacentPoint(newBendpoints.get(0), newBendpoints.get(1), 4));
-							newBendpoints.set(newBendpoints.size() - 1,
-									getAdjacentPoint(newBendpoints.get(newBendpoints.size() - 1),
-											newBendpoints.get(newBendpoints.size() - 2), 4));
-							m.setBendpoints(de2, newBendpoints);
+								newBendpoints.add(new Point(es.getEndX() + offsetX, es.getEndY() + offsetY));
+								newBendpoints.set(0, getAdjacentPoint(newBendpoints.get(0), newBendpoints.get(1), 4));
+								newBendpoints.set(newBendpoints.size() - 1,
+										getAdjacentPoint(newBendpoints.get(newBendpoints.size() - 1),
+												newBendpoints.get(newBendpoints.size() - 2), 4));
+								m.setBendpoints(de2, newBendpoints);
+							}
 
 							cwsCount++;
 						}
