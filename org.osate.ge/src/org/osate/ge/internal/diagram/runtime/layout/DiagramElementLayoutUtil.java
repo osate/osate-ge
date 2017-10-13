@@ -632,35 +632,31 @@ public class DiagramElementLayoutUtil {
 							// TODO: Understand edge section fields.
 							// TODO: Coordinate transformations.
 
-							if(es.getBendPoints().size() == 0)  {
-								m.setBendpoints(de2, Collections.emptyList());
-							} else {
-								final Point parentPosition = getAbsolutePosition(de2.getContainer());
-								final Point elkContainerPosition = getAbsolutePosition(
-										(DiagramNode) mapping.getGraphMap().get(edge.getContainingNode()));
-								final double offsetX = elkContainerPosition.x;// - parentPosition.x; // TODO: Double
-								final double offsetY = elkContainerPosition.y;// - parentPosition.y; // TODO: Double
+							final Point parentPosition = getAbsolutePosition(de2.getContainer());
+							final Point elkContainerPosition = getAbsolutePosition(
+									(DiagramNode) mapping.getGraphMap().get(edge.getContainingNode()));
+							final double offsetX = elkContainerPosition.x;// - parentPosition.x; // TODO: Double
+							final double offsetY = elkContainerPosition.y;// - parentPosition.y; // TODO: Double
 
-								final List<Point> newBendpoints;
-								newBendpoints = new ArrayList<>(2 + es.getBendPoints().size());
-								// TODO: Could have no bendpoints but have a start and end point..
-								// TODO: Starting and ending points. Usage allows more accurately using ELK layout but causes problems with connection
-								// endings. Fix!
+							final List<Point> newBendpoints;
+							newBendpoints = new ArrayList<>(2 + es.getBendPoints().size());
+							// TODO: Could have no bendpoints but have a start and end point..
+							// TODO: Starting and ending points. Usage allows more accurately using ELK layout but causes problems with connection
+							// endings. Fix!
 
-								// TODO: Need to have a offset for the start and end points... Need to work if there are no bendpoints.
+							// TODO: Need to have a offset for the start and end points... Need to work if there are no bendpoints.
 
-								newBendpoints.add(new Point(es.getStartX() + offsetX, es.getStartY() + offsetY));
+							newBendpoints.add(new Point(es.getStartX() + offsetX, es.getStartY() + offsetY));
 
-								es.getBendPoints().stream().map(bp -> new Point(bp.getX() + offsetX, bp.getY() + offsetY))
-								.forEachOrdered(newBendpoints::add);
+							es.getBendPoints().stream().map(bp -> new Point(bp.getX() + offsetX, bp.getY() + offsetY))
+									.forEachOrdered(newBendpoints::add);
 
-								newBendpoints.add(new Point(es.getEndX() + offsetX, es.getEndY() + offsetY));
-								newBendpoints.set(0, getAdjacentPoint(newBendpoints.get(0), newBendpoints.get(1), 4));
-								newBendpoints.set(newBendpoints.size() - 1,
-										getAdjacentPoint(newBendpoints.get(newBendpoints.size() - 1),
-												newBendpoints.get(newBendpoints.size() - 2), 4));
-								m.setBendpoints(de2, newBendpoints);
-							}
+							newBendpoints.add(new Point(es.getEndX() + offsetX, es.getEndY() + offsetY));
+							newBendpoints.set(0, getAdjacentPoint(newBendpoints.get(0), newBendpoints.get(1), 4));
+							newBendpoints.set(newBendpoints.size() - 1,
+									getAdjacentPoint(newBendpoints.get(newBendpoints.size() - 1),
+											newBendpoints.get(newBendpoints.size() - 2), 4));
+							m.setBendpoints(de2, newBendpoints);
 
 							cwsCount++;
 						}

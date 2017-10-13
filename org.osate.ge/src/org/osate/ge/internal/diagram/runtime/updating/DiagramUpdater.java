@@ -1,6 +1,7 @@
 package org.osate.ge.internal.diagram.runtime.updating;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -39,7 +40,7 @@ public class DiagramUpdater {
 
 	// Holds information regarding diagram elements which have not been created. The DiagramNode is the parent of the new element.
 	// The Point is the position. It may be null to indicate that an element should be added as a manually added element but that a position hasn't been specified.
-	private final Map<DiagramNode, Map<RelativeBusinessObjectReference, Point>> futureElementPositionMap = new HashMap<>();
+	private final Map<DiagramNode, Map<RelativeBusinessObjectReference, Point>> futureElementToPositionMap = new HashMap<>();
 
 	public DiagramUpdater(final TreeUpdater boTreeExpander,
 			final DiagramElementInformationProvider infoProvider) {
@@ -56,10 +57,10 @@ public class DiagramUpdater {
 	public void addToNextUpdate(final DiagramNode parentDiagramNode,
 			final RelativeBusinessObjectReference ref,
 			final Point newElementPosition) {
-		Map<RelativeBusinessObjectReference, Point> m = futureElementPositionMap.get(parentDiagramNode);
+		Map<RelativeBusinessObjectReference, Point> m = futureElementToPositionMap.get(parentDiagramNode);
 		if(m == null) {
 			m = new HashMap<>();
-			futureElementPositionMap.put(parentDiagramNode, m);
+			futureElementToPositionMap.put(parentDiagramNode, m);
 		}
 		m.put(ref, newElementPosition);
 	}
@@ -68,7 +69,7 @@ public class DiagramUpdater {
 	// As part of the update process the auto content filter settings may be cleared for non-manual nodes.
 	public void updateDiagram(final AgeDiagram diagram) {
 		// Create an updated business object tree based on the current state of the diagram and pending elements
-		final BusinessObjectNode tree = DiagramToBusinessObjectTreeConverter.createBusinessObjectNode(diagram, futureElementPositionMap, containerToRelativeReferenceToGhostMap);
+		final BusinessObjectNode tree = DiagramToBusinessObjectTreeConverter.createBusinessObjectNode(diagram, futureElementToPositionMap, containerToRelativeReferenceToGhostMap);
 		updateDiagram(diagram, tree);
 	}
 
@@ -92,7 +93,7 @@ public class DiagramUpdater {
 		});
 
 		// Remove all entries from the future elements map regardless of whether they were created or not. This ensures that unused positions aren't retained indefinitely
-		futureElementPositionMap.clear();
+		futureElementToPositionMap.clear();
 	}
 
 	/**
@@ -224,8 +225,9 @@ public class DiagramUpdater {
 
 				// Set the initial position if there is a value in the future element position map
 				// Set the position after the dock area so that setPosition() will know whether the element is dockable.
-				final Map<RelativeBusinessObjectReference, Point> futureElementPositions = futureElementPositionMap.get(container);
-				final Point initialPosition = futureElementPositions == null ? null : futureElementPositions.get(n.getRelativeReference());
+				final Map<RelativeBusinessObjectReference, Point> futureElementPositions = futureElementToPositionMap.get(container);
+				final boolean isInFutureElementMap = futureElementPositions == null ? false : futureElementPositions.containsKey(n.getRelativeReference());
+				final Point initialPosition = isInFutureElementMap ? futureElementPositions.get(n.getRelativeReference()) : null;
 				if(initialPosition != null) {
 					m.setPosition(element, initialPosition);
 				}
@@ -233,6 +235,12 @@ public class DiagramUpdater {
 				if(element.getGraphic() instanceof AgeConnection) {
 					// Add connection elements to the list so that they can be access later.
 					connectionElements.add(element);
+
+					// Set the bend points of the connection to prevent an incremental layout
+					if (isInFutureElementMap) {
+						System.err.println("SETTING BENDPOINTS");
+						m.setBendpoints(element, Collections.emptyList());
+					}
 				}
 
 				// Update the element's children
