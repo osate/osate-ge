@@ -177,16 +177,33 @@ public class DiagramElementLayoutUtil {
 			if(element instanceof ElkNode) {
 				final ElkNode n = (ElkNode) element;
 
-//				PortConstraints portConstraints = PortConstraints.FIXED_SIDE;
-//				if(n.getPorts().size() == 0) {
-//					// Don't constrain ports if there aren't any. As of 2017-10-11, FIXED_POS can affect the layout even if the node does not contain ports.
-//					// TODO: What about FIXED_SIDE?
-//					portConstraints = PortConstraints.FREE;
-//				}
+				PortConstraints portConstraints = PortConstraints.FIXED_SIDE;
+				if (n.getPorts().size() == 0) {
+					// Don't constrain ports if there aren't any. As of 2017-10-11, FIXED_POS can affect the layout even if the node does not contain ports.
+					// TODO: What about FIXED_SIDE?
+					portConstraints = PortConstraints.FREE;
+				}
 				// TODO: Don't fix side? Algorithm seems to do it automatically and this allows for exceptions in the case of provides and requires.
-				PortConstraints portConstraints = PortConstraints.FREE;
+				// PortConstraints portConstraints = PortConstraints.FREE;
 
 				n.setProperty(CoreOptions.PORT_CONSTRAINTS, portConstraints);
+
+				// TODO: Set the minimum size
+				// The node size constraints for labels doesn't seem to work properly
+				// TODO: Create test case and report
+				double minWidth = 200;
+				double minHeight = 100;
+
+				// TODO: Only do this based on node placements
+				for (final ElkLabel l : n.getLabels()) {
+					// TODO: TBD padding. Sometimes labels aren't shifted all the way to the edge by ELK so padding is needed. Property to adjust.
+					// Is this due to being positioned away from ports? Any ways to tell it to clear area for labels?
+					minWidth = Math.max(minWidth, l.getWidth() + 50);
+					minHeight = Math.max(minHeight, l.getHeight());
+				}
+
+				// TODO: Remove the other setting of the minimum node size
+				n.setProperty(CoreOptions.NODE_SIZE_MINIMUM, new KVector(minWidth, minHeight));
 
 			} else if (element instanceof ElkPort) {
 				final ElkPort p = (ElkPort) element;
