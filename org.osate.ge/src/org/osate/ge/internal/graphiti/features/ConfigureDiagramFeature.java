@@ -17,7 +17,7 @@ import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.boTree.BusinessObjectNode;
 import org.osate.ge.internal.diagram.runtime.boTree.DiagramToBusinessObjectTreeConverter;
 import org.osate.ge.internal.diagram.runtime.boTree.TreeUpdater;
-import org.osate.ge.internal.diagram.runtime.layout.IncrementalLayoutUtil;
+import org.osate.ge.internal.diagram.runtime.layout.DiagramElementLayoutUtil;
 import org.osate.ge.internal.diagram.runtime.updating.DiagramUpdater;
 import org.osate.ge.internal.graphiti.GraphitiAgeDiagramProvider;
 import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram;
@@ -34,9 +34,9 @@ public class ConfigureDiagramFeature extends AbstractCustomFeature implements IC
 	private final ProjectReferenceService referenceService;
 	private final ExtensionService extService;
 	private final ProjectProvider projectProvider;
-	
+
 	@Inject
-	public ConfigureDiagramFeature(final IFeatureProvider fp, 
+	public ConfigureDiagramFeature(final IFeatureProvider fp,
 			final TreeUpdater boTreeExpander,
 			final DiagramUpdater diagramUpdater,
 			final GraphitiAgeDiagramProvider graphitiAgeDiagramProvider,
@@ -61,19 +61,19 @@ public class ConfigureDiagramFeature extends AbstractCustomFeature implements IC
 	public boolean canExecute(final ICustomContext context) {
 		return true;
 	}
-	
+
 	@Override
 	public void execute(final ICustomContext context) {
 		final GraphitiAgeDiagram graphitiAgeDiagram = graphitiAgeDiagramProvider.getGraphitiAgeDiagram();
 		final AgeDiagram diagram = graphitiAgeDiagram.getAgeDiagram();
-		
+
 		BusinessObjectNode boTree = DiagramToBusinessObjectTreeConverter.createBusinessObjectNode(diagram);
-		
+
 		// Update the tree so that it's business objects are refreshed
 		boTree = boTreeExpander.expandTree(diagram.getConfiguration(), boTree, diagram.getMaxElementId() + 1);
-		
-		final long nextElementId = BusinessObjectNode.getMaxId(boTree) + 1; 
-		
+
+		final long nextElementId = BusinessObjectNode.getMaxId(boTree) + 1;
+
 		try(final DefaultDiagramConfigurationDialogModel model = new DefaultDiagramConfigurationDialogModel(referenceService, extService, projectProvider, nextElementId)) {
 			// Create a BO path for the initial selection
 			Object[] initialSelectionBoPath = null;
@@ -87,31 +87,31 @@ public class ConfigureDiagramFeature extends AbstractCustomFeature implements IC
 						boList.addFirst(tmp.getBusinessObject());
 						tmp = tmp.getParent();
 					}
-					
+
 					initialSelectionBoPath = boList.toArray();
-				}				
-			}			
-			
-		    // Show the dialog
+				}
+			}
+
+			// Show the dialog
 			final DiagramConfigurationDialog.Result result = DiagramConfigurationDialog.show(null, model, diagram.getConfiguration(), boTree, initialSelectionBoPath);
 			if(result != null) {
 				diagram.setDiagramConfiguration(result.getDiagramConfiguration());
 				diagramUpdater.updateDiagram(diagram, result.getBusinessObjectTree());
-	
+
 				// Clear ghosts triggered by this update to prevent them from being unghosted during the next update.
 				diagramUpdater.clearGhosts();
-				
-				diagram.modify("Layout", m -> IncrementalLayoutUtil.layout(diagram, m));
+
+				diagram.modify("Layout", m -> DiagramElementLayoutUtil.layoutIncrementally(diagram, m));
 			}
 		}
 	}
-	
+
 	// ICustomUndoRedoFeature
 	@Override
 	public boolean canUndo(final IContext context) {
 		return false;
 	}
-	
+
 	@Override
 	public void preUndo(final IContext context) {
 	}

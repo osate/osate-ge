@@ -5,7 +5,7 @@ import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.osate.ge.internal.Activator;
-import org.osate.ge.internal.diagram.runtime.layout.IncrementalLayoutUtil;
+import org.osate.ge.internal.diagram.runtime.layout.IncrementalLayoutMode;
 import org.osate.ge.internal.preferences.Preferences;
 
 public class AgePreferencePage extends FieldEditorPreferencePage implements IWorkbenchPreferencePage {
@@ -23,8 +23,8 @@ public class AgePreferencePage extends FieldEditorPreferencePage implements IWor
 
 	private static String[][] getIncrementalUpdateModeNamesAndLabels() {
 		return new String[][] {
-			new String[] { "Diagram", IncrementalLayoutUtil.IncrementalLayoutMode.LAYOUT_DIAGRAM.id },
-			new String[] { "Container", IncrementalLayoutUtil.IncrementalLayoutMode.LAYOUT_CONTAINER.id },
-			new String[] { "Contents", IncrementalLayoutUtil.IncrementalLayoutMode.LAYOUT_CONTENTS.id } };
+				new String[] { "Diagram", IncrementalLayoutMode.LAYOUT_DIAGRAM.id },
+				new String[] { "Container", IncrementalLayoutMode.LAYOUT_CONTAINER.id },
+				new String[] { "Contents", IncrementalLayoutMode.LAYOUT_CONTENTS.id } };
 	}
 }

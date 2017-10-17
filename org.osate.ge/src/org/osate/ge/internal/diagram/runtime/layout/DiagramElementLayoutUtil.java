@@ -1,35 +1,28 @@
 package org.osate.ge.internal.diagram.runtime.layout;
 
-import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.elk.core.IGraphLayoutEngine;
 import org.eclipse.elk.core.RecursiveGraphLayoutEngine;
 import org.eclipse.elk.core.math.KVector;
 import org.eclipse.elk.core.options.CoreOptions;
-import org.eclipse.elk.core.options.Direction;
-import org.eclipse.elk.core.options.HierarchyHandling;
-import org.eclipse.elk.core.options.NodeLabelPlacement;
 import org.eclipse.elk.core.options.PortConstraints;
-import org.eclipse.elk.core.options.PortLabelPlacement;
 import org.eclipse.elk.core.options.PortSide;
-import org.eclipse.elk.core.options.SizeConstraint;
 import org.eclipse.elk.core.service.LayoutMapping;
 import org.eclipse.elk.core.util.BasicProgressMonitor;
 import org.eclipse.elk.core.util.ElkUtil;
 import org.eclipse.elk.core.util.IGraphElementVisitor;
-import org.eclipse.elk.graph.ElkConnectableShape;
 import org.eclipse.elk.graph.ElkEdge;
 import org.eclipse.elk.graph.ElkEdgeSection;
 import org.eclipse.elk.graph.ElkGraphElement;
@@ -37,26 +30,13 @@ import org.eclipse.elk.graph.ElkLabel;
 import org.eclipse.elk.graph.ElkNode;
 import org.eclipse.elk.graph.ElkPort;
 import org.eclipse.elk.graph.ElkShape;
-import org.eclipse.elk.graph.util.ElkGraphUtil;
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorPart;
-import org.eclipse.ui.IViewPart;
-import org.eclipse.ui.IWorkbenchPart;
-import org.eclipse.ui.PlatformUI;
+import org.osate.ge.DockingPosition;
 import org.osate.ge.graphics.Point;
-import org.osate.ge.graphics.Style;
-import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.AgeConnection;
 import org.osate.ge.graphics.internal.AgeShape;
 import org.osate.ge.graphics.internal.Label;
-import org.osate.ge.internal.AgeDiagramProvider;
+import org.osate.ge.internal.Activator;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramElementPredicates;
@@ -64,9 +44,12 @@ import org.osate.ge.internal.diagram.runtime.DiagramModification;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.Dimension;
 import org.osate.ge.internal.diagram.runtime.DockArea;
+import org.osate.ge.internal.preferences.Preferences;
+import org.osate.ge.internal.query.Queryable;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 
 public class DiagramElementLayoutUtil {
+	private static final String incrementalLayoutLabel = "Incremental Layout";
 	private static final String layoutAlgorithm = "org.eclipse.elk.layered";
 
 	public static void layout(final String label, final IEditorPart editor,
@@ -110,7 +93,7 @@ public class DiagramElementLayoutUtil {
 		// Layout the nodes
 		final IGraphLayoutEngine layoutEngine = new RecursiveGraphLayoutEngine(); // TODO: Move
 		for (final DiagramNode dn : nodesToLayout) {
-			final LayoutMapping mapping = buildLayoutGraph(dn);
+			final LayoutMapping mapping = ElkGraphBuilder.buildLayoutGraph(dn);
 
 			mapping.getLayoutGraph().setProperty(CoreOptions.ALGORITHM, layoutAlgorithm);
 
@@ -118,7 +101,7 @@ public class DiagramElementLayoutUtil {
 			applyInitialProperties(mapping, options);
 
 			// TODO: Only during development
-			saveGraphToDebugProject(mapping.getLayoutGraph());
+			LayoutDebugUtil.saveGraphToDebugProject(mapping.getLayoutGraph());
 
 			// Perform the layout
 			layoutEngine.layout(mapping.getLayoutGraph(), new BasicProgressMonitor());
@@ -130,44 +113,145 @@ public class DiagramElementLayoutUtil {
 			applyLayout(mapping, m);
 
 			// TODO: Only during development
-			showGraphInLayoutGraphView(mapping.getLayoutGraph());
+			LayoutDebugUtil.showGraphInLayoutGraphView(mapping.getLayoutGraph());
 		}
 	}
 
-	private static void saveGraphToDebugProject(final ElkNode g) {
-		final IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject("debug");
-		if(project != null && project.exists()) {
-			final URI uri = URI.createPlatformResourceURI(project.getFile("layout_graph.elkg").getFullPath().toString(),
-					true);
+	/**
+	 * Performs layout on elements in the specified diagram which have not been layed out.
+	 * @param diagram
+	 * @param mod
+	 */
+	public static void layoutIncrementally(final AgeDiagram diagram, final DiagramModification mod) {
+		final IncrementalLayoutMode currentLayoutMode = IncrementalLayoutMode
+				.getById(Activator.getDefault().getPreferenceStore().getString(Preferences.INCREMENTAL_LAYOUT_MODE))
+				.orElse(IncrementalLayoutMode.LAYOUT_CONTENTS);
 
-			// Save the resource
-			final ResourceSet rs = new ResourceSetImpl();
-			final Resource resource = rs.createResource(uri);
-			resource.getContents().add(g);
-			try {
-				resource.save(Collections.emptyMap());
-			} catch (IOException e) {
-				throw new RuntimeException(e);
-			}
+		final boolean preferLayoutContainer = currentLayoutMode != IncrementalLayoutMode.LAYOUT_CONTENTS;
+		final List<DiagramNode> nodesToLayout = DiagramElementLayoutUtil
+				.filterUnusedNodes(getNodesToLayoutIncrementally(diagram, preferLayoutContainer, new HashSet<>()));
+
+		if (nodesToLayout.size() == 0) {
+			return;
 		}
-	}
 
-	private static void showGraphInLayoutGraphView(final ElkNode n) {
-		Display.getCurrent().syncExec(() -> {
-			try {
-				final IViewPart viewPart = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
-						.showView("org.eclipse.elk.debug.graphView");
-				if (viewPart != null) {
-					final Method updateWithGraphMethod = viewPart.getClass().getMethod("updateWithGraph",
-							ElkNode.class);
-					updateWithGraphMethod.invoke(null, n);
+		if (currentLayoutMode == IncrementalLayoutMode.LAYOUT_DIAGRAM) {
+			DiagramElementLayoutUtil.layout(incrementalLayoutLabel, diagram, new LayoutOptionsBuilder().build());
+		} else {
+			DiagramElementLayoutUtil.layout(mod, nodesToLayout, new LayoutOptionsBuilder().build());
+
+			// Set Position. Need to do this when just laying out contents
+			// TODO: Improve algorithm.
+			for (final DiagramNode dn : nodesToLayout) {
+				if (dn instanceof DiagramElement) {
+					final DiagramElement de = (DiagramElement) dn;
+					if (!de.hasPosition()) {
+						if (de.getDockArea() == null) {
+							mod.setPosition(de, new Point(0.0, 0.0));
+						} else if (de.getDockArea() != DockArea.GROUP && de.getParent() instanceof DiagramElement) {
+							final DiagramElement parent = (DiagramElement) de.getParent();
+							final DockingPosition defaultDockingPosition = de
+									.getGraphicalConfiguration().defaultDockingPosition;
+							final DockArea defaultDockArea = defaultDockingPosition.getDockArea();
+
+							if (parent.hasSize()) {
+								// TODO: Rename?
+								final Stream<DiagramElement> others = parent.getDiagramElements().stream().filter(
+										c -> c.hasPosition() && c.hasSize() && c.getDockArea() == defaultDockArea);
+
+								double t; // TODO: Rename
+								if (defaultDockingPosition == DockingPosition.TOP
+										|| defaultDockingPosition == DockingPosition.BOTTOM) {
+									t = others.max(Comparator.comparingDouble(c -> c.getY()))
+											.map(c -> c.getX() + c.getWidth()).orElse(0.0);
+								} else {
+									t = others.max(Comparator.comparingDouble(c -> c.getY()))
+											.map(c -> c.getY() + c.getHeight()).orElse(0.0);
+								}
+
+								// TODO: Need padding
+								// TODO: Will this cause parent to resize?
+
+								// Set position based on the docking position
+								switch (defaultDockingPosition) {
+								case TOP:
+									mod.setPosition(de, new Point(t, 0));
+									break;
+								case BOTTOM:
+									mod.setPosition(de, new Point(t, parent.getHeight()));
+									break;
+								case LEFT:
+									mod.setPosition(de, new Point(0, t));
+									break;
+								case RIGHT:
+									mod.setPosition(de, new Point(parent.getWidth(), t));
+									break;
+								default:
+									break;
+								}
+							}
+
+							mod.setDockArea(de, defaultDockArea);
+						}
+					}
 				}
-			} catch (final Exception e) {
-				e.printStackTrace();
 			}
-		});
-
+		}
 	}
+
+	// TODO: Rename. Similar to what is in LayoutUtil
+	// TODO: Document what alwaysLayoutContainer is. Could pass mode instead? Rename? prefer?
+	private static Set<DiagramNode> getNodesToLayoutIncrementally(final DiagramNode node,
+			final boolean alwaysLayoutContainer, final Set<DiagramNode> results) {
+
+		for (final DiagramElement child : node.getDiagramElements()) {
+			// TODO: Handle case there the node is added after the child is.. Don't want to layout both the child and the parent.
+			if (DiagramElementPredicates.isShape(child)) {
+				// TODO: Rename
+				final boolean positionIsSet = child.hasPosition() || !DiagramElementPredicates.isMoveable(child);
+				final boolean sizeIsSet = child.hasSize() || !DiagramElementPredicates.isResizeable(child);
+
+				// The position is set but the size isn't, then layout the child.
+				// This occurs when a user has created an element using the palette
+				if (positionIsSet && !sizeIsSet) {
+					results.add(child);
+				} else {
+					if (sizeIsSet && positionIsSet) {
+						getNodesToLayoutIncrementally(child, alwaysLayoutContainer, results);
+					} else {
+						// If always layout container is specified, layout container
+						// If container does not have any layed out shapes, layout container.
+						final boolean layoutContainer = alwaysLayoutContainer
+								|| !hasLayedOutShapes(node.getDiagramElements());
+						if (layoutContainer) {
+							results.add(node);
+							break;
+						} else {
+							results.add(child);
+						}
+					}
+				}
+			} else if (DiagramElementPredicates.isConnection(child) && alwaysLayoutContainer
+					&& child.getStartElement() != null && child.getEndElement() != null) {
+				// Only layout the connection if its bendpoints have not been set regardless of whether it has any bendpoints.
+				if (!child.isBendpointsSet()) {
+					final Optional<Queryable> ancestor = Queryable.getFirstCommonAncestor(
+							child.getStartElement().getContainer(), child.getEndElement().getContainer());
+					if (ancestor.isPresent()) {
+						results.add((DiagramNode) ancestor.get());
+					}
+				}
+			}
+		}
+
+		return results;
+	}
+
+	private static boolean hasLayedOutShapes(final Collection<DiagramElement> diagramElements) {
+		return diagramElements.stream().anyMatch(de -> (de.hasPosition() || !DiagramElementPredicates.isMoveable(de))
+				&& (de.hasSize() || !DiagramElementPredicates.isResizeable(de)));
+	}
+
 
 // TODO: rename
 	private static void applyInitialProperties(final LayoutMapping layoutMapping, final LayoutOptions options) {
@@ -183,8 +267,6 @@ public class DiagramElementLayoutUtil {
 					// TODO: What about FIXED_SIDE?
 					portConstraints = PortConstraints.FREE;
 				}
-				// TODO: Don't fix side? Algorithm seems to do it automatically and this allows for exceptions in the case of provides and requires.
-				// PortConstraints portConstraints = PortConstraints.FREE;
 
 				n.setProperty(CoreOptions.PORT_CONSTRAINTS, portConstraints);
 
@@ -296,276 +378,6 @@ public class DiagramElementLayoutUtil {
 		}
 	}
 
-// TODO: Rename
-// TODO: Cleanup Rename.. Differnet return value?
-	private static LayoutMapping buildLayoutGraph(final DiagramNode rootDiagramNode) {
-		System.err.println("CREATING GRAPH LAYOUT");
-
-		// Create the graph
-		final LayoutMapping mapping = new LayoutMapping(null);
-		final ElkNode rootNode = ElkGraphUtil.createGraph();
-		rootNode.setProperty(CoreOptions.DIRECTION, Direction.RIGHT);
-		rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.INCLUDE_CHILDREN);
-		// rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.SEPARATE_CHILDREN);
-
-		if (rootDiagramNode instanceof AgeDiagram) {
-			final ElkNode diagramElkNode = ElkGraphUtil.createNode(rootNode);
-			mapping.getGraphMap().put(diagramElkNode, rootDiagramNode);
-			createElkGraphElementsForNonLabelChildShapes(rootDiagramNode, diagramElkNode, mapping);
-		} else if (rootDiagramNode instanceof DiagramElement) {
-			createElkGraphElementsForElements(Collections.singleton((DiagramElement) rootDiagramNode), rootNode,
-					mapping);
-		}
-
-		createElkGraphElementsForConnections(rootDiagramNode, mapping);
-
-		mapping.setLayoutGraph(rootNode);
-
-		return mapping;
-	}
-
-	private static void createElkGraphElementsForNonLabelChildShapes(final DiagramNode parentNode, final ElkNode parent,
-			final LayoutMapping mapping) {
-		createElkGraphElementsForElements(parentNode.getDiagramElements(), parent, mapping);
-	}
-
-	private static void createElkGraphElementsForElements(final Collection<DiagramElement> elements,
-			final ElkNode parent, final LayoutMapping mapping) {
-		// TODO: Share predicate
-		elements.stream().filter(de -> de.getGraphic() instanceof AgeShape && !(de.getGraphic() instanceof Label))
-		.forEachOrdered(de -> {
-			createElkGraphElementForNonLabelShape(de, parent, mapping)
-			.ifPresent(newLayoutElement -> createElkLabels(de, newLayoutElement, mapping));
-		});
-	}
-
-	private static Optional<ElkGraphElement> createElkGraphElementForNonLabelShape(final DiagramElement de,
-			final ElkNode layoutParent, final LayoutMapping mapping) {
-		if (de.getDockArea() == null) {
-			final ElkNode newNode = ElkGraphUtil.createNode(layoutParent);
-			mapping.getGraphMap().put(newNode, de);
-			setShapePositionAndSize(newNode, de);
-
-			newNode.setProperty(CoreOptions.PORT_LABELS_PLACEMENT, PortLabelPlacement.INSIDE);
-
-			// newNode.setProperty(LayeredOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.free()); // TODO: Should be configurable. Allows layout
-			final EnumSet<SizeConstraint> nodeSizeConstraints = EnumSet.of(SizeConstraint.PORTS,
-					SizeConstraint.MINIMUM_SIZE, SizeConstraint.NODE_LABELS);
-			newNode.setProperty(CoreOptions.NODE_SIZE_CONSTRAINTS, nodeSizeConstraints); // TODO: Should include port labels?
-
-			// TODO: MInimum size may not be an Issue
-			// TODO: SHouldn't have to set minimum size if ports are being taken into account and labels are the correct size
-			newNode.setProperty(CoreOptions.NODE_SIZE_MINIMUM, new KVector(200, 100));
-
-			newNode.setProperty(CoreOptions.INSIDE_SELF_LOOPS_ACTIVATE, true);
-
-			// Create Children
-			createElkGraphElementsForNonLabelChildShapes(de, newNode, mapping);
-
-			return Optional.ofNullable(newNode);
-		} else { // Docked
-			// Create Port
-			final ElkPort newPort = ElkGraphUtil.createPort(layoutParent);
-			mapping.getGraphMap().put(newPort, de);
-			setShapePositionAndSize(newPort, de);
-
-			// Don't create graph elements for children. ELK port cannot have child ports.
-
-			return Optional.ofNullable(newPort);
-		}
-	}
-
-	private static void setShapePositionAndSize(final ElkShape shape, final DiagramElement de) {
-		if (de.hasPosition()) {
-			shape.setLocation(de.getX(), de.getY());
-		}
-
-		if (de.hasSize()) {
-			shape.setDimensions(de.getWidth(), de.getHeight());
-		}
-	}
-
-	private static void createElkLabels(final DiagramElement parentElement, final ElkGraphElement parentLayoutElement,
-			final LayoutMapping mapping) {
-		// TODO: Sizing
-		// TODO: Connection labels are in incorrect position
-		// TODO: Feature labels are in incorrect position. PortLabelPosition property...
-
-		// Create Primary Label
-		if (parentElement.getName() != null) {
-			// TODO: Need completeness indicator.. Share with GraphitiAgeDiagram
-			createElkLabel(parentLayoutElement, parentElement.getName());
-			// TODO: Need some sort of mapping. Will be needed for connection labels
-		}
-
-		// Create Secondary Labels
-		parentElement.getDiagramElements().stream().filter(c -> c.getGraphic() instanceof Label)
-		.forEachOrdered(labelElement -> {
-			mapping.getGraphMap().put(createElkLabel(parentLayoutElement, labelElement.getName()),
-					labelElement);
-		});
-
-		;
-
-		// TODO: Have helper?
-		final Style style = StyleBuilder
-				.create(parentElement.getStyle(), parentElement.getGraphicalConfiguration().style, Style.DEFAULT)
-				.build();
-
-		if (parentLayoutElement instanceof ElkNode) {
-			// TODO: Need to get final style
-			parentLayoutElement.setProperty(CoreOptions.NODE_LABELS_PLACEMENT, getNodeLabelPlacement(style));
-		}
-	}
-
-	private static EnumSet<NodeLabelPlacement> getNodeLabelPlacement(final Style s) {
-		final EnumSet<NodeLabelPlacement> nodeLabelPlacement = EnumSet.noneOf(NodeLabelPlacement.class);
-
-		// TODO: Adjust API and AFTER_GRAPHIC and BEFORE_GRAPHIC to align with ELK's INSIDE and OUTSIDE
-		// TOOD: Check for null
-		// System.err.println(s.getHorizontalLabelPosition());
-		// System.err.println(s.getVerticalLabelPosition());
-
-		// TODO: Have some sort of default if one or both are null?
-
-		if (s.getHorizontalLabelPosition() != null) {
-			switch (s.getHorizontalLabelPosition()) {
-			case BEFORE_GRAPHIC:
-				nodeLabelPlacement.add(NodeLabelPlacement.H_LEFT);
-				break;
-				// Use center for all of these to avoid the layout algorithm from allocating a separate layer for the label
-			case GRAPHIC_BEGINNING:
-			case GRAPHIC_CENTER:
-			case GRAPHIC_END:
-				nodeLabelPlacement.add(NodeLabelPlacement.H_CENTER);
-				nodeLabelPlacement.add(NodeLabelPlacement.H_CENTER);
-				nodeLabelPlacement.add(NodeLabelPlacement.H_CENTER);
-				break;
-			case AFTER_GRAPHIC:
-				nodeLabelPlacement.add(NodeLabelPlacement.H_RIGHT);
-				break;
-			default:
-				break;
-			}
-		}
-
-		// TOOD: Check for null
-		if (s.getVerticalLabelPosition() != null) {
-			switch (s.getVerticalLabelPosition()) {
-			case BEFORE_GRAPHIC:
-				nodeLabelPlacement.add(NodeLabelPlacement.V_TOP);
-				break;
-			case GRAPHIC_BEGINNING:
-				nodeLabelPlacement.add(NodeLabelPlacement.V_TOP);
-				break;
-			case GRAPHIC_CENTER:
-				nodeLabelPlacement.add(NodeLabelPlacement.V_CENTER);
-				break;
-			case GRAPHIC_END:
-				nodeLabelPlacement.add(NodeLabelPlacement.V_BOTTOM);
-				break;
-			case AFTER_GRAPHIC:
-				nodeLabelPlacement.add(NodeLabelPlacement.V_BOTTOM);
-				break;
-			default:
-				break;
-			}
-		}
-
-		// TODO: Support outside and priority
-		nodeLabelPlacement.add(NodeLabelPlacement.INSIDE); // TODO: Not orientation specific
-
-		return nodeLabelPlacement;
-	}
-
-	private static ElkLabel createElkLabel(final ElkGraphElement parentLayoutElement, final String txt) {
-		final ElkLabel newLabel = ElkGraphUtil.createLabel(parentLayoutElement);
-
-		// TODO
-		newLabel.setX(0);
-		newLabel.setY(0);
-
-		newLabel.setWidth(100);
-		newLabel.setHeight(20);
-
-		// TODO:
-		// TODO: Require running in UI Thread?
-
-		// Display.getDefault().
-		// TODO: Use appropriate font. Only initialize once for entire layout process.. Abstract out into handler.. Need to map style to font
-		final Font f = new Font(Display.getDefault(), "Arial", 14, SWT.NONE);
-		GC gc = null;
-		try {
-			gc = new GC(Display.getDefault());
-			gc.setFont(f);
-			final org.eclipse.swt.graphics.Point p = gc.stringExtent(txt);
-			newLabel.setWidth(p.x);
-			newLabel.setHeight(p.y);
-		} finally {
-			if (gc != null) {
-				gc.dispose();
-			}
-
-			if (f != null) {
-				f.dispose();
-			}
-		}
-
-		newLabel.setText(txt); // TODO
-
-		return newLabel;
-	}
-
-	private static void createElkGraphElementsForConnections(final DiagramNode dn, final LayoutMapping mapping) {
-		for (final DiagramElement de : dn.getDiagramElements()) {
-			// TODO: Understand the multiple sources and targets... Need to group connections from the same element together?
-			// TODO: Understand edge vs edge section
-			// TODO: Read Edge documentation. GraphUtil needed to assign to appropriate container?
-
-			if (de.getGraphic() instanceof AgeConnection) {
-				final Object edgeStart = mapping.getGraphMap().inverse().get(de.getStartElement());
-				final Object edgeEnd = mapping.getGraphMap().inverse().get(de.getEndElement());
-				if (edgeStart instanceof ElkConnectableShape && edgeEnd instanceof ElkConnectableShape) {
-					final ElkConnectableShape start = (ElkConnectableShape) edgeStart;
-					final ElkConnectableShape end = (ElkConnectableShape) edgeEnd;
-
-//						final ElkEdge newEdge = ElkGraphUtil.createEdge(null);
-//						newEdge.getSources().add(start);
-//						newEdge.getTargets().add(end);
-					//
-//						final ElkEdgeSection s = ElkGraphUtil.createEdgeSection(newEdge);
-//						// TODO: Backwards?
-//						s.setOutgoingShape(start);
-//						s.setIncomingShape(end);
-//						ElkGraphUtil.updateContainment(newEdge);
-
-					// TODO: Remove this. This is ignores node to node connections
-					// if (start instanceof ElkPort && end instanceof ElkPort) {
-					final ElkEdge newEdge = ElkGraphUtil.createSimpleEdge(start, end);// ElkGraphUtil.createEdge(elkParentNode); // TODO: Coordinate system.
-					// Read documentation
-					newEdge.setProperty(CoreOptions.INSIDE_SELF_LOOPS_YO, true); // TODO: SHould be set on the edge?
-
-					// TODO: Disable bendpoints for curved edges.
-					mapping.getGraphMap().put(newEdge, de);
-
-					createElkLabels(de, newEdge, mapping);
-
-				}
-
-				// TODO: Connection to Connections ...
-			}
-
-			createElkGraphElementsForConnections(de, mapping);
-		}
-	}
-
-	private static AgeDiagram getDiagram(final IWorkbenchPart workbenchPart) {
-		final AgeDiagramEditor editor = ((AgeDiagramEditor) workbenchPart);
-		final AgeDiagramProvider diagramProvider = (AgeDiagramProvider) Objects
-				.requireNonNull(editor.getAdapter(AgeDiagramProvider.class), "Unable to get Age Diagram Provider");
-		return Objects.requireNonNull(diagramProvider.getAgeDiagram(), "Unable to retrieve diagram");
-	}
-
 // TODO: Cleanup
 	private static void applyLayout(final LayoutMapping mapping, final DiagramModification m) {
 		// Modify shapes
@@ -607,9 +419,6 @@ public class DiagramElementLayoutUtil {
 			}
 		}
 
-		int cCount = 0; // TODO: Remove
-		int cwsCount = 0; // TODO: Remove
-
 		// Modify Connections
 		for (Entry<ElkGraphElement, Object> entry2 : mapping.getGraphMap().entrySet()) {
 			final ElkGraphElement elkElement2 = entry2.getKey();
@@ -624,7 +433,6 @@ public class DiagramElementLayoutUtil {
 
 					if (elkElement2 instanceof ElkEdge) {
 						final ElkEdge edge = (ElkEdge) elkElement2;
-						cCount++;
 
 						if (edge.getSections().size() > 0) {
 							// TODO: Check that it is 1. Edges that represent multiple connections?
@@ -649,7 +457,7 @@ public class DiagramElementLayoutUtil {
 							newBendpoints.add(new Point(es.getStartX() + offsetX, es.getStartY() + offsetY));
 
 							es.getBendPoints().stream().map(bp -> new Point(bp.getX() + offsetX, bp.getY() + offsetY))
-									.forEachOrdered(newBendpoints::add);
+							.forEachOrdered(newBendpoints::add);
 
 							newBendpoints.add(new Point(es.getEndX() + offsetX, es.getEndY() + offsetY));
 							newBendpoints.set(0, getAdjacentPoint(newBendpoints.get(0), newBendpoints.get(1), 4));
@@ -657,8 +465,6 @@ public class DiagramElementLayoutUtil {
 									getAdjacentPoint(newBendpoints.get(newBendpoints.size() - 1),
 											newBendpoints.get(newBendpoints.size() - 2), 4));
 							m.setBendpoints(de2, newBendpoints);
-
-							cwsCount++;
 						}
 					}
 				}
