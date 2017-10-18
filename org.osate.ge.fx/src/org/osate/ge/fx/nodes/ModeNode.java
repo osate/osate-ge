@@ -28,8 +28,8 @@ public class ModeNode extends Region implements HasBackgroundColor, HasOutlineCo
 	private final Circle initialModeCircle = new Circle(initialModeEllipseRadius);
 	private final CubicCurve initialModeCurve = new CubicCurve();
 	private final Path initialModeArrow = new Path();
-	private BooleanProperty isInitialModeProperty = new SimpleBooleanProperty();
-	private BooleanProperty isInitialModeIndicatorInBoundsProperty = new SimpleBooleanProperty();
+	private BooleanProperty initialModeProperty = new SimpleBooleanProperty();
+	private BooleanProperty initialModeIndicatorInBoundsProperty = new SimpleBooleanProperty();
 
 	public ModeNode() {
 		// Set initial settings and visibility for the initial mode indicator
@@ -52,10 +52,10 @@ public class ModeNode extends Region implements HasBackgroundColor, HasOutlineCo
 		setLineWidth(2);
 		setBackgroundColor(Color.WHITE);
 		setOutlineColor(Color.BLACK);
-		setIsInitialMode(false);
-		setIsInitialModeIndicatorInBounds(true);
+		setInitialMode(false);
+		setInitialModeIndicatorInBounds(true);
 
-		isInitialModeProperty.addListener((ChangeListener<Boolean>) (observable, oldValue, newValue) -> {
+		initialModeProperty.addListener((ChangeListener<Boolean>) (observable, oldValue, newValue) -> {
 			final boolean newValuePrim = newValue.booleanValue();
 			initialModeCircle.setVisible(newValuePrim);
 			initialModeCurve.setVisible(newValuePrim);
@@ -65,7 +65,7 @@ public class ModeNode extends Region implements HasBackgroundColor, HasOutlineCo
 			resize(getWidth(), getHeight());
 		});
 
-		isInitialModeIndicatorInBoundsProperty
+		initialModeIndicatorInBoundsProperty
 		.addListener((ChangeListener<Boolean>) (observable, oldValue, newValue) -> {
 			// Call a resize to relayout and configure the internal nodes
 			resize(getWidth(), getHeight());
@@ -83,7 +83,7 @@ public class ModeNode extends Region implements HasBackgroundColor, HasOutlineCo
 
 		final double modeTop;
 		final double modeHeight;
-		if (isInitialModeProperty.get() && isInitialModeIndicatorInBoundsProperty.get()) {
+		if (initialModeProperty.get() && initialModeIndicatorInBoundsProperty.get()) {
 			modeTop = initialModeAreaHeight;
 			modeHeight = Math.max(0, height - initialModeAreaHeight);
 		} else {
@@ -94,14 +94,12 @@ public class ModeNode extends Region implements HasBackgroundColor, HasOutlineCo
 		outline.getElements().setAll(new MoveTo(0, modeTop + modeHeight * 0.5), new LineTo(width * 0.25, modeTop),
 				new HLineTo(width * 0.75), new LineTo(width, modeTop + modeHeight * 0.5),
 				new LineTo(width * 0.75, modeTop + modeHeight), new HLineTo(width * 0.25),
-				new LineTo(0, modeTop + modeHeight * 0.5)
-				);
+				new LineTo(0, modeTop + modeHeight * 0.5));
 
-		initialModeCircle.setCenterX(
-				Math.max(0, Math.max(width / 2 - 50, width * 0.25) + initialModeCircle.getRadius()));
-		initialModeCircle.setCenterY(
-				initialModeCircle.getRadius()
-				+ (isInitialModeIndicatorInBoundsProperty.get() ? 0.0 : -initialModeAreaHeight));
+		initialModeCircle
+		.setCenterX(Math.max(0, Math.max(width / 2 - 50, width * 0.25) + initialModeCircle.getRadius()));
+		initialModeCircle.setCenterY(initialModeCircle.getRadius()
+				+ (initialModeIndicatorInBoundsProperty.get() ? 0.0 : -initialModeAreaHeight));
 
 		initialModeCurve.setStartX(initialModeCircle.getCenterX() + initialModeCircle.getRadius());
 		initialModeCurve.setStartY(initialModeCircle.getCenterY());
@@ -139,19 +137,19 @@ public class ModeNode extends Region implements HasBackgroundColor, HasOutlineCo
 		initialModeCurve.setStrokeWidth(value);
 	}
 
-	public final void setIsInitialMode(final boolean value) {
-		isInitialModeProperty.setValue(value);
+	public final void setInitialMode(final boolean value) {
+		initialModeProperty.setValue(value);
 	}
 
-	public final void setIsInitialModeIndicatorInBounds(final boolean value) {
-		isInitialModeIndicatorInBoundsProperty.set(value);
+	public final void setInitialModeIndicatorInBounds(final boolean value) {
+		initialModeIndicatorInBoundsProperty.set(value);
 	}
 
 	public static void main(final String[] args) {
 		final ModeNode m1 = new ModeNode();
 		final ModeNode m2 = new ModeNode();
-		m2.setIsInitialMode(true);
-		m2.setIsInitialModeIndicatorInBounds(true);
+		m2.setInitialMode(true);
+		m2.setInitialModeIndicatorInBounds(true);
 		NodeApplication.run(m1, m2);
 	}
 }

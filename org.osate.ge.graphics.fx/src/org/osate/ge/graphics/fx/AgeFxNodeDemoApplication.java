@@ -23,12 +23,17 @@ import org.osate.ge.graphics.internal.ParallelogramBuilder;
 import org.osate.ge.graphics.internal.ProcessorGraphicBuilder;
 
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 // TODO: AgeToFx if methods are single line, they should be inlined
@@ -97,6 +102,7 @@ public class AgeFxNodeDemoApplication extends Application {
 		final GridPane container = new GridPane();// VBox container = new VBox();
 		container.setHgap(10.0);
 		container.setVgap(10.0);
+		container.setBackground(new Background(new BackgroundFill(Color.LIGHTGRAY, CornerRadii.EMPTY, Insets.EMPTY)));
 
 		// TODO: Need with various style. Default and other. Columns?
 		// TODO: Need polygon and polyline

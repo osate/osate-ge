@@ -2,7 +2,7 @@ package org.osate.ge.fx.nodes;
 
 import org.osate.ge.fx.styling.HasBackgroundColor;
 import org.osate.ge.fx.styling.HasFontColor;
-import org.osate.ge.fx.styling.HasFontSize;
+import org.osate.ge.fx.styling.HasFontFont;
 
 import javafx.geometry.Bounds;
 import javafx.scene.Group;
@@ -14,7 +14,7 @@ import javafx.scene.text.Text;
 
 // TODO: Finish implementing. Need to avoid duplicate calculations.
 
-public class LabelNode extends Group implements HasBackgroundColor, HasFontColor, HasFontSize {
+public class LabelNode extends Group implements HasBackgroundColor, HasFontColor, HasFontFont {
 	private final Rectangle background = new Rectangle();
 	private final Text text = new Text();
 
@@ -31,17 +31,27 @@ public class LabelNode extends Group implements HasBackgroundColor, HasFontColor
 		this("");
 	}
 
-	// TODO: Opacity
+	@Override
+	protected void layoutChildren() {
+		super.layoutChildren();
+
+		// TODO: Understand layout bounds
+		final Bounds textBounds = text.getLayoutBounds();
+		background.setWidth(textBounds.getWidth());
+		background.setHeight(textBounds.getHeight());
+		text.setLayoutY(-textBounds.getMinY());
+
+	}
+
 	@Override
 	public final void setBackgroundColor(final Color value) {
 		background.setFill(value);
 	}
 
-
 	@Override
-	public void setFontSize(double size) {
-		text.setFont(new Font("Arial", size)); // TODO: Avoid hardcoding font...
-		layoutTest(); // TODO: Finish
+	public void setFont(final Font font) {
+		text.setFont(font);
+		requestLayout();
 	}
 
 	@Override
@@ -51,16 +61,7 @@ public class LabelNode extends Group implements HasBackgroundColor, HasFontColor
 
 	public void setText(final String value) {
 		text.setText(value);
-		layoutTest(); // TODO: Finish
-	}
-
-	// TODO: Would prefer to to this only once after all the font size changes and text have been set. Could have custom layout?
-	private void layoutTest() { // TODO: Rename.
-		// TODO: Understand layout bounds
-		final Bounds textBounds = text.getLayoutBounds();
-		background.setWidth(textBounds.getWidth());
-		background.setHeight(textBounds.getHeight());
-		text.setLayoutY(-textBounds.getMinY());
+		requestLayout();
 	}
 
 	public static void main(final String[] args) {

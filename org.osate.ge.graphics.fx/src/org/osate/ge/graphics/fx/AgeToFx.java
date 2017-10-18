@@ -20,7 +20,7 @@ import org.osate.ge.fx.nodes.ProcessorNode;
 import org.osate.ge.fx.nodes.RectangleNode;
 import org.osate.ge.fx.styling.HasBackgroundColor;
 import org.osate.ge.fx.styling.HasFontColor;
-import org.osate.ge.fx.styling.HasFontSize;
+import org.osate.ge.fx.styling.HasFontFont;
 import org.osate.ge.fx.styling.HasLineWidth;
 import org.osate.ge.fx.styling.HasOutlineColor;
 import org.osate.ge.graphics.Graphic;
@@ -42,6 +42,7 @@ import com.google.common.collect.ImmutableMap;
 
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 
 // TODO: Rename.. Stop using Age prefix?
 public class AgeToFx {
@@ -79,7 +80,7 @@ public class AgeToFx {
 		addCreator(mapBuilder, FeatureGroupTypeGraphic.class, fgtg -> new FeatureGroupTypeNode());
 		addCreator(mapBuilder, ModeGraphic.class, mg -> {
 			final ModeNode mn = new ModeNode();
-			mn.setIsInitialMode(mg.isInitialMode);
+			mn.setInitialMode(mg.isInitialMode);
 			return mn;
 		});
 		addCreator(mapBuilder, Label.class, lg -> new LabelNode());
@@ -126,8 +127,9 @@ public class AgeToFx {
 		}
 
 		// TODO: Should be has font?
-		if (node instanceof HasFontSize) {
-			((HasFontSize) node).setFontSize(style.getFontSize());
+		if (node instanceof HasFontFont) {
+			final Font font = new Font("Arial", style.getFontSize());
+			((HasFontFont) node).setFont(font);
 		}
 
 		if (node instanceof HasLineWidth) {
