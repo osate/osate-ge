@@ -267,6 +267,7 @@ class ElkGraphBuilder {
 					final ElkConnectableShape start = (ElkConnectableShape) edgeStart;
 					final ElkConnectableShape end = (ElkConnectableShape) edgeEnd;
 
+
 //							final ElkEdge newEdge = ElkGraphUtil.createEdge(null);
 //							newEdge.getSources().add(start);
 //							newEdge.getTargets().add(end);
@@ -282,6 +283,8 @@ class ElkGraphBuilder {
 					final ElkEdge newEdge = ElkGraphUtil.createSimpleEdge(start, end);// ElkGraphUtil.createEdge(elkParentNode); // TODO: Coordinate system.
 					// Read documentation
 					newEdge.setProperty(CoreOptions.INSIDE_SELF_LOOPS_YO, true); // TODO: SHould be set on the edge?
+
+					// TODO: Set control points
 
 					// TODO: Disable bendpoints for curved edges.
 					mapping.getGraphMap().put(newEdge, de);

@@ -465,11 +465,69 @@ public class DiagramElementLayoutUtil {
 									getAdjacentPoint(newBendpoints.get(newBendpoints.size() - 1),
 											newBendpoints.get(newBendpoints.size() - 2), 4));
 							m.setBendpoints(de2, newBendpoints);
+
+
+							final Point midpoint = findMidpoint(newBendpoints);
+
+							// Handle labels
+							// TODO: Primary labels.
+							// TODO: Separate labels
+							for (final ElkLabel edgeLabel : edge.getLabels()) {
+
+								// TODO: Need offset for labels and points?
+								// Position relative to the start
+								final double lx = edgeLabel.getX() - midpoint.x;
+								final double ly = edgeLabel.getY() - midpoint.y + edgeLabel.getHeight() / 2.0;
+
+								// TODO: Understand coordinate system
+								m.setConnectionPrimaryLabelPosition(de2,
+										new Point(lx, ly)); // Connection label position relative to center?
+							}
 						}
 					}
 				}
 			}
 		}
+	}
+
+	private static Point findMidpoint(final List<Point> points) {
+		if (points.size() < 2) {
+			throw new RuntimeException("At least two points must be specified");
+		}
+
+		final double totalLength = length(points);
+		double lengthToTarget = totalLength / 2.0;
+
+		for (int i = 1; i < points.size(); i++) {
+			final Point p1 = points.get(i - 1);
+			final Point p2 = points.get(i);
+			final double segmentLength = length(p1, points.get(i));
+			if (lengthToTarget > segmentLength) {
+				System.err.println("A");
+				lengthToTarget -= segmentLength;
+			} else {
+				System.err.println("B");
+				final double frac = lengthToTarget / segmentLength;
+				return new Point(p1.x + (p2.x - p1.x) * frac, p1.y + (p2.y - p1.y) * frac);
+			}
+		}
+
+		throw new RuntimeException("Unexpected case: midpoint not found");
+	}
+
+	private static double length(final List<Point> points) {
+		double totalLength = 0;
+		for (int i = 1; i < points.size(); i++) {
+			totalLength += length(points.get(i - 1), points.get(i));
+		}
+
+		return totalLength;
+	}
+
+	private static double length(final Point p1, final Point p2) {
+		final double dx = p1.x - p2.x;
+		final double dy = p1.y - p2.y;
+		return Math.sqrt(dx * dx + dy * dy);
 	}
 
 	/**

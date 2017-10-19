@@ -485,6 +485,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 					labelX = primaryLabelPosition.x;
 					labelY = primaryLabelPosition.y;
 				}
+
 				gaService.setLocation(text, (int) Math.round(labelX), (int) Math.round(labelY));
 			}
 
