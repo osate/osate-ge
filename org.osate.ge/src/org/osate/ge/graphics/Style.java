@@ -7,6 +7,7 @@ public class Style {
 	public final static Style DEFAULT = StyleBuilder.create().backgroundColor(Color.WHITE).foregroundColor(Color.BLACK)
 			.fontSize(10.0).lineWidth(2.0)
 			.lineStyle(LineStyle.SOLID).labelsHorizontalPosition(LabelPosition.GRAPHIC_BEGINNING)
+			.primaryLabelVisible(true)
 			.labelsVerticalPosition(LabelPosition.GRAPHIC_BEGINNING).build();
 
 	private final Color background;
@@ -17,10 +18,11 @@ public class Style {
 	private final LineStyle lineStyle;
 	private final LabelPosition horizontalLabelPosition;
 	private final LabelPosition verticalLabelPosition;
+	private final Boolean primaryLabelVisible;
 
 	Style(final Color background, final Color fontColor, final Color outline, final Double fontSize,
 			final Double lineWidth, final LineStyle lineStyle, final LabelPosition horizontalLabelPosition,
-			final LabelPosition verticalLabelPosition) {
+			final LabelPosition verticalLabelPosition, final Boolean primaryLabelVisible) {
 		this.background = background;
 		this.fontColor = fontColor;
 		this.outline = outline;
@@ -29,6 +31,7 @@ public class Style {
 		this.lineStyle = lineStyle;
 		this.horizontalLabelPosition = horizontalLabelPosition;
 		this.verticalLabelPosition = verticalLabelPosition;
+		this.primaryLabelVisible = primaryLabelVisible;
 	}
 
 	/**
@@ -78,6 +81,10 @@ public class Style {
 		return verticalLabelPosition;
 	}
 
+	public final Boolean getPrimaryLabelVisible() {
+		return primaryLabelVisible;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -89,6 +96,7 @@ public class Style {
 		result = prime * result + ((lineStyle == null) ? 0 : lineStyle.hashCode());
 		result = prime * result + ((lineWidth == null) ? 0 : lineWidth.hashCode());
 		result = prime * result + ((outline == null) ? 0 : outline.hashCode());
+		result = prime * result + ((primaryLabelVisible == null) ? 0 : primaryLabelVisible.hashCode());
 		result = prime * result + ((verticalLabelPosition == null) ? 0 : verticalLabelPosition.hashCode());
 		return result;
 	}
@@ -144,6 +152,13 @@ public class Style {
 				return false;
 			}
 		} else if (!outline.equals(other.outline)) {
+			return false;
+		}
+		if (primaryLabelVisible == null) {
+			if (other.primaryLabelVisible != null) {
+				return false;
+			}
+		} else if (!primaryLabelVisible.equals(other.primaryLabelVisible)) {
 			return false;
 		}
 		if (verticalLabelPosition != other.verticalLabelPosition) {

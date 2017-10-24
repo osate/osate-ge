@@ -110,7 +110,7 @@ public class ProofOfConceptGEF5Test {
 				final Object content = ((IContentPart<? extends Node>) vp).getContent();
 				if (content instanceof DiagramElement) {
 					;
-				return (IContentPart<? extends Node>) vp;
+					return (IContentPart<? extends Node>) vp;
 				}
 			}
 		}

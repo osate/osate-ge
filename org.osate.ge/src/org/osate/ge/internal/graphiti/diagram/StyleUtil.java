@@ -11,17 +11,18 @@ import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.Graphiti;
 import org.osate.ge.graphics.Style;
-import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.AgeShape;
 import org.osate.ge.graphics.internal.Label;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
+import org.osate.ge.internal.diagram.runtime.styling.StyleProvider;
 import org.osate.ge.internal.graphiti.ShapeNames;
 
 class StyleUtil {
 	public static void refreshStyle(final Diagram graphitiDiagram, final PictogramElement pe,
-			final DiagramElement element, final ColoringProvider coloringProvider, final NodePictogramBiMap mapping) {
-		final Style finalStyle = getFinalStyle(element, coloringProvider);
+			final DiagramElement element, final StyleProvider finalStyleProvider,
+			final NodePictogramBiMap mapping) {
+		final Style finalStyle = finalStyleProvider.getStyle(element);
 		final org.osate.ge.graphics.Color finalOutline = finalStyle.getOutlineColor();
 		final org.osate.ge.graphics.Color finalBackground = finalStyle.getBackgroundColor();
 		final org.osate.ge.graphics.Color finalFontColor = finalStyle.getFontColor();
@@ -49,8 +50,8 @@ class StyleUtil {
 									: labelContainerShape;
 
 							if (labelBackgroundDiagramElement != null) {
-								final org.osate.ge.graphics.Color geLabelBackground = getFinalStyle(labelBackgroundDiagramElement,
-										coloringProvider).getBackgroundColor();
+								final org.osate.ge.graphics.Color geLabelBackground = finalStyleProvider
+										.getStyle(labelBackgroundDiagramElement).getBackgroundColor();
 								labelBackground = Graphiti.getGaService().manageColor(graphitiDiagram, geLabelBackground.getRed(),
 										geLabelBackground.getGreen(), geLabelBackground.getBlue());
 							}
@@ -69,17 +70,6 @@ class StyleUtil {
 		}
 
 		return null;
-	}
-
-	private static Style getFinalStyle(final DiagramElement de, final ColoringProvider coloringProvider) {
-		final StyleBuilder sb = StyleBuilder.create(de.getStyle(), de.getGraphicalConfiguration().style, Style.DEFAULT);
-
-		org.osate.ge.graphics.Color foregroundColor = coloringProvider.getForegroundColor(de);
-		if (foregroundColor != null) {
-			sb.foregroundColor(foregroundColor);
-		}
-
-		return sb.build();
 	}
 
 	private static void overrideStyle(final PictogramElement pe,
