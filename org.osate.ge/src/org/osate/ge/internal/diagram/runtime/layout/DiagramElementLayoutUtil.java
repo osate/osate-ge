@@ -44,6 +44,8 @@ import org.osate.ge.internal.diagram.runtime.DiagramModification;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.Dimension;
 import org.osate.ge.internal.diagram.runtime.DockArea;
+import org.osate.ge.internal.diagram.runtime.styling.StyleCalculator;
+import org.osate.ge.internal.diagram.runtime.styling.StyleProvider;
 import org.osate.ge.internal.preferences.Preferences;
 import org.osate.ge.internal.query.Queryable;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
@@ -83,17 +85,19 @@ public class DiagramElementLayoutUtil {
 			return;
 		}
 
-		diagram.modify(label, m -> layout(m, nodesToLayout, options));
+		diagram.modify(label, m -> layout(m, nodesToLayout,
+				new StyleCalculator(diagram.getConfiguration(), StyleProvider.EMPTY), options));
 	}
 
-	public static void layout(final DiagramModification m,
-			final Collection<? extends DiagramNode> nodesToLayout, final LayoutOptions options) {
+	private static void layout(final DiagramModification m,
+			final Collection<? extends DiagramNode> nodesToLayout, final StyleProvider styleProvider,
+			final LayoutOptions options) {
 		Objects.requireNonNull(nodesToLayout, "nodesToLayout must not be null");
 
 		// Layout the nodes
 		final IGraphLayoutEngine layoutEngine = new RecursiveGraphLayoutEngine(); // TODO: Move
 		for (final DiagramNode dn : nodesToLayout) {
-			final LayoutMapping mapping = ElkGraphBuilder.buildLayoutGraph(dn);
+			final LayoutMapping mapping = ElkGraphBuilder.buildLayoutGraph(dn, styleProvider);
 
 			mapping.getLayoutGraph().setProperty(CoreOptions.ALGORITHM, layoutAlgorithm);
 
@@ -138,7 +142,9 @@ public class DiagramElementLayoutUtil {
 		if (currentLayoutMode == IncrementalLayoutMode.LAYOUT_DIAGRAM) {
 			DiagramElementLayoutUtil.layout(incrementalLayoutLabel, diagram, new LayoutOptionsBuilder().build());
 		} else {
-			DiagramElementLayoutUtil.layout(mod, nodesToLayout, new LayoutOptionsBuilder().build());
+			DiagramElementLayoutUtil.layout(mod, nodesToLayout,
+					new StyleCalculator(diagram.getConfiguration(), StyleProvider.EMPTY),
+					new LayoutOptionsBuilder().build());
 
 			// Set Position. Need to do this when just laying out contents
 			// TODO: Improve algorithm.

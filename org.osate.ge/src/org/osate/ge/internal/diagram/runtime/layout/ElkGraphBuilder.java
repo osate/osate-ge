@@ -3,6 +3,7 @@ package org.osate.ge.internal.diagram.runtime.layout;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.eclipse.elk.core.math.KVector;
@@ -26,18 +27,33 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.Display;
 import org.osate.ge.graphics.Style;
-import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.AgeConnection;
 import org.osate.ge.graphics.internal.AgeShape;
 import org.osate.ge.graphics.internal.Label;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
+import org.osate.ge.internal.diagram.runtime.styling.StyleProvider;
 
 class ElkGraphBuilder {
-	// TODO: Rename
-	// TODO: Cleanup Rename.. Differnet return value?
-	static LayoutMapping buildLayoutGraph(final DiagramNode rootDiagramNode) {
+	private final StyleProvider styleProvider;
+
+	private ElkGraphBuilder(final StyleProvider styleProvider) {
+		this.styleProvider = Objects.requireNonNull(styleProvider, "styleProvider must not be null");
+	}
+
+	/**
+	 *
+	 * @param rootDiagramNode
+	 * @param styleProvider is a style provider which provides the style for the diagram elements. The style provider is expected to return a final style. The style must not contain null values.
+	 * @return
+	 */
+	static LayoutMapping buildLayoutGraph(final DiagramNode rootDiagramNode, final StyleProvider styleProvider) {
+		final ElkGraphBuilder graphBuilder = new ElkGraphBuilder(styleProvider);
+		return graphBuilder.buildLayoutGraph(rootDiagramNode);
+	}
+
+	private LayoutMapping buildLayoutGraph(final DiagramNode rootDiagramNode) {
 		System.err.println("CREATING GRAPH LAYOUT");
 
 		// Create the graph
@@ -62,12 +78,12 @@ class ElkGraphBuilder {
 		return mapping;
 	}
 
-	private static void createElkGraphElementsForNonLabelChildShapes(final DiagramNode parentNode, final ElkNode parent,
+	private void createElkGraphElementsForNonLabelChildShapes(final DiagramNode parentNode, final ElkNode parent,
 			final LayoutMapping mapping) {
 		createElkGraphElementsForElements(parentNode.getDiagramElements(), parent, mapping);
 	}
 
-	private static void createElkGraphElementsForElements(final Collection<DiagramElement> elements,
+	private void createElkGraphElementsForElements(final Collection<DiagramElement> elements,
 			final ElkNode parent, final LayoutMapping mapping) {
 		// TODO: Share predicate
 		elements.stream().filter(de -> de.getGraphic() instanceof AgeShape && !(de.getGraphic() instanceof Label))
@@ -77,7 +93,7 @@ class ElkGraphBuilder {
 		});
 	}
 
-	private static Optional<ElkGraphElement> createElkGraphElementForNonLabelShape(final DiagramElement de,
+	private Optional<ElkGraphElement> createElkGraphElementForNonLabelShape(final DiagramElement de,
 			final ElkNode layoutParent, final LayoutMapping mapping) {
 		if (de.getDockArea() == null) {
 			final ElkNode newNode = ElkGraphUtil.createNode(layoutParent);
@@ -123,17 +139,20 @@ class ElkGraphBuilder {
 		}
 	}
 
-	private static void createElkLabels(final DiagramElement parentElement, final ElkGraphElement parentLayoutElement,
+	private void createElkLabels(final DiagramElement parentElement, final ElkGraphElement parentLayoutElement,
 			final LayoutMapping mapping) {
 		// TODO: Sizing
 		// TODO: Connection labels are in incorrect position
 		// TODO: Feature labels are in incorrect position. PortLabelPosition property...
 
-		// Create Primary Label
-		if (parentElement.getName() != null) {
-			// TODO: Need completeness indicator.. Share with GraphitiAgeDiagram
-			createElkLabel(parentLayoutElement, parentElement.getName());
-			// TODO: Need some sort of mapping. Will be needed for connection labels
+		final Style style = styleProvider.getStyle(parentElement);
+		if (style.getPrimaryLabelVisible()) {
+			// Create Primary Label
+			if (parentElement.getName() != null) {
+				// TODO: Need completeness indicator.. Share with GraphitiAgeDiagram
+				createElkLabel(parentLayoutElement, parentElement.getName());
+				// TODO: Need some sort of mapping. Will be needed for connection labels
+			}
 		}
 
 		// Create Secondary Labels
@@ -144,11 +163,6 @@ class ElkGraphBuilder {
 		});
 
 		;
-
-		// TODO: Have helper?
-		final Style style = StyleBuilder
-				.create(parentElement.getStyle(), parentElement.getGraphicalConfiguration().style, Style.DEFAULT)
-				.build();
 
 		if (parentLayoutElement instanceof ElkNode) {
 			// TODO: Need to get final style
@@ -254,7 +268,7 @@ class ElkGraphBuilder {
 		return newLabel;
 	}
 
-	private static void createElkGraphElementsForConnections(final DiagramNode dn, final LayoutMapping mapping) {
+	private void createElkGraphElementsForConnections(final DiagramNode dn, final LayoutMapping mapping) {
 		for (final DiagramElement de : dn.getDiagramElements()) {
 			// TODO: Understand the multiple sources and targets... Need to group connections from the same element together?
 			// TODO: Understand edge vs edge section
