@@ -30,7 +30,6 @@ import org.eclipse.graphiti.mm.pictograms.ChopboxAnchor;
 import org.eclipse.graphiti.mm.pictograms.Connection;
 import org.eclipse.graphiti.mm.pictograms.ConnectionDecorator;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
-import org.eclipse.graphiti.mm.pictograms.CurvedConnection;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.FreeFormConnection;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
@@ -51,6 +50,7 @@ import org.osate.ge.graphics.internal.Label;
 import org.osate.ge.graphics.internal.Poly;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.BeforeModificationsCompletedEvent;
+import org.osate.ge.internal.diagram.runtime.DiagramConfigurationChangedEvent;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramModification;
 import org.osate.ge.internal.diagram.runtime.DiagramModificationListener;
@@ -83,6 +83,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 	private final Map<PictogramElement, DiagramNode> pictogramElementToDiagramNodeMap = new HashMap<>();
 	private final Map<DiagramNode, PictogramElement> diagramNodeToPictogramElementMap = new HashMap<>();
 	private final GraphitiDiagramModificationListener modificationListener = new GraphitiDiagramModificationListener();
+	private Style diagramConnectionStyle = Style.EMPTY; // Cached style based on the diagram configuraiton.
 
 	public interface CommandExecutor {
 		void execute(final Command cmd);
@@ -104,6 +105,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 			final EditingDomain editingDomain, final CommandExecutor cmdExecutor,
 			final ColoringProvider coloringProvider, final UpdaterListener updateListener) {
 		this.ageDiagram = Objects.requireNonNull(ageDiagram, "ageDiagram must not be null");
+		this.diagramConnectionStyle = StyleUtil.getDiagramConfigurationConnectionStyle(ageDiagram.getConfiguration());
 		Objects.requireNonNull(editingDomain, "editingDomain must not be null");
 		this.coloringProvider = Objects.requireNonNull(coloringProvider, "coloringProvider must not be null");
 		this.updateListener = Objects.requireNonNull(updateListener, "updateListener must not be null");
@@ -400,10 +402,6 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 			ga.setLineWidth(2);
 			ga.setForeground(Graphiti.getGaService().manageColor(graphitiDiagram, IColorConstant.BLACK));
 
-			if (pe instanceof CurvedConnection) {
-				ConnectionUtil.updateControlPoints((CurvedConnection) pe);
-			}
-
 			if (pe instanceof FreeFormConnection) {
 				final FreeFormConnection ffc = (FreeFormConnection) pe;
 				final List<org.eclipse.graphiti.mm.algorithms.styles.Point> graphitiBendpoints = ffc.getBendpoints();
@@ -423,7 +421,10 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 		// Build the primary label which includes the element's name
 		final String completenessSuffix = de.getCompleteness() == Completeness.INCOMPLETE ? incompleteIndicator : "";
-		final String primaryLabelStr = de.getName() == null ? null : (de.getName() + completenessSuffix);
+		final Style finalStyle = StyleUtil.getFinalStyle(de, diagramConnectionStyle, coloringProvider);
+		final String primaryLabelStr = (!finalStyle.getPrimaryLabelVisible().booleanValue() || de.getName() == null)
+				? null
+						: (de.getName() + completenessSuffix);
 
 		if (pe instanceof ContainerShape) {
 			final double fontSize = de.getStyle().getFontSize() == null ? Style.DEFAULT.getFontSize()
@@ -541,13 +542,6 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		final PictogramElement pe = getPictogramElement(element);
 		if (pe instanceof Shape) {
 			final Shape shape = ((Shape) pe);
-
-			// Update control points of curved connections which are connected to the shape.
-			for (final Anchor anchor : shape.getAnchors()) {
-				ConnectionUtil.updateControlPoints(anchor.getIncomingConnections());
-				ConnectionUtil.updateControlPoints(anchor.getOutgoingConnections());
-			}
-
 			AnchorUtil.updateConnectionAnchors(shape, GraphitiAgeDiagram.this);
 		} else if (pe instanceof Connection) {
 			AnchorUtil.updateConnectionAnchor(element, (Connection) pe, GraphitiAgeDiagram.this);
@@ -572,12 +566,9 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 		// Create/Change Pictogram Element Based on the Graphic
 		if (graphic instanceof AgeConnection) {
-			final AgeConnection ac = (AgeConnection) graphic;
-
 			// Remove the PE If it is of the wrong type...
 			if (pe != null) {
-				if (!(pe instanceof Connection) || (ac.isCurved && !(pe instanceof CurvedConnection))
-						|| (!ac.isCurved && !(pe instanceof FreeFormConnection))) {
+				if (!(pe instanceof Connection)) {
 					EcoreUtil.delete(pe, true);
 					pe = null;
 				}
@@ -585,11 +576,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 			if (pe == null) {
 				// Create the connection
-				if (ac.isCurved) {
-					pe = peCreateService.createCurvedConnection(new double[] { 0.0, 0.0 }, graphitiDiagram);
-				} else {
-					pe = peCreateService.createFreeFormConnection(graphitiDiagram);
-				}
+				pe = peCreateService.createFreeFormConnection(graphitiDiagram);
 
 				final GraphicsAlgorithm ga = Graphiti.getGaService().createPlainPolyline(pe);
 				PropertyUtil.setIsStylingContainer(ga, true);
@@ -686,7 +673,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 	public final void refreshStyle(final DiagramElement de) {
 		final PictogramElement pe = getPictogramElement(de);
 		if (pe != null) {
-			StyleUtil.refreshStyle(graphitiDiagram, pe, de, coloringProvider, this);
+			StyleUtil.refreshStyle(graphitiDiagram, pe, de, diagramConnectionStyle, coloringProvider, this);
 		}
 	}
 
@@ -835,9 +822,15 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 	private class GraphitiDiagramModificationListener implements DiagramModificationListener {
 		private boolean enabled = true;
 		private boolean inBeforeModificationsCompleted = false;
-		private boolean elementAdded = false;
+		private boolean needFullUpdate = false;
 		private final Set<DiagramElement> elementsToUpdate = new LinkedHashSet<>();
 		private final Set<DiagramElement> elementsToRemove = new LinkedHashSet<>();
+
+		@Override
+		public void diagramConfigurationChanged(final DiagramConfigurationChangedEvent e) {
+			needFullUpdate = true;
+			diagramConnectionStyle = StyleUtil.getDiagramConfigurationConnectionStyle(ageDiagram.getConfiguration());
+		}
 
 		@Override
 		public void elementAdded(final ElementAddedEvent e) {
@@ -848,7 +841,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 		private void onElementAdded(final DiagramElement element) {
 			elementsToRemove.remove(element);
-			elementAdded = true;
+			needFullUpdate = true;
 			elementsToUpdate.clear(); // Clear all elements to update. They will not be processed if an element has been added.
 		}
 
@@ -864,7 +857,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		public void elementUpdated(final ElementUpdatedEvent e) {
 			// Don't store updated elements when an element has been added. The add will trigger a complete update.
 			// Ignore elements which don't have a graphical configuration.
-			if (enabled && !elementAdded && e.element.getGraphicalConfiguration() != null
+			if (enabled && !needFullUpdate && e.element.getGraphicalConfiguration() != null
 					&& !inBeforeModificationsCompleted) {
 				// If the pictogram element type and the graphic type do not agree on whether the element is a connection, treat the update as an addition.
 				// This ensures the the pictogram element is recreated.
@@ -908,7 +901,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 							removeMappingForBranch(element);
 						}
 
-						if (elementAdded) {
+						if (needFullUpdate) {
 							createUpdateElementsFromAgeDiagram(event.mod);
 						} else {
 							final Set<DiagramNode> nodesToLayout = new HashSet<>();
@@ -990,7 +983,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 		@Override
 		public void modificationsCompleted(final ModificationsCompletedEvent event) {
-			elementAdded = false;
+			needFullUpdate = false;
 			elementsToRemove.clear();
 			elementsToUpdate.clear();
 

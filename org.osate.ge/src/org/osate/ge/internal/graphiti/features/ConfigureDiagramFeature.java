@@ -95,9 +95,10 @@ public class ConfigureDiagramFeature extends AbstractCustomFeature implements IC
 			// Show the dialog
 			final DiagramConfigurationDialog.Result result = DiagramConfigurationDialog.show(null, model, diagram.getConfiguration(), boTree, initialSelectionBoPath);
 			if(result != null) {
-				diagram.setDiagramConfiguration(result.getDiagramConfiguration());
-				diagramUpdater.updateDiagram(diagram, result.getBusinessObjectTree());
-
+				diagram.modify("Set Diagram Configuration", m -> {
+					m.setDiagramConfiguration(result.getDiagramConfiguration());
+					diagramUpdater.updateDiagram(diagram, result.getBusinessObjectTree());
+				});
 				// Clear ghosts triggered by this update to prevent them from being unghosted during the next update.
 				diagramUpdater.clearGhosts();
 
