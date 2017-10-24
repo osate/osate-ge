@@ -384,114 +384,138 @@ public class DiagramElementLayoutUtil {
 		}
 	}
 
-// TODO: Cleanup
 	private static void applyLayout(final LayoutMapping mapping, final DiagramModification m) {
+		applyShapeLayout(mapping, m);
+		applyConnectionLayout(mapping, m);
+	}
+
+	private static void applyShapeLayout(final LayoutMapping mapping, final DiagramModification m) {
 		// Modify shapes
-		for (Entry<ElkGraphElement, Object> entry1 : mapping.getGraphMap().entrySet()) {
-			final ElkGraphElement elkElement1 = entry1.getKey();
-			final DiagramNode dn1 = (DiagramNode) entry1.getValue();
+		for (Entry<ElkGraphElement, Object> e : mapping.getGraphMap().entrySet()) {
+			final ElkGraphElement elkElement = e.getKey();
+			final Object mappedValue = e.getValue();
+			final boolean isTopLevelElement = isTopLevel(elkElement);
 
-			final boolean isTopLevelElement = isTopLevel(elkElement1);
-			// TODO: Is there a modified flag for elk element. One appeared to be mentioned
+			if (!(elkElement instanceof ElkShape)) {
+				continue;
+			}
+			final ElkShape elkShape = (ElkShape) elkElement;
 
-			if (dn1 instanceof DiagramElement) {
-				final DiagramElement de1 = (DiagramElement) dn1;
-				if (de1.getGraphic() instanceof AgeShape) {
-					// TODO: Handle labels. At least handle connection labels. Other labels aren't positionable.
-					if (!(de1.getGraphic() instanceof Label)) {
-						// TODO: Check if things are sizable
-						if (elkElement1 instanceof ElkShape) {
-							final ElkShape elkShape1 = (ElkShape) elkElement1;
-							// Set Position. Don't set the position of top level elements
-							if (!isTopLevelElement) {
-								// TODO: Need to handle nested shapes and need to set parent first?
-								if (de1.getDockArea() == DockArea.GROUP) {
-									// TODO: Fix. This assumes parent is a non-docked element
-									// TODO: Fix cast
-									final ElkPort parentPort = (ElkPort) mapping.getGraphMap().inverse()
-											.get(de1.getParent());
+			if (!(mappedValue instanceof DiagramElement)) {
+				continue;
+			}
 
-									m.setPosition(de1, new Point(elkShape1.getX() - parentPort.getX(),
-											elkShape1.getY() - parentPort.getY()));
-								} else {
-									m.setPosition(de1, new Point(elkShape1.getX(), elkShape1.getY()));
-								}
-							}
+			final DiagramElement de = (DiagramElement) mappedValue;
+			if (!(de.getGraphic() instanceof AgeShape)) {
+				continue;
+			}
 
-							m.setSize(de1, new Dimension(elkShape1.getWidth(), elkShape1.getHeight()));
-						}
-					}
+			if (de.getGraphic() instanceof Label) {
+				continue;
+			}
+
+			// Set Position. Don't set the position of top level elements
+			if (!isTopLevelElement) {
+				// TODO: Need to handle nested shapes and need to set parent first?
+				if (de.getDockArea() == DockArea.GROUP) {
+					// TODO: Fix. This assumes parent is a non-docked element
+					// TODO: Fix cast
+					final ElkPort parentPort = (ElkPort) mapping.getGraphMap().inverse()
+							.get(de.getParent());
+
+					m.setPosition(de, new Point(elkShape.getX() - parentPort.getX(),
+							elkShape.getY() - parentPort.getY()));
+				} else {
+					m.setPosition(de, new Point(elkShape.getX(), elkShape.getY()));
 				}
 			}
+
+			m.setSize(de, new Dimension(elkShape.getWidth(), elkShape.getHeight()));
+
+
 		}
+	}
 
+	private static void applyConnectionLayout(final LayoutMapping mapping, final DiagramModification m) {
 		// Modify Connections
-		for (Entry<ElkGraphElement, Object> entry2 : mapping.getGraphMap().entrySet()) {
-			final ElkGraphElement elkElement2 = entry2.getKey();
-			final DiagramNode dn2 = (DiagramNode) entry2.getValue();
+		for (Entry<ElkGraphElement, Object> e : mapping.getGraphMap().entrySet()) {
+			final ElkGraphElement elkElement = e.getKey();
+			final Object mappedValue = e.getValue();
 
-			// TODO: Is there a modified flag for elk element. One appeared to be mentioned
+			if (!(elkElement instanceof ElkEdge)) {
+				continue;
+			}
+			final ElkEdge edge = (ElkEdge) elkElement;
 
-			if (dn2 instanceof DiagramElement) {
-				final DiagramElement de2 = (DiagramElement) dn2;
-				if (de2.getGraphic() instanceof AgeConnection) {
-					// TODO: Hierarchical edges aren't being handled. Because of the layout algorithm?
+			if (edge.getSections().size() != 1) {
+				throw new RuntimeException("Edges must have exactly 1 section");
+			}
+			final ElkEdgeSection edgeSection = edge.getSections().get(0);
 
-					if (elkElement2 instanceof ElkEdge) {
-						final ElkEdge edge = (ElkEdge) elkElement2;
+			if (!(mappedValue instanceof DiagramElement)) {
+				continue;
+			}
 
-						if (edge.getSections().size() > 0) {
-							// TODO: Check that it is 1. Edges that represent multiple connections?
-							final ElkEdgeSection es = edge.getSections().get(0);
-							// TODO: Understand edge section fields.
-							// TODO: Coordinate transformations.
+			final DiagramElement de = (DiagramElement) mappedValue;
+			if (!(de.getGraphic() instanceof AgeConnection)) {
+				continue;
+			}
 
-							final Point parentPosition = getAbsolutePosition(de2.getContainer());
-							final Point elkContainerPosition = getAbsolutePosition(
-									(DiagramNode) mapping.getGraphMap().get(edge.getContainingNode()));
-							final double offsetX = elkContainerPosition.x;// - parentPosition.x; // TODO: Double
-							final double offsetY = elkContainerPosition.y;// - parentPosition.y; // TODO: Double
+			final List<Point> bendpointsInParentCoordinateSystem = getBendpointsInParentCoordinateSystem(edgeSection);
 
-							final List<Point> newBendpoints;
-							newBendpoints = new ArrayList<>(2 + es.getBendPoints().size());
-							// TODO: Could have no bendpoints but have a start and end point..
-							// TODO: Starting and ending points. Usage allows more accurately using ELK layout but causes problems with connection
-							// endings. Fix!
+			// Set bendpoints
+			final Point elkContainerPosition = getAbsolutePosition(
+					(DiagramNode) mapping.getGraphMap().get(edge.getContainingNode()));
+			m.setBendpoints(de, bendpointsInParentCoordinateSystem.stream()
+					.map(p -> new Point(p.x + elkContainerPosition.x, p.y + elkContainerPosition.y))
+					.collect(Collectors.toList()));
 
-							// TODO: Need to have a offset for the start and end points... Need to work if there are no bendpoints.
+			// Set Label Positions
+			setLabelPositionsForEdge(mapping, m, edge, findMidpoint(bendpointsInParentCoordinateSystem));
+		}
+	}
 
-							newBendpoints.add(new Point(es.getStartX() + offsetX, es.getStartY() + offsetY));
+	private static List<Point> getBendpointsInParentCoordinateSystem(final ElkEdgeSection es) {
+		final List<Point> bendpointsInParentCoordinateSystem = new ArrayList<>(2 + es.getBendPoints().size());
+		// TODO: Could have no bendpoints but have a start and end point..
+		// TODO: Starting and ending points. Usage allows more accurately using ELK layout but causes problems with connection
+		// endings. Fix!
 
-							es.getBendPoints().stream().map(bp -> new Point(bp.getX() + offsetX, bp.getY() + offsetY))
-							.forEachOrdered(newBendpoints::add);
+		// TODO: Need to have a offset for the start and end points... Need to work if there are no bendpoints.
 
-							newBendpoints.add(new Point(es.getEndX() + offsetX, es.getEndY() + offsetY));
-							newBendpoints.set(0, getAdjacentPoint(newBendpoints.get(0), newBendpoints.get(1), 4));
-							newBendpoints.set(newBendpoints.size() - 1,
-									getAdjacentPoint(newBendpoints.get(newBendpoints.size() - 1),
-											newBendpoints.get(newBendpoints.size() - 2), 4));
-							m.setBendpoints(de2, newBendpoints);
+		bendpointsInParentCoordinateSystem.add(new Point(es.getStartX(), es.getStartY()));
 
+		es.getBendPoints().stream().map(bp -> new Point(bp.getX(), bp.getY()))
+		.forEachOrdered(bendpointsInParentCoordinateSystem::add);
 
-							final Point midpoint = findMidpoint(newBendpoints);
+		bendpointsInParentCoordinateSystem.add(new Point(es.getEndX(), es.getEndY()));
+		bendpointsInParentCoordinateSystem.set(0, getAdjacentPoint(bendpointsInParentCoordinateSystem.get(0),
+				bendpointsInParentCoordinateSystem.get(1), 4));
+		bendpointsInParentCoordinateSystem.set(bendpointsInParentCoordinateSystem.size() - 1,
+				getAdjacentPoint(bendpointsInParentCoordinateSystem.get(bendpointsInParentCoordinateSystem.size() - 1),
+						bendpointsInParentCoordinateSystem.get(bendpointsInParentCoordinateSystem.size() - 2), 4));
 
-							// Handle labels
-							// TODO: Primary labels.
-							// TODO: Separate labels
-							for (final ElkLabel edgeLabel : edge.getLabels()) {
+		return bendpointsInParentCoordinateSystem;
+	}
 
-								// TODO: Need offset for labels and points?
-								// Position relative to the start
-								final double lx = edgeLabel.getX() - midpoint.x;
-								final double ly = edgeLabel.getY() - midpoint.y + edgeLabel.getHeight() / 2.0;
+	/**
+	 *
+	 * @param mapping
+	 * @param m
+	 * @param edge
+	 * @param edgeMidpoint must be relative to the edge's container
+	 */
+	private static void setLabelPositionsForEdge(final LayoutMapping mapping, DiagramModification m, final ElkEdge edge,
+			final Point edgeMidpoint) {
+		// Handle labels
+		for (final ElkLabel edgeLabel : edge.getLabels()) {
+			final Object labelValue = mapping.getGraphMap().get(edgeLabel);
+			if (labelValue instanceof LabelReference) {
+				final double lx = edgeLabel.getX() - edgeMidpoint.x;
+				final double ly = edgeLabel.getY() - edgeMidpoint.y;
 
-								// TODO: Understand coordinate system
-								m.setConnectionPrimaryLabelPosition(de2,
-										new Point(lx, ly)); // Connection label position relative to center?
-							}
-						}
-					}
-				}
+				// TODO: Understand coordinate system
+				((LabelReference) labelValue).setPosition(m, new Point(lx, ly));
 			}
 		}
 	}
@@ -509,10 +533,8 @@ public class DiagramElementLayoutUtil {
 			final Point p2 = points.get(i);
 			final double segmentLength = length(p1, points.get(i));
 			if (lengthToTarget > segmentLength) {
-				System.err.println("A");
 				lengthToTarget -= segmentLength;
 			} else {
-				System.err.println("B");
 				final double frac = lengthToTarget / segmentLength;
 				return new Point(p1.x + (p2.x - p1.x) * frac, p1.y + (p2.y - p1.y) * frac);
 			}

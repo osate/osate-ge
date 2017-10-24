@@ -38,7 +38,7 @@ public class DiagramElement implements DiagramNode, ModifiableDiagramElementCont
 
 	// Connection Specific
 	private List<Point> bendpoints; // Optional. Diagram coordinate system. A null value indicates that the bendpoints have not been configured.
-	private Point connectionPrimaryLabelPosition; // Optional. Position of the connection label.
+	private Point connectionPrimaryLabelPosition; // Optional. Position of the connection label. Relative to the midpoint of the connection.
 
 	/**
 	 * It is intended that bo and boHandler will not be null except for during the diagram loading process.

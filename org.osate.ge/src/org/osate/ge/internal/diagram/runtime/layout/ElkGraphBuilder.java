@@ -145,24 +145,30 @@ class ElkGraphBuilder {
 		// TODO: Connection labels are in incorrect position
 		// TODO: Feature labels are in incorrect position. PortLabelPosition property...
 
+		final boolean isConnection = parentElement.getGraphic() instanceof AgeConnection;
+
 		final Style style = styleProvider.getStyle(parentElement);
 		if (style.getPrimaryLabelVisible()) {
 			// Create Primary Label
 			if (parentElement.getName() != null) {
 				// TODO: Need completeness indicator.. Share with GraphitiAgeDiagram
-				createElkLabel(parentLayoutElement, parentElement.getName());
-				// TODO: Need some sort of mapping. Will be needed for connection labels
+				final ElkLabel elkLabel = createElkLabel(parentLayoutElement, parentElement.getName());
+				if (isConnection) {
+					mapping.getGraphMap().put(elkLabel, new PrimaryConnectionLabelReference(parentElement));
+				}
+				// TODO: Need some sort of mapping. Will be needed for connection labels. Can't map to diagram element becuase that is already has a mapping for
+				// the element.
 			}
 		}
 
 		// Create Secondary Labels
 		parentElement.getDiagramElements().stream().filter(c -> c.getGraphic() instanceof Label)
 		.forEachOrdered(labelElement -> {
-			mapping.getGraphMap().put(createElkLabel(parentLayoutElement, labelElement.getName()),
-					labelElement);
+					final ElkLabel elkLabel = createElkLabel(parentLayoutElement, labelElement.getName());
+			if (isConnection) {
+				mapping.getGraphMap().put(elkLabel, new SecondaryConnectionLabelReference(labelElement));
+			}
 		});
-
-		;
 
 		if (parentLayoutElement instanceof ElkNode) {
 			// TODO: Need to get final style
