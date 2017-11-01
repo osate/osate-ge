@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.eclipse.graphiti.datatypes.IDimension;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.Text;
 import org.eclipse.graphiti.mm.algorithms.styles.Point;
@@ -21,7 +20,6 @@ import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.services.IGaService;
-import org.eclipse.graphiti.ui.services.GraphitiUi;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.LabelPosition;
 import org.osate.ge.graphics.Style;
@@ -32,6 +30,7 @@ import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramElementPredicates;
 import org.osate.ge.internal.diagram.runtime.DiagramModification;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
+import org.osate.ge.internal.diagram.runtime.Dimension;
 import org.osate.ge.internal.diagram.runtime.DockArea;
 import org.osate.ge.internal.graphiti.AnchorNames;
 import org.osate.ge.internal.graphiti.ShapeNames;
@@ -119,17 +118,17 @@ class LayoutUtil {
 						if (decorationElement.getName() != null) {
 							final Text text = gaService.createDefaultText(graphitiDiagram, cd);
 							PropertyUtil.setIsStylingChild(text, true);
-							TextUtil.setStyle(graphitiDiagram, text, decorationElement.getStyle().getFontSize());
 							text.setValue(decorationElement.getName());
+							TextUtil.setStyleAndSize(graphitiDiagram, text, decorationElement.getStyle().getFontSize());
 							if (decorationElement.hasPosition()) {
 								gaService.setLocation(text, (int) Math.round(decorationElement.getX()),
 										(int) Math.round(decorationElement.getY()));
 							} else {
-								final IDimension labelTextSize = GraphitiUi.getUiLayoutService()
-										.calculateTextSize(decorationElement.getName(), text.getFont());
-								text.setX(-labelTextSize.getWidth() / 2);
+								text.setX(-text.getWidth() / 2);
 								text.setY(labelY);
 							}
+
+							mod.setSize(decorationElement, new Dimension(text.getWidth(), text.getHeight()));
 
 							// Set the next label position based on the position of this label
 							labelY += 15;

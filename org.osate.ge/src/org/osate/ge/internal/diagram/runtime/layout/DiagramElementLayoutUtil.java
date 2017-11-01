@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.eclipse.core.runtime.Adapters;
 import org.eclipse.elk.core.IGraphLayoutEngine;
 import org.eclipse.elk.core.RecursiveGraphLayoutEngine;
 import org.eclipse.elk.core.math.KVector;
@@ -61,17 +62,26 @@ public class DiagramElementLayoutUtil {
 			throw new RuntimeException("Editor must be an " + AgeDiagramEditor.class.getName());
 		}
 
-		layout(label, ((AgeDiagramEditor) editor).getAgeDiagram(), diagramNodes, options);
+		final AgeDiagramEditor ageDiagramEditor = ((AgeDiagramEditor) editor);
+		final LayoutInfoProvider layoutInfoProvider = Adapters.adapt(ageDiagramEditor, LayoutInfoProvider.class);
+		layout(label, ageDiagramEditor.getAgeDiagram(), diagramNodes, layoutInfoProvider, options);
 	}
 
 	public static void layout(final String label, final AgeDiagram diagram,
+			final LayoutInfoProvider layoutInfoProvider,
 			final LayoutOptions options) {
-		layout(label, diagram, null, options);
+		layout(label, diagram, null, layoutInfoProvider, options);
 	}
 
 	public static void layout(final String label, final AgeDiagram diagram,
 			final Collection<? extends DiagramNode> diagramNodes,
+			final LayoutInfoProvider layoutInfoProvider,
 			final LayoutOptions options) {
+		Objects.requireNonNull(label, "label must not be null");
+		Objects.requireNonNull(diagram, "diagram must not be null");
+		Objects.requireNonNull(layoutInfoProvider, "layoutInfoProvider must not be null");
+		Objects.requireNonNull(options, "options must not be null");
+
 		// Determine the diagram nodes to layout
 		final List<DiagramNode> nodesToLayout;
 		if (diagramNodes == null) {
@@ -86,18 +96,19 @@ public class DiagramElementLayoutUtil {
 		}
 
 		diagram.modify(label, m -> layout(m, nodesToLayout,
-				new StyleCalculator(diagram.getConfiguration(), StyleProvider.EMPTY), options));
+				new StyleCalculator(diagram.getConfiguration(), StyleProvider.EMPTY), layoutInfoProvider, options));
 	}
 
 	private static void layout(final DiagramModification m,
 			final Collection<? extends DiagramNode> nodesToLayout, final StyleProvider styleProvider,
+			final LayoutInfoProvider layoutInfoProvider,
 			final LayoutOptions options) {
 		Objects.requireNonNull(nodesToLayout, "nodesToLayout must not be null");
 
 		// Layout the nodes
 		final IGraphLayoutEngine layoutEngine = new RecursiveGraphLayoutEngine(); // TODO: Move
 		for (final DiagramNode dn : nodesToLayout) {
-			final LayoutMapping mapping = ElkGraphBuilder.buildLayoutGraph(dn, styleProvider);
+			final LayoutMapping mapping = ElkGraphBuilder.buildLayoutGraph(dn, styleProvider, layoutInfoProvider);
 
 			mapping.getLayoutGraph().setProperty(CoreOptions.ALGORITHM, layoutAlgorithm);
 
@@ -126,7 +137,12 @@ public class DiagramElementLayoutUtil {
 	 * @param diagram
 	 * @param mod
 	 */
-	public static void layoutIncrementally(final AgeDiagram diagram, final DiagramModification mod) {
+	public static void layoutIncrementally(final AgeDiagram diagram, final DiagramModification mod,
+			final LayoutInfoProvider layoutInfoProvider) {
+		Objects.requireNonNull(diagram, "diagram must not be null");
+		Objects.requireNonNull(mod, "mod must not be null");
+		Objects.requireNonNull(layoutInfoProvider, "layoutInfoProvider must not be null");
+
 		final IncrementalLayoutMode currentLayoutMode = IncrementalLayoutMode
 				.getById(Activator.getDefault().getPreferenceStore().getString(Preferences.INCREMENTAL_LAYOUT_MODE))
 				.orElse(IncrementalLayoutMode.LAYOUT_CONTENTS);
@@ -140,10 +156,12 @@ public class DiagramElementLayoutUtil {
 		}
 
 		if (currentLayoutMode == IncrementalLayoutMode.LAYOUT_DIAGRAM) {
-			DiagramElementLayoutUtil.layout(incrementalLayoutLabel, diagram, new LayoutOptionsBuilder().build());
+			DiagramElementLayoutUtil.layout(incrementalLayoutLabel, diagram, layoutInfoProvider,
+					new LayoutOptionsBuilder().build());
 		} else {
 			DiagramElementLayoutUtil.layout(mod, nodesToLayout,
 					new StyleCalculator(diagram.getConfiguration(), StyleProvider.EMPTY),
+					layoutInfoProvider,
 					new LayoutOptionsBuilder().build());
 
 			// Set Position. Need to do this when just laying out contents
@@ -275,24 +293,6 @@ public class DiagramElementLayoutUtil {
 				}
 
 				n.setProperty(CoreOptions.PORT_CONSTRAINTS, portConstraints);
-
-				// TODO: Set the minimum size
-				// The node size constraints for labels doesn't seem to work properly
-				// TODO: Create test case and report
-				double minWidth = 200;
-				double minHeight = 100;
-
-				// TODO: Only do this based on node placements
-				for (final ElkLabel l : n.getLabels()) {
-					// TODO: TBD padding. Sometimes labels aren't shifted all the way to the edge by ELK so padding is needed. Property to adjust.
-					// Is this due to being positioned away from ports? Any ways to tell it to clear area for labels?
-					minWidth = Math.max(minWidth, l.getWidth() + 50);
-					minHeight = Math.max(minHeight, l.getHeight());
-				}
-
-				// TODO: Remove the other setting of the minimum node size
-				n.setProperty(CoreOptions.NODE_SIZE_MINIMUM, new KVector(minWidth, minHeight));
-
 			} else if (element instanceof ElkPort) {
 				final ElkPort p = (ElkPort) element;
 				final DiagramElement de = (DiagramElement) layoutMapping.getGraphMap().get(p);
@@ -320,6 +320,36 @@ public class DiagramElementLayoutUtil {
 		};
 
 		ElkUtil.applyVisitors(layoutMapping.getLayoutGraph(),visitor);
+
+		// Set the minimum node size based on the ports and their assigned sides.
+		final IGraphElementVisitor minNodeSizeVisitor = element -> {
+			if (element instanceof ElkNode) {
+				final ElkNode n = (ElkNode) element;
+
+				// TODO: Set the minimum size
+				// The node size constraints for labels doesn't seem to work properly
+				// TODO: Create test case and report
+
+				// TODO: Only do this based on node placements
+				final double maxLabelWidth = n.getLabels().stream().mapToDouble(l -> l.getWidth()).max().orElse(0.0);
+				final double maxLabelHeight = n.getLabels().stream().mapToDouble(l -> l.getHeight()).max().orElse(0.0);
+
+				// Set a minimum size that includes twice the max port width so that ELK will center the labels and non have them overlap with ports.
+				// This happens because of PORT_BORDER_OFFSET.
+				final double maxPortWidth = n.getPorts().stream().mapToDouble(p -> p.getWidth()).max().orElse(0.0);
+
+				// TODO: Adjust as appropriate.. ELK still doesn't think it's centered.. That's because it's centering it and then adding the extra space.
+				final double minWidth = Math.max(200, maxLabelWidth/* + 2 * maxPortWidth */);
+				final double minHeight = Math.max(100, maxLabelHeight);
+
+				// TODO: Add padding
+
+				// TODO: Remove the other setting of the minimum node size
+				n.setProperty(CoreOptions.NODE_SIZE_MINIMUM, new KVector(minWidth, minHeight));
+			}
+		};
+
+		ElkUtil.applyVisitors(layoutMapping.getLayoutGraph(), minNodeSizeVisitor);
 
 	}
 

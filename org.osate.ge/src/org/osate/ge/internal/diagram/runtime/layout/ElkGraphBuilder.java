@@ -6,6 +6,7 @@ import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.eclipse.elk.alg.layered.options.LayeredOptions;
 import org.eclipse.elk.core.math.KVector;
 import org.eclipse.elk.core.options.CoreOptions;
 import org.eclipse.elk.core.options.Direction;
@@ -13,6 +14,7 @@ import org.eclipse.elk.core.options.HierarchyHandling;
 import org.eclipse.elk.core.options.NodeLabelPlacement;
 import org.eclipse.elk.core.options.PortLabelPlacement;
 import org.eclipse.elk.core.options.SizeConstraint;
+import org.eclipse.elk.core.options.SizeOptions;
 import org.eclipse.elk.core.service.LayoutMapping;
 import org.eclipse.elk.graph.ElkConnectableShape;
 import org.eclipse.elk.graph.ElkEdge;
@@ -22,10 +24,6 @@ import org.eclipse.elk.graph.ElkNode;
 import org.eclipse.elk.graph.ElkPort;
 import org.eclipse.elk.graph.ElkShape;
 import org.eclipse.elk.graph.util.ElkGraphUtil;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.widgets.Display;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.internal.AgeConnection;
 import org.osate.ge.graphics.internal.AgeShape;
@@ -33,13 +31,16 @@ import org.osate.ge.graphics.internal.Label;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
+import org.osate.ge.internal.diagram.runtime.Dimension;
 import org.osate.ge.internal.diagram.runtime.styling.StyleProvider;
 
 class ElkGraphBuilder {
 	private final StyleProvider styleProvider;
+	private final LayoutInfoProvider layoutInfoProvider;
 
-	private ElkGraphBuilder(final StyleProvider styleProvider) {
+	private ElkGraphBuilder(final StyleProvider styleProvider, final LayoutInfoProvider layoutInfoProvider) {
 		this.styleProvider = Objects.requireNonNull(styleProvider, "styleProvider must not be null");
+		this.layoutInfoProvider = Objects.requireNonNull(layoutInfoProvider, "layoutInfoProvider must not be null");
 	}
 
 	/**
@@ -48,8 +49,9 @@ class ElkGraphBuilder {
 	 * @param styleProvider is a style provider which provides the style for the diagram elements. The style provider is expected to return a final style. The style must not contain null values.
 	 * @return
 	 */
-	static LayoutMapping buildLayoutGraph(final DiagramNode rootDiagramNode, final StyleProvider styleProvider) {
-		final ElkGraphBuilder graphBuilder = new ElkGraphBuilder(styleProvider);
+	static LayoutMapping buildLayoutGraph(final DiagramNode rootDiagramNode, final StyleProvider styleProvider,
+			final LayoutInfoProvider layoutInfoProvider) {
+		final ElkGraphBuilder graphBuilder = new ElkGraphBuilder(styleProvider, layoutInfoProvider);
 		return graphBuilder.buildLayoutGraph(rootDiagramNode);
 	}
 
@@ -102,6 +104,13 @@ class ElkGraphBuilder {
 
 			newNode.setProperty(CoreOptions.PORT_LABELS_PLACEMENT, PortLabelPlacement.INSIDE);
 
+			// SizeOptions.ASYMMETRICAL
+			final EnumSet<SizeOptions> nodeSizeOptions = EnumSet.of(SizeOptions.DEFAULT_MINIMUM_SIZE/*
+			 * ,
+			 * SizeOptions.ASYMMETRICAL
+			 */);
+			newNode.setProperty(LayeredOptions.NODE_SIZE_OPTIONS, nodeSizeOptions);
+
 			// newNode.setProperty(LayeredOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.free()); // TODO: Should be configurable. Allows layout
 			final EnumSet<SizeConstraint> nodeSizeConstraints = EnumSet.of(SizeConstraint.PORTS,
 					SizeConstraint.MINIMUM_SIZE, SizeConstraint.NODE_LABELS);
@@ -123,7 +132,14 @@ class ElkGraphBuilder {
 			mapping.getGraphMap().put(newPort, de);
 			setShapePositionAndSize(newPort, de);
 
-			// Don't create graph elements for children. ELK port cannot have child ports.
+			// TODO: Offset.. Sides, etc..
+			// TODO: Take into account label and actual port position..
+			// Problem is that the port positions are at the end so routing isn't working properly..
+			// Getting it to mostly work would be useful because it will be needed regardless of connection algorithm used
+			//newPort.setProperty(CoreOptions.PORT_LABELS_PLACEMENT, PortLabelPlacement.FIXED); // TODO: Learn about port label placement...
+			newPort.setProperty(CoreOptions.PORT_ANCHOR, new KVector(0, newPort.getHeight() / 2 + 12));
+
+			// Don't create graph elements for children. An ELK port cannot have child ports.
 
 			return Optional.ofNullable(newPort);
 		}
@@ -141,6 +157,11 @@ class ElkGraphBuilder {
 
 	private void createElkLabels(final DiagramElement parentElement, final ElkGraphElement parentLayoutElement,
 			final LayoutMapping mapping) {
+		// Don't create labels for ElkPort. The bounds of the port contain their labels.
+		if (parentLayoutElement instanceof ElkPort) {
+			return;
+		}
+
 		// TODO: Sizing
 		// TODO: Connection labels are in incorrect position
 		// TODO: Feature labels are in incorrect position. PortLabelPosition property...
@@ -152,7 +173,8 @@ class ElkGraphBuilder {
 			// Create Primary Label
 			if (parentElement.getName() != null) {
 				// TODO: Need completeness indicator.. Share with GraphitiAgeDiagram
-				final ElkLabel elkLabel = createElkLabel(parentLayoutElement, parentElement.getName());
+				final ElkLabel elkLabel = createElkLabel(parentLayoutElement, parentElement.getName(),
+						layoutInfoProvider.getPrimaryLabelSize(parentElement));
 				if (isConnection) {
 					mapping.getGraphMap().put(elkLabel, new PrimaryConnectionLabelReference(parentElement));
 				}
@@ -164,14 +186,14 @@ class ElkGraphBuilder {
 		// Create Secondary Labels
 		parentElement.getDiagramElements().stream().filter(c -> c.getGraphic() instanceof Label)
 		.forEachOrdered(labelElement -> {
-					final ElkLabel elkLabel = createElkLabel(parentLayoutElement, labelElement.getName());
+			final ElkLabel elkLabel = createElkLabel(parentLayoutElement, labelElement.getName(),
+					labelElement.getSize());
 			if (isConnection) {
 				mapping.getGraphMap().put(elkLabel, new SecondaryConnectionLabelReference(labelElement));
 			}
 		});
 
 		if (parentLayoutElement instanceof ElkNode) {
-			// TODO: Need to get final style
 			parentLayoutElement.setProperty(CoreOptions.NODE_LABELS_PLACEMENT, getNodeLabelPlacement(style));
 		}
 	}
@@ -195,8 +217,6 @@ class ElkGraphBuilder {
 			case GRAPHIC_BEGINNING:
 			case GRAPHIC_CENTER:
 			case GRAPHIC_END:
-				nodeLabelPlacement.add(NodeLabelPlacement.H_CENTER);
-				nodeLabelPlacement.add(NodeLabelPlacement.H_CENTER);
 				nodeLabelPlacement.add(NodeLabelPlacement.H_CENTER);
 				break;
 			case AFTER_GRAPHIC:
@@ -233,40 +253,23 @@ class ElkGraphBuilder {
 		// TODO: Support outside and priority
 		nodeLabelPlacement.add(NodeLabelPlacement.INSIDE); // TODO: Not orientation specific
 
+		//nodeLabelPlacement.add(NodeLabelPlacement.H_PRIORITY);
+
 		return nodeLabelPlacement;
 	}
 
-	private static ElkLabel createElkLabel(final ElkGraphElement parentLayoutElement, final String txt) {
+	private ElkLabel createElkLabel(final ElkGraphElement parentLayoutElement, final String txt,
+			final Dimension labelSize) {
+		// Objects.requireNonNull(labelSize, "labelSize must not be null");
 		final ElkLabel newLabel = ElkGraphUtil.createLabel(parentLayoutElement);
 
 		// TODO
 		newLabel.setX(0);
 		newLabel.setY(0);
 
-		newLabel.setWidth(100);
-		newLabel.setHeight(20);
-
-		// TODO:
-		// TODO: Require running in UI Thread?
-
-		// Display.getDefault().
-		// TODO: Use appropriate font. Only initialize once for entire layout process.. Abstract out into handler.. Need to map style to font
-		final Font f = new Font(Display.getDefault(), "Arial", 14, SWT.NONE);
-		GC gc = null;
-		try {
-			gc = new GC(Display.getDefault());
-			gc.setFont(f);
-			final org.eclipse.swt.graphics.Point p = gc.stringExtent(txt);
-			newLabel.setWidth(p.x);
-			newLabel.setHeight(p.y);
-		} finally {
-			if (gc != null) {
-				gc.dispose();
-			}
-
-			if (f != null) {
-				f.dispose();
-			}
+		if (labelSize != null) {
+			newLabel.setWidth(labelSize.width);
+			newLabel.setHeight(labelSize.height);
 		}
 
 		newLabel.setText(txt); // TODO

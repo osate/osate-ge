@@ -8,15 +8,25 @@
  *******************************************************************************/
 package org.osate.ge.internal.graphiti.services.impl;
 
+import java.util.Collection;
 import java.util.Objects;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.emf.edit.domain.EditingDomain;
 import org.eclipse.graphiti.dt.IDiagramTypeProvider;
 import org.eclipse.graphiti.features.IFeatureProvider;
+import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
+import org.eclipse.graphiti.mm.pictograms.Connection;
+import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
+import org.eclipse.graphiti.mm.pictograms.PictogramElement;
+import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
+import org.osate.ge.internal.diagram.runtime.DiagramElement;
+import org.osate.ge.internal.diagram.runtime.Dimension;
+import org.osate.ge.internal.graphiti.ShapeNames;
 import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram;
+import org.osate.ge.internal.graphiti.diagram.PropertyUtil;
 import org.osate.ge.internal.graphiti.services.GraphitiService;
 import org.osate.ge.internal.ui.editor.AgeDiagramBehavior;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
@@ -24,22 +34,22 @@ import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 public class DefaultGraphitiService implements GraphitiService {
 	private final IDiagramTypeProvider dtp;
 	private final IFeatureProvider fp;
-	
+
 	public DefaultGraphitiService(final IDiagramTypeProvider dtp, final IFeatureProvider fp) {
 		this.dtp = Objects.requireNonNull(dtp, "dtp must not be null");
 		this.fp = Objects.requireNonNull(fp, "fp must not be null");
 	}
-	
+
 	@Override
 	public Diagram getDiagram() {
 		return dtp.getDiagram();
 	}
-	
+
 	@Override
 	public IDiagramTypeProvider getDiagramTypeProvider() {
 		return dtp;
 	}
-	
+
 	@Override
 	public IFeatureProvider getFeatureProvider() {
 		return fp;
@@ -68,5 +78,47 @@ public class DefaultGraphitiService implements GraphitiService {
 	@Override
 	public AgeDiagramEditor getEditor() {
 		return (AgeDiagramEditor)((AgeDiagramBehavior)dtp.getDiagramBehavior()).getDiagramContainer();
+	}
+
+	@Override
+	public Dimension getPrimaryLabelSize(final DiagramElement de) {
+		final GraphitiAgeDiagram graphitiAgeDiagram = getGraphitiAgeDiagram();
+		if (graphitiAgeDiagram == null) {
+			return null;
+		}
+
+		final PictogramElement pe = graphitiAgeDiagram.getPictogramElement(de);
+		if (pe == null) {
+			return null;
+		}
+
+		final Shape primaryLabelShape = getChildShapeByName(pe, ShapeNames.primaryLabelShapeName);
+		if (primaryLabelShape == null) {
+			return null;
+
+		}
+		final GraphicsAlgorithm ga = primaryLabelShape.getGraphicsAlgorithm();
+		return ga == null ? new Dimension(0, 0) : new Dimension(ga.getWidth(), ga.getHeight());
+	}
+
+	// TODO: Share with layout util.. Or have a getPrimaryLabel()
+	private static Shape getChildShapeByName(final PictogramElement pe, final String name) {
+		if (pe instanceof Connection) {
+			return getShapeByName(((Connection) pe).getConnectionDecorators(), name);
+		} else if (pe instanceof ContainerShape) {
+			return getShapeByName(((ContainerShape) pe).getChildren(), name);
+		} else {
+			throw new RuntimeException("Unexpected pictogram element: " + pe);
+		}
+	}
+
+	private static Shape getShapeByName(final Collection<? extends Shape> shapes, final String name) {
+		for (final Shape child : shapes) {
+			if (name.equals(PropertyUtil.getName(child))) {
+				return child;
+			}
+		}
+
+		return null;
 	}
 }

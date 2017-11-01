@@ -87,6 +87,7 @@ import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramSerialization;
 import org.osate.ge.internal.diagram.runtime.layout.DiagramElementLayoutUtil;
+import org.osate.ge.internal.diagram.runtime.layout.LayoutInfoProvider;
 import org.osate.ge.internal.graphiti.AgeDiagramTypeProvider;
 import org.osate.ge.internal.graphiti.AgeFeatureProvider;
 import org.osate.ge.internal.graphiti.GraphitiAgeDiagramProvider;
@@ -880,7 +881,10 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 		fp.getDiagramUpdater().updateDiagram(ageDiagram);
 
 		// Perform incremental layout
-		ageDiagram.modify("Incremental Layout", m -> DiagramElementLayoutUtil.layoutIncrementally(ageDiagram, m));
+		final LayoutInfoProvider layoutInfoProvider = (LayoutInfoProvider) dtp.getCurrentToolBehaviorProvider()
+				.getAdapter(LayoutInfoProvider.class);
+		ageDiagram.modify("Incremental Layout",
+				m -> DiagramElementLayoutUtil.layoutIncrementally(ageDiagram, m, layoutInfoProvider));
 
 		// Set the coloring service field. It is needed
 		final ColoringProvider coloringProvider = new ColoringProvider() {
