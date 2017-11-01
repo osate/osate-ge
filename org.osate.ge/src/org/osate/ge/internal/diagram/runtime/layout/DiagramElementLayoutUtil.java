@@ -18,6 +18,7 @@ import org.eclipse.elk.core.IGraphLayoutEngine;
 import org.eclipse.elk.core.RecursiveGraphLayoutEngine;
 import org.eclipse.elk.core.math.KVector;
 import org.eclipse.elk.core.options.CoreOptions;
+import org.eclipse.elk.core.options.NodeLabelPlacement;
 import org.eclipse.elk.core.options.PortConstraints;
 import org.eclipse.elk.core.options.PortSide;
 import org.eclipse.elk.core.service.LayoutMapping;
@@ -326,25 +327,29 @@ public class DiagramElementLayoutUtil {
 			if (element instanceof ElkNode) {
 				final ElkNode n = (ElkNode) element;
 
-				// TODO: Set the minimum size
-				// The node size constraints for labels doesn't seem to work properly
-				// TODO: Create test case and report
-
-				// TODO: Only do this based on node placements
 				final double maxLabelWidth = n.getLabels().stream().mapToDouble(l -> l.getWidth()).max().orElse(0.0);
 				final double maxLabelHeight = n.getLabels().stream().mapToDouble(l -> l.getHeight()).max().orElse(0.0);
 
-				// Set a minimum size that includes twice the max port width so that ELK will center the labels and non have them overlap with ports.
-				// This happens because of PORT_BORDER_OFFSET.
-				final double maxPortWidth = n.getPorts().stream().mapToDouble(p -> p.getWidth()).max().orElse(0.0);
+				// Adjust the minimum space of the node so that it will be large enough to avoid overlaps when the labels are centered
+				final double extraWidthForLabelAlignment;
+				if (n.getProperty(CoreOptions.NODE_LABELS_PLACEMENT).contains(NodeLabelPlacement.H_CENTER)) {
+					final double maxLeftPortWidth = n.getPorts().stream()
+							.filter(p -> p.getProperty(CoreOptions.PORT_SIDE) == PortSide.WEST)
+							.mapToDouble(p -> p.getWidth()).max().orElse(0.0);
+					final double maxRightPortWidth = n.getPorts().stream()
+							.filter(p -> p.getProperty(CoreOptions.PORT_SIDE) == PortSide.EAST)
+							.mapToDouble(p -> p.getWidth()).max().orElse(0.0);
 
-				// TODO: Adjust as appropriate.. ELK still doesn't think it's centered.. That's because it's centering it and then adding the extra space.
-				final double minWidth = Math.max(200, maxLabelWidth/* + 2 * maxPortWidth */);
+					// Add twice the difference between the width of the left and right ports so that ELK will center the labels and non have them overlap with
+					// ports. This happens because ports are inside the node due to the PORT_BORDER_OFFSET and ELK centers the labels in the remaining space.
+					extraWidthForLabelAlignment = 2 * Math.abs(maxLeftPortWidth - maxRightPortWidth);
+				} else {
+					extraWidthForLabelAlignment = 0;
+				}
+
+				final double minWidth = Math.max(200, maxLabelWidth + extraWidthForLabelAlignment);
 				final double minHeight = Math.max(100, maxLabelHeight);
 
-				// TODO: Add padding
-
-				// TODO: Remove the other setting of the minimum node size
 				n.setProperty(CoreOptions.NODE_SIZE_MINIMUM, new KVector(minWidth, minHeight));
 			}
 		};

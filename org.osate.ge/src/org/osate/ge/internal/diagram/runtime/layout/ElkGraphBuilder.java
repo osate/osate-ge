@@ -6,15 +6,12 @@ import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.eclipse.elk.alg.layered.options.LayeredOptions;
 import org.eclipse.elk.core.math.KVector;
 import org.eclipse.elk.core.options.CoreOptions;
 import org.eclipse.elk.core.options.Direction;
 import org.eclipse.elk.core.options.HierarchyHandling;
 import org.eclipse.elk.core.options.NodeLabelPlacement;
-import org.eclipse.elk.core.options.PortLabelPlacement;
 import org.eclipse.elk.core.options.SizeConstraint;
-import org.eclipse.elk.core.options.SizeOptions;
 import org.eclipse.elk.core.service.LayoutMapping;
 import org.eclipse.elk.graph.ElkConnectableShape;
 import org.eclipse.elk.graph.ElkEdge;
@@ -102,23 +99,9 @@ class ElkGraphBuilder {
 			mapping.getGraphMap().put(newNode, de);
 			setShapePositionAndSize(newNode, de);
 
-			newNode.setProperty(CoreOptions.PORT_LABELS_PLACEMENT, PortLabelPlacement.INSIDE);
-
-			// SizeOptions.ASYMMETRICAL
-			final EnumSet<SizeOptions> nodeSizeOptions = EnumSet.of(SizeOptions.DEFAULT_MINIMUM_SIZE/*
-			 * ,
-			 * SizeOptions.ASYMMETRICAL
-			 */);
-			newNode.setProperty(LayeredOptions.NODE_SIZE_OPTIONS, nodeSizeOptions);
-
-			// newNode.setProperty(LayeredOptions.NODE_SIZE_CONSTRAINTS, SizeConstraint.free()); // TODO: Should be configurable. Allows layout
 			final EnumSet<SizeConstraint> nodeSizeConstraints = EnumSet.of(SizeConstraint.PORTS,
 					SizeConstraint.MINIMUM_SIZE, SizeConstraint.NODE_LABELS);
 			newNode.setProperty(CoreOptions.NODE_SIZE_CONSTRAINTS, nodeSizeConstraints); // TODO: Should include port labels?
-
-			// TODO: MInimum size may not be an Issue
-			// TODO: SHouldn't have to set minimum size if ports are being taken into account and labels are the correct size
-			newNode.setProperty(CoreOptions.NODE_SIZE_MINIMUM, new KVector(200, 100));
 
 			newNode.setProperty(CoreOptions.INSIDE_SELF_LOOPS_ACTIVATE, true);
 
