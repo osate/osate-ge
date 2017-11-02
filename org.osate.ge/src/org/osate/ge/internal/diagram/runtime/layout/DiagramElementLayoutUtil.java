@@ -52,9 +52,15 @@ import org.osate.ge.internal.preferences.Preferences;
 import org.osate.ge.internal.query.Queryable;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.ImmutableBiMap;
+
 public class DiagramElementLayoutUtil {
 	private static final String incrementalLayoutLabel = "Incremental Layout";
 	private static final String layoutAlgorithm = "org.eclipse.elk.layered";
+	private final static BiMap<DockArea, PortSide> dockAreaToPortSideMap = ImmutableBiMap.of(DockArea.TOP,
+			PortSide.NORTH, DockArea.BOTTOM, PortSide.SOUTH, DockArea.LEFT, PortSide.WEST, DockArea.RIGHT,
+			PortSide.EAST);
 
 	public static void layout(final String label, final IEditorPart editor,
 			final Collection<? extends DiagramNode> diagramNodes,
@@ -400,43 +406,13 @@ public class DiagramElementLayoutUtil {
 		return false;
 	}
 
-	// TODO: Use bitmap
 	private static PortSide getPortSideForNonGroupDockArea(final DockArea dockArea) {
-		switch (dockArea) {
-		case TOP:
-			return PortSide.NORTH;
-
-		case BOTTOM:
-			return PortSide.SOUTH;
-
-		case LEFT:
-			return PortSide.WEST;
-
-		case RIGHT:
-			return PortSide.EAST;
-
-		default:
+		final PortSide portSide = dockAreaToPortSideMap.get(dockArea);
+		if (portSide == null) {
 			throw new RuntimeException("Unexpected dock area: " + dockArea);
 		}
-	}
 
-	private static DockArea getDockAreaForPortSide(final PortSide portSide) {
-		switch (portSide) {
-		case NORTH:
-			return DockArea.TOP;
-
-		case SOUTH:
-			return DockArea.BOTTOM;
-
-		case WEST:
-			return DockArea.LEFT;
-
-		case EAST:
-			return DockArea.RIGHT;
-
-		default:
-			throw new RuntimeException("Unexpected port side: " + portSide);
-		}
+		return portSide;
 	}
 
 	private static void applyLayout(final LayoutMapping mapping, final DiagramModification m) {
@@ -477,9 +453,10 @@ public class DiagramElementLayoutUtil {
 				}
 
 				if (de.getDockArea() != DockArea.GROUP && de.getDockArea() != null) {
-					final PortSide portSide = elkShape.getProperty(CoreOptions.PORT_SIDE);
-					if (portSide != null) {
-						m.setDockArea(de, getDockAreaForPortSide(portSide));
+					final DockArea newDockArea = dockAreaToPortSideMap.inverse()
+							.get(elkShape.getProperty(CoreOptions.PORT_SIDE));
+					if (newDockArea != null) {
+						m.setDockArea(de, newDockArea);
 					}
 				}
 			}
