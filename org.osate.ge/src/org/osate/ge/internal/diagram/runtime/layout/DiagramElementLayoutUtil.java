@@ -400,6 +400,7 @@ public class DiagramElementLayoutUtil {
 		return false;
 	}
 
+	// TODO: Use bitmap
 	private static PortSide getPortSideForNonGroupDockArea(final DockArea dockArea) {
 		switch (dockArea) {
 		case TOP:
@@ -416,6 +417,25 @@ public class DiagramElementLayoutUtil {
 
 		default:
 			throw new RuntimeException("Unexpected dock area: " + dockArea);
+		}
+	}
+
+	private static DockArea getDockAreaForPortSide(final PortSide portSide) {
+		switch (portSide) {
+		case NORTH:
+			return DockArea.TOP;
+
+		case SOUTH:
+			return DockArea.BOTTOM;
+
+		case WEST:
+			return DockArea.LEFT;
+
+		case EAST:
+			return DockArea.RIGHT;
+
+		default:
+			throw new RuntimeException("Unexpected port side: " + portSide);
 		}
 	}
 
@@ -451,17 +471,16 @@ public class DiagramElementLayoutUtil {
 
 			// Set Position. Don't set the position of top level elements
 			if (!isTopLevelElement) {
-				// TODO: Need to handle nested shapes and need to set parent first?
-				if (de.getDockArea() == DockArea.GROUP) {
-					// TODO: Fix. This assumes parent is a non-docked element
-					// TODO: Fix cast
-					final ElkPort parentPort = (ElkPort) mapping.getGraphMap().inverse()
-							.get(de.getParent());
-
-					m.setPosition(de, new Point(elkShape.getX() - parentPort.getX(),
-							elkShape.getY() - parentPort.getY()));
-				} else {
+				// Position all shapes which are not a children of a docked diagram element.
+				if (de.getDockArea() != DockArea.GROUP) {
 					m.setPosition(de, new Point(elkShape.getX(), elkShape.getY()));
+				}
+
+				if (de.getDockArea() != DockArea.GROUP && de.getDockArea() != null) {
+					final PortSide portSide = elkShape.getProperty(CoreOptions.PORT_SIDE);
+					if (portSide != null) {
+						m.setDockArea(de, getDockAreaForPortSide(portSide));
+					}
 				}
 			}
 
