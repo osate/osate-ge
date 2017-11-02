@@ -183,7 +183,8 @@ public class DiagramElementLayoutUtil {
 							final DiagramElement parent = (DiagramElement) de.getParent();
 							final DockingPosition defaultDockingPosition = de
 									.getGraphicalConfiguration().defaultDockingPosition;
-							final DockArea defaultDockArea = defaultDockingPosition.getDockArea();
+							final DockArea defaultDockArea = defaultDockingPosition
+									.getDefaultDockArea();
 
 							if (parent.hasSize()) {
 								// TODO: Rename?
@@ -312,8 +313,10 @@ public class DiagramElementLayoutUtil {
 				final PortSide portSide;
 
 				// Otherwise change the port side based on the diagram element's default docking configuration
+				final DockingPosition defaultDockingPosition = de.getGraphicalConfiguration().defaultDockingPosition;
 				portSide = getPortSideForNonGroupDockArea(
-						de.getGraphicalConfiguration().defaultDockingPosition.getDockArea());
+						(defaultDockingPosition == DockingPosition.ANY && de.getDockArea() != null) ? de.getDockArea()
+								: defaultDockingPosition.getDefaultDockArea());
 
 				p.setProperty(CoreOptions.PORT_SIDE, portSide);
 
