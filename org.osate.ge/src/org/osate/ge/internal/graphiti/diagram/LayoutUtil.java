@@ -250,8 +250,8 @@ class LayoutUtil {
 
 						// Handle positioning of group docked shapes
 						for (final Entry<DockArea, List<Shape>> dockAreaToShapesEntry : dockAreaToShapesMap.entrySet()) {
-							for (final Shape childShape : dockAreaToShapesEntry.getValue()) {
-								if (dockAreaToShapesEntry.getKey() == DockArea.GROUP) {
+							if (dockAreaToShapesEntry.getKey() == DockArea.GROUP) {
+								for (final Shape childShape : dockAreaToShapesEntry.getValue()) {
 									switch (shapeDockArea) {
 									case LEFT:
 									case RIGHT:
@@ -692,7 +692,12 @@ class LayoutUtil {
 				// Sort shapes by order. Ignore shapes that haven't been layed out
 				final List<Shape> sortedShapes = dockAreaToShapesEntry.getValue().stream().filter(s -> {
 					final DiagramNode dn = diagramNodeProvider.getDiagramNode(s);
-					return dn instanceof DiagramElement && ((DiagramElement) dn).hasPosition();
+					if (!(dn instanceof DiagramElement)) {
+						return false;
+					}
+
+					final DiagramElement de = (DiagramElement) dn;
+					return de.hasPosition() || de.getDockArea() == DockArea.GROUP;
 				}).collect(Collectors.toList());
 
 				if (vertical) {
@@ -714,6 +719,14 @@ class LayoutUtil {
 							shape.getGraphicsAlgorithm().setX(newX);
 							minX = newX + shape.getGraphicsAlgorithm().getWidth() + 5;
 						}
+					}
+				}
+
+				// Nested docked feature need to be marked as layed out since the layout algorithm does not handle them.
+				// This ensures they are taken into account when determining minimum size
+				if (dockAreaToShapesEntry.getKey() == DockArea.GROUP) {
+					for (Shape shape : sortedShapes) {
+						PropertyUtil.setIsLayedOut(shape, true);
 					}
 				}
 			}

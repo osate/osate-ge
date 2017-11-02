@@ -462,8 +462,6 @@ public class DiagramElementLayoutUtil {
 			}
 
 			m.setSize(de, new Dimension(elkShape.getWidth(), elkShape.getHeight()));
-
-
 		}
 	}
 
