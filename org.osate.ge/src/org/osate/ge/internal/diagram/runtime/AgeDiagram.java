@@ -610,7 +610,9 @@ public class AgeDiagram implements DiagramNode, ModifiableDiagramElementContaine
 	}
 
 	private DockArea calculateDockArea(final DiagramElement e) {
-		return AgeDiagramUtil.determineDockingPosition(e.getContainer(), e.getX(), e.getY(), e.getWidth(), e.getHeight()).getDockArea();
+		return AgeDiagramUtil
+				.determineDockingPosition(e.getContainer(), e.getX(), e.getY(), e.getWidth(), e.getHeight())
+				.getDefaultDockArea();
 	}
 
 	@Override

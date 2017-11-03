@@ -14,20 +14,23 @@ import org.eclipse.graphiti.features.impl.Reason;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.layout.DiagramElementLayoutUtil;
+import org.osate.ge.internal.diagram.runtime.layout.LayoutInfoProvider;
 import org.osate.ge.internal.diagram.runtime.updating.DiagramUpdater;
 import org.osate.ge.internal.graphiti.GraphitiAgeDiagramProvider;
 
 public class UpdateDiagramFeature extends AbstractUpdateFeature implements ICustomUndoRedoFeature {
 	private final GraphitiAgeDiagramProvider graphitiAgeDiagramProvider;
 	private final DiagramUpdater diagramUpdater;
+	private final LayoutInfoProvider layoutInfoProvider;
 
 	@Inject
 	public UpdateDiagramFeature(final IFeatureProvider fp,
 			final GraphitiAgeDiagramProvider graphitiAgeDiagramProvider,
-			final DiagramUpdater diagramUpdater) {
+			final DiagramUpdater diagramUpdater, final LayoutInfoProvider layoutInfoProvider) {
 		super(fp);
 		this.graphitiAgeDiagramProvider = Objects.requireNonNull(graphitiAgeDiagramProvider, "graphitiAgeDiagramProvider must not be null");
 		this.diagramUpdater = Objects.requireNonNull(diagramUpdater, "diagramUpdater must not be null");
+		this.layoutInfoProvider = Objects.requireNonNull(layoutInfoProvider, "layoutInfoProvider must not be null");
 	}
 
 	@Override
@@ -48,7 +51,8 @@ public class UpdateDiagramFeature extends AbstractUpdateFeature implements ICust
 		diagramUpdater.updateDiagram(ageDiagram);
 
 		// Perform the layout as a separate operation because the sizes for the shapes are assigned by the Graphiti modification listener.
-		ageDiagram.modify("Update Diagram", m -> DiagramElementLayoutUtil.layoutIncrementally(ageDiagram, m));
+		ageDiagram.modify("Update Diagram",
+				m -> DiagramElementLayoutUtil.layoutIncrementally(ageDiagram, m, layoutInfoProvider));
 
 		return true;
 	}

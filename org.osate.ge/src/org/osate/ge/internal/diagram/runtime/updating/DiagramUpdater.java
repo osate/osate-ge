@@ -216,7 +216,7 @@ public class DiagramUpdater {
 					if(container instanceof DiagramElement && ((DiagramElement) container).getDockArea() != null) {
 						m.setDockArea(element, DockArea.GROUP);
 					} else if(element.getDockArea() == null) {
-						m.setDockArea(element, defaultDockingPosition.getDockArea());
+						m.setDockArea(element, defaultDockingPosition.getDefaultDockArea());
 					}
 				} else {
 					// Ensure the dock area is null

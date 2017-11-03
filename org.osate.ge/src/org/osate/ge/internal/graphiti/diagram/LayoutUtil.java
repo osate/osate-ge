@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.eclipse.graphiti.datatypes.IDimension;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.Text;
 import org.eclipse.graphiti.mm.algorithms.styles.Point;
@@ -21,7 +20,6 @@ import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.services.IGaService;
-import org.eclipse.graphiti.ui.services.GraphitiUi;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.LabelPosition;
 import org.osate.ge.graphics.Style;
@@ -32,6 +30,7 @@ import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramElementPredicates;
 import org.osate.ge.internal.diagram.runtime.DiagramModification;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
+import org.osate.ge.internal.diagram.runtime.Dimension;
 import org.osate.ge.internal.diagram.runtime.DockArea;
 import org.osate.ge.internal.graphiti.AnchorNames;
 import org.osate.ge.internal.graphiti.ShapeNames;
@@ -119,17 +118,17 @@ class LayoutUtil {
 						if (decorationElement.getName() != null) {
 							final Text text = gaService.createDefaultText(graphitiDiagram, cd);
 							PropertyUtil.setIsStylingChild(text, true);
-							TextUtil.setStyle(graphitiDiagram, text, decorationElement.getStyle().getFontSize());
 							text.setValue(decorationElement.getName());
+							TextUtil.setStyleAndSize(graphitiDiagram, text, decorationElement.getStyle().getFontSize());
 							if (decorationElement.hasPosition()) {
 								gaService.setLocation(text, (int) Math.round(decorationElement.getX()),
 										(int) Math.round(decorationElement.getY()));
 							} else {
-								final IDimension labelTextSize = GraphitiUi.getUiLayoutService()
-										.calculateTextSize(decorationElement.getName(), text.getFont());
-								text.setX(-labelTextSize.getWidth() / 2);
+								text.setX(-text.getWidth() / 2);
 								text.setY(labelY);
 							}
+
+							mod.setSize(decorationElement, new Dimension(text.getWidth(), text.getHeight()));
 
 							// Set the next label position based on the position of this label
 							labelY += 15;
@@ -251,8 +250,8 @@ class LayoutUtil {
 
 						// Handle positioning of group docked shapes
 						for (final Entry<DockArea, List<Shape>> dockAreaToShapesEntry : dockAreaToShapesMap.entrySet()) {
-							for (final Shape childShape : dockAreaToShapesEntry.getValue()) {
-								if (dockAreaToShapesEntry.getKey() == DockArea.GROUP) {
+							if (dockAreaToShapesEntry.getKey() == DockArea.GROUP) {
+								for (final Shape childShape : dockAreaToShapesEntry.getValue()) {
 									switch (shapeDockArea) {
 									case LEFT:
 									case RIGHT:
@@ -693,7 +692,12 @@ class LayoutUtil {
 				// Sort shapes by order. Ignore shapes that haven't been layed out
 				final List<Shape> sortedShapes = dockAreaToShapesEntry.getValue().stream().filter(s -> {
 					final DiagramNode dn = diagramNodeProvider.getDiagramNode(s);
-					return dn instanceof DiagramElement && ((DiagramElement) dn).hasPosition();
+					if (!(dn instanceof DiagramElement)) {
+						return false;
+					}
+
+					final DiagramElement de = (DiagramElement) dn;
+					return de.hasPosition() || de.getDockArea() == DockArea.GROUP;
 				}).collect(Collectors.toList());
 
 				if (vertical) {
@@ -715,6 +719,14 @@ class LayoutUtil {
 							shape.getGraphicsAlgorithm().setX(newX);
 							minX = newX + shape.getGraphicsAlgorithm().getWidth() + 5;
 						}
+					}
+				}
+
+				// Nested docked feature need to be marked as layed out since the layout algorithm does not handle them.
+				// This ensures they are taken into account when determining minimum size
+				if (dockAreaToShapesEntry.getKey() == DockArea.GROUP) {
+					for (Shape shape : sortedShapes) {
+						PropertyUtil.setIsLayedOut(shape, true);
 					}
 				}
 			}
