@@ -21,11 +21,11 @@ import org.eclipse.ui.PlatformUI;
  */
 class LayoutDebugUtil {
 	private static final boolean enabled = false;
-	private static final String magicProjectName = "__osate_ge_debug";
+	private static final String outputProjectName = "__osate_ge_debug";
 
 	static void saveElkGraphToDebugProject(final ElkNode g) {
 		if (enabled) {
-			final IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(magicProjectName);
+			final IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(outputProjectName);
 			if (project != null && project.exists()) {
 				final URI uri = URI
 						.createPlatformResourceURI(project.getFile("layout_graph.elkg").getFullPath().toString(), true);
