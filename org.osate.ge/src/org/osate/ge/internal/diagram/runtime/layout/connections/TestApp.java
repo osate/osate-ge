@@ -1,10 +1,12 @@
 package org.osate.ge.internal.diagram.runtime.layout.connections;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import org.osate.ge.graphics.Point;
+import org.osate.ge.internal.diagram.runtime.Dimension;
 import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.DataSource;
 import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.Graph;
 import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.HorizontalSegment;
@@ -28,35 +30,38 @@ public class TestApp extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+//		final List<TestObject> objects = Arrays.asList(
+//				TestObject.createContainer(null, new Point(100, 100), new Dimension(100, 100)),
+//				TestObject.createContainer(null, new Point(100, 300), new Dimension(100, 100)),
+//				TestObject.createContainer(null, new Point(100, 500), new Dimension(100, 100)),
+//				TestObject.createContainer(null, new Point(300, 175), new Dimension(100, 100)),
+//				TestObject.createContainer(null, new Point(250, 35), new Dimension(100, 100)));
+
+		final List<TestObject> objects = Arrays.asList(
+				TestObject.createSimple(null, new Point(0, 0), new Dimension(200, 200)),
+				TestObject.createSimple(null, new Point(400, 0), new Dimension(200, 200)));
+
+		TestObject.createSimple(objects.get(0), new Point(50, 100), new Dimension(50, 50));
+		TestObject.createSimple(objects.get(1), new Point(500, 100), new Dimension(50, 50));
+
 		final DataSource<TestObject> testDataSource = new DataSource<TestObject>() {
-			private List<TestObject> rects = Arrays.asList(new TestObject(new Point(100, 100)),
-					new TestObject(new Point(100, 300)), new TestObject(new Point(100, 500)),
-					new TestObject(new Point(300, 175)),
-					new TestObject(new Point(250, 35)));
-
-			// private List<TestObject> rects = Arrays.asList(new TestObject(new Point(100, 100)));
-
 			@Override
 			public List<TestObject> getChildren(final TestObject o) {
 				if (o == null) {
-					return rects;
+					return objects;
 				} else {
-					return Collections.emptyList();
+					return o.children;
 				}
 			}
 
 			@Override
 			public int getNumberOfConnectionPoints(final TestObject o) {
-				return o.connectionPoints.length;
+				return o.connectionPoints.size();
 			}
 
 			@Override
 			public Point getConnectionPoint(final TestObject o, final int index) {
-				if (index >= o.connectionPoints.length) {
-					throw new IllegalArgumentException("Index out of range: " + index);
-				}
-
-				return o.connectionPoints[index];
+				return o.connectionPoints.get(index);
 			}
 
 			@Override
@@ -93,13 +98,8 @@ public class TestApp extends Application {
 
 	private <T> void draw(final GraphicsContext gc, final DataSource<T> ds, final Graph graph,
 			final Segments segments) {
-		// TODO: Handle hierarchy
-		for (final T obj : ds.getChildren(null)) {
-			final Rectangle bounds = ds.getBounds(obj);
-			gc.setStroke(Color.BLACK);
-			gc.setLineWidth(4);
-			gc.strokeRect(bounds.min.x, bounds.min.y, bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y);
-		}
+		// Draw the objects
+		drawChildren(gc, ds, null);
 
 		// Draw Segments
 		gc.setStroke(Color.GREY);
@@ -144,24 +144,67 @@ public class TestApp extends Application {
 		}
 	}
 
+	private <T> void drawChildren(final GraphicsContext gc, final DataSource<T> ds, final T parent) {
+		for (final T child : ds.getChildren(parent)) {
+			drawObject(gc, ds, child);
+		}
+	}
+
+	private <T> void drawObject(final GraphicsContext gc, final DataSource<T> ds, final T obj) {
+		final Rectangle bounds = ds.getBounds(obj);
+		gc.setStroke(Color.BLACK);
+		gc.setLineWidth(4);
+		gc.strokeRect(bounds.min.x, bounds.min.y, bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y);
+		drawChildren(gc, ds, obj);
+	}
+
 	private static class TestObject {
-		private static final double width = 100;
-		private static final double height = 100;
+		public final TestObject parent;
+		private final List<TestObject> modifiableChildren = new ArrayList<>();
+		public final List<TestObject> children = Collections.unmodifiableList(modifiableChildren);
+		public final Rectangle bounds;
+		public final List<Point> connectionPoints; // In Absolute coordinates
 
-		private final Rectangle bounds;
-		public final Point connectionPoints[];
+		private TestObject(final TestObject parent, final Point position, final Dimension size,
+				final Point[] connectionPoints) {
+			this.parent = parent;
+			if (parent != null) {
+				parent.modifiableChildren.add(this);
+			}
+			this.bounds = new Rectangle(position, new Point(position.x + size.width, position.y + size.height));
+			this.connectionPoints = Collections.unmodifiableList(Arrays.asList(connectionPoints));
+		}
 
-		public TestObject(final Point topLeft) {
-			bounds = new Rectangle(topLeft, new Point(topLeft.x + width, topLeft.y + height));
-			// TODO: Define connection points
-			connectionPoints = new Point[] {
-					/*
-					 * new Point(topLeft.x + width / 2, topLeft.y)
-					 * , new Point(topLeft.x + width / 2, topLeft.y + height),
-					 * new Point(topLeft.x, topLeft.y + height / 2),
-					 * new Point(topLeft.x + width, topLeft.y + height / 2)
-					 */
-			};
+		/**
+		 * Represents a box with connection points on left and right.
+		 * @param parent
+		 * @param position
+		 * @param size
+		 * @return
+		 */
+		public static TestObject createSimple(final TestObject parent, final Point position,
+				final Dimension size) {
+			return new TestObject(parent, position, size,
+					new Point[] { new Point(position.x, position.y + size.height / 2.0),
+							new Point(position.x + size.width, position.y + size.height / 2.0) });
+		}
+
+		/**
+		 *
+		 * @param parent
+		 * @param position
+		 * @param size
+		 * @param exteriorConnectionPoint relative to position
+		 * @param interiorConnectionPoint relative to position
+		 * @return
+		 */
+		public static TestObject createPort(final TestObject parent, final Point position, final Dimension size,
+				final Point exteriorConnectionPoint, final Point interiorConnectionPoint) {
+			return new TestObject(parent, position, size,
+					new Point[] {
+							new Point(position.x + exteriorConnectionPoint.x, position.y + exteriorConnectionPoint.y),
+							new Point(position.x + interiorConnectionPoint.x,
+									position.y + interiorConnectionPoint.y) });
 		}
 	}
 }
