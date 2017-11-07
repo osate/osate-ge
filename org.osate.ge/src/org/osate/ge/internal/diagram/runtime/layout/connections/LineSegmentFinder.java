@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.osate.ge.graphics.Point;
 import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.HorizontalSegment;
 import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.VerticalSegment;
 import org.osate.ge.internal.diagram.runtime.layout.connections.Sweeper.Event;
@@ -30,10 +31,10 @@ import com.google.common.collect.TreeMultimap;
 public class LineSegmentFinder {
 	// TODO: Rename
 	private static abstract class AbstractSegmentCollector<ObjectType> implements ResultCollector<ObjectType> {
-		private final OrthogonalVisibilityGraphDataSource<ObjectType> ds;
+		private final LineSegmentFinderDataSource<ObjectType> ds;
 		final Function<ObjectType, Double> keyFunc;
 
-		public AbstractSegmentCollector(final OrthogonalVisibilityGraphDataSource<ObjectType> ds,
+		public AbstractSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
 				final Function<ObjectType, Double> keyFunc) {
 			this.ds = Objects.requireNonNull(ds, "ds must not be null");
 			this.keyFunc = Objects.requireNonNull(keyFunc, "keyFunc must not be null");
@@ -112,7 +113,7 @@ public class LineSegmentFinder {
 	private static class MinVerticalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
 		private final Set<VerticalSegment> segments;
 
-		public MinVerticalSegmentCollector(final OrthogonalVisibilityGraphDataSource<ObjectType> ds,
+		public MinVerticalSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
 				final Set<VerticalSegment> segments) {
 			super(ds, o -> ds.getBounds(o).min.y);
 			this.segments = Objects.requireNonNull(segments, "segments must not be null");
@@ -142,7 +143,7 @@ public class LineSegmentFinder {
 	private static class MaxVerticalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
 		private final Set<VerticalSegment> segments;
 
-		public MaxVerticalSegmentCollector(final OrthogonalVisibilityGraphDataSource<ObjectType> ds,
+		public MaxVerticalSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
 				final Set<VerticalSegment> segments) {
 			super(ds, o -> ds.getBounds(o).max.y);
 			this.segments = Objects.requireNonNull(segments, "segments must not be null");
@@ -174,7 +175,7 @@ public class LineSegmentFinder {
 	private static class MinHorizontalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
 		private final Set<HorizontalSegment> segments;
 
-		public MinHorizontalSegmentCollector(final OrthogonalVisibilityGraphDataSource<ObjectType> ds,
+		public MinHorizontalSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
 				final Set<HorizontalSegment> segments) {
 			super(ds, o -> ds.getBounds(o).min.x);
 			this.segments = Objects.requireNonNull(segments, "segments must not be null");
@@ -204,7 +205,7 @@ public class LineSegmentFinder {
 	private static class MaxHorizontalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
 		private final Set<HorizontalSegment> segments;
 
-		public MaxHorizontalSegmentCollector(final OrthogonalVisibilityGraphDataSource<ObjectType> ds,
+		public MaxHorizontalSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
 				final Set<HorizontalSegment> segments) {
 			super(ds, o -> ds.getBounds(o).max.x);
 			this.segments = Objects.requireNonNull(segments, "segments must not be null");
@@ -234,9 +235,9 @@ public class LineSegmentFinder {
 
 	// TODO: What is needed... Bounds of ALL the objects and connection points.. In order to make an event list.
 	// TODO: Does the data source really need the concept of children?
-	public final static <T> Set<VerticalSegment> findVerticalSegments(OrthogonalVisibilityGraphDataSource<T> ds) {
+	public final static <T> Set<VerticalSegment> findVerticalSegments(LineSegmentFinderDataSource<T> ds) {
 		final List<Sweeper.Event<T>> events = new ArrayList<>();
-		addEventsForHorizontalSweep(null, ds, events);
+		addEventsForHorizontalSweep(ds, events);
 		Sweeper.sort(events);
 
 //		// TODO: What if two objects have the same min/max y? Only one object will be inserted?
@@ -260,26 +261,25 @@ public class LineSegmentFinder {
 	}
 
 	// TODO: A stream would be better to avoid having to store everything in an array
-	private static <T> void addEventsForHorizontalSweep(final T parent,
-			final OrthogonalVisibilityGraphDataSource<T> ds,
+	private static <T> void addEventsForHorizontalSweep(final LineSegmentFinderDataSource<T> ds,
 			final Collection<Sweeper.Event<T>> events) {
-		for (final T child : ds.getChildren(parent)) {
+		for (final T child : ds.getObjects()) {
 			final Rectangle childBounds = ds.getBounds(child);
-			// TODO: Add events
-			events.add(new Event<T>(EventType.OPEN, childBounds.min.x, child));
-			events.add(new Event<T>(EventType.CLOSE, childBounds.max.x, child));
+			if (childBounds != null) {
+				events.add(new Event<T>(EventType.OPEN, childBounds.min.x, child));
+				events.add(new Event<T>(EventType.CLOSE, childBounds.max.x, child));
+			} else {
+				final Point position = ds.getPosition(child);
+				if (position == null) {
+					throw new RuntimeException("Bounds and position are both invalid for: " + child);
+				}
 
-			final int numberOfConnectionPoints = ds.getNumberOfConnectionPoints(child);
-			for (int cpIndex = 0; cpIndex < numberOfConnectionPoints; cpIndex++) {
-				final T cp = ds.getConnectionPoint(child, cpIndex);
-				events.add(new Event<T>(EventType.POINT, ds.getConnectionPointPosition(cp).x, cp));
+				events.add(new Event<T>(EventType.POINT, position.x, child));
 			}
-
-			addEventsForHorizontalSweep(child, ds, events);
 		}
 	}
 
-	public final static <T> Set<HorizontalSegment> findHorizontalSegments(OrthogonalVisibilityGraphDataSource<T> ds) {
+	public final static <T> Set<HorizontalSegment> findHorizontalSegments(LineSegmentFinderDataSource<T> ds) {
 		final List<Sweeper.Event<T>> events = new ArrayList<>();
 		addEventsForVerticalSweep(null, ds, events);
 		Sweeper.sort(events);
@@ -298,34 +298,35 @@ public class LineSegmentFinder {
 				Ordering.arbitrary());
 		final MaxHorizontalSegmentCollector<T> maxHorizontalCollector = new MaxHorizontalSegmentCollector<T>(ds,
 				horizontalSegments);
+		// TODO: Use the function which is part of the collector.
 		Sweeper.sweep(events, maxXOpenObjects, o -> ds.getBounds(o).max.x, maxHorizontalCollector);
 
 		return horizontalSegments;
 	}
 
-	// TODO: A stream would be better to avoid having to store everything in an array
-	private static <T> void addEventsForVerticalSweep(final T parent, final OrthogonalVisibilityGraphDataSource<T> ds,
+	// TODO: Share implementation with other horizontal sweep. Only difference is the axis
+	private static <T> void addEventsForVerticalSweep(final T parent, final LineSegmentFinderDataSource<T> ds,
 			final Collection<Sweeper.Event<T>> events) {
-		for (final T child : ds.getChildren(parent)) {
+		for (final T child : ds.getObjects()) {
 			final Rectangle childBounds = ds.getBounds(child);
-			// TODO: Add events
-			events.add(new Event<T>(EventType.OPEN, childBounds.min.y, child));
-			events.add(new Event<T>(EventType.CLOSE, childBounds.max.y, child));
+			if (childBounds != null) {
+				events.add(new Event<T>(EventType.OPEN, childBounds.min.y, child));
+				events.add(new Event<T>(EventType.CLOSE, childBounds.max.y, child));
+			} else {
+				final Point position = ds.getPosition(child);
+				if (position == null) {
+					throw new RuntimeException("Bounds and position are both invalid for: " + child);
+				}
 
-			final int numberOfConnectionPoints = ds.getNumberOfConnectionPoints(child);
-			for (int cpIndex = 0; cpIndex < numberOfConnectionPoints; cpIndex++) {
-				final T cp = ds.getConnectionPoint(child, cpIndex);
-				events.add(new Event<T>(EventType.POINT, ds.getConnectionPointPosition(cp).y, cp));
+				events.add(new Event<T>(EventType.POINT, position.y, child));
 			}
-
-			addEventsForVerticalSweep(child, ds, events);
 		}
 	}
 
 	// TODO: May need a better way to get the cp segment bounds... Decide after seeing how things work.
 
 	public static void main(String[] args) {
-		final OrthogonalVisibilityGraphDataSource<?> ds = TestModel.createDataSource();
+		final LineSegmentFinderDataSource<?> ds = TestModel.createDataSource();
 
 		// Vertical
 		final Set<VerticalSegment> verticalSegments = findVerticalSegments(ds);

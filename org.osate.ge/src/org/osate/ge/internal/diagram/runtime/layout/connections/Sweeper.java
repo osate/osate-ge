@@ -41,7 +41,6 @@ public class Sweeper<Tag> {
 	 *
 	 * @param events must be such that iterating through it will produce events in order.
 	 */
-	@SuppressWarnings({ "unchecked" })
 	public static <Tag> void sweep(final List<Event<Tag>> events, final TreeMultimap<Double, Tag> openObjects, // TODO: use interface type
 			final Function<Tag, Double> getObjectKey,
 			final ResultCollector<Tag> resultCollector) {

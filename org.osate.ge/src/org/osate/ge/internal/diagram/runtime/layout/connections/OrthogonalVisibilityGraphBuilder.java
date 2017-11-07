@@ -147,11 +147,9 @@ public class OrthogonalVisibilityGraphBuilder {
 			this.verticalSegments = verticalSegments;
 		}
 	}
-	// TODO: Return value
-	// TODO: Accept connector points.
-	// TODO: Need concept of container and owners right? To support hierarical.
-	// TODO: Accept Obstacles.
-	public static <T> Graph create(final OrthogonalVisibilityGraphDataSource<T> ds) {
+
+	// TODO: Should this exist? Should just have the version that is passed segments and then a helper in another class?
+	public static <T> Graph create(final LineSegmentFinderDataSource<T> ds) {
 		return buildGraph(buildSegments(ds));
 	}
 
@@ -208,7 +206,8 @@ public class OrthogonalVisibilityGraphBuilder {
 		return new Graph(nodes.stream().distinct().collect(ImmutableList.toImmutableList()));
 	}
 
-	static <T> Segments buildSegments(final OrthogonalVisibilityGraphDataSource<T> ds) {
+	// TODO: Should be moved outside of this class?
+	static <T> Segments buildSegments(final LineSegmentFinderDataSource<T> ds) {
 		final Set<VerticalSegment> verticalSegments = LineSegmentFinder.findVerticalSegments(ds);
 		final Set<HorizontalSegment> horizontalSegments = LineSegmentFinder.findHorizontalSegments(ds);
 

@@ -23,7 +23,7 @@ public class TestApp extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		final OrthogonalVisibilityGraphDataSource<?> testDataSource = TestModel.createDataSource();
+		final LineSegmentFinderDataSource<?> testDataSource = TestModel.createDataSource();
 
 		// OrthogonalVisibilityGraph.create(testDataSource);
 		final Segments segments = OrthogonalVisibilityGraphBuilder.buildSegments(testDataSource);
@@ -49,10 +49,12 @@ public class TestApp extends Application {
 		primaryStage.show();
 	}
 
-	private <T> void draw(final GraphicsContext gc, final OrthogonalVisibilityGraphDataSource<T> ds, final Graph graph,
+	private <T> void draw(final GraphicsContext gc, final LineSegmentFinderDataSource<T> ds, final Graph graph,
 			final Segments segments) {
 		// Draw the objects
-		drawChildren(gc, ds, null);
+		for (final T obj : ds.getObjects()) {
+			drawObjectIfBounded(gc, ds, obj);
+		}
 
 		// Draw Segments
 		gc.setStroke(Color.GREY);
@@ -96,18 +98,14 @@ public class TestApp extends Application {
 		}
 	}
 
-	private <T> void drawChildren(final GraphicsContext gc, final OrthogonalVisibilityGraphDataSource<T> ds, final T parent) {
-		for (final T child : ds.getChildren(parent)) {
-			drawObject(gc, ds, child);
-		}
-	}
-
-	private <T> void drawObject(final GraphicsContext gc, final OrthogonalVisibilityGraphDataSource<T> ds, final T obj) {
+	private <T> void drawObjectIfBounded(final GraphicsContext gc, final LineSegmentFinderDataSource<T> ds,
+			final T obj) {
 		final Rectangle bounds = ds.getBounds(obj);
-		gc.setStroke(Color.BLACK);
-		gc.setLineWidth(4);
-		gc.strokeRect(bounds.min.x, bounds.min.y, bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y);
-		drawChildren(gc, ds, obj);
+		if (bounds != null) {
+			gc.setStroke(Color.BLACK);
+			gc.setLineWidth(4);
+			gc.strokeRect(bounds.min.x, bounds.min.y, bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y);
+		}
 	}
 
 }
