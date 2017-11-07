@@ -12,6 +12,7 @@ import java.util.TreeSet;
 import org.osate.ge.graphics.Point;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 
 
 // TODO: Cite paper
@@ -20,7 +21,6 @@ import com.google.common.collect.ImmutableList;
 //     Check that left and right agree. Also up and down.
 //     Segments max > min
 public class OrthogonalVisibilityGraphBuilder {
-
 	// TODO: Rename to model
 	public static interface DataSource<T> {
 		// All children are assumed to be contained in the bounding box of their parent.
@@ -29,7 +29,17 @@ public class OrthogonalVisibilityGraphBuilder {
 		int getNumberOfConnectionPoints(final T o);
 
 		// TODO: Need concept of direction in points? Or some way to avoid collision with owner.
+		// TODO: Rename to getConnectionPointPosition?
 		org.osate.ge.graphics.Point getConnectionPoint(final T o, final int index);
+
+		// TODO: Rename
+		/**
+		 *
+		 * @param o
+		 * @param index
+		 * @return a null result means that the segments should be unconstrained.
+		 */
+		Rectangle getConnectionPointSegmentBounds(final T o, final int index);
 
 		Rectangle getBounds(final T o);
 	}
@@ -221,7 +231,6 @@ public class OrthogonalVisibilityGraphBuilder {
 					if(leftNode != null) {
 						leftNode.setNeighbor(OrthogonalDirection.RIGHT, newNode);
 					}
-					// newNode.le
 
 					leftNode = newNode;
 
@@ -241,19 +250,18 @@ public class OrthogonalVisibilityGraphBuilder {
 		return new Graph(nodes.stream().distinct().collect(ImmutableList.toImmutableList()));
 	}
 
-	// TODO: Assumes that segments are sorted by the fixed coordinate and the min of the secondary coordinate.
-	static <T> void addSegments(final DataSource<T> ds, final List<T> objects,
+	// Assumes that segments are sorted by the fixed coordinate and the min of the secondary coordinate.
+	static <T> void addSegmentsForChild(final DataSource<T> ds, final T object, final Rectangle segmentBounds,
+			final Iterable<T> collisionObjects,
 			final NavigableSet<HorizontalSegment> horizontalSegments,
 			final NavigableSet<VerticalSegment> verticalSegments,
 			final double x, final double y) {
 
-		// TODO: Cleanup. Break into pieces.
-		// TODO: Hierarical.
-		// TODO: Can optimize finding spans by sorting bounding boxes.
+		// TODO: Optimize finding spaces by sorting bounding boxes or using a specialized data structure
 
 		// Create Vertical Segments
-		double up = Double.NEGATIVE_INFINITY;
-		double down = Double.POSITIVE_INFINITY;
+		double up = segmentBounds == null ? Double.NEGATIVE_INFINITY : segmentBounds.min.y;
+		double down = segmentBounds == null ? Double.POSITIVE_INFINITY : segmentBounds.max.y;
 		// TODO: Avoid allocations?
 		final VerticalSegment topSearchVerticalSegment = new VerticalSegment(x, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY);
 		final VerticalSegment bottomSearchVerticalSegment = new VerticalSegment(x, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
@@ -261,21 +269,17 @@ public class OrthogonalVisibilityGraphBuilder {
 				.subSet(topSearchVerticalSegment, true,
 						bottomSearchVerticalSegment, true);
 
-		boolean alreadyFoundVertical = false;
-
-
-		// TODO: NOTE:  This assumes that none of the boxes overlap.
+		boolean addVerticalSegments = true;
 		final VerticalSegment yPointSegment = new VerticalSegment(x, y, y);
 		for (final VerticalSegment tmp : verticalSegmentsMatchingX.tailSet(yPointSegment, true)) {
 			if (tmp.minY <= y && tmp.maxY >= y) {
-				alreadyFoundVertical = true;
+				addVerticalSegments = false;
 				break;
 			}
 		}
 
-		if (!alreadyFoundVertical) {
-			for (int j = 0; j < objects.size(); j++) {
-				final T o2 = objects.get(j);
+		if (addVerticalSegments) {
+			for (final T o2 : collisionObjects) {
 				final Rectangle b2 = ds.getBounds(o2);
 
 				// Up
@@ -293,8 +297,8 @@ public class OrthogonalVisibilityGraphBuilder {
 		}
 
 		// Create Horizontal Segments
-		double left = Double.NEGATIVE_INFINITY;
-		double right = Double.POSITIVE_INFINITY;
+		double left = segmentBounds == null ? Double.NEGATIVE_INFINITY : segmentBounds.min.x;
+		double right = segmentBounds == null ? Double.POSITIVE_INFINITY : segmentBounds.max.x;
 		// TODO: Avoid allocations?
 		final HorizontalSegment leftSearchHorizontalSegment = new HorizontalSegment(y, Double.NEGATIVE_INFINITY,
 				Double.NEGATIVE_INFINITY);
@@ -303,18 +307,17 @@ public class OrthogonalVisibilityGraphBuilder {
 		final NavigableSet<HorizontalSegment> horizontalSegmentsMatchingY = horizontalSegments
 				.subSet(leftSearchHorizontalSegment, true, rightSearchHorizontalSegment, true);
 
-		boolean alreadyFoundHorizontal = false;
+		boolean addHorizontalSegments = true;
 		final HorizontalSegment xPointSegment = new HorizontalSegment(y, x, x);
 		for (final HorizontalSegment tmp : horizontalSegmentsMatchingY.tailSet(xPointSegment, true)) {
 			if (tmp.minX <= x && tmp.maxX >= x) {
-				alreadyFoundHorizontal = true;
+				addHorizontalSegments = false;
 				break;
 			}
 		}
 
-		if (!alreadyFoundHorizontal) {
-			for (int j = 0; j < objects.size(); j++) {
-				final T o2 = objects.get(j);
+		if (addHorizontalSegments) {
+			for (final T o2 : collisionObjects) {
 				final Rectangle b2 = ds.getBounds(o2);
 
 				// Left
@@ -349,26 +352,46 @@ public class OrthogonalVisibilityGraphBuilder {
 		final TreeSet<HorizontalSegment> horizontalSegments = new TreeSet<>(
 				yComparator.thenComparing((hs1, hs2) -> Double.compare(hs1.minX, hs2.minX)));
 
-		// TODO: Want to treat each point independently instead of just checking a single direction?
-
-		// Look for interesting segments
-		final List<T> objects = ds.getChildren(null);
-		for (int i = 0; i < objects.size(); i++) {
-			final T o1 = objects.get(i);
-			final Rectangle b1 = ds.getBounds(o1);
-
-			addSegments(ds, objects, horizontalSegments, verticalSegments, b1.min.x, b1.min.y);
-			addSegments(ds, objects, horizontalSegments, verticalSegments, b1.max.x, b1.min.y);
-			addSegments(ds, objects, horizontalSegments, verticalSegments, b1.min.x, b1.max.y);
-			addSegments(ds, objects, horizontalSegments, verticalSegments, b1.max.x, b1.max.y);
-		}
+		addSegments(ds, verticalSegments, horizontalSegments, null);
 
 		System.err.println("VERTICAL SEGMENTS: " + verticalSegments.size());
 		System.err.println("HORIZONTAL SEGMENTS: " + horizontalSegments.size());
-		// TODO: Store as tree set.. Immutable ideally
 
-		// Remove duplicate and create segments object
+		// Create segments object
 		return new Segments(Collections.unmodifiableNavigableSet(horizontalSegments),
 				Collections.unmodifiableNavigableSet(verticalSegments));
+	}
+
+	private static <T> void addSegments(final DataSource<T> ds, final TreeSet<VerticalSegment> verticalSegments,
+			final TreeSet<HorizontalSegment> horizontalSegments, final T parent) {
+		// TODO: Want to treat each point independently instead of just checking a single direction?
+
+		// Look for interesting segments
+		final List<T> objects = ds.getChildren(parent);
+		final Rectangle parentBounds = parent == null ? null : ds.getBounds(parent);
+		for (int i = 0; i < objects.size(); i++) {
+			final T child = objects.get(i);
+			final Rectangle b1 = ds.getBounds(child);
+
+			final Iterable<T> collisionObjects = Iterables.concat(objects, ds.getChildren(child));
+			addSegmentsForChild(ds, child, parentBounds, collisionObjects, horizontalSegments, verticalSegments, b1.min.x,
+					b1.min.y);
+			addSegmentsForChild(ds, child, parentBounds, collisionObjects, horizontalSegments, verticalSegments, b1.max.x,
+					b1.min.y);
+			addSegmentsForChild(ds, child, parentBounds, collisionObjects, horizontalSegments, verticalSegments, b1.min.x,
+					b1.max.y);
+			addSegmentsForChild(ds, child, parentBounds, collisionObjects, horizontalSegments, verticalSegments, b1.max.x,
+					b1.max.y);
+
+			for (int connectionPointIndex = 0; connectionPointIndex < ds
+					.getNumberOfConnectionPoints(child); connectionPointIndex++) {
+				final Point cp = ds.getConnectionPoint(child, connectionPointIndex);
+				addSegmentsForChild(ds, child, ds.getConnectionPointSegmentBounds(child, connectionPointIndex),
+						collisionObjects, horizontalSegments, verticalSegments, cp.x,
+						cp.y);
+			}
+
+			addSegments(ds, verticalSegments, horizontalSegments, child);
+		}
 	}
 }
