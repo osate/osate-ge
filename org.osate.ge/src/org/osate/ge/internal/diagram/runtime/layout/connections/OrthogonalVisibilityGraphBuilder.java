@@ -1,14 +1,22 @@
 package org.osate.ge.internal.diagram.runtime.layout.connections;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.osate.ge.graphics.Point;
+import org.osate.ge.internal.diagram.runtime.layout.connections.Sweeper.Event;
+import org.osate.ge.internal.diagram.runtime.layout.connections.Sweeper.EventType;
+import org.osate.ge.internal.diagram.runtime.layout.connections.Sweeper.ResultCollector;
 
-import com.google.common.collect.ImmutableList;
-
+import com.google.common.collect.Ordering;
+import com.google.common.collect.TreeMultimap;
 
 // TODO: Cite paper
 // TODO: Describe modifications.
@@ -17,10 +25,10 @@ import com.google.common.collect.ImmutableList;
 //     Segments max > min
 public class OrthogonalVisibilityGraphBuilder {
 	static class Graph {
-		public final ImmutableList<OrthogonalGraphNode> nodes;
+		public final Collection<OrthogonalGraphNode> nodes;
 
-		public Graph(final ImmutableList<OrthogonalGraphNode> nodes) {
-			this.nodes = nodes;
+		public Graph(final Collection<OrthogonalGraphNode> nodes) {
+			this.nodes = Collections.unmodifiableCollection(nodes);
 		}
 	}
 
@@ -29,56 +37,143 @@ public class OrthogonalVisibilityGraphBuilder {
 		return buildGraph(LineSegmentFinder.buildSegments(ds));
 	}
 
-	static <T> Graph buildGraph(final OrthogonalSegments<T> segments) {
-		final List<OrthogonalGraphNode> nodes = new ArrayList<>();
+	// TODO: Rename
+	// TODO: Generic for segment type?
+	private static class SegmentNodePair<SegmentType> {
+		public SegmentType segment;
+		public OrthogonalGraphNode node;
 
-		// TODO: Some intersections aren't showing up...
-		// Intersections in the middle of object segments aren't showing up either.
-		// That's because segments aren't being created for edges.
+		public SegmentNodePair(final SegmentType segment, final OrthogonalGraphNode node) {
+			this.segment = segment;
+			this.node = node;
+		}
+	}
 
-		// Create nodes at intersections of segments
-		// TODO: Avoid duplicates. Distinct clears them out but would be better not to create them in the first place
-		// Compare performance of a hash set versus creating and then clearing
+	// TODO: Move. Rename
+	private static class LineIntersectionCollector<T> implements ResultCollector<Object> {
+		private final Map<Point, OrthogonalGraphNode> positionToNodesMap = new HashMap<>();
 
-		// TO Create Horizontal Edges
-		// Sort Nodes By X
-		// Map segment to node.
-		// Set edges based on position of node...
+		// For every y, track the rightmost part of the segment and left
+		private final Map<Double, SegmentNodePair<HorizontalSegment<?>>> yToLeftNodeSegmentMap = new HashMap<>();
 
-		// TODO: Group nodes by horizontal segment. Sorted
-		// Go through each node and set edges.
+		private double lastX = Double.NaN;
+		// Processed and cleared whenever a new X is encountered.
+		private final TreeMap<Double, SegmentNodePair<VerticalSegment<?>>> yToVerticalNodeMap = new TreeMap<Double, SegmentNodePair<VerticalSegment<?>>>();
 
-		// TODO: Sort segments.. Already sorted?
+		@Override
+		public void handleEvent(final Event<Object> event, final TreeMultimap<Double, Object> openObjects) {
+			if (event.position != lastX) {
+				processOrderedNodes();
+				lastX = event.position;
+			}
 
-		final Map<VerticalSegment<T>, OrthogonalGraphNode> vsToUpNode = new HashMap<>();
+			// TODO: Get all intersections
+			if(event.type == EventType.POINT) {
+				// TODO: Support any vertical segment... Type doesn't really matter.. Right?
+				@SuppressWarnings("unchecked")
+				final VerticalSegment<?> vs = (VerticalSegment<?>) event.tag;
+				for(final Double key : openObjects.keySet().subSet(vs.minY, true, vs.maxY, true)) {
+					for(final Object hsObj : openObjects.get(key)) {
+						final HorizontalSegment<T> hs = (HorizontalSegment<T>)hsObj;
 
-		for (final HorizontalSegment<T> hs : segments.horizontalSegments) {
-			OrthogonalGraphNode leftNode = null;
+						// TODO: Should be intersection
+						final Point nodePosition = new Point(vs.x, hs.y);
+						final boolean nodeExists = positionToNodesMap.containsKey(nodePosition);
 
-			for (final VerticalSegment<T> vs : segments.verticalSegments) {
-				if (vs.minY <= hs.y && vs.maxY >= hs.y && vs.x >= hs.minX && vs.x <= hs.maxX) {
-					final OrthogonalGraphNode newNode = new OrthogonalGraphNode(new Point(vs.x, hs.y));
-					nodes.add(newNode);
+						// TODO: Rename
+						if (nodeExists) {
+							// Update the segment stored in the tuple maps if the previously stored segment is to the left/above this segment
+							// This is needed to prevent from using the incorrect segment when segments overlap.
+							final SegmentNodePair<HorizontalSegment<?>> prevPair = yToLeftNodeSegmentMap
+									.get(nodePosition.y);
+							if (prevPair.segment.maxX < hs.maxX) {
+								prevPair.segment = hs;
+							}
 
-					if(leftNode != null) {
-						leftNode.setNeighbor(OrthogonalDirection.RIGHT, newNode);
+							final SegmentNodePair<VerticalSegment<?>> prevVertPair = yToVerticalNodeMap.get(nodePosition.y);
+							if (prevVertPair.segment.maxY < vs.maxY) {
+								prevVertPair.segment = vs;
+							}
+						} else {
+							final OrthogonalGraphNode newNode = new OrthogonalGraphNode(nodePosition);
+
+							positionToNodesMap.put(nodePosition, newNode);
+							yToVerticalNodeMap.put(newNode.position.y, new SegmentNodePair<>(vs, newNode));
+
+							final SegmentNodePair<HorizontalSegment<?>> leftTestTuple = yToLeftNodeSegmentMap
+									.put(nodePosition.y,
+									new SegmentNodePair<>(hs, newNode));
+
+							if (leftTestTuple != null
+									&& leftTestTuple.segment.maxX >= hs.minX) {
+								newNode.setNeighbor(OrthogonalDirection.LEFT, leftTestTuple.node);
+							}
+						}
 					}
-
-					leftNode = newNode;
-
-					// TODO: Get the previous node from the same vertical segment.
-					final OrthogonalGraphNode upNode = vsToUpNode.get(vs);
-					if (upNode != null) {
-						upNode.setNeighbor(OrthogonalDirection.DOWN, newNode);
-					}
-
-					vsToUpNode.put(vs, newNode);
+					// vs.minY
 				}
+
 			}
 		}
 
-		// TODO: Edges
+		// Must be called to finish setting vertical neighbors.
+		public void finish() {
+			processOrderedNodes();
+		}
 
-		return new Graph(nodes.stream().distinct().collect(ImmutableList.toImmutableList()));
+		// Sets the vertical neighbors and then cleared
+		// TODO: Rename
+		private void processOrderedNodes() {
+			SegmentNodePair<VerticalSegment<?>> prev = null;
+			final Iterator<SegmentNodePair<VerticalSegment<?>>> tupleIt = yToVerticalNodeMap.values().iterator(); // TODO: Rename
+			if (tupleIt.hasNext()) {
+				prev = tupleIt.next();
+			}
+
+			while (tupleIt.hasNext()) {
+				final SegmentNodePair<VerticalSegment<?>> tmp = tupleIt.next();
+
+				if (prev.segment.maxY >= tmp.segment.minY) {
+					tmp.node.setNeighbor(OrthogonalDirection.UP, prev.node);
+				}
+
+				prev = tmp;
+			}
+
+			yToVerticalNodeMap.clear();
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	static <T> Graph buildGraph(final OrthogonalSegments<T> segments) {
+		// Create events from segments
+		final List<Event<Object>> events = new ArrayList<>(
+				segments.horizontalSegments.size() * 2 + segments.verticalSegments.size());
+
+		for (final HorizontalSegment<T> hs : segments.horizontalSegments) {
+			events.add(new Event<Object>(EventType.OPEN, hs.minX, hs));
+			events.add(new Event<Object>(EventType.CLOSE, hs.maxX, hs));
+		}
+
+		for (final VerticalSegment<T> vs : segments.verticalSegments) {
+			events.add(new Event<Object>(EventType.POINT, vs.x, vs));
+		}
+
+		Sweeper.sort(events);
+
+		final TreeMultimap<Double, Object> openObjects = TreeMultimap.create(Comparator.naturalOrder(),
+				Ordering.arbitrary());
+
+		// TODO: rename
+		final LineIntersectionCollector<Object> intersectionCollector = new LineIntersectionCollector<Object>();
+
+		// TODO: Key function should be between the collector?
+		Sweeper.sweep(events, openObjects, o -> ((HorizontalSegment<T>) o).y, intersectionCollector);
+
+		intersectionCollector.finish();
+
+		// TODO: Return entire map.. Will need it to lookup nodes
+		return new Graph(intersectionCollector.positionToNodesMap.values());// nodes.stream().distinct().collect(ImmutableList.toImmutableList()));
+		// return new Graph(Collections.emptySet());
 	}
 }

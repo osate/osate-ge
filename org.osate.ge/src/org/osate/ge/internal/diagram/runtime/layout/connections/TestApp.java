@@ -41,11 +41,13 @@ public class TestApp extends Application {
 		primaryStage.setTitle("Connection Layout Test");
 		final Group root = new Group();
 		final Canvas canvas = new Canvas(800, 500);
+
 		final GraphicsContext gc = canvas.getGraphicsContext2D();
 		draw(gc, ds, graph, segments);
 		root.getChildren().add(canvas);
 		primaryStage.setScene(new Scene(root));
 		primaryStage.show();
+
 	}
 
 	private <T> void draw(final GraphicsContext gc, final LineSegmentFinderDataSource<T> ds, final Graph graph,
@@ -71,7 +73,6 @@ public class TestApp extends Application {
 		final boolean drawNodesAndEdges = true;// false; // TODO: Reenable
 		if (drawNodesAndEdges) {
 			gc.setFill(Color.BLUE);
-			System.err.println(graph.nodes.size());
 			for (final OrthogonalGraphNode n : graph.nodes) {
 				gc.fillOval(n.position.x - halfNodeIndicatorSize, n.position.y - halfNodeIndicatorSize, nodeIndicatorSize,
 						nodeIndicatorSize);

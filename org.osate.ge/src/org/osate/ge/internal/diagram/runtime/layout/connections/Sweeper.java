@@ -41,6 +41,10 @@ public class Sweeper<Tag> {
 	 *
 	 * @param events must be such that iterating through it will produce events in order.
 	 */
+	// TODO: getObjectKey.. Only needed for object that will be opened/closed? Need to document. Could be part of event but then a new set would have be created
+	// each time..
+	// But wouldn't have to call function to get.. Is it just called once per thing?
+	// TODO: Consider going back to a special type for open objects...
 	public static <Tag> void sweep(final List<Event<Tag>> events, final TreeMultimap<Double, Tag> openObjects, // TODO: use interface type
 			final Function<Tag, Double> getObjectKey,
 			final ResultCollector<Tag> resultCollector) {
