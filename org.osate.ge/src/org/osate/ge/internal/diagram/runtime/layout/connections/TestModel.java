@@ -127,7 +127,7 @@ public class TestModel {
 	}
 
 	// TODO: Document. Need bounds or position but not both.
-	private static class TestElement {
+	static class TestElement {
 		public final TestElement parent;
 		public final Rectangle bounds;
 		public final Rectangle segmentBounds;

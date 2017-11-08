@@ -2,6 +2,7 @@ package org.osate.ge.internal.diagram.runtime.layout.connections;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -10,8 +11,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
-import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.HorizontalSegment;
-import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.VerticalSegment;
 import org.osate.ge.internal.diagram.runtime.layout.connections.Sweeper.Event;
 import org.osate.ge.internal.diagram.runtime.layout.connections.Sweeper.EventType;
 import org.osate.ge.internal.diagram.runtime.layout.connections.Sweeper.ResultCollector;
@@ -30,7 +29,7 @@ import com.google.common.collect.TreeMultimap;
 public class LineSegmentFinder {
 	// TODO: Rename
 	private static abstract class AbstractSegmentCollector<ObjectType> implements ResultCollector<ObjectType> {
-		private final LineSegmentFinderDataSource<ObjectType> ds;
+		protected final LineSegmentFinderDataSource<ObjectType> ds;
 		final Function<ObjectType, Double> keyFunc;
 
 		public AbstractSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
@@ -43,8 +42,6 @@ public class LineSegmentFinder {
 		public void handleEvent(final Event<ObjectType> event, final TreeMultimap<Double, ObjectType> openObjects) {
 			final ObjectType eventTagObject = event.tag; // TODO: Rename
 			final ObjectType parentEventTagObject = ds.getParent(eventTagObject); // TODO: Rename
-
-			final Rectangle tagBounds = ds.getBounds(eventTagObject);
 
 			// TODO: Document. This is for deciding which ancestors to ignore. The results are different based on whether the object is a point or has a parent
 			// which is a port.
@@ -98,148 +95,156 @@ public class LineSegmentFinder {
 			}
 
 			final Rectangle afterBounds = after == null ? null : ds.getBounds(after);
-			createSegment(event.position, tagBounds, segmentBounds, beforeBounds, afterBounds);
+			createSegment(event.position, eventTagObject, segmentBounds, beforeBounds, afterBounds);
 		}
 
 		// TODO: Does value need to be a rect or change it just be a point?
 		// TODO: Rename
-		protected abstract void createSegment(final double position, final Rectangle value,
+		protected abstract void createSegment(final double position, final ObjectType eventTag,
 				final Rectangle maxSegmentBounds, final Rectangle before,
 				final Rectangle after);
 	}
 
 	private static class MinVerticalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
-		private final Set<VerticalSegment> segments;
+		private final Set<VerticalSegment<ObjectType>> segments;
 
 		public MinVerticalSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
-				final Set<VerticalSegment> segments) {
+				final Set<VerticalSegment<ObjectType>> segments) {
 			super(ds, o -> ds.getBounds(o).min.y);
 			this.segments = Objects.requireNonNull(segments, "segments must not be null");
 		}
 
 		@Override
-		protected void createSegment(final double position, final Rectangle value, final Rectangle maxSegmentBounds,
+		protected void createSegment(final double position, final ObjectType eventTag, final Rectangle maxSegmentBounds,
 				final Rectangle before,
 				final Rectangle after) {
+			final Rectangle eventTagBounds = ds.getBounds(eventTag);
 			double min = before == null ? Double.NEGATIVE_INFINITY : before.max.y;
 
 			// If value is inside of before
-			if (min > value.min.y) {
+			if (min > eventTagBounds.min.y) {
 				min = before.min.y;
 			}
 
 			min = Math.max(min, maxSegmentBounds.min.y);
 
 			// Clamp max since we are dealing with mins..
-			final double max = Math.min(Math.min(after == null ? Double.POSITIVE_INFINITY : after.min.y, value.max.y),
+			final double max = Math.min(
+					Math.min(after == null ? Double.POSITIVE_INFINITY : after.min.y, eventTagBounds.max.y),
 					maxSegmentBounds.max.y);
 
-			segments.add(new VerticalSegment(position, min, max));
+			segments.add(new VerticalSegment<>(position, min, max, eventTag));
 		}
 	};
 
 // TODO: Cleanup.. Try to share code..
 	private static class MaxVerticalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
-		private final Set<VerticalSegment> segments;
+		private final Set<VerticalSegment<ObjectType>> segments;
 
 		public MaxVerticalSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
-				final Set<VerticalSegment> segments) {
+				final Set<VerticalSegment<ObjectType>> segments) {
 			super(ds, o -> ds.getBounds(o).max.y);
 			this.segments = Objects.requireNonNull(segments, "segments must not be null");
 		}
 
 		@Override
-		protected void createSegment(final double position, final Rectangle value, final Rectangle maxSegmentBounds,
+		protected void createSegment(final double position, final ObjectType eventTag, final Rectangle maxSegmentBounds,
 				final Rectangle before,
 				final Rectangle after) {
-			final double min = Math.max(Math.max(before == null ? Double.NEGATIVE_INFINITY : before.max.y, value.min.y),
+			final Rectangle eventTagBounds = ds.getBounds(eventTag);
+			final double min = Math.max(
+					Math.max(before == null ? Double.NEGATIVE_INFINITY : before.max.y, eventTagBounds.min.y),
 					maxSegmentBounds.min.y);
 
 			// Clamp max since we are dealing with mins..
 			double max = after == null ? Double.POSITIVE_INFINITY : after.min.y;
 
 			// If value is inside of before
-			if (max < value.max.y) {
+			if (max < eventTagBounds.max.y) {
 				max = after.max.y;
 			}
 
 			max = Math.min(max, maxSegmentBounds.max.y);
 
-			segments.add(new VerticalSegment(position, min, max));
+			segments.add(new VerticalSegment<>(position, min, max, eventTag));
 		}
 	};
 
 	private static class MinHorizontalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
-		private final Set<HorizontalSegment> segments;
+		private final Set<HorizontalSegment<ObjectType>> segments;
 
 		public MinHorizontalSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
-				final Set<HorizontalSegment> segments) {
+				final Set<HorizontalSegment<ObjectType>> segments) {
 			super(ds, o -> ds.getBounds(o).min.x);
 			this.segments = Objects.requireNonNull(segments, "segments must not be null");
 		}
 
 		@Override
-		protected void createSegment(final double position, final Rectangle value, final Rectangle maxSegmentBounds,
+		protected void createSegment(final double position, final ObjectType eventTag, final Rectangle maxSegmentBounds,
 				final Rectangle before,
 				final Rectangle after) {
+			final Rectangle eventTagBounds = ds.getBounds(eventTag);
 			double min = before == null ? Double.NEGATIVE_INFINITY : before.max.x;
 
 			// If value is inside of before
-			if (min > value.min.x) {
+			if (min > eventTagBounds.min.x) {
 				min = before.min.x;
 			}
 
 			min = Math.max(min, maxSegmentBounds.min.x);
 
 			// Clamp max since we are dealing with mins..
-			final double max = Math.min(Math.min(after == null ? Double.POSITIVE_INFINITY : after.min.x, value.max.x),
+			final double max = Math.min(
+					Math.min(after == null ? Double.POSITIVE_INFINITY : after.min.x, eventTagBounds.max.x),
 					maxSegmentBounds.max.x);
 
-			segments.add(new HorizontalSegment(position, min, max));
+			segments.add(new HorizontalSegment<>(position, min, max, eventTag));
 		}
 	};
 
 	private static class MaxHorizontalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
-		private final Set<HorizontalSegment> segments;
+		private final Set<HorizontalSegment<ObjectType>> segments;
 
 		public MaxHorizontalSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
-				final Set<HorizontalSegment> segments) {
+				final Set<HorizontalSegment<ObjectType>> segments) {
 			super(ds, o -> ds.getBounds(o).max.x);
 			this.segments = Objects.requireNonNull(segments, "segments must not be null");
 		}
 
 		@Override
-		protected void createSegment(final double position, final Rectangle value, final Rectangle maxSegmentBounds,
+		protected void createSegment(final double position, final ObjectType eventTag, final Rectangle maxSegmentBounds,
 				final Rectangle before,
 				final Rectangle after) {
-			final double min = Math.max(Math.max(before == null ? Double.NEGATIVE_INFINITY : before.max.x, value.min.x),
+			final Rectangle eventTagBounds = ds.getBounds(eventTag);
+			final double min = Math.max(
+					Math.max(before == null ? Double.NEGATIVE_INFINITY : before.max.x, eventTagBounds.min.x),
 					maxSegmentBounds.min.x);
 
 			// Clamp max since we are dealing with mins..
 			double max = after == null ? Double.POSITIVE_INFINITY : after.min.x;
 
 			// If value is inside of before
-			if (max < value.max.x) {
+			if (max < eventTagBounds.max.x) {
 				max = after.max.x;
 			}
 
 			max = Math.min(max, maxSegmentBounds.max.x);
 
-			segments.add(new HorizontalSegment(position, min, max));
+			segments.add(new HorizontalSegment<>(position, min, max, eventTag));
 		}
 	};
 // END X
 
 // TODO: What is needed... Bounds of ALL the objects and connection points.. In order to make an event list.
 // TODO: Does the data source really need the concept of children?
-	public final static <T> Set<VerticalSegment> findVerticalSegments(LineSegmentFinderDataSource<T> ds) {
+	public final static <T> Set<VerticalSegment<T>> findVerticalSegments(LineSegmentFinderDataSource<T> ds) {
 		final List<Sweeper.Event<T>> events = new ArrayList<>();
 		addEventsForHorizontalSweep(ds, events);
 		Sweeper.sort(events);
 
 //		// TODO: What if two objects have the same min/max y? Only one object will be inserted?
 //
-		final Set<VerticalSegment> verticalSegments = new HashSet<>();
+		final Set<VerticalSegment<T>> verticalSegments = new HashSet<>();
 		final TreeMultimap<Double, T> minYOpenObjects = TreeMultimap.create(Comparator.naturalOrder(),
 				Ordering.arbitrary());
 		final MinVerticalSegmentCollector<T> minVerticalCollector = new MinVerticalSegmentCollector<>(ds,
@@ -271,14 +276,14 @@ public class LineSegmentFinder {
 		}
 	}
 
-	public final static <T> Set<HorizontalSegment> findHorizontalSegments(LineSegmentFinderDataSource<T> ds) {
+	public final static <T> Set<HorizontalSegment<T>> findHorizontalSegments(LineSegmentFinderDataSource<T> ds) {
 		final List<Sweeper.Event<T>> events = new ArrayList<>();
 		addEventsForVerticalSweep(null, ds, events);
 		Sweeper.sort(events);
 
 		// TODO: What if two objects have the same min/max x? Only one object will be inserted?
 		// TODO: Reenable
-		final Set<HorizontalSegment> horizontalSegments = new HashSet<>();
+		final Set<HorizontalSegment<T>> horizontalSegments = new HashSet<>();
 		final TreeMultimap<Double, T> minXOpenObjects = TreeMultimap.create(Comparator.naturalOrder(),
 				Ordering.arbitrary());
 		final MinHorizontalSegmentCollector<T> minHorizontalCollector = new MinHorizontalSegmentCollector<T>(ds,
@@ -310,22 +315,32 @@ public class LineSegmentFinder {
 		}
 	}
 
+	// TODO: Should be moved outside of this class?
+	static <T> OrthogonalSegments<T> buildSegments(final LineSegmentFinderDataSource<T> ds) {
+		final Set<VerticalSegment<T>> verticalSegments = findVerticalSegments(ds);
+		final Set<HorizontalSegment<T>> horizontalSegments = findHorizontalSegments(ds);
+
+		// Create segments object
+		return new OrthogonalSegments(Collections.unmodifiableSet(horizontalSegments),
+				Collections.unmodifiableSet(verticalSegments));
+	}
+
 // TODO: May need a better way to get the cp segment bounds... Decide after seeing how things work.
 
 	public static void main(String[] args) {
-		final LineSegmentFinderDataSource<?> ds = TestModel.createDataSource();
+		final LineSegmentFinderDataSource<TestModel.TestElement> ds = TestModel.createDataSource();
 
 		// Vertical
-		final Set<VerticalSegment> verticalSegments = findVerticalSegments(ds);
+		final Set<VerticalSegment<TestModel.TestElement>> verticalSegments = findVerticalSegments(ds);
 		System.out.println("Vertical Segment Count: " + verticalSegments.size());
-		for (final VerticalSegment vs : verticalSegments) {
+		for (final VerticalSegment<?> vs : verticalSegments) {
 			System.out.println(vs.x + " : " + vs.minY + " -> " + vs.maxY);
 		}
 
 		// Horizontal
-		final Set<HorizontalSegment> horizontalSegments = findHorizontalSegments(ds);
+		final Set<HorizontalSegment<TestModel.TestElement>> horizontalSegments = findHorizontalSegments(ds);
 		System.out.println("Horizontal Segment Count: " + horizontalSegments.size());
-		for (final HorizontalSegment hs : horizontalSegments) {
+		for (final HorizontalSegment<?> hs : horizontalSegments) {
 			System.out.println(hs.y + " : " + hs.minX + " -> " + hs.maxX);
 		}
 	}

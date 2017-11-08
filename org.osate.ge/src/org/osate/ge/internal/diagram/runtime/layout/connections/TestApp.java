@@ -1,9 +1,6 @@
 package org.osate.ge.internal.diagram.runtime.layout.connections;
 
 import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.Graph;
-import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.HorizontalSegment;
-import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.Segments;
-import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.VerticalSegment;
 
 import javafx.application.Application;
 import javafx.scene.Group;
@@ -23,19 +20,21 @@ public class TestApp extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		final LineSegmentFinderDataSource<?> testDataSource = TestModel.createDataSource();
+		startWithDataSource(primaryStage, TestModel.createDataSource());
+	}
 
+	private <T> void startWithDataSource(final Stage primaryStage, final LineSegmentFinderDataSource<T> ds) {
 		// OrthogonalVisibilityGraph.create(testDataSource);
-		final Segments segments = OrthogonalVisibilityGraphBuilder.buildSegments(testDataSource);
+		final OrthogonalSegments<T> segments = LineSegmentFinder.buildSegments(ds);
 		final Graph graph = OrthogonalVisibilityGraphBuilder.buildGraph(segments);
 
 		// TODO: Cleanup
 		// Print the segments to the console
-		for (final VerticalSegment vs : segments.verticalSegments) {
+		for (final VerticalSegment<T> vs : segments.verticalSegments) {
 			// System.out.println(vs);
 		}
 
-		for (final HorizontalSegment hs : segments.horizontalSegments) {
+		for (final HorizontalSegment<T> hs : segments.horizontalSegments) {
 			// System.out.println(hs);
 		}
 
@@ -43,14 +42,14 @@ public class TestApp extends Application {
 		final Group root = new Group();
 		final Canvas canvas = new Canvas(800, 500);
 		final GraphicsContext gc = canvas.getGraphicsContext2D();
-		draw(gc, testDataSource, graph, segments);
+		draw(gc, ds, graph, segments);
 		root.getChildren().add(canvas);
 		primaryStage.setScene(new Scene(root));
 		primaryStage.show();
 	}
 
 	private <T> void draw(final GraphicsContext gc, final LineSegmentFinderDataSource<T> ds, final Graph graph,
-			final Segments segments) {
+			final OrthogonalSegments<T> segments) {
 		// Draw the objects
 		for (final T obj : ds.getObjects()) {
 			drawObjectIfBounded(gc, ds, obj);
@@ -60,11 +59,11 @@ public class TestApp extends Application {
 		gc.setStroke(Color.GREY);
 		gc.setLineWidth(1);
 		gc.setLineDashes(1.0, 5.0);
-		for (final OrthogonalVisibilityGraphBuilder.HorizontalSegment hs : segments.horizontalSegments) {
+		for (final HorizontalSegment<T> hs : segments.horizontalSegments) {
 			gc.strokeLine(Math.max(0, hs.minX), hs.y, Math.min(1000, hs.maxX), hs.y);
 		}
 
-		for (final OrthogonalVisibilityGraphBuilder.VerticalSegment vs : segments.verticalSegments) {
+		for (final VerticalSegment<T> vs : segments.verticalSegments) {
 			gc.strokeLine(vs.x, Math.max(0, vs.minY), vs.x, Math.min(1000, vs.maxY));
 		}
 
