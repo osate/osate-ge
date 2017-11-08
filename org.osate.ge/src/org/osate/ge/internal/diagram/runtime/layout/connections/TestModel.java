@@ -10,6 +10,10 @@ import org.osate.ge.internal.diagram.runtime.Dimension;
 
 // TODO: Rename
 public class TestModel {
+	private static Rectangle infiniteBounds = new Rectangle(
+			new Point(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY),
+			new Point(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY));
+
 	public static LineSegmentFinderDataSource<TestElement> createDataSource() {
 		final List<TestElement> objects = new ArrayList<>();
 		addNonPort(objects, null, new Point(100, 100), new Dimension(200, 200));
@@ -42,8 +46,8 @@ public class TestModel {
 			}
 
 			@Override
-			public boolean isPort(final TestElement e) {
-				return e.isPort;
+			public Rectangle getSegmentBounds(final TestElement e) {
+				return e.segmentBounds;
 			}
 		};
 
@@ -59,13 +63,15 @@ public class TestModel {
 	 */
 	private static TestElement addNonPort(final Collection<TestElement> elements, final TestElement parent,
 			final Point position, final Dimension size) {
-
-		final TestElement newObj = new TestElement(parent, position, size, false);
+		final TestElement newObj = new TestElement(parent, position, size,
+				parent == null ? infiniteBounds : parent.bounds);
 		elements.add(newObj);
 
-		elements.add(new TestElement(newObj, new Point(position.x, position.y + size.height / 2.0)));
 		elements.add(
-				new TestElement(newObj, new Point(position.x + size.width, position.y + size.height / 2.0)));
+				new TestElement(newObj, new Point(position.x, position.y + size.height / 2.0), newObj.segmentBounds));
+		elements.add(
+				new TestElement(newObj, new Point(position.x + size.width, position.y + size.height / 2.0),
+						newObj.segmentBounds));
 
 		return newObj;
 	}
@@ -84,7 +90,7 @@ public class TestModel {
 			final Point[] exteriorConnectionPointPositions, final Point[] interiorConnectionPointPositions) {
 		Objects.requireNonNull(parent, "parent must not be null");
 
-		final TestElement newObj = new TestElement(parent, position, size, true);
+		final TestElement newObj = new TestElement(parent, position, size, parent.bounds);
 		elements.add(newObj);
 
 
@@ -93,36 +99,30 @@ public class TestModel {
 		// final Rectangle nonPortParentBounds = getNonPortBounds(parent, 1);
 
 		for (final Point interiorConnectionPointPosition : interiorConnectionPointPositions) {
-			final Rectangle interiorPortSegmentBounds;
-//			if (nonPortParentBounds == null) {
-//				throw new RuntimeException("Unexpected case");
-//			} else {
-//				interiorPortSegmentBounds = new Rectangle(
-//						new Point(position.x + interiorConnectionPointPosition.x,
-//								position.y + interiorConnectionPointPosition.y),
-//						new Point(nonPortParentBounds.max.x, position.y + interiorConnectionPointPosition.y));
-//			}
-
+			final Rectangle segmentBounds = new Rectangle(
+					new Point(position.x + interiorConnectionPointPosition.x,
+							position.y + interiorConnectionPointPosition.y),
+					new Point(newObj.segmentBounds.max.x, position.y + interiorConnectionPointPosition.y));
 			elements.add(new TestElement(newObj, new Point(position.x + interiorConnectionPointPosition.x,
-					position.y + interiorConnectionPointPosition.y)));
+					position.y + interiorConnectionPointPosition.y), segmentBounds));
 		}
 
-		// final Rectangle nonPortGrandparentBounds = getNonPortBounds(parent, 2);
+		final Rectangle grandparentBounds = parent.parent == null ? infiniteBounds : parent.parent.bounds;
 		for (final Point exteriorConnectionPointPosition : exteriorConnectionPointPositions) {
-//			final Rectangle exteriorPortSegmentBounds;
-//			if (nonPortGrandparentBounds == null) {
-//				exteriorPortSegmentBounds = new Rectangle(
-//						new Point(Double.NEGATIVE_INFINITY, position.y + exteriorConnectionPointPosition.y),
-//						new Point(position.x + exteriorConnectionPointPosition.x,
-//								position.y + exteriorConnectionPointPosition.y));
-//			} else {
-//				exteriorPortSegmentBounds = new Rectangle(
-//						new Point(nonPortGrandparentBounds.min.x, position.y + exteriorConnectionPointPosition.y),
-//						new Point(position.x + exteriorConnectionPointPosition.x,
-//								position.y + exteriorConnectionPointPosition.y));
-//			}
+			final Rectangle exteriorPortSegmentBounds;
+			if (grandparentBounds == null) {
+				exteriorPortSegmentBounds = new Rectangle(
+						new Point(Double.NEGATIVE_INFINITY, position.y + exteriorConnectionPointPosition.y),
+						new Point(position.x + exteriorConnectionPointPosition.x,
+								position.y + exteriorConnectionPointPosition.y));
+			} else {
+				exteriorPortSegmentBounds = new Rectangle(
+						new Point(grandparentBounds.min.x, position.y + exteriorConnectionPointPosition.y),
+						new Point(position.x + exteriorConnectionPointPosition.x,
+								position.y + exteriorConnectionPointPosition.y));
+			}
 			elements.add(new TestElement(newObj, new Point(position.x + exteriorConnectionPointPosition.x,
-					position.y + exteriorConnectionPointPosition.y)));
+					position.y + exteriorConnectionPointPosition.y), exteriorPortSegmentBounds));
 		}
 	}
 
@@ -130,18 +130,19 @@ public class TestModel {
 	private static class TestElement {
 		public final TestElement parent;
 		public final Rectangle bounds;
-		public final boolean isPort;
+		public final Rectangle segmentBounds;
 
-		public TestElement(final TestElement parent, final Point position) {
+		public TestElement(final TestElement parent, final Point position, final Rectangle segmentBounds) {
 			this.parent = parent;
 			this.bounds = new Rectangle(position, position);
-			this.isPort = false;
+			this.segmentBounds = segmentBounds;
 		}
 
-		public TestElement(final TestElement parent, final Point position, final Dimension size, final boolean isPort) {
+		public TestElement(final TestElement parent, final Point position, final Dimension size,
+				final Rectangle segmentBounds) {
 			this.parent = parent;
 			this.bounds = new Rectangle(position, new Point(position.x + size.width, position.y + size.height));
-			this.isPort = isPort;
+			this.segmentBounds = segmentBounds;
 		}
 	}
 }

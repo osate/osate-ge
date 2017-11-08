@@ -15,12 +15,8 @@ public interface LineSegmentFinderDataSource<T> {
 	 */
 	Rectangle getBounds(T obj);
 
-	// TODO: Document what this affects
-	/**
-	 * The parent of a port must not be a port. Ports must not have any children.
-	 * @param obj
-	 * @return
-	 */
-	boolean isPort(T obj);
+	// TODO: Document
+	// Must not return null
+	Rectangle getSegmentBounds(T obj);
 
 }

@@ -69,7 +69,7 @@ public class TestApp extends Application {
 		}
 
 		// Draw Nodes
-		final boolean drawNodesAndEdges = false; // TODO: Reenable
+		final boolean drawNodesAndEdges = true;// false; // TODO: Reenable
 		if (drawNodesAndEdges) {
 			gc.setFill(Color.BLUE);
 			System.err.println(graph.nodes.size());

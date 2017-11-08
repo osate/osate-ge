@@ -48,10 +48,10 @@ public class LineSegmentFinder {
 
 			// TODO: Document. This is for deciding which ancestors to ignore. The results are different based on whether the object is a point or has a parent
 			// which is a port.
-			final boolean parentIsPort = parentEventTagObject == null ? false : ds.isPort(parentEventTagObject);
-			final ObjectType ignoredParentEventTagObject = parentEventTagObject != null
-					&& (event.type == EventType.POINT || parentIsPort) ? parentEventTagObject : null;
-			final ObjectType portParentEventTagObject = parentIsPort ? ds.getParent(ignoredParentEventTagObject) : null; // TODO: Rename
+			// TODO: Rename?
+			final Rectangle segmentBounds = ds.getSegmentBounds(eventTagObject);
+			final ObjectType parent = parentEventTagObject;
+			final ObjectType grandparent = parent == null ? null : ds.getParent(parent);
 
 			// Find the first before object which is not the event object
 			ObjectType before = null;
@@ -62,8 +62,7 @@ public class LineSegmentFinder {
 				final NavigableSet<ObjectType> tmpObjects = openObjects.get(tmpKey);
 				for (final ObjectType tmp : tmpObjects) {
 					// TODO: Think about implications of parent checks
-					if (tmp != eventTagObject && tmp != ignoredParentEventTagObject
-							&& tmp != portParentEventTagObject) {
+					if (tmp != eventTagObject && tmp != parent && tmp != grandparent) {
 						before = tmp;
 						found = true;
 						break;
@@ -77,7 +76,6 @@ public class LineSegmentFinder {
 			}
 
 			final Rectangle beforeBounds = before == null ? null : ds.getBounds(before);
-			before(event.position, tagBounds, beforeBounds);
 
 			// Find the first after object which is not the event object
 			ObjectType after = null;
@@ -86,8 +84,7 @@ public class LineSegmentFinder {
 				final NavigableSet<ObjectType> tmpObjects = openObjects.get(tmpKey);
 				// TODO: Think about these checks
 				for (final ObjectType tmp : tmpObjects) {
-					if (tmp != eventTagObject && tmp != ignoredParentEventTagObject
-							&& tmp != portParentEventTagObject) {
+					if (tmp != eventTagObject && tmp != parent && tmp != grandparent) {
 						after = tmp;
 						found = true;
 						break;
@@ -101,13 +98,14 @@ public class LineSegmentFinder {
 			}
 
 			final Rectangle afterBounds = after == null ? null : ds.getBounds(after);
-			after(event.position, tagBounds, afterBounds);
+			createSegment(event.position, tagBounds, segmentBounds, beforeBounds, afterBounds);
 		}
 
 		// TODO: Does value need to be a rect or change it just be a point?
-		protected abstract void before(final double position, final Rectangle value, final Rectangle before);
-
-		protected abstract void after(final double position, final Rectangle value, final Rectangle before);
+		// TODO: Rename
+		protected abstract void createSegment(final double position, final Rectangle value,
+				final Rectangle maxSegmentBounds, final Rectangle before,
+				final Rectangle after);
 	}
 
 	private static class MinVerticalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
@@ -120,7 +118,9 @@ public class LineSegmentFinder {
 		}
 
 		@Override
-		protected void before(final double position, final Rectangle value, final Rectangle before) {
+		protected void createSegment(final double position, final Rectangle value, final Rectangle maxSegmentBounds,
+				final Rectangle before,
+				final Rectangle after) {
 			double min = before == null ? Double.NEGATIVE_INFINITY : before.max.y;
 
 			// If value is inside of before
@@ -128,14 +128,13 @@ public class LineSegmentFinder {
 				min = before.min.y;
 			}
 
-			segments.add(new VerticalSegment(position, min, value.min.y));
-		}
+			min = Math.max(min, maxSegmentBounds.min.y);
 
-		@Override
-		protected void after(final double position, final Rectangle value, final Rectangle after) {
 			// Clamp max since we are dealing with mins..
-			final double max = Math.min(after == null ? Double.POSITIVE_INFINITY : after.min.y, value.max.y);
-			segments.add(new VerticalSegment(position, value.min.y, max));
+			final double max = Math.min(Math.min(after == null ? Double.POSITIVE_INFINITY : after.min.y, value.max.y),
+					maxSegmentBounds.max.y);
+
+			segments.add(new VerticalSegment(position, min, max));
 		}
 	};
 
@@ -150,13 +149,11 @@ public class LineSegmentFinder {
 		}
 
 		@Override
-		protected void before(final double position, final Rectangle value, final Rectangle before) {
-			final double min = Math.max(before == null ? Double.NEGATIVE_INFINITY : before.max.y, value.min.y);
-			segments.add(new VerticalSegment(position, min, value.max.y));
-		}
-
-		@Override
-		protected void after(final double position, final Rectangle value, final Rectangle after) {
+		protected void createSegment(final double position, final Rectangle value, final Rectangle maxSegmentBounds,
+				final Rectangle before,
+				final Rectangle after) {
+			final double min = Math.max(Math.max(before == null ? Double.NEGATIVE_INFINITY : before.max.y, value.min.y),
+					maxSegmentBounds.min.y);
 
 			// Clamp max since we are dealing with mins..
 			double max = after == null ? Double.POSITIVE_INFINITY : after.min.y;
@@ -166,12 +163,12 @@ public class LineSegmentFinder {
 				max = after.max.y;
 			}
 
-			segments.add(new VerticalSegment(position, value.max.y, max));
+			max = Math.min(max, maxSegmentBounds.max.y);
+
+			segments.add(new VerticalSegment(position, min, max));
 		}
 	};
 
-// TODO
-/////////////////////////////////////////// X
 	private static class MinHorizontalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
 		private final Set<HorizontalSegment> segments;
 
@@ -182,7 +179,9 @@ public class LineSegmentFinder {
 		}
 
 		@Override
-		protected void before(final double position, final Rectangle value, final Rectangle before) {
+		protected void createSegment(final double position, final Rectangle value, final Rectangle maxSegmentBounds,
+				final Rectangle before,
+				final Rectangle after) {
 			double min = before == null ? Double.NEGATIVE_INFINITY : before.max.x;
 
 			// If value is inside of before
@@ -190,18 +189,16 @@ public class LineSegmentFinder {
 				min = before.min.x;
 			}
 
-			segments.add(new HorizontalSegment(position, min, value.min.x));
-		}
+			min = Math.max(min, maxSegmentBounds.min.x);
 
-		@Override
-		protected void after(final double position, final Rectangle value, final Rectangle after) {
 			// Clamp max since we are dealing with mins..
-			final double max = Math.min(after == null ? Double.POSITIVE_INFINITY : after.min.x, value.max.x);
-			segments.add(new HorizontalSegment(position, value.min.x, max));
+			final double max = Math.min(Math.min(after == null ? Double.POSITIVE_INFINITY : after.min.x, value.max.x),
+					maxSegmentBounds.max.x);
+
+			segments.add(new HorizontalSegment(position, min, max));
 		}
 	};
 
-// TODO: Cleanup.. Try to share code..
 	private static class MaxHorizontalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
 		private final Set<HorizontalSegment> segments;
 
@@ -212,13 +209,11 @@ public class LineSegmentFinder {
 		}
 
 		@Override
-		protected void before(final double position, final Rectangle value, final Rectangle before) {
-			final double min = Math.max(before == null ? Double.NEGATIVE_INFINITY : before.max.x, value.min.x);
-			segments.add(new HorizontalSegment(position, min, value.max.x));
-		}
-
-		@Override
-		protected void after(final double position, final Rectangle value, final Rectangle after) {
+		protected void createSegment(final double position, final Rectangle value, final Rectangle maxSegmentBounds,
+				final Rectangle before,
+				final Rectangle after) {
+			final double min = Math.max(Math.max(before == null ? Double.NEGATIVE_INFINITY : before.max.x, value.min.x),
+					maxSegmentBounds.min.x);
 
 			// Clamp max since we are dealing with mins..
 			double max = after == null ? Double.POSITIVE_INFINITY : after.min.x;
@@ -228,7 +223,9 @@ public class LineSegmentFinder {
 				max = after.max.x;
 			}
 
-			segments.add(new HorizontalSegment(position, value.max.x, max));
+			max = Math.min(max, maxSegmentBounds.max.x);
+
+			segments.add(new HorizontalSegment(position, min, max));
 		}
 	};
 // END X
