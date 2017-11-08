@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph;
 
 import org.osate.ge.graphics.Point;
 

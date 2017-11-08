@@ -1,8 +1,8 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph;
 
 import java.util.List;
 
-public interface LineSegmentFinderDataSource<T> {
+public interface OrthogonalSegmentsFactoryDataSource<T> {
 	// TODO: Rename to Element?
 	List<T> getObjects();
 

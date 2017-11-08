@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph;
 
 class HorizontalSegment<T> {
 	public final double y;

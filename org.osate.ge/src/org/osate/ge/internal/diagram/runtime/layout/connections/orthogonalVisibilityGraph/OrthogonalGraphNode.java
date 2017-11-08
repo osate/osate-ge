@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph;
 
 import java.util.Collections;
 import java.util.EnumMap;
@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.osate.ge.graphics.Point;
 
-class OrthogonalGraphNode
+public class OrthogonalGraphNode
 {
 	public final Point position;
 	private final EnumMap<OrthogonalDirection, OrthogonalGraphNode> neighbors = new EnumMap<>(OrthogonalDirection.class);

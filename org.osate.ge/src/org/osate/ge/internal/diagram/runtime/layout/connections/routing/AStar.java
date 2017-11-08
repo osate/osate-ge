@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections;
+package org.osate.ge.internal.diagram.runtime.layout.connections.routing;
 
 import java.util.ArrayList;
 import java.util.Collection;

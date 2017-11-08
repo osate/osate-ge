@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,7 +14,7 @@ public class TestModel {
 			new Point(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY),
 			new Point(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY));
 
-	public static LineSegmentFinderDataSource<TestElement> createDataSource() {
+	public static OrthogonalSegmentsFactoryDataSource<TestElement> createDataSource() {
 		final List<TestElement> objects = new ArrayList<>();
 		addNonPort(objects, null, new Point(100, 100), new Dimension(200, 200));
 		addNonPort(objects, null, new Point(200, 350), new Dimension(400, 50));
@@ -28,7 +28,7 @@ public class TestModel {
 				new Point[] { new Point(20, 10), new Point(20, 30), new Point(20, 50) },
 				new Point[] { new Point(60, 10), new Point(60, 30), new Point(60, 50) });
 
-		final LineSegmentFinderDataSource<TestElement> testDataSource = new LineSegmentFinderDataSource<TestElement>() {
+		final OrthogonalSegmentsFactoryDataSource<TestElement> testDataSource = new OrthogonalSegmentsFactoryDataSource<TestElement>() {
 			@Override
 			public List<TestElement> getObjects() {
 				return objects;

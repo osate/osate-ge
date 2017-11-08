@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -11,9 +11,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
-import org.osate.ge.internal.diagram.runtime.layout.connections.Sweeper.Event;
-import org.osate.ge.internal.diagram.runtime.layout.connections.Sweeper.EventType;
-import org.osate.ge.internal.diagram.runtime.layout.connections.Sweeper.ResultCollector;
+import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweepEvent;
+import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweeper;
+import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweeper.EventType;
+import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweeperEventHandler;
 
 import com.google.common.collect.Ordering;
 import com.google.common.collect.TreeMultimap;
@@ -26,20 +27,20 @@ import com.google.common.collect.TreeMultimap;
 // TODO: Simplify collector code..
 // TODO: Share code between collectors
 
-public class LineSegmentFinder {
+public class OrthogonalSegmentsFactory {
 	// TODO: Rename
-	private static abstract class AbstractSegmentCollector<ObjectType> implements ResultCollector<ObjectType> {
-		protected final LineSegmentFinderDataSource<ObjectType> ds;
+	private static abstract class AbstractSegmentCollector<ObjectType> implements LineSweeperEventHandler<ObjectType> {
+		protected final OrthogonalSegmentsFactoryDataSource<ObjectType> ds;
 		final Function<ObjectType, Double> keyFunc;
 
-		public AbstractSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
+		public AbstractSegmentCollector(final OrthogonalSegmentsFactoryDataSource<ObjectType> ds,
 				final Function<ObjectType, Double> keyFunc) {
 			this.ds = Objects.requireNonNull(ds, "ds must not be null");
 			this.keyFunc = Objects.requireNonNull(keyFunc, "keyFunc must not be null");
 		}
 
 		@Override
-		public void handleEvent(final Event<ObjectType> event, final TreeMultimap<Double, ObjectType> openObjects) {
+		public void handleEvent(final LineSweepEvent<ObjectType> event, final TreeMultimap<Double, ObjectType> openObjects) {
 			final ObjectType eventTagObject = event.tag; // TODO: Rename
 			final ObjectType parentEventTagObject = ds.getParent(eventTagObject); // TODO: Rename
 
@@ -108,7 +109,7 @@ public class LineSegmentFinder {
 	private static class MinVerticalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
 		private final Set<VerticalSegment<ObjectType>> segments;
 
-		public MinVerticalSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
+		public MinVerticalSegmentCollector(final OrthogonalSegmentsFactoryDataSource<ObjectType> ds,
 				final Set<VerticalSegment<ObjectType>> segments) {
 			super(ds, o -> ds.getBounds(o).min.y);
 			this.segments = Objects.requireNonNull(segments, "segments must not be null");
@@ -141,7 +142,7 @@ public class LineSegmentFinder {
 	private static class MaxVerticalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
 		private final Set<VerticalSegment<ObjectType>> segments;
 
-		public MaxVerticalSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
+		public MaxVerticalSegmentCollector(final OrthogonalSegmentsFactoryDataSource<ObjectType> ds,
 				final Set<VerticalSegment<ObjectType>> segments) {
 			super(ds, o -> ds.getBounds(o).max.y);
 			this.segments = Objects.requireNonNull(segments, "segments must not be null");
@@ -173,7 +174,7 @@ public class LineSegmentFinder {
 	private static class MinHorizontalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
 		private final Set<HorizontalSegment<ObjectType>> segments;
 
-		public MinHorizontalSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
+		public MinHorizontalSegmentCollector(final OrthogonalSegmentsFactoryDataSource<ObjectType> ds,
 				final Set<HorizontalSegment<ObjectType>> segments) {
 			super(ds, o -> ds.getBounds(o).min.x);
 			this.segments = Objects.requireNonNull(segments, "segments must not be null");
@@ -205,7 +206,7 @@ public class LineSegmentFinder {
 	private static class MaxHorizontalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
 		private final Set<HorizontalSegment<ObjectType>> segments;
 
-		public MaxHorizontalSegmentCollector(final LineSegmentFinderDataSource<ObjectType> ds,
+		public MaxHorizontalSegmentCollector(final OrthogonalSegmentsFactoryDataSource<ObjectType> ds,
 				final Set<HorizontalSegment<ObjectType>> segments) {
 			super(ds, o -> ds.getBounds(o).max.x);
 			this.segments = Objects.requireNonNull(segments, "segments must not be null");
@@ -233,29 +234,24 @@ public class LineSegmentFinder {
 			segments.add(new HorizontalSegment<>(position, min, max, eventTag));
 		}
 	};
-// END X
 
-// TODO: What is needed... Bounds of ALL the objects and connection points.. In order to make an event list.
-// TODO: Does the data source really need the concept of children?
-	public final static <T> Set<VerticalSegment<T>> findVerticalSegments(LineSegmentFinderDataSource<T> ds) {
-		final List<Sweeper.Event<T>> events = new ArrayList<>();
+	private final static <T> Set<VerticalSegment<T>> findVerticalSegments(OrthogonalSegmentsFactoryDataSource<T> ds) {
+		final List<LineSweepEvent<T>> events = new ArrayList<>();
 		addEventsForHorizontalSweep(ds, events);
-		Sweeper.sort(events);
+		LineSweeper.sort(events);
 
-//		// TODO: What if two objects have the same min/max y? Only one object will be inserted?
-//
 		final Set<VerticalSegment<T>> verticalSegments = new HashSet<>();
 		final TreeMultimap<Double, T> minYOpenObjects = TreeMultimap.create(Comparator.naturalOrder(),
 				Ordering.arbitrary());
 		final MinVerticalSegmentCollector<T> minVerticalCollector = new MinVerticalSegmentCollector<>(ds,
 				verticalSegments);
-		Sweeper.sweep(events, minYOpenObjects, minVerticalCollector.keyFunc, minVerticalCollector);
+		LineSweeper.sweep(events, minYOpenObjects, minVerticalCollector.keyFunc, minVerticalCollector);
 
 		final TreeMultimap<Double, T> maxYOpenObjects = TreeMultimap.create(Comparator.naturalOrder(),
 				Ordering.arbitrary());
 		final MaxVerticalSegmentCollector<T> maxVerticalCollector = new MaxVerticalSegmentCollector<>(ds,
 				verticalSegments);
-		Sweeper.sweep(events, maxYOpenObjects, maxVerticalCollector.keyFunc, maxVerticalCollector);
+		LineSweeper.sweep(events, maxYOpenObjects, maxVerticalCollector.keyFunc, maxVerticalCollector);
 
 		// TODO: Do this for max as well... That will finish collecting all the vertical segments
 
@@ -263,23 +259,24 @@ public class LineSegmentFinder {
 	}
 
 // TODO: A stream would be better to avoid having to store everything in an array
-	private static <T> void addEventsForHorizontalSweep(final LineSegmentFinderDataSource<T> ds,
-			final Collection<Sweeper.Event<T>> events) {
+	private static <T> void addEventsForHorizontalSweep(final OrthogonalSegmentsFactoryDataSource<T> ds,
+			final Collection<LineSweepEvent<T>> events) {
 		for (final T child : ds.getObjects()) {
 			final Rectangle childBounds = ds.getBounds(child);
 			if (childBounds.min.x != childBounds.max.x) {
-				events.add(new Event<T>(EventType.OPEN, childBounds.min.x, child));
-				events.add(new Event<T>(EventType.CLOSE, childBounds.max.x, child));
+				events.add(new LineSweepEvent<T>(EventType.OPEN, childBounds.min.x, child));
+				events.add(new LineSweepEvent<T>(EventType.CLOSE, childBounds.max.x, child));
 			} else {
-				events.add(new Event<T>(EventType.POINT, childBounds.min.x, child));
+				events.add(new LineSweepEvent<T>(EventType.POINT, childBounds.min.x, child));
 			}
 		}
 	}
 
-	public final static <T> Set<HorizontalSegment<T>> findHorizontalSegments(LineSegmentFinderDataSource<T> ds) {
-		final List<Sweeper.Event<T>> events = new ArrayList<>();
+	private final static <T> Set<HorizontalSegment<T>> findHorizontalSegments(
+			OrthogonalSegmentsFactoryDataSource<T> ds) {
+		final List<LineSweepEvent<T>> events = new ArrayList<>();
 		addEventsForVerticalSweep(null, ds, events);
-		Sweeper.sort(events);
+		LineSweeper.sort(events);
 
 		// TODO: What if two objects have the same min/max x? Only one object will be inserted?
 		// TODO: Reenable
@@ -289,34 +286,33 @@ public class LineSegmentFinder {
 		final MinHorizontalSegmentCollector<T> minHorizontalCollector = new MinHorizontalSegmentCollector<T>(ds,
 				horizontalSegments);
 		// TODO: Avoid passing function in.. Should be part of collector? or some model?
-		Sweeper.sweep(events, minXOpenObjects, minHorizontalCollector.keyFunc, minHorizontalCollector);
+		LineSweeper.sweep(events, minXOpenObjects, minHorizontalCollector.keyFunc, minHorizontalCollector);
 
 		final TreeMultimap<Double, T> maxXOpenObjects = TreeMultimap.create(Comparator.naturalOrder(),
 				Ordering.arbitrary());
 		final MaxHorizontalSegmentCollector<T> maxHorizontalCollector = new MaxHorizontalSegmentCollector<T>(ds,
 				horizontalSegments);
 		// TODO: Use the function which is part of the collector.
-		Sweeper.sweep(events, maxXOpenObjects, o -> ds.getBounds(o).max.x, maxHorizontalCollector);
+		LineSweeper.sweep(events, maxXOpenObjects, o -> ds.getBounds(o).max.x, maxHorizontalCollector);
 
 		return horizontalSegments;
 	}
 
 // TODO: Share implementation with other horizontal sweep. Only difference is the axis
-	private static <T> void addEventsForVerticalSweep(final T parent, final LineSegmentFinderDataSource<T> ds,
-			final Collection<Sweeper.Event<T>> events) {
+	private static <T> void addEventsForVerticalSweep(final T parent, final OrthogonalSegmentsFactoryDataSource<T> ds,
+			final Collection<LineSweepEvent<T>> events) {
 		for (final T child : ds.getObjects()) {
 			final Rectangle childBounds = ds.getBounds(child);
 			if (childBounds.min.y != childBounds.max.y) {
-				events.add(new Event<T>(EventType.OPEN, childBounds.min.y, child));
-				events.add(new Event<T>(EventType.CLOSE, childBounds.max.y, child));
+				events.add(new LineSweepEvent<T>(EventType.OPEN, childBounds.min.y, child));
+				events.add(new LineSweepEvent<T>(EventType.CLOSE, childBounds.max.y, child));
 			} else {
-				events.add(new Event<T>(EventType.POINT, childBounds.min.y, child));
+				events.add(new LineSweepEvent<T>(EventType.POINT, childBounds.min.y, child));
 			}
 		}
 	}
 
-	// TODO: Should be moved outside of this class?
-	static <T> OrthogonalSegments<T> buildSegments(final LineSegmentFinderDataSource<T> ds) {
+	public static <T> OrthogonalSegments<T> create(final OrthogonalSegmentsFactoryDataSource<T> ds) {
 		final Set<VerticalSegment<T>> verticalSegments = findVerticalSegments(ds);
 		final Set<HorizontalSegment<T>> horizontalSegments = findHorizontalSegments(ds);
 
@@ -325,10 +321,8 @@ public class LineSegmentFinder {
 				Collections.unmodifiableSet(verticalSegments));
 	}
 
-// TODO: May need a better way to get the cp segment bounds... Decide after seeing how things work.
-
 	public static void main(String[] args) {
-		final LineSegmentFinderDataSource<TestModel.TestElement> ds = TestModel.createDataSource();
+		final OrthogonalSegmentsFactoryDataSource<TestModel.TestElement> ds = TestModel.createDataSource();
 
 		// Vertical
 		final Set<VerticalSegment<TestModel.TestElement>> verticalSegments = findVerticalSegments(ds);

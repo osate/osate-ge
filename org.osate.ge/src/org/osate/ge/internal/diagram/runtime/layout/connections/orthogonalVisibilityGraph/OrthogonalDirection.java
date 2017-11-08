@@ -1,6 +1,6 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph;
 
-enum OrthogonalDirection {
+public enum OrthogonalDirection {
 	UP {
 		@Override
 		public OrthogonalDirection opposite() {

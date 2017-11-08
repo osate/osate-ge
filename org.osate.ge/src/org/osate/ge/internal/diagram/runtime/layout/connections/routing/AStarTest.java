@@ -1,8 +1,10 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections;
+package org.osate.ge.internal.diagram.runtime.layout.connections.routing;
 
 import java.util.List;
 
 import org.osate.ge.graphics.Point;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph.OrthogonalDirection;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph.OrthogonalGraphNode;
 
 // TODO: Turn into a unit test.
 public class AStarTest {

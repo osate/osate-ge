@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections;
+package org.osate.ge.internal.diagram.runtime.layout.connections.routing;
 
 class RouteCost implements Comparable<RouteCost> {
 	public static RouteCost ZERO = new RouteCost(0, 0);

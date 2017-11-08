@@ -1,9 +1,11 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections;
+package org.osate.ge.internal.diagram.runtime.layout.connections.routing;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import org.osate.ge.internal.diagram.runtime.layout.connections.AStar.NodeEdgePair;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph.OrthogonalDirection;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph.OrthogonalGraphNode;
+import org.osate.ge.internal.diagram.runtime.layout.connections.routing.AStar.NodeEdgePair;
 
 public class DefaultAStarDelegate implements AStar.Delegate<OrthogonalGraphNode, OrthogonalDirection, RouteCost> {
 	@Override

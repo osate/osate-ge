@@ -1,6 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections;
-
-import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.Graph;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph;
 
 import javafx.application.Application;
 import javafx.scene.Group;
@@ -23,10 +21,10 @@ public class TestApp extends Application {
 		startWithDataSource(primaryStage, TestModel.createDataSource());
 	}
 
-	private <T> void startWithDataSource(final Stage primaryStage, final LineSegmentFinderDataSource<T> ds) {
+	private <T> void startWithDataSource(final Stage primaryStage, final OrthogonalSegmentsFactoryDataSource<T> ds) {
 		// OrthogonalVisibilityGraph.create(testDataSource);
-		final OrthogonalSegments<T> segments = LineSegmentFinder.buildSegments(ds);
-		final Graph graph = OrthogonalVisibilityGraphBuilder.buildGraph(segments);
+		final OrthogonalSegments<T> segments = OrthogonalSegmentsFactory.create(ds);
+		final OrthogonalGraph graph = OrthogonalVisibilityGraphFactory.create(segments);
 
 		// TODO: Cleanup
 		// Print the segments to the console
@@ -50,7 +48,7 @@ public class TestApp extends Application {
 
 	}
 
-	private <T> void draw(final GraphicsContext gc, final LineSegmentFinderDataSource<T> ds, final Graph graph,
+	private <T> void draw(final GraphicsContext gc, final OrthogonalSegmentsFactoryDataSource<T> ds, final OrthogonalGraph graph,
 			final OrthogonalSegments<T> segments) {
 		// Draw the objects
 		for (final T obj : ds.getObjects()) {
@@ -73,14 +71,14 @@ public class TestApp extends Application {
 		final boolean drawNodesAndEdges = true;// false; // TODO: Reenable
 		if (drawNodesAndEdges) {
 			gc.setFill(Color.BLUE);
-			for (final OrthogonalGraphNode n : graph.nodes) {
+			for (final OrthogonalGraphNode n : graph.getNodes()) {
 				gc.fillOval(n.position.x - halfNodeIndicatorSize, n.position.y - halfNodeIndicatorSize, nodeIndicatorSize,
 						nodeIndicatorSize);
 			}
 
 			// Draw Edge
 			gc.setLineDashes(0.0);
-			for (final OrthogonalGraphNode n : graph.nodes) {
+			for (final OrthogonalGraphNode n : graph.getNodes()) {
 				gc.setStroke(Color.RED);
 				final OrthogonalGraphNode right = n.getNeighbor(OrthogonalDirection.RIGHT);
 				if (right != null) {
@@ -98,7 +96,7 @@ public class TestApp extends Application {
 		}
 	}
 
-	private <T> void drawObjectIfBounded(final GraphicsContext gc, final LineSegmentFinderDataSource<T> ds,
+	private <T> void drawObjectIfBounded(final GraphicsContext gc, final OrthogonalSegmentsFactoryDataSource<T> ds,
 			final T obj) {
 		final Rectangle bounds = ds.getBounds(obj);
 		if (bounds != null) {
