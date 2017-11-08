@@ -10,7 +10,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
-import org.osate.ge.graphics.Point;
 import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.HorizontalSegment;
 import org.osate.ge.internal.diagram.runtime.layout.connections.OrthogonalVisibilityGraphBuilder.VerticalSegment;
 import org.osate.ge.internal.diagram.runtime.layout.connections.Sweeper.Event;
@@ -40,68 +39,69 @@ public class LineSegmentFinder {
 			this.keyFunc = Objects.requireNonNull(keyFunc, "keyFunc must not be null");
 		}
 
-		@SuppressWarnings("unchecked")
 		@Override
 		public void handleEvent(final Event<ObjectType> event, final TreeMultimap<Double, ObjectType> openObjects) {
-			if (event.type == EventType.POINT) {
-				// Connection Point
-				// TODO
-			} else {
-				final ObjectType eventTagObject = event.tag; // TODO: Rename
-				final ObjectType parentEventTagObject = ds.getParent(eventTagObject); // TODO: Rename
-				final Rectangle tagBounds = ds.getBounds(eventTagObject);
+			final ObjectType eventTagObject = event.tag; // TODO: Rename
+			final ObjectType parentEventTagObject = ds.getParent(eventTagObject); // TODO: Rename
 
-				// Find the first before object which is not the event object
-				ObjectType before = null;
-				for (final Double tmpKey : openObjects.keySet().headSet(keyFunc.apply(eventTagObject), true)
-						.descendingSet()) {
-					boolean found = false;
+			final Rectangle tagBounds = ds.getBounds(eventTagObject);
 
-					final NavigableSet<ObjectType> tmpObjects = openObjects.get(tmpKey);
-					for (final ObjectType tmp : tmpObjects) {
-						// TODO: Think about implications of parent checks
-						if (tmp != eventTagObject
-								&& tmp != parentEventTagObject) {
-							before = tmp;
-							found = true;
-							break;
-						}
-					}
+			// TODO: Document. This is for deciding which ancestors to ignore. The results are different based on whether the object is a point or has a parent
+			// which is a port.
+			final boolean parentIsPort = parentEventTagObject == null ? false : ds.isPort(parentEventTagObject);
+			final ObjectType ignoredParentEventTagObject = parentEventTagObject != null
+					&& (event.type == EventType.POINT || parentIsPort) ? parentEventTagObject : null;
+			final ObjectType portParentEventTagObject = parentIsPort ? ds.getParent(ignoredParentEventTagObject) : null; // TODO: Rename
 
-					// TODO: Cleanup
-					if (found) {
+			// Find the first before object which is not the event object
+			ObjectType before = null;
+			for (final Double tmpKey : openObjects.keySet().headSet(keyFunc.apply(eventTagObject), true)
+					.descendingSet()) {
+				boolean found = false;
+
+				final NavigableSet<ObjectType> tmpObjects = openObjects.get(tmpKey);
+				for (final ObjectType tmp : tmpObjects) {
+					// TODO: Think about implications of parent checks
+					if (tmp != eventTagObject && tmp != ignoredParentEventTagObject
+							&& tmp != portParentEventTagObject) {
+						before = tmp;
+						found = true;
 						break;
 					}
 				}
 
-				final Rectangle beforeBounds = before == null ? null : ds.getBounds(before);
-				before(event.position, tagBounds, beforeBounds);
-
-				// Find the first after object which is not the event object
-				ObjectType after = null;
-				// for (final ObjectType tmp : openObjects.tailSet(eventTagObject, true)) {
-				for (final Double tmpKey : openObjects.keySet().tailSet(keyFunc.apply(eventTagObject), true)) {
-					boolean found = false;
-					final NavigableSet<ObjectType> tmpObjects = openObjects.get(tmpKey);
-					// TODO: Think about these checks
-					for (final ObjectType tmp : tmpObjects) {
-						if (tmp != eventTagObject
-								&& tmp != parentEventTagObject) {
-							after = tmp;
-							found = true;
-							break;
-						}
-					}
-
-					// TODO: Cleanup
-					if (found) {
-						break;
-					}
+				// TODO: Cleanup
+				if (found) {
+					break;
 				}
-
-				final Rectangle afterBounds = after == null ? null : ds.getBounds(after);
-				after(event.position, tagBounds, afterBounds);
 			}
+
+			final Rectangle beforeBounds = before == null ? null : ds.getBounds(before);
+			before(event.position, tagBounds, beforeBounds);
+
+			// Find the first after object which is not the event object
+			ObjectType after = null;
+			for (final Double tmpKey : openObjects.keySet().tailSet(keyFunc.apply(eventTagObject), true)) {
+				boolean found = false;
+				final NavigableSet<ObjectType> tmpObjects = openObjects.get(tmpKey);
+				// TODO: Think about these checks
+				for (final ObjectType tmp : tmpObjects) {
+					if (tmp != eventTagObject && tmp != ignoredParentEventTagObject
+							&& tmp != portParentEventTagObject) {
+						after = tmp;
+						found = true;
+						break;
+					}
+				}
+
+				// TODO: Cleanup
+				if (found) {
+					break;
+				}
+			}
+
+			final Rectangle afterBounds = after == null ? null : ds.getBounds(after);
+			after(event.position, tagBounds, afterBounds);
 		}
 
 		// TODO: Does value need to be a rect or change it just be a point?
@@ -139,7 +139,7 @@ public class LineSegmentFinder {
 		}
 	};
 
-	// TODO: Cleanup.. Try to share code..
+// TODO: Cleanup.. Try to share code..
 	private static class MaxVerticalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
 		private final Set<VerticalSegment> segments;
 
@@ -170,8 +170,8 @@ public class LineSegmentFinder {
 		}
 	};
 
-	// TODO
-	/////////////////////////////////////////// X
+// TODO
+/////////////////////////////////////////// X
 	private static class MinHorizontalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
 		private final Set<HorizontalSegment> segments;
 
@@ -201,7 +201,7 @@ public class LineSegmentFinder {
 		}
 	};
 
-	// TODO: Cleanup.. Try to share code..
+// TODO: Cleanup.. Try to share code..
 	private static class MaxHorizontalSegmentCollector<ObjectType> extends AbstractSegmentCollector<ObjectType> {
 		private final Set<HorizontalSegment> segments;
 
@@ -231,10 +231,10 @@ public class LineSegmentFinder {
 			segments.add(new HorizontalSegment(position, value.max.x, max));
 		}
 	};
-	// END X
+// END X
 
-	// TODO: What is needed... Bounds of ALL the objects and connection points.. In order to make an event list.
-	// TODO: Does the data source really need the concept of children?
+// TODO: What is needed... Bounds of ALL the objects and connection points.. In order to make an event list.
+// TODO: Does the data source really need the concept of children?
 	public final static <T> Set<VerticalSegment> findVerticalSegments(LineSegmentFinderDataSource<T> ds) {
 		final List<Sweeper.Event<T>> events = new ArrayList<>();
 		addEventsForHorizontalSweep(ds, events);
@@ -260,21 +260,16 @@ public class LineSegmentFinder {
 		return verticalSegments;
 	}
 
-	// TODO: A stream would be better to avoid having to store everything in an array
+// TODO: A stream would be better to avoid having to store everything in an array
 	private static <T> void addEventsForHorizontalSweep(final LineSegmentFinderDataSource<T> ds,
 			final Collection<Sweeper.Event<T>> events) {
 		for (final T child : ds.getObjects()) {
 			final Rectangle childBounds = ds.getBounds(child);
-			if (childBounds != null) {
+			if (childBounds.min.x != childBounds.max.x) {
 				events.add(new Event<T>(EventType.OPEN, childBounds.min.x, child));
 				events.add(new Event<T>(EventType.CLOSE, childBounds.max.x, child));
 			} else {
-				final Point position = ds.getPosition(child);
-				if (position == null) {
-					throw new RuntimeException("Bounds and position are both invalid for: " + child);
-				}
-
-				events.add(new Event<T>(EventType.POINT, position.x, child));
+				events.add(new Event<T>(EventType.POINT, childBounds.min.x, child));
 			}
 		}
 	}
@@ -304,26 +299,21 @@ public class LineSegmentFinder {
 		return horizontalSegments;
 	}
 
-	// TODO: Share implementation with other horizontal sweep. Only difference is the axis
+// TODO: Share implementation with other horizontal sweep. Only difference is the axis
 	private static <T> void addEventsForVerticalSweep(final T parent, final LineSegmentFinderDataSource<T> ds,
 			final Collection<Sweeper.Event<T>> events) {
 		for (final T child : ds.getObjects()) {
 			final Rectangle childBounds = ds.getBounds(child);
-			if (childBounds != null) {
+			if (childBounds.min.y != childBounds.max.y) {
 				events.add(new Event<T>(EventType.OPEN, childBounds.min.y, child));
 				events.add(new Event<T>(EventType.CLOSE, childBounds.max.y, child));
 			} else {
-				final Point position = ds.getPosition(child);
-				if (position == null) {
-					throw new RuntimeException("Bounds and position are both invalid for: " + child);
-				}
-
-				events.add(new Event<T>(EventType.POINT, position.y, child));
+				events.add(new Event<T>(EventType.POINT, childBounds.min.y, child));
 			}
 		}
 	}
 
-	// TODO: May need a better way to get the cp segment bounds... Decide after seeing how things work.
+// TODO: May need a better way to get the cp segment bounds... Decide after seeing how things work.
 
 	public static void main(String[] args) {
 		final LineSegmentFinderDataSource<?> ds = TestModel.createDataSource();
