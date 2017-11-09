@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph.test;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -7,6 +7,8 @@ import java.util.Objects;
 
 import org.osate.ge.graphics.Point;
 import org.osate.ge.internal.diagram.runtime.Dimension;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.OrthogonalSegmentsFactoryDataSource;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.Rectangle;
 
 // TODO: Rename
 public class TestModel {
@@ -127,7 +129,7 @@ public class TestModel {
 	}
 
 	// TODO: Document. Need bounds or position but not both.
-	static class TestElement {
+	public static class TestElement {
 		public final TestElement parent;
 		public final Rectangle bounds;
 		public final Rectangle segmentBounds;

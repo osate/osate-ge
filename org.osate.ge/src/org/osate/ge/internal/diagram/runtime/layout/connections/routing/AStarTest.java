@@ -3,23 +3,23 @@ package org.osate.ge.internal.diagram.runtime.layout.connections.routing;
 import java.util.List;
 
 import org.osate.ge.graphics.Point;
-import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph.OrthogonalDirection;
-import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph.OrthogonalGraphNode;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.OrthogonalDirection;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.OrthogonalGraphNode;
 
 // TODO: Turn into a unit test.
 public class AStarTest {
 	public static void main(String[] args) {
-		final OrthogonalGraphNode n1 = new OrthogonalGraphNode(new Point(0.0, 0.0));
-		final OrthogonalGraphNode n2 = new OrthogonalGraphNode(new Point(100.0, 0.0));
-		final OrthogonalGraphNode n3 = new OrthogonalGraphNode(new Point(0.0, 100.0));
-		final OrthogonalGraphNode n4 = new OrthogonalGraphNode(new Point(100.0, 100.0));
-		final OrthogonalGraphNode n5 = new OrthogonalGraphNode(new Point(200.0, 100.0));
-		final OrthogonalGraphNode n6 = new OrthogonalGraphNode(new Point(0.0, 200.0));
-		final OrthogonalGraphNode n7 = new OrthogonalGraphNode(new Point(200.0, 200.0));
-		final OrthogonalGraphNode n8 = new OrthogonalGraphNode(new Point(100.0, 50.0));
-		final OrthogonalGraphNode n9 = new OrthogonalGraphNode(new Point(200.0, 50.0));
-		final OrthogonalGraphNode n10 = new OrthogonalGraphNode(new Point(300.0, 200.0));
-		final OrthogonalGraphNode n11 = new OrthogonalGraphNode(new Point(300.0, 200.0));
+		final OrthogonalGraphNode<Object, Object> n1 = new OrthogonalGraphNode<>(new Point(0.0, 0.0));
+		final OrthogonalGraphNode<Object, Object> n2 = new OrthogonalGraphNode<>(new Point(100.0, 0.0));
+		final OrthogonalGraphNode<Object, Object> n3 = new OrthogonalGraphNode<>(new Point(0.0, 100.0));
+		final OrthogonalGraphNode<Object, Object> n4 = new OrthogonalGraphNode<>(new Point(100.0, 100.0));
+		final OrthogonalGraphNode<Object, Object> n5 = new OrthogonalGraphNode<>(new Point(200.0, 100.0));
+		final OrthogonalGraphNode<Object, Object> n6 = new OrthogonalGraphNode<>(new Point(0.0, 200.0));
+		final OrthogonalGraphNode<Object, Object> n7 = new OrthogonalGraphNode<>(new Point(200.0, 200.0));
+		final OrthogonalGraphNode<Object, Object> n8 = new OrthogonalGraphNode<>(new Point(100.0, 50.0));
+		final OrthogonalGraphNode<Object, Object> n9 = new OrthogonalGraphNode<>(new Point(200.0, 50.0));
+		final OrthogonalGraphNode<Object, Object> n10 = new OrthogonalGraphNode<>(new Point(300.0, 200.0));
+		final OrthogonalGraphNode<Object, Object> n11 = new OrthogonalGraphNode<>(new Point(300.0, 200.0));
 
 		n1.setNeighbor(OrthogonalDirection.RIGHT, n2);
 		n1.setNeighbor(OrthogonalDirection.DOWN, n3);
@@ -37,13 +37,14 @@ public class AStarTest {
 
 		// TODO: How to consider hierarchy when routing
 
-		final List<OrthogonalGraphNode> path = AStar.findPath(n1, n11, new DefaultAStarDelegate());
+		final List<OrthogonalGraphNode<Object, Object>> path = AStar.findPath(n1, n11,
+				new SimpleAStarDelegate<Object, Object>());
 		if (path == null) {
 			System.out.println("Failure");
 		} else {
 			// Path
 			System.out.println("Path ");
-			for (final OrthogonalGraphNode n : path) {
+			for (final OrthogonalGraphNode<Object, Object> n : path) {
 				System.out.println(n.position);
 			}
 		}

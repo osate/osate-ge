@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,6 +14,7 @@ import java.util.function.Function;
 import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweepEvent;
 import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweeper;
 import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweeper.EventType;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph.test.TestModel;
 import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweeperEventHandler;
 
 import com.google.common.collect.Ordering;

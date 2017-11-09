@@ -1,22 +1,22 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph;
 
-class VerticalSegment<T> {
-	public final double x;
-	public final double minY;
-	public final double maxY;
+public class HorizontalSegment<T> {
+	public final double y;
+	public final double minX;
+	public final double maxX;
 	public final T tag;
 
-	public VerticalSegment(final double x, final double minY, final double maxY, final T tag) {
-		this.x = x;
-		this.minY = minY;
-		this.maxY = maxY;
+	public HorizontalSegment(final double y, final double minX, final double maxX, final T tag) {
+		this.y = y;
+		this.minX = minX;
+		this.maxX = maxX;
 		// TODO: Assert max > min
 		this.tag = tag;
 	}
 
 	@Override
 	public String toString() {
-		return "VerticalSegment {" + x + "," + minY + " -> " + maxY + "}";
+		return "HorizontalSegment {" + y + "," + minX + " -> " + maxX + "}";
 	}
 
 	@Override
@@ -24,12 +24,12 @@ class VerticalSegment<T> {
 		final int prime = 31;
 		int result = 1;
 		long temp;
-		temp = Double.doubleToLongBits(maxY);
+		temp = Double.doubleToLongBits(maxX);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
-		temp = Double.doubleToLongBits(minY);
+		temp = Double.doubleToLongBits(minX);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
 		result = prime * result + ((tag == null) ? 0 : tag.hashCode());
-		temp = Double.doubleToLongBits(x);
+		temp = Double.doubleToLongBits(y);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
 		return result;
 	}
@@ -45,11 +45,11 @@ class VerticalSegment<T> {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		VerticalSegment other = (VerticalSegment) obj;
-		if (Double.doubleToLongBits(maxY) != Double.doubleToLongBits(other.maxY)) {
+		HorizontalSegment other = (HorizontalSegment) obj;
+		if (Double.doubleToLongBits(maxX) != Double.doubleToLongBits(other.maxX)) {
 			return false;
 		}
-		if (Double.doubleToLongBits(minY) != Double.doubleToLongBits(other.minY)) {
+		if (Double.doubleToLongBits(minX) != Double.doubleToLongBits(other.minX)) {
 			return false;
 		}
 		if (tag == null) {
@@ -59,10 +59,9 @@ class VerticalSegment<T> {
 		} else if (!tag.equals(other.tag)) {
 			return false;
 		}
-		if (Double.doubleToLongBits(x) != Double.doubleToLongBits(other.x)) {
+		if (Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y)) {
 			return false;
 		}
 		return true;
 	}
-
 }

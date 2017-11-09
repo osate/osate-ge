@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph;
 
 public enum OrthogonalDirection {
 	UP {
