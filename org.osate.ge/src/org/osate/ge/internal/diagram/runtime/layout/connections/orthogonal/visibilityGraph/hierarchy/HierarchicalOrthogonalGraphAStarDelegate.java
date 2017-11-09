@@ -1,12 +1,10 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.routing;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.hierarchy;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
 
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.OrthogonalGraphEdge;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.OrthogonalGraphNode;
-import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.hierarchy.EdgeHierarchy;
-import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.hierarchy.NodeHierarchy;
 import org.osate.ge.internal.diagram.runtime.layout.connections.routing.AStarDelegate;
 import org.osate.ge.internal.diagram.runtime.layout.connections.routing.NodeEdgePair;
 

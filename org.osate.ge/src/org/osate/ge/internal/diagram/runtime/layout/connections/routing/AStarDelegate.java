@@ -2,6 +2,13 @@ package org.osate.ge.internal.diagram.runtime.layout.connections.routing;
 
 import java.util.Collection;
 
+/**
+ * Interface to provide usage dependent functionality to the A* algorithm.
+ *
+ * @param <NodeType>
+ * @param <EdgeType>
+ * @param <CostType>
+ */
 public interface AStarDelegate<NodeType, EdgeType, CostType> {
 	/**
 	 * Returns the actual cost between two nodes. The specified nodes are guaranteed to be neighbors.

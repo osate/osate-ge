@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.routing;
+package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.hierarchy;
 
 public class HierarchicalOrthogonalRouteCost implements Comparable<HierarchicalOrthogonalRouteCost> {
 	public static HierarchicalOrthogonalRouteCost ZERO = new HierarchicalOrthogonalRouteCost(0, 0, 0);

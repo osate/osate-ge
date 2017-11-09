@@ -4,10 +4,14 @@ import java.util.List;
 
 import org.osate.ge.graphics.Point;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.OrthogonalDirection;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.OrthogonalGraphEdge;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.OrthogonalGraphNode;
 
-// TODO: Turn into a unit test.
-public class AStarTest {
+/**
+ * Simple example of usage of the AStar class
+ *
+ */
+public class AStarExample {
 	public static void main(String[] args) {
 		final OrthogonalGraphNode<Object, Object> n1 = new OrthogonalGraphNode<>(new Point(0.0, 0.0));
 		final OrthogonalGraphNode<Object, Object> n2 = new OrthogonalGraphNode<>(new Point(100.0, 0.0));
@@ -35,17 +39,16 @@ public class AStarTest {
 		n9.setNeighbor(OrthogonalDirection.RIGHT, n10);
 		n10.setNeighbor(OrthogonalDirection.DOWN, n11);
 
-		// TODO: How to consider hierarchy when routing
-
-		final List<OrthogonalGraphNode<Object, Object>> path = AStar.findPath(n1, n11,
-				new SimpleAStarDelegate<Object, Object>());
+		final List<NodeEdgePair<OrthogonalGraphNode<Object, Object>, OrthogonalGraphEdge<Object, Object>>> path = AStar
+				.findPath(n1, n11,
+						new SimpleAStarDelegate<Object, Object>());
 		if (path == null) {
 			System.out.println("Failure");
 		} else {
 			// Path
-			System.out.println("Path ");
-			for (final OrthogonalGraphNode<Object, Object> n : path) {
-				System.out.println(n.position);
+			System.out.println("Path:");
+			for (final NodeEdgePair<OrthogonalGraphNode<Object, Object>, OrthogonalGraphEdge<Object, Object>> ne : path) {
+				System.out.println(ne.node.position + " : " + (ne.edge == null ? "" : ne.edge.direction));
 			}
 		}
 	}

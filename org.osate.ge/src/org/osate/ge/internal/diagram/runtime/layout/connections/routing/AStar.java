@@ -1,15 +1,15 @@
 package org.osate.ge.internal.diagram.runtime.layout.connections.routing;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 
 /**
- * A* search Algorithm
+ * A* search Algorithm implementation.
  * Based on the description and pseudocode on wikipedia.
  */
 public class AStar {
@@ -18,9 +18,9 @@ public class AStar {
 	 * @param startNode
 	 * @param goal
 	 * @param delegate
-	 * @return the path from startNode to goal. The list will be in reverse order. That is, the first node in the list will be the goal. Returns null if a path could not be found.
+	 * @return the path from startNode to goal. Returns null if a path could not be found.
 	 */
-	public static <NodeType, EdgeType, CostType extends Comparable<CostType>> List<NodeType> findPath(
+	public static <NodeType, EdgeType, CostType extends Comparable<CostType>> List<NodeEdgePair<NodeType, EdgeType>> findPath(
 			final NodeType startNode, final NodeType goal,
 			final AStarDelegate<NodeType, EdgeType, CostType> delegate) {
 		final CostType zeroCost = delegate.getZeroCost();
@@ -43,10 +43,10 @@ public class AStar {
 			final NodeEdgePair<NodeType, EdgeType> current = nextEdgeToTraverseQueue.poll();
 			if (current.node == goal) {
 				// Build the path
-				final List<NodeType> path = new ArrayList<>();
+				final LinkedList<NodeEdgePair<NodeType, EdgeType>> path = new LinkedList<>();
 				NodeEdgePair<NodeType, EdgeType> tmp = current;
 				do {
-					path.add(tmp.node);
+					path.addFirst(tmp);
 					tmp = cameFrom.get(tmp);
 				} while (tmp != null);
 

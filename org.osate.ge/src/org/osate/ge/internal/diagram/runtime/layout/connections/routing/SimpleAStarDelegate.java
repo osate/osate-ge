@@ -3,24 +3,24 @@ package org.osate.ge.internal.diagram.runtime.layout.connections.routing;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
+import org.osate.ge.graphics.Point;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.OrthogonalGraphEdge;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.OrthogonalGraphNode;
 
 public class SimpleAStarDelegate<N, E>
 implements
-AStarDelegate<OrthogonalGraphNode<N, E>, OrthogonalGraphEdge<N, E>, Integer> {
+AStarDelegate<OrthogonalGraphNode<N, E>, OrthogonalGraphEdge<N, E>, Double> {
 	@Override
-	public Integer getActualCost(
+	public Double getActualCost(
 			NodeEdgePair<OrthogonalGraphNode<N, E>, OrthogonalGraphEdge<N, E>> ne1,
 			NodeEdgePair<OrthogonalGraphNode<N, E>, OrthogonalGraphEdge<N, E>> ne2) {
-		return Integer.valueOf(1);
+		return distance(ne1.node.position, ne2.node.position);
 	}
 
 	@Override
-	public Integer getEstimatedCost(final OrthogonalGraphNode<N, E> from,
+	public Double getEstimatedCost(final OrthogonalGraphNode<N, E> from,
 			final OrthogonalGraphNode<N, E> to) {
-		// TODO:
-		return Integer.valueOf(from == to ? 0 : 1);
+		return distance(from.position, to.position);
 	}
 
 	@Override
@@ -30,17 +30,21 @@ AStarDelegate<OrthogonalGraphNode<N, E>, OrthogonalGraphEdge<N, E>, Integer> {
 	}
 
 	@Override
-	public Integer add(final Integer c1, final Integer c2) {
+	public Double add(final Double c1, final Double c2) {
 		return c1 + c2;
 	}
 
 	@Override
-	public Integer getZeroCost() {
-		return Integer.valueOf(0);
+	public Double getZeroCost() {
+		return Double.valueOf(0);
 	}
 
 	@Override
-	public Integer getInfiniteCost() {
-		return Integer.valueOf(Integer.MAX_VALUE);
+	public Double getInfiniteCost() {
+		return Double.valueOf(Double.POSITIVE_INFINITY);
+	}
+
+	private static <NodeTag, EdgeTag> double distance(final Point p1, final Point p2) {
+		return Math.abs(p1.x - p2.x) + Math.abs(p1.y - p2.y);
 	}
 }
