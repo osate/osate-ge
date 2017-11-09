@@ -1,31 +1,48 @@
 package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.hierarchy;
 
-import org.osate.ge.graphics.Point;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.OrthogonalSegmentsFactoryDataSource;
-import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.Rectangle;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.OrthogonalVisibilityGraphFactory.NodeTagCreator;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.Rectangle;
 
-// TODO: Rename
-public class NodeHierarchy<ModelElement> {
-	public final ModelElement container;
-	public final ModelElement borderElement; // Will only be set if the node is on the border of a model elmeent
-	public final int depth;
+/**
+ * Class used for a tag for nodes when working with hierarchical graphs.
+ *
+ */
+public class HierarchicalNodeTag<ModelElement> {
+	private final ModelElement container;
+	private final ModelElement borderElement; // Will only be set if the node is on the border of a model element
+	private final int depth;
 
-	public NodeHierarchy(final ModelElement container, final ModelElement borderElement, final int depth) {
+	public HierarchicalNodeTag(final ModelElement container, final ModelElement borderElement, final int depth) {
 		this.container = container;
 		this.borderElement = borderElement;
 		this.depth = depth;
 	}
 
-	// TODO: Rename
-	public static <SegmentTag> NodeTagCreator<SegmentTag, NodeHierarchy<SegmentTag>> createNodeHierarchyCreator(
+	public final ModelElement getContainer() {
+		return container;
+	}
+
+	public final ModelElement getBorderElement() {
+		return borderElement;
+	}
+
+	public final int getDepth() {
+		return depth;
+	}
+
+	/**
+	 * Creates a node tag creator which creates a HierarchicalNodeTag object.
+	 * @param ds
+	 * @return
+	 */
+	public static <SegmentTag> NodeTagCreator<SegmentTag, HierarchicalNodeTag<SegmentTag>> createHierarchicalNodeTagCreator(
 			final OrthogonalSegmentsFactoryDataSource<SegmentTag> ds) {
-		return (hs, vs) -> {
-			final Point nodePoint = new Point(vs.x, hs.y); // TODO: Could pass this in?
+		return (nodePosition, hs, vs) -> {
 			SegmentTag borderElement = null;
 
 			// Start with the first common ancestor
-			SegmentTag st = getFirstCommonAncestor(ds, hs.tag, vs.tag);
+			SegmentTag st = getFirstCommonAncestor(ds, hs.getTag(), vs.tag);
 			if (st != null) {
 				Rectangle bounds = ds.getBounds(st);
 
@@ -38,7 +55,7 @@ public class NodeHierarchy<ModelElement> {
 				}
 
 				// While the point is on the border of the current segment tag, go to the parent
-				while (bounds.borderContains(nodePoint) && st != null) {
+				while (bounds.borderContains(nodePosition) && st != null) {
 					borderElement = st;
 					st = ds.getParent(st);
 					if (st != null) {
@@ -47,7 +64,7 @@ public class NodeHierarchy<ModelElement> {
 				}
 			}
 
-			return new NodeHierarchy<SegmentTag>(st, borderElement, getDepth(ds, st));
+			return new HierarchicalNodeTag<SegmentTag>(st, borderElement, getDepth(ds, st));
 		};
 	}
 

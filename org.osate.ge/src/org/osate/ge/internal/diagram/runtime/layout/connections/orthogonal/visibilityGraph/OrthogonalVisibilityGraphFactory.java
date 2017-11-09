@@ -19,14 +19,17 @@ import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph
 
 import com.google.common.collect.TreeMultimap;
 
-//TODO: Cite paper
-//TODO: Describe modifications.
-//TODO: Unit test with sanity checks.
-//Check that left and right agree. Also up and down.
-//Segments max > min
+/**
+ * Creates an orthogonal visibility graph based on "interesting" horizontal and vertical segments.
+ * See Wybrow M., Marriott K., Stuckey P.J. (2010) Orthogonal Connector Routing. In: Eppstein D., Gansner E.R. (eds) Graph Drawing. GD 2009.
+ * Lecture Notes in Computer Science, vol 5849. Springer, Berlin, Heidelberg
+ * Section 3
+ *
+ * Also see {@link OrthogonalSegmentsFactory} for a description of some of the differences in the interesting segments generated.
+ */
 public class OrthogonalVisibilityGraphFactory {
 	public static interface NodeTagCreator<SegmentTag, NodeTag> {
-		NodeTag create(HorizontalSegment<SegmentTag> hs, VerticalSegment<SegmentTag> vs);
+		NodeTag create(Point nodePosition, HorizontalSegment<SegmentTag> hs, VerticalSegment<SegmentTag> vs);
 	}
 
 	public static interface EdgeTagCreator<NodeTag, EdgeTag> {
@@ -45,35 +48,34 @@ public class OrthogonalVisibilityGraphFactory {
 			final OrthogonalSegments<SegmentTag> segments,
 			final NodeTagCreator<SegmentTag, NodeTag> nodeTagCreator,
 			final EdgeTagCreator<NodeTag, EdgeTag> edgeTagCreator) {
-		// Perform a vertical sweep from left to right.
+		//
+		// Perform a vertical sweep from left to right which will create node and edges.
+		//
+
 		// Start by creating events for the start and end points of each horizontal segments and for the location of each vertical segment.
 		final List<LineSweepEvent<Object>> events = new ArrayList<>(
-				segments.horizontalSegments.size() * 2 + segments.verticalSegments.size());
+				segments.getHorizontalSegments().size() * 2 + segments.getVerticalSegments().size());
 
-		for (final HorizontalSegment<SegmentTag> hs : segments.horizontalSegments) {
-			events.add(new LineSweepEvent<Object>(EventType.OPEN, hs.minX, hs));
-			events.add(new LineSweepEvent<Object>(EventType.CLOSE, hs.maxX, hs));
+		for (final HorizontalSegment<SegmentTag> hs : segments.getHorizontalSegments()) {
+			events.add(new LineSweepEvent<Object>(EventType.OPEN, hs.getMinX(), hs));
+			events.add(new LineSweepEvent<Object>(EventType.CLOSE, hs.getMaxX(), hs));
 		}
 
-		for (final VerticalSegment<SegmentTag> vs : segments.verticalSegments) {
+		for (final VerticalSegment<SegmentTag> vs : segments.getVerticalSegments()) {
 			events.add(new LineSweepEvent<Object>(EventType.POINT, vs.x, vs));
 		}
 
 		LineSweeper.sortByPosition(events);
 
-		// TODO: rename
-		final NodeCreator<SegmentTag, NodeTag, EdgeTag> nodeCollector = new NodeCreator<>(nodeTagCreator,
+		// Create the nodes and edges
+		final NodeCreator<SegmentTag, NodeTag, EdgeTag> nodeCreator = new NodeCreator<>(nodeTagCreator,
 				edgeTagCreator);
+		LineSweeper.sweep(events, hs -> hs.getY(), nodeCreator);
+		nodeCreator.finish(); // Finish the creation process
 
-		LineSweeper.sweep(events, hs -> hs.y, nodeCollector);
-
-		nodeCollector.finish();
-
-		return new OrthogonalGraph<NodeTag, EdgeTag>(nodeCollector.positionToNodesMap);
+		return new OrthogonalGraph<NodeTag, EdgeTag>(nodeCreator.positionToNodesMap);
 	}
 
-	// TODO: Rename
-	// TODO: Generic for segment type?
 	private static class SegmentNodePair<SegmentType, NodeTag, EdgeTag> {
 		public SegmentType segment;
 		public OrthogonalGraphNode<NodeTag, EdgeTag> node;
@@ -84,7 +86,6 @@ public class OrthogonalVisibilityGraphFactory {
 		}
 	}
 
-	// TODO: Move. Rename. Creates edges too
 	private static class NodeCreator<SegmentTag, NodeTag, EdgeTag>
 	implements LineSweeperEventHandler<Object, HorizontalSegment<SegmentTag>, Double> {
 		private final NodeTagCreator<SegmentTag, NodeTag> nodeTagCreator;
@@ -96,7 +97,7 @@ public class OrthogonalVisibilityGraphFactory {
 
 		private double lastX = Double.NaN;
 		// Processed and cleared whenever a new X is encountered.
-		private final TreeMap<Double, SegmentNodePair<VerticalSegment<?>, NodeTag, EdgeTag>> yToVerticalNodeMap = new TreeMap<>();
+		private final TreeMap<Double, SegmentNodePair<VerticalSegment<?>, NodeTag, EdgeTag>> yToVerticalSegmentNodeMap = new TreeMap<>();
 
 		public NodeCreator(final NodeTagCreator<SegmentTag, NodeTag> nodeTagCreator,
 				final EdgeTagCreator<NodeTag, EdgeTag> edgeTagCreator) {
@@ -108,50 +109,55 @@ public class OrthogonalVisibilityGraphFactory {
 		public void handleEvent(final LineSweepEvent<Object> event,
 				final TreeMultimap<Double, HorizontalSegment<SegmentTag>> openHorizontalSegments) {
 			if (event.position != lastX) {
-				processOrderedNodes();
+				assignVerticalNeighbors();
 				lastX = event.position;
 			}
 
-			// TODO: Get all intersections
+			// A point represents a vertical segment. For each vertical segment, an open horizontal segment indicates an interesection.
 			if (event.type == EventType.POINT) {
 				@SuppressWarnings("unchecked")
 				final VerticalSegment<SegmentTag> vs = (VerticalSegment<SegmentTag>) event.tag;
 				for (final Double key : openHorizontalSegments.keySet().subSet(vs.minY, true, vs.maxY, true)) {
 					for (final HorizontalSegment<SegmentTag> hs : openHorizontalSegments.get(key)) {
-						// TODO: Should be intersection
-						final Point nodePosition = new Point(vs.x, hs.y);
-						final boolean nodeExists = positionToNodesMap.containsKey(nodePosition);
+						// Create a node and or edge based on the intersection
+						final Point nodePosition = new Point(vs.x, hs.getY());
 
-						// TODO: Rename
-						if (nodeExists) {
-							// Update the segment stored in the tuple maps if the previously stored segment is to the left/above this segment
-							// This is needed to prevent from using the incorrect segment when segments overlap.
+						// Check if the node already exists.
+						if (positionToNodesMap.containsKey(nodePosition)) {
+							// Update the segment stored if the previously stored segment is to the left/above this segment
+							// This is needed to ensure the segment that extends the farthest to the right is used when determining if nodes are connected.
 							final SegmentNodePair<HorizontalSegment<?>, NodeTag, EdgeTag> prevPair = yToLeftNodeSegmentMap
 									.get(nodePosition.y);
-							if (prevPair.segment.maxX < hs.maxX) {
+							if (prevPair.segment.getMaxX() < hs.getMaxX()) {
 								prevPair.segment = hs;
 							}
 
-							final SegmentNodePair<VerticalSegment<?>, NodeTag, EdgeTag> prevVerticalPair = yToVerticalNodeMap
+							// Similarly, do the same for vertical segments to ensure the segment which extends downward the most is used.
+							final SegmentNodePair<VerticalSegment<?>, NodeTag, EdgeTag> prevVerticalPair = yToVerticalSegmentNodeMap
 									.get(nodePosition.y);
 							if (prevVerticalPair.segment.maxY < vs.maxY) {
 								prevVerticalPair.segment = vs;
 							}
 						} else {
+							// Create and store the node
 							final OrthogonalGraphNode<NodeTag, EdgeTag> newNode = new OrthogonalGraphNode<>(
 									nodePosition,
-									nodeTagCreator.create(hs, vs));
-
+									nodeTagCreator.create(nodePosition, hs, vs));
 							positionToNodesMap.put(nodePosition, newNode);
-							yToVerticalNodeMap.put(newNode.position.y, new SegmentNodePair<>(vs, newNode));
 
-							// TODO: Rename
-							final SegmentNodePair<HorizontalSegment<?>, NodeTag, EdgeTag> leftTestTuple = yToLeftNodeSegmentMap
+							// Store the vertical segment pair in the map so it can be used to find vertical neighbors once the X position changes or
+							// the finish() method is called.
+							yToVerticalSegmentNodeMap.put(newNode.getPosition().y, new SegmentNodePair<>(vs, newNode));
+
+							// Store the horizontal segment pair so that the left node can be determined for future nodes with the same y value.
+							final SegmentNodePair<HorizontalSegment<?>, NodeTag, EdgeTag> leftNeighbor = yToLeftNodeSegmentMap
 									.put(nodePosition.y, new SegmentNodePair<>(hs, newNode));
 
-							if (leftTestTuple != null && leftTestTuple.segment.maxX >= hs.minX) {
-								newNode.setNeighbor(OrthogonalDirection.LEFT, leftTestTuple.node,
-										edgeTagCreator.create(newNode, leftTestTuple.node));
+							// Set the left neighbor if there was a node with the same y value and its horizontal segment extends to the segment connected to
+							// this node.
+							if (leftNeighbor != null && leftNeighbor.segment.getMaxX() >= hs.getMinX()) {
+								newNode.setNeighbor(OrthogonalDirection.LEFT, leftNeighbor.node,
+										edgeTagCreator.create(newNode, leftNeighbor.node));
 							}
 						}
 					}
@@ -162,21 +168,20 @@ public class OrthogonalVisibilityGraphFactory {
 
 		// Must be called to finish setting vertical neighbors.
 		public void finish() {
-			processOrderedNodes();
+			assignVerticalNeighbors();
 		}
 
-		// Sets the vertical neighbors and then cleared
-		// TODO: Rename
-		private void processOrderedNodes() {
+		// Sets the vertical neighbors and then clears the y to vertical node map.
+		private void assignVerticalNeighbors() {
 			SegmentNodePair<VerticalSegment<?>, NodeTag, EdgeTag> prev = null;
-			final Iterator<SegmentNodePair<VerticalSegment<?>, NodeTag, EdgeTag>> tupleIt = yToVerticalNodeMap.values()
-					.iterator(); // TODO: Rename
-			if (tupleIt.hasNext()) {
-				prev = tupleIt.next();
+			final Iterator<SegmentNodePair<VerticalSegment<?>, NodeTag, EdgeTag>> it = yToVerticalSegmentNodeMap.values()
+					.iterator();
+			if (it.hasNext()) {
+				prev = it.next();
 			}
 
-			while (tupleIt.hasNext()) {
-				final SegmentNodePair<VerticalSegment<?>, NodeTag, EdgeTag> tmp = tupleIt.next();
+			while (it.hasNext()) {
+				final SegmentNodePair<VerticalSegment<?>, NodeTag, EdgeTag> tmp = it.next();
 
 				if (prev.segment.maxY >= tmp.segment.minY) {
 					tmp.node.setNeighbor(OrthogonalDirection.UP, prev.node, edgeTagCreator.create(tmp.node, prev.node));
@@ -185,7 +190,7 @@ public class OrthogonalVisibilityGraphFactory {
 				prev = tmp;
 			}
 
-			yToVerticalNodeMap.clear();
+			yToVerticalSegmentNodeMap.clear();
 		}
 	}
 }

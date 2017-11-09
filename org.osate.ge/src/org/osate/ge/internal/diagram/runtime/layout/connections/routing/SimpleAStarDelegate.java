@@ -14,19 +14,19 @@ AStarDelegate<OrthogonalGraphNode<N, E>, OrthogonalGraphEdge<N, E>, Double> {
 	public Double getActualCost(
 			NodeEdgePair<OrthogonalGraphNode<N, E>, OrthogonalGraphEdge<N, E>> ne1,
 			NodeEdgePair<OrthogonalGraphNode<N, E>, OrthogonalGraphEdge<N, E>> ne2) {
-		return distance(ne1.node.position, ne2.node.position);
+		return distance(ne1.node.getPosition(), ne2.node.getPosition());
 	}
 
 	@Override
 	public Double getEstimatedCost(final OrthogonalGraphNode<N, E> from,
 			final OrthogonalGraphNode<N, E> to) {
-		return distance(from.position, to.position);
+		return distance(from.getPosition(), to.getPosition());
 	}
 
 	@Override
 	public Collection<NodeEdgePair<OrthogonalGraphNode<N, E>, OrthogonalGraphEdge<N, E>>> getNeighbors(
 			final OrthogonalGraphNode<N, E> n) {
-		return n.getEdges().values().stream().map(v -> new NodeEdgePair<>(v.node, v)).collect(Collectors.toList());
+		return n.getEdges().values().stream().map(v -> new NodeEdgePair<>(v.getNode(), v)).collect(Collectors.toList());
 	}
 
 	@Override

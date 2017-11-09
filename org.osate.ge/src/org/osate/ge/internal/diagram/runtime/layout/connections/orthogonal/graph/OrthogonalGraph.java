@@ -13,11 +13,11 @@ public class OrthogonalGraph<NodeTag, EdgeType> {
 		this.positionToNodeMap = Collections.unmodifiableMap(positionToNodeMap);
 	}
 
-	public Collection<OrthogonalGraphNode<NodeTag, EdgeType>> getNodes() {
+	public final Collection<OrthogonalGraphNode<NodeTag, EdgeType>> getNodes() {
 		return this.positionToNodeMap.values();
 	}
 
-	public OrthogonalGraphNode<NodeTag, EdgeType> getNode(final Point position) {
+	public final OrthogonalGraphNode<NodeTag, EdgeType> getNode(final Point position) {
 		return positionToNodeMap.get(position);
 	}
 }

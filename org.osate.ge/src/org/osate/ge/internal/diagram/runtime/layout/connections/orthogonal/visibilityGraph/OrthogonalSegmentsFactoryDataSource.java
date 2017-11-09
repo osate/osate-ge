@@ -2,21 +2,29 @@ package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visi
 
 import java.util.List;
 
-public interface OrthogonalSegmentsFactoryDataSource<T> {
-	// TODO: Rename to Element?
-	List<T> getObjects();
+public interface OrthogonalSegmentsFactoryDataSource<ElementType> {
+	/**
+	 * Returns the elements provided by this data source. Each element will be turned into one or more events and then processed
+	 * by the OrthogonalSegmentsFactory based on the values returned by the methods of this interface.
+	 * @return
+	 */
+	List<ElementType> getElements();
 
-	T getParent(T obj);
+	ElementType getParent(ElementType e);
 
 	/**
 	 * For points the min and max of the bounds should be equal.
-	 * @param obj
+	 * @param e
 	 * @return
 	 */
-	Rectangle getBounds(T obj);
+	Rectangle getBounds(ElementType e);
 
-	// TODO: Document
-	// Must not return null
-	Rectangle getSegmentBounds(T obj);
+	/**
+	 * Returns a bounds to which the segments generated for this element are constrained. Useful to prevent how far segments generated
+	 * by connection points can extend.
+	 * @param e
+	 * @return must not return null.
+	 */
+	Rectangle getSegmentBounds(ElementType e);
 
 }

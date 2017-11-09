@@ -1,22 +1,24 @@
 package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class HorizontalSegment<T> {
-	public final double y;
-	public final double minX;
-	public final double maxX;
-	public final T tag;
+	private final double y;
+	private final double minX;
+	private final double maxX;
+	private final T tag;
 
 	public HorizontalSegment(final double y, final double minX, final double maxX, final T tag) {
+		checkArgument(maxX >= minX, "Max X is less than min.");
 		this.y = y;
 		this.minX = minX;
 		this.maxX = maxX;
-		// TODO: Assert max > min
 		this.tag = tag;
 	}
 
 	@Override
 	public String toString() {
-		return "HorizontalSegment {" + y + "," + minX + " -> " + maxX + "}";
+		return "HorizontalSegment {" + getY() + "," + getMinX() + " -> " + getMaxX() + "}";
 	}
 
 	@Override
@@ -24,12 +26,12 @@ public class HorizontalSegment<T> {
 		final int prime = 31;
 		int result = 1;
 		long temp;
-		temp = Double.doubleToLongBits(maxX);
+		temp = Double.doubleToLongBits(getMaxX());
 		result = prime * result + (int) (temp ^ (temp >>> 32));
-		temp = Double.doubleToLongBits(minX);
+		temp = Double.doubleToLongBits(getMinX());
 		result = prime * result + (int) (temp ^ (temp >>> 32));
-		result = prime * result + ((tag == null) ? 0 : tag.hashCode());
-		temp = Double.doubleToLongBits(y);
+		result = prime * result + ((getTag() == null) ? 0 : getTag().hashCode());
+		temp = Double.doubleToLongBits(getY());
 		result = prime * result + (int) (temp ^ (temp >>> 32));
 		return result;
 	}
@@ -45,23 +47,39 @@ public class HorizontalSegment<T> {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		HorizontalSegment other = (HorizontalSegment) obj;
-		if (Double.doubleToLongBits(maxX) != Double.doubleToLongBits(other.maxX)) {
+		HorizontalSegment<?> other = (HorizontalSegment<?>) obj;
+		if (Double.doubleToLongBits(getMaxX()) != Double.doubleToLongBits(other.getMaxX())) {
 			return false;
 		}
-		if (Double.doubleToLongBits(minX) != Double.doubleToLongBits(other.minX)) {
+		if (Double.doubleToLongBits(getMinX()) != Double.doubleToLongBits(other.getMinX())) {
 			return false;
 		}
-		if (tag == null) {
-			if (other.tag != null) {
+		if (getTag() == null) {
+			if (other.getTag() != null) {
 				return false;
 			}
-		} else if (!tag.equals(other.tag)) {
+		} else if (!getTag().equals(other.getTag())) {
 			return false;
 		}
-		if (Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y)) {
+		if (Double.doubleToLongBits(getY()) != Double.doubleToLongBits(other.getY())) {
 			return false;
 		}
 		return true;
+	}
+
+	public final double getY() {
+		return y;
+	}
+
+	public final double getMinX() {
+		return minX;
+	}
+
+	public final double getMaxX() {
+		return maxX;
+	}
+
+	public final T getTag() {
+		return tag;
 	}
 }

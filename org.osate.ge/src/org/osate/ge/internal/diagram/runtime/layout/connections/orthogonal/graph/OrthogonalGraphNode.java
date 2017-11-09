@@ -7,12 +7,10 @@ import java.util.Objects;
 
 import org.osate.ge.graphics.Point;
 
-// TODO: Make generic.
-// TODO: Accessors, etc
 public class OrthogonalGraphNode<NodeTag, EdgeTag>
 {
-	public final Point position;
-	public final NodeTag tag;
+	private final Point position;
+	private final NodeTag tag;
 	private final EnumMap<OrthogonalDirection,
 	OrthogonalGraphEdge<NodeTag, EdgeTag>> edges = new EnumMap<>(
 			OrthogonalDirection.class);
@@ -36,7 +34,7 @@ public class OrthogonalGraphNode<NodeTag, EdgeTag>
 
 	public final OrthogonalGraphNode<NodeTag, EdgeTag> getNeighbor(final OrthogonalDirection direction) {
 		final OrthogonalGraphEdge<NodeTag, EdgeTag> edge = edges.get(direction);
-		return edge == null ? null : edge.node;
+		return edge == null ? null : edge.getNode();
 	}
 
 	public void setNeighbor(final OrthogonalDirection direction, OrthogonalGraphNode<NodeTag, EdgeTag> n) {
@@ -49,5 +47,13 @@ public class OrthogonalGraphNode<NodeTag, EdgeTag>
 		edges.put(direction, new OrthogonalGraphEdge<>(direction, n, edgeTag));
 		final OrthogonalDirection opposite = direction.opposite();
 		n.edges.put(opposite, new OrthogonalGraphEdge<>(opposite, this, edgeTag));
+	}
+
+	public final Point getPosition() {
+		return position;
+	}
+
+	public final NodeTag getTag() {
+		return tag;
 	}
 }

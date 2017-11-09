@@ -8,37 +8,43 @@ import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph
 import org.osate.ge.internal.diagram.runtime.layout.connections.routing.AStarDelegate;
 import org.osate.ge.internal.diagram.runtime.layout.connections.routing.NodeEdgePair;
 
-public class HierarchicalOrthogonalGraphAStarDelegate<NodeTag extends NodeHierarchy<?>, EdgeTag extends EdgeHierarchy>
+/**
+ * Implementation of the AStarDelegate interface intended for use with hierarchical graphs. Uses HierarchicalOrthogonalRouteCost for route costs.
+ *
+ * @param <NodeTag>
+ * @param <EdgeTag>
+ */
+public class HierarchicalOrthogonalGraphAStarDelegate<NodeTag extends HierarchicalNodeTag<?>, EdgeTag extends HierarchicalEdgeTag>
 implements
 AStarDelegate<OrthogonalGraphNode<NodeTag, EdgeTag>, OrthogonalGraphEdge<NodeTag, EdgeTag>, HierarchicalOrthogonalRouteCost> {
 	@Override
 	public HierarchicalOrthogonalRouteCost getActualCost(
 			NodeEdgePair<OrthogonalGraphNode<NodeTag, EdgeTag>, OrthogonalGraphEdge<NodeTag, EdgeTag>> ne1,
 			NodeEdgePair<OrthogonalGraphNode<NodeTag, EdgeTag>, OrthogonalGraphEdge<NodeTag, EdgeTag>> ne2) {
-		final int numberOfBends = (ne1.edge.direction == ne2.edge.direction) ? 0 : 1;
-		return new HierarchicalOrthogonalRouteCost(ne2.edge.tag.depth, numberOfBends, distance(ne1.node, ne2.node));
+		final int numberOfBends = (ne1.edge.getDirection() == ne2.edge.getDirection()) ? 0 : 1;
+		return new HierarchicalOrthogonalRouteCost(ne2.edge.getTag().getLevelsCrossed(), numberOfBends, distance(ne1.node, ne2.node));
 	}
 
 	@Override
 	public HierarchicalOrthogonalRouteCost getEstimatedCost(
 			final OrthogonalGraphNode<NodeTag, EdgeTag> from,
 			final OrthogonalGraphNode<NodeTag, EdgeTag> to) {
-		final boolean mustHaveBend = from.position.x != to.position.y && from.position.y != to.position.y;
+		final boolean mustHaveBend = from.getPosition().x != to.getPosition().y && from.getPosition().y != to.getPosition().y;
 		final int estNumberOfBends = mustHaveBend ? 1 : 0;
-		final int estHierarchyCrossings = Math.abs(from.tag.depth - to.tag.depth);
+		final int estHierarchyCrossings = Math.abs(from.getTag().getDepth() - to.getTag().getDepth());
 		return new HierarchicalOrthogonalRouteCost(estHierarchyCrossings, estNumberOfBends,
 				distance(from, to));
 	}
 
 	private static <NodeTag, EdgeTag> double distance(final OrthogonalGraphNode<NodeTag, EdgeTag> n1,
 			final OrthogonalGraphNode<NodeTag, EdgeTag> n2) {
-		return Math.abs(n1.position.x - n2.position.x) + Math.abs(n1.position.y - n2.position.y);
+		return Math.abs(n1.getPosition().x - n2.getPosition().x) + Math.abs(n1.getPosition().y - n2.getPosition().y);
 	}
 
 	@Override
 	public Collection<NodeEdgePair<OrthogonalGraphNode<NodeTag, EdgeTag>, OrthogonalGraphEdge<NodeTag, EdgeTag>>> getNeighbors(
 			final OrthogonalGraphNode<NodeTag, EdgeTag> n) {
-		return n.getEdges().values().stream().map(v -> new NodeEdgePair<>(v.node, v))
+		return n.getEdges().values().stream().map(v -> new NodeEdgePair<>(v.getNode(), v))
 				.collect(Collectors.toList());
 	}
 

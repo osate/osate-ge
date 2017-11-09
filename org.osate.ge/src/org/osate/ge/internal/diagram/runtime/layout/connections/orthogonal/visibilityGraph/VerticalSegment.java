@@ -1,5 +1,7 @@
 package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 public class VerticalSegment<T> {
 	public final double x;
 	public final double minY;
@@ -7,10 +9,10 @@ public class VerticalSegment<T> {
 	public final T tag;
 
 	public VerticalSegment(final double x, final double minY, final double maxY, final T tag) {
+		checkArgument(maxY >= minY, "Max Y is less than min");
 		this.x = x;
 		this.minY = minY;
 		this.maxY = maxY;
-		// TODO: Assert max > min
 		this.tag = tag;
 	}
 
@@ -45,7 +47,7 @@ public class VerticalSegment<T> {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		VerticalSegment other = (VerticalSegment) obj;
+		VerticalSegment<?> other = (VerticalSegment<?>) obj;
 		if (Double.doubleToLongBits(maxY) != Double.doubleToLongBits(other.maxY)) {
 			return false;
 		}

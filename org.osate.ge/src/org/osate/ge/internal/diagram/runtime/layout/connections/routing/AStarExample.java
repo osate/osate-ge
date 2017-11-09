@@ -48,7 +48,7 @@ public class AStarExample {
 			// Path
 			System.out.println("Path:");
 			for (final NodeEdgePair<OrthogonalGraphNode<Object, Object>, OrthogonalGraphEdge<Object, Object>> ne : path) {
-				System.out.println(ne.node.position + " : " + (ne.edge == null ? "" : ne.edge.direction));
+				System.out.println(ne.node.getPosition() + " : " + (ne.edge == null ? "" : ne.edge.getDirection()));
 			}
 		}
 	}

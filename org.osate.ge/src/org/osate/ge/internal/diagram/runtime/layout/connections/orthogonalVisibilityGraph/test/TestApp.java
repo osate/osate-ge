@@ -9,12 +9,12 @@ import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visib
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.OrthogonalSegmentsFactory;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.OrthogonalSegmentsFactoryDataSource;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.OrthogonalVisibilityGraphFactory;
-import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.Rectangle;
-import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.VerticalSegment;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.OrthogonalVisibilityGraphFactory.EdgeTagCreator;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.OrthogonalVisibilityGraphFactory.NodeTagCreator;
-import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.hierarchy.EdgeHierarchy;
-import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.hierarchy.NodeHierarchy;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.Rectangle;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.VerticalSegment;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.hierarchy.HierarchicalEdgeTag;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph.hierarchy.HierarchicalNodeTag;
 
 import javafx.application.Application;
 import javafx.scene.Group;
@@ -37,9 +37,9 @@ public class TestApp extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-		final OrthogonalSegmentsFactoryDataSource<TestModel.TestElement> ds = TestModel.createDataSource();
-		startWithDataSource(primaryStage, ds, NodeHierarchy.createNodeHierarchyCreator(ds),
-				EdgeHierarchy.createEdgeHierarchyCreator(ds));
+		final OrthogonalSegmentsFactoryDataSource<ExampleModel.TestElement> ds = ExampleModel.createDataSource();
+		startWithDataSource(primaryStage, ds, HierarchicalNodeTag.createHierarchicalNodeTagCreator(ds),
+				HierarchicalEdgeTag.createHierarchicalEdgeTagCreator(ds));
 	}
 
 	private <T, NodeTag, EdgeTag> void startWithDataSource(final Stage primaryStage,
@@ -66,7 +66,7 @@ public class TestApp extends Application {
 			final OrthogonalGraph<?, ?> graph,
 			final OrthogonalSegments<T> segments) {
 		// Draw the objects
-		for (final T obj : ds.getObjects()) {
+		for (final T obj : ds.getElements()) {
 			drawObjectIfBounded(gc, ds, obj);
 		}
 
@@ -74,22 +74,22 @@ public class TestApp extends Application {
 		gc.setStroke(Color.GREY);
 		gc.setLineWidth(1);
 		gc.setLineDashes(1.0, 5.0);
-		for (final HorizontalSegment<T> hs : segments.horizontalSegments) {
-			gc.strokeLine(Math.max(0, hs.minX), hs.y, Math.min(1000, hs.maxX), hs.y);
+		for (final HorizontalSegment<T> hs : segments.getHorizontalSegments()) {
+			gc.strokeLine(Math.max(0, hs.getMinX()), hs.getY(), Math.min(1000, hs.getMaxX()), hs.getY());
 		}
 
-		for (final VerticalSegment<T> vs : segments.verticalSegments) {
+		for (final VerticalSegment<T> vs : segments.getVerticalSegments()) {
 			gc.strokeLine(vs.x, Math.max(0, vs.minY), vs.x, Math.min(1000, vs.maxY));
 		}
 
 		gc.setFont(Font.font("Arial", FontWeight.BOLD, 14));
 
 		// Draw Nodes
-		final boolean drawNodesAndEdges = true;// false; // TODO: Reenable
+		final boolean drawNodesAndEdges = true;
 		if (drawNodesAndEdges) {
 			for (final OrthogonalGraphNode<?, ?> n : graph.getNodes()) {
 				gc.setFill(Color.BLUE);
-				gc.fillOval(n.position.x - halfNodeIndicatorSize, n.position.y - halfNodeIndicatorSize, nodeIndicatorSize,
+				gc.fillOval(n.getPosition().x - halfNodeIndicatorSize, n.getPosition().y - halfNodeIndicatorSize, nodeIndicatorSize,
 						nodeIndicatorSize);
 			}
 
@@ -99,16 +99,16 @@ public class TestApp extends Application {
 				gc.setStroke(Color.RED);
 				final OrthogonalGraphEdge<?, ?> rightEdge = n.getEdge(OrthogonalDirection.RIGHT);
 				if (rightEdge != null) {
-					drawEdge(gc, n.position.x + halfNodeIndicatorSize, n.position.y,
-							rightEdge.node.position.x - halfNodeIndicatorSize, rightEdge.node.position.y,
-							rightEdge.tag);
+					drawEdge(gc, n.getPosition().x + halfNodeIndicatorSize, n.getPosition().y,
+							rightEdge.getNode().getPosition().x - halfNodeIndicatorSize, rightEdge.getNode().getPosition().y,
+							rightEdge.getTag());
 				}
 
 				gc.setStroke(Color.GREEN);
 				final OrthogonalGraphEdge<?, ?> downEdge = n.getEdge(OrthogonalDirection.DOWN);
 				if (downEdge != null) {
-					drawEdge(gc, n.position.x, n.position.y + halfNodeIndicatorSize, downEdge.node.position.x,
-							downEdge.node.position.y - halfNodeIndicatorSize, downEdge.tag);
+					drawEdge(gc, n.getPosition().x, n.getPosition().y + halfNodeIndicatorSize, downEdge.getNode().getPosition().x,
+							downEdge.getNode().getPosition().y - halfNodeIndicatorSize, downEdge.getTag());
 				}
 			}
 		}
@@ -118,10 +118,10 @@ public class TestApp extends Application {
 			Object tag) {
 		gc.strokeLine(x1, y1, x2, y2);
 
-		if (tag instanceof EdgeHierarchy) {
+		if (tag instanceof HierarchicalEdgeTag) {
 			gc.setFill(Color.BLACK);
 			gc.setTextAlign(TextAlignment.CENTER);
-			gc.fillText(Integer.toString(((EdgeHierarchy) tag).depth), (x1 + x2) / 2.0, (y1 + y2) / 2.0);
+			gc.fillText(Integer.toString(((HierarchicalEdgeTag) tag).getLevelsCrossed()), (x1 + x2) / 2.0, (y1 + y2) / 2.0);
 		}
 	}
 
@@ -131,7 +131,7 @@ public class TestApp extends Application {
 		if (bounds != null) {
 			gc.setStroke(Color.BLACK);
 			gc.setLineWidth(4);
-			gc.strokeRect(bounds.min.x, bounds.min.y, bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y);
+			gc.strokeRect(bounds.getMin().x, bounds.getMin().y, bounds.getMax().x - bounds.getMin().x, bounds.getMax().y - bounds.getMin().y);
 		}
 	}
 
