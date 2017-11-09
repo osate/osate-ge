@@ -3,7 +3,6 @@ package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visi
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NavigableSet;
@@ -14,10 +13,9 @@ import java.util.function.Function;
 import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweepEvent;
 import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweeper;
 import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweeper.EventType;
-import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph.test.TestModel;
 import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweeperEventHandler;
+import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonalVisibilityGraph.test.TestModel;
 
-import com.google.common.collect.Ordering;
 import com.google.common.collect.TreeMultimap;
 
 // TODO: Rename and Describe
@@ -30,7 +28,8 @@ import com.google.common.collect.TreeMultimap;
 
 public class OrthogonalSegmentsFactory {
 	// TODO: Rename
-	private static abstract class AbstractSegmentCollector<ObjectType> implements LineSweeperEventHandler<ObjectType> {
+	private static abstract class AbstractSegmentCollector<ObjectType>
+	implements LineSweeperEventHandler<ObjectType, ObjectType, Double> {
 		protected final OrthogonalSegmentsFactoryDataSource<ObjectType> ds;
 		final Function<ObjectType, Double> keyFunc;
 
@@ -41,7 +40,8 @@ public class OrthogonalSegmentsFactory {
 		}
 
 		@Override
-		public void handleEvent(final LineSweepEvent<ObjectType> event, final TreeMultimap<Double, ObjectType> openObjects) {
+		public void handleEvent(final LineSweepEvent<ObjectType> event,
+				final TreeMultimap<Double, ObjectType> openObjects) {
 			final ObjectType eventTagObject = event.tag; // TODO: Rename
 			final ObjectType parentEventTagObject = ds.getParent(eventTagObject); // TODO: Rename
 
@@ -239,20 +239,16 @@ public class OrthogonalSegmentsFactory {
 	private final static <T> Set<VerticalSegment<T>> findVerticalSegments(OrthogonalSegmentsFactoryDataSource<T> ds) {
 		final List<LineSweepEvent<T>> events = new ArrayList<>();
 		addEventsForHorizontalSweep(ds, events);
-		LineSweeper.sort(events);
+		LineSweeper.sortByPosition(events);
 
 		final Set<VerticalSegment<T>> verticalSegments = new HashSet<>();
-		final TreeMultimap<Double, T> minYOpenObjects = TreeMultimap.create(Comparator.naturalOrder(),
-				Ordering.arbitrary());
 		final MinVerticalSegmentCollector<T> minVerticalCollector = new MinVerticalSegmentCollector<>(ds,
 				verticalSegments);
-		LineSweeper.sweep(events, minYOpenObjects, minVerticalCollector.keyFunc, minVerticalCollector);
+		LineSweeper.sweep(events, minVerticalCollector.keyFunc, minVerticalCollector);
 
-		final TreeMultimap<Double, T> maxYOpenObjects = TreeMultimap.create(Comparator.naturalOrder(),
-				Ordering.arbitrary());
 		final MaxVerticalSegmentCollector<T> maxVerticalCollector = new MaxVerticalSegmentCollector<>(ds,
 				verticalSegments);
-		LineSweeper.sweep(events, maxYOpenObjects, maxVerticalCollector.keyFunc, maxVerticalCollector);
+		LineSweeper.sweep(events, maxVerticalCollector.keyFunc, maxVerticalCollector);
 
 		// TODO: Do this for max as well... That will finish collecting all the vertical segments
 
@@ -277,24 +273,20 @@ public class OrthogonalSegmentsFactory {
 			OrthogonalSegmentsFactoryDataSource<T> ds) {
 		final List<LineSweepEvent<T>> events = new ArrayList<>();
 		addEventsForVerticalSweep(null, ds, events);
-		LineSweeper.sort(events);
+		LineSweeper.sortByPosition(events);
 
 		// TODO: What if two objects have the same min/max x? Only one object will be inserted?
 		// TODO: Reenable
 		final Set<HorizontalSegment<T>> horizontalSegments = new HashSet<>();
-		final TreeMultimap<Double, T> minXOpenObjects = TreeMultimap.create(Comparator.naturalOrder(),
-				Ordering.arbitrary());
 		final MinHorizontalSegmentCollector<T> minHorizontalCollector = new MinHorizontalSegmentCollector<T>(ds,
 				horizontalSegments);
 		// TODO: Avoid passing function in.. Should be part of collector? or some model?
-		LineSweeper.sweep(events, minXOpenObjects, minHorizontalCollector.keyFunc, minHorizontalCollector);
+		LineSweeper.sweep(events, minHorizontalCollector.keyFunc, minHorizontalCollector);
 
-		final TreeMultimap<Double, T> maxXOpenObjects = TreeMultimap.create(Comparator.naturalOrder(),
-				Ordering.arbitrary());
 		final MaxHorizontalSegmentCollector<T> maxHorizontalCollector = new MaxHorizontalSegmentCollector<T>(ds,
 				horizontalSegments);
 		// TODO: Use the function which is part of the collector.
-		LineSweeper.sweep(events, maxXOpenObjects, o -> ds.getBounds(o).max.x, maxHorizontalCollector);
+		LineSweeper.sweep(events, o -> ds.getBounds(o).max.x, maxHorizontalCollector);
 
 		return horizontalSegments;
 	}
@@ -318,7 +310,7 @@ public class OrthogonalSegmentsFactory {
 		final Set<HorizontalSegment<T>> horizontalSegments = findHorizontalSegments(ds);
 
 		// Create segments object
-		return new OrthogonalSegments(Collections.unmodifiableSet(horizontalSegments),
+		return new OrthogonalSegments<T>(Collections.unmodifiableSet(horizontalSegments),
 				Collections.unmodifiableSet(verticalSegments));
 	}
 

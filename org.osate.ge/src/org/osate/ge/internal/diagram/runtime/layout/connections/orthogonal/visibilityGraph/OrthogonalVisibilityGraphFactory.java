@@ -1,7 +1,6 @@
 package org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.visibilityGraph;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -13,12 +12,11 @@ import org.osate.ge.graphics.Point;
 import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweepEvent;
 import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweeper;
 import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweeper.EventType;
+import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweeperEventHandler;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.OrthogonalDirection;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.OrthogonalGraph;
 import org.osate.ge.internal.diagram.runtime.layout.connections.orthogonal.graph.OrthogonalGraphNode;
-import org.osate.ge.internal.diagram.runtime.layout.connections.lineSweep.LineSweeperEventHandler;
 
-import com.google.common.collect.Ordering;
 import com.google.common.collect.TreeMultimap;
 
 //TODO: Cite paper
@@ -61,17 +59,13 @@ public class OrthogonalVisibilityGraphFactory {
 			events.add(new LineSweepEvent<Object>(EventType.POINT, vs.x, vs));
 		}
 
-		LineSweeper.sort(events);
-
-		final TreeMultimap<Double, Object> openObjects = TreeMultimap.create(Comparator.naturalOrder(),
-				Ordering.arbitrary());
+		LineSweeper.sortByPosition(events);
 
 		// TODO: rename
 		final NodeCreator<SegmentTag, NodeTag, EdgeTag> nodeCollector = new NodeCreator<>(nodeTagCreator,
 				edgeTagCreator);
 
-		// TODO: Key function should be between the collector?
-		LineSweeper.sweep(events, openObjects, o -> ((HorizontalSegment<?>) o).y, nodeCollector);
+		LineSweeper.sweep(events, hs -> hs.y, nodeCollector);
 
 		nodeCollector.finish();
 
@@ -91,7 +85,8 @@ public class OrthogonalVisibilityGraphFactory {
 	}
 
 	// TODO: Move. Rename. Creates edges too
-	private static class NodeCreator<SegmentTag, NodeTag, EdgeTag> implements LineSweeperEventHandler<Object> {
+	private static class NodeCreator<SegmentTag, NodeTag, EdgeTag>
+	implements LineSweeperEventHandler<Object, HorizontalSegment<SegmentTag>, Double> {
 		private final NodeTagCreator<SegmentTag, NodeTag> nodeTagCreator;
 		private final EdgeTagCreator<NodeTag, EdgeTag> edgeTagCreator;
 		private final Map<Point, OrthogonalGraphNode<NodeTag, EdgeTag>> positionToNodesMap = new HashMap<>();
@@ -110,7 +105,8 @@ public class OrthogonalVisibilityGraphFactory {
 		}
 
 		@Override
-		public void handleEvent(final LineSweepEvent<Object> event, final TreeMultimap<Double, Object> openObjects) {
+		public void handleEvent(final LineSweepEvent<Object> event,
+				final TreeMultimap<Double, HorizontalSegment<SegmentTag>> openHorizontalSegments) {
 			if (event.position != lastX) {
 				processOrderedNodes();
 				lastX = event.position;
@@ -120,11 +116,8 @@ public class OrthogonalVisibilityGraphFactory {
 			if (event.type == EventType.POINT) {
 				@SuppressWarnings("unchecked")
 				final VerticalSegment<SegmentTag> vs = (VerticalSegment<SegmentTag>) event.tag;
-				for (final Double key : openObjects.keySet().subSet(vs.minY, true, vs.maxY, true)) {
-					for (final Object hsObj : openObjects.get(key)) {
-						@SuppressWarnings("unchecked")
-						final HorizontalSegment<SegmentTag> hs = (HorizontalSegment<SegmentTag>) hsObj;
-
+				for (final Double key : openHorizontalSegments.keySet().subSet(vs.minY, true, vs.maxY, true)) {
+					for (final HorizontalSegment<SegmentTag> hs : openHorizontalSegments.get(key)) {
 						// TODO: Should be intersection
 						final Point nodePosition = new Point(vs.x, hs.y);
 						final boolean nodeExists = positionToNodesMap.containsKey(nodePosition);
