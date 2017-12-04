@@ -4,21 +4,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.Adapters;
-import org.eclipse.jface.layout.RowLayoutFactory;
 import org.eclipse.jface.viewers.IFilter;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.layout.FormAttachment;
-import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
-import org.eclipse.ui.views.properties.tabbed.ITabbedPropertyConstants;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.osate.aadl2.Access;
 import org.osate.aadl2.AccessType;
@@ -51,32 +46,17 @@ public class AccessPropertySection extends AbstractPropertySection {
 	@Override
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
-
 		Composite composite = getWidgetFactory().createFlatFormComposite(parent);
 
-		FormData ld;
-		final Composite directionContainer = getWidgetFactory().createComposite(composite);
-		directionContainer.setLayout(RowLayoutFactory.fillDefaults().wrap(false).create());
-		ld = new FormData();
-		ld.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
-		ld.right = new FormAttachment(100, 0);
-		ld.top = new FormAttachment(0, ITabbedPropertyConstants.VSPACE);
-		directionContainer.setLayoutData(ld);
+		final Composite directionContainer = PropertySectionUtil.createRowLayoutComposite(getWidgetFactory(), composite,
+				STANDARD_LABEL_WIDTH);
 
-		providesBtn = getWidgetFactory().createButton(directionContainer, "Provides", SWT.RADIO);
-		providesBtn.setData(AccessType.PROVIDES);
-		providesBtn.addSelectionListener(directionSelectionListener);
+		providesBtn = PropertySectionUtil.createButton(getWidgetFactory(), directionContainer, AccessType.PROVIDES,
+				directionSelectionListener, "Provides", SWT.RADIO);
+		requiresBtn = PropertySectionUtil.createButton(getWidgetFactory(), directionContainer, AccessType.REQUIRES,
+				directionSelectionListener, "Requires", SWT.RADIO);
 
-		requiresBtn = getWidgetFactory().createButton(directionContainer, "Requires", SWT.RADIO);
-		requiresBtn.setData(AccessType.REQUIRES);
-		requiresBtn.addSelectionListener(directionSelectionListener);
-
-		final Label label = getWidgetFactory().createLabel(composite, "Type:");
-		ld = new FormData();
-		ld.left = new FormAttachment(0, 0);
-		ld.right = new FormAttachment(directionContainer, -ITabbedPropertyConstants.HSPACE);
-		ld.top = new FormAttachment(directionContainer, 0, SWT.CENTER);
-		label.setLayoutData(ld);
+		PropertySectionUtil.createSectionLabel(composite, directionContainer, getWidgetFactory(), "Access Type:");
 	}
 
 	@Override
@@ -94,5 +74,4 @@ public class AccessPropertySection extends AbstractPropertySection {
 		providesBtn.setSelection(selectedDirections.contains(AccessType.PROVIDES));
 		requiresBtn.setSelection(selectedDirections.contains(AccessType.REQUIRES));
 	}
-
 }

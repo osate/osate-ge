@@ -8,6 +8,7 @@ import org.osate.ge.di.GetLabel;
 import org.osate.ge.di.Names;
 import org.osate.ge.internal.di.GetBusinessObjectToModify;
 
+// TODO property of the call sequence, drag order of calls
 public class MoveSubprogramCallUpCommand extends ReorderSubprogramCallCommand {
 	public MoveSubprogramCallUpCommand() {
 		super();
@@ -17,12 +18,13 @@ public class MoveSubprogramCallUpCommand extends ReorderSubprogramCallCommand {
 	public String getLabel() {
 		return "Move Up";
 	}
-	
+
 	@GetBusinessObjectToModify
 	public Object getBusinessObjectToModify(@Named(Names.BUSINESS_OBJECT) final SubprogramCall call) {
 		return call.eContainer();
 	}
 
+	@Override
 	protected int getNewIndex(final SubprogramCall call) {
 		final SubprogramCallSequence cs = (SubprogramCallSequence)call.eContainer();
 		final int currentIndex = cs.getOwnedSubprogramCalls().indexOf(call);

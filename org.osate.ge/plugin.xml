@@ -1404,9 +1404,6 @@
              class="org.osate.ge.internal.commands.SetModeTransitionTriggersCommand">
        </command>
        <command
-             class="org.osate.ge.internal.commands.EditFlowsCommand">
-       </command>
-       <command
              class="org.osate.ge.internal.commands.SetSubcomponentClassifierCommand">
        </command>
        <command
@@ -1513,6 +1510,55 @@
                class="org.osate.ge.internal.ui.properties.ConfigureInModesSection"
                filter="org.osate.ge.internal.ui.properties.ConfigureInModesSection$Filter"
                id="org.osate.ge.ui.properties.configureInModesSection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.ChangeFeatureTypePropertySection"
+               filter="org.osate.ge.internal.ui.properties.ChangeFeatureTypePropertySection$Filter"
+               id="org.osate.ge.ui.properties.changeFeatureTypePropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.ChangeSubcomponentTypePropertySection"
+               filter="org.osate.ge.internal.ui.properties.ChangeSubcomponentTypePropertySection$Filter"
+               id="org.osate.ge.ui.properties.changeSubcomponentTypePropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.SwitchDirectionOfConnectionPropertySection"
+               filter="org.osate.ge.internal.ui.properties.SwitchDirectionOfConnectionPropertySection$Filter"
+               id="org.osate.ge.ui.properties.switchDirectionOfConnectionPropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.ChangeComponentTypePropertySection"
+               filter="org.osate.ge.internal.ui.properties.ChangeComponentTypePropertySection$Filter"
+               id="org.osate.ge.ui.properties.changeComponentTypePropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.EditFlowsPropertySection"
+               filter="org.osate.ge.internal.ui.properties.EditFlowsPropertySection$Filter"
+               id="org.osate.ge.ui.properties.editFlowsPropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.ChangeComponentImplPropertySection"
+               filter="org.osate.ge.internal.ui.properties.ChangeComponentImplPropertySection$Filter"
+               id="org.osate.ge.ui.properties.changeComponentImplPropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.SetSubprogramCallSequenceOrderPropertySection"
+               filter="org.osate.ge.internal.ui.properties.SetSubprogramCallSequenceOrderPropertySection$Filter"
+               id="org.osate.ge.ui.properties.setSubprogramCallSequenceOrderPropertySection"
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
       </propertySections>

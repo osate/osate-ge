@@ -19,6 +19,7 @@ import org.osate.ge.services.QueryService;
 public class SetModeTransitionTriggersCommand {
 	private static final StandaloneQuery parentQuery = StandaloneQuery.create((root) -> root.ancestor(1));
 
+// TODO yes
 	@GetLabel
 	public String getLabel() {
 		return "Set Mode Transition Triggers...";

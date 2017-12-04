@@ -6,12 +6,12 @@ import org.osate.aadl2.Classifier;
 import org.osate.aadl2.ComponentType;
 import org.osate.aadl2.FeatureGroup;
 import org.osate.aadl2.FeatureGroupType;
+import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.di.Activate;
 import org.osate.ge.di.CanActivate;
 import org.osate.ge.di.GetLabel;
 import org.osate.ge.di.IsAvailable;
 import org.osate.ge.di.Names;
-import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.internal.di.GetBusinessObjectToModify;
 import org.osate.ge.internal.util.AadlFeatureUtil;
 import org.osate.ge.query.StandaloneQuery;
@@ -21,6 +21,7 @@ public class SetFeatureGroupInverseCommand {
 	private static final StandaloneQuery parentQuery = StandaloneQuery.create((root) -> root.ancestor(1));
 	final boolean inverse;
 
+// TODO YES
 	public SetFeatureGroupInverseCommand(boolean inverse) {
 		this.inverse = inverse;
 	}
@@ -50,7 +51,7 @@ public class SetFeatureGroupInverseCommand {
 	public Object getBusinessObjectToModify(@Named(Names.BUSINESS_OBJECT) final Object bo) {
 		return bo;
 	}
-	
+
 	@Activate
 	public boolean activate(@Named(Names.BUSINESS_OBJECT) final FeatureGroup feat) {
 		feat.setInverse(inverse);

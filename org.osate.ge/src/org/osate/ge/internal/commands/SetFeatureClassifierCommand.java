@@ -12,7 +12,7 @@ import javax.inject.Named;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.osate.aadl2.Aadl2Factory;
@@ -31,11 +31,11 @@ import org.osate.aadl2.Prototype;
 import org.osate.aadl2.SubprogramClassifier;
 import org.osate.aadl2.SubprogramGroupSubcomponentType;
 import org.osate.aadl2.SubprogramSubcomponentType;
+import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.di.Activate;
 import org.osate.ge.di.GetLabel;
 import org.osate.ge.di.IsAvailable;
 import org.osate.ge.di.Names;
-import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.internal.di.GetBusinessObjectToModify;
 import org.osate.ge.internal.ui.dialogs.ElementSelectionDialog;
 import org.osate.ge.internal.util.ScopedEMFIndexRetrieval;
@@ -43,9 +43,10 @@ import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
 
 public class SetFeatureClassifierCommand {
+	// TODO current and browse button
 	private static final StandaloneQuery parentQuery = StandaloneQuery.create((root) -> root.ancestor(1));
 	private static Map<EClass, FeatureClassifierSetterInfo> featureTypeToClassifierSetterMap = new HashMap<EClass, FeatureClassifierSetterInfo>();
-	
+
 	static {
 		final Aadl2Package p = Aadl2Factory.eINSTANCE.getAadl2Package();
 		featureTypeToClassifierSetterMap.put(p.getBusAccess(), new FeatureClassifierSetterInfo(p.getBusSubcomponentType(), BusSubcomponentType.class, "setBusFeatureClassifier"));
@@ -61,51 +62,51 @@ public class SetFeatureClassifierCommand {
 		featureTypeToClassifierSetterMap.put(p.getPortProxy(), new FeatureClassifierSetterInfo(p.getDataClassifier(), DataClassifier.class, "setDataClassifier"));
 		featureTypeToClassifierSetterMap.put(p.getSubprogramProxy(), new FeatureClassifierSetterInfo(p.getSubprogramClassifier(), SubprogramClassifier.class, "setSubprogramClassifier"));
 	}
-	
+
 	private static class FeatureClassifierSetterInfo {
 		private final EClass classifierEClass;
 		private final Class<?> classifierClass;
 		private final String setterName;
-		
+
 		public FeatureClassifierSetterInfo(final EClass classifierEClass, final Class<?> classifierClass, final String setterName) {
 			this.classifierEClass = classifierEClass;
 			this.classifierClass = classifierClass;
 			this.setterName = setterName;
 		}
-	}	
-	
+	}
+
 	@GetLabel
 	public String getLabel() {
 		return "Set Classifier...";
 	}
-	
+
 	@IsAvailable
-	public boolean isAvailable(@Named(Names.BUSINESS_OBJECT) final NamedElement feature, 
+	public boolean isAvailable(@Named(Names.BUSINESS_OBJECT) final NamedElement feature,
 			@Named(Names.BUSINESS_OBJECT_CONTEXT) final BusinessObjectContext boc,
 			final QueryService queryService) {
-		return feature.getContainingClassifier() == queryService.getFirstBusinessObject(parentQuery, boc) && 
-				featureTypeToClassifierSetterMap.containsKey(feature.eClass());		
+		return feature.getContainingClassifier() == queryService.getFirstBusinessObject(parentQuery, boc) &&
+				featureTypeToClassifierSetterMap.containsKey(feature.eClass());
 	}
-	
+
 	@GetBusinessObjectToModify
 	public Object getBusinessObjectToModify(@Named(Names.BUSINESS_OBJECT) final Object bo) {
 		return bo;
 	}
-	
+
 	@Activate
 	public boolean activate(@Named(Names.BUSINESS_OBJECT) final NamedElement feature) {
 		// Prompt the user for the classifier
 		final ElementSelectionDialog dlg = new ElementSelectionDialog(Display.getCurrent().getActiveShell(), "Select a Classifier", "Select a classifier.", getPotentialFeatureClassifiers(feature));
-		if(dlg.open() == Dialog.CANCEL) {
+		if(dlg.open() == Window.CANCEL) {
 			return false;
 		}
-		
+
 		// Import the package if necessary
 		EObject selectedType = (EObject)dlg.getFirstSelectedElement();
 		if(selectedType != null) {
 			// Resolve the reference
 			selectedType = EcoreUtil.resolve(selectedType, feature.eResource());
-			
+
 			// Import its package if necessary
 			final AadlPackage pkg = (AadlPackage)feature.getElementRoot();
 			if(selectedType instanceof Classifier && ((Classifier)selectedType).getNamespace() != null && pkg != null) {
@@ -115,14 +116,14 @@ public class SetFeatureClassifierCommand {
 					section.getImportedUnits().add(selectedClassifierPkg);
 				}
 			}
-		}				
-		
+		}
+
 		// Set the classifier
 		setFeatureClassifier(feature, dlg.getFirstSelectedElement());
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Return a list of EObjectDescriptions and NamedElements for potential subcomponent types for the specified subcomponent
 	 * @return
@@ -130,25 +131,25 @@ public class SetFeatureClassifierCommand {
 	private List<Object> getPotentialFeatureClassifiers(final NamedElement feature) {
 		final List<Object> featureClassifiers = new ArrayList<Object>();
 		featureClassifiers.add(null);
-		
+
 		final FeatureClassifierSetterInfo setterInfo = featureTypeToClassifierSetterMap.get(feature.eClass());
 		// Populate the list with valid classifier descriptions
 		for(final IEObjectDescription desc : ScopedEMFIndexRetrieval.getAllEObjectsByType(feature.eResource(), setterInfo.classifierEClass)) {
 			featureClassifiers.add(desc);
 		}
-		
+
 		// Add any prototypes that are of the appropriate type
 		if(feature.getContainingClassifier() instanceof ComponentClassifier) {
 			for(final Prototype p : ((ComponentClassifier)feature.getContainingClassifier()).getAllPrototypes()) {
 				if(setterInfo.classifierEClass.isInstance(p)) {
 					featureClassifiers.add(p);
-				}			
-			}		
+				}
+			}
 		}
 
 		return featureClassifiers;
 	}
-	
+
 	private static void setFeatureClassifier(final NamedElement feature, final Object classifier) {
 		final FeatureClassifierSetterInfo setterInfo = featureTypeToClassifierSetterMap.get(feature.eClass());
 		try {

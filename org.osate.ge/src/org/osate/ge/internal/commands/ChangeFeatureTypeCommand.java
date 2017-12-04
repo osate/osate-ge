@@ -1,12 +1,8 @@
 package org.osate.ge.internal.commands;
 
-import java.util.List;
-
 import javax.inject.Named;
 
 import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.osate.aadl2.AbstractFeature;
 import org.osate.aadl2.Classifier;
@@ -28,10 +24,11 @@ import org.osate.ge.internal.util.AadlFeatureUtil;
 import org.osate.ge.internal.util.StringUtil;
 import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
+import org.osate.ge.ui.properties.PropertySectionUtil;
 
 public class ChangeFeatureTypeCommand {
 	private static final StandaloneQuery parentQuery = StandaloneQuery.create((root) -> root.ancestor(1));
-	private final EClass featureType;	
+	private final EClass featureType;
 
 	public ChangeFeatureTypeCommand(final EClass featureType) {
 		this.featureType = featureType;
@@ -41,19 +38,21 @@ public class ChangeFeatureTypeCommand {
 	public String getLabel() {
 		return "Convert to " + StringUtil.camelCaseToUser(featureType.getName());
 	}
-	
+
 	@IsAvailable
 	public boolean isAvailable(@Named(Names.BUSINESS_OBJECT) final NamedElement feature,
 			@Named(Names.BUSINESS_OBJECT_CONTEXT) final BusinessObjectContext boc,
 			final QueryService queryService) {
 		// Check that the shape represents a feature and that the classifier can contain features of the type this feature changes features into.
 		final Object parent = queryService.getFirstBusinessObject(parentQuery, boc);
-		if(!((feature instanceof Feature || feature instanceof InternalFeature || feature instanceof ProcessorFeature) && parent instanceof Classifier)) {
+		if (!((feature instanceof Feature || feature instanceof InternalFeature || feature instanceof ProcessorFeature)
+				&& parent instanceof Classifier)) {
 			return false;
 		}
-		
-		return feature.getContainingClassifier() == parent &&
-				AadlFeatureUtil.canOwnFeatureType(feature.getContainingClassifier(), featureType) &&
+
+		return feature.getContainingClassifier() == parent
+				&& AadlFeatureUtil.canOwnFeatureType(feature.getContainingClassifier(), featureType)
+				&&
 				(!(feature instanceof Feature) || (((Feature)feature).getRefined() == null || ((Feature)feature).getRefined() instanceof AbstractFeature));
 	}
 
@@ -70,14 +69,14 @@ public class ChangeFeatureTypeCommand {
 	public Object getBusinessObjectToModify(@Named(Names.BUSINESS_OBJECT) final NamedElement feature) {
 		return feature.getContainingClassifier();
 	}
-	
+
 	@Activate
 	public boolean activate(@Named(Names.BUSINESS_OBJECT) final NamedElement feature) {
 		final Classifier featureOwner = feature.getContainingClassifier();
 		final NamedElement replacementFeature = AadlFeatureUtil.createFeature(featureOwner, featureType);
 
 		// Copy structural feature values to the replacement object.
-		transferStructuralFeatureValues(feature, replacementFeature);
+		PropertySectionUtil.transferStructuralFeatureValues(feature, replacementFeature);
 
 		// Handle copying the data feature classifier
 		if(replacementFeature instanceof EventDataPort) {
@@ -101,32 +100,4 @@ public class ChangeFeatureTypeCommand {
 
 		return null;
 	}
-
-	/**
-	 * Copies structural feature values from original to replacement. If replacement does not contain a matching structural feature, the value is ignored. If a feature is not set,
-	 * its value is not copied over to the replacement.
-	 * @param original
-	 * @param replacement
-	 */
-	private void transferStructuralFeatureValues(final EObject original, final EObject replacement) {
-		for(final EStructuralFeature feature : original.eClass().getEAllStructuralFeatures()) {
-			if(feature.isChangeable() && !feature.isDerived()) {
-				final Object originalValue = original.eGet(feature, true);						
-
-				// Only copy values that are set
-				if(original.eIsSet(feature)) {
-					if(replacement.eClass().getEAllStructuralFeatures().contains(feature)) {
-						if(feature.isMany()) {
-							final @SuppressWarnings("unchecked") List<Object> originalList = (List<Object>)originalValue;
-							final Object replacementValue = replacement.eGet(feature);
-							final @SuppressWarnings("unchecked") List<Object> replacementList = (List<Object>)replacementValue;
-							replacementList.addAll(originalList);					
-						} else {
-							replacement.eSet(feature, originalValue);
-						}
-					}
-				}
-			}
-		}
-	}	
 }

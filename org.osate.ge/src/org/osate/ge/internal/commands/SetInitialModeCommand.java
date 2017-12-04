@@ -4,12 +4,12 @@ import javax.inject.Named;
 
 import org.osate.aadl2.ComponentClassifier;
 import org.osate.aadl2.Mode;
+import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.di.Activate;
 import org.osate.ge.di.GetLabel;
 import org.osate.ge.di.IsAvailable;
 import org.osate.ge.di.Names;
 import org.osate.ge.internal.di.GetBusinessObjectToModify;
-import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
 
@@ -17,6 +17,7 @@ public class SetInitialModeCommand {
 	private static final StandaloneQuery parentQuery = StandaloneQuery.create((root) -> root.ancestor(1));
 	final boolean isInitial;
 
+// TODO yes
 	public SetInitialModeCommand(boolean isInitial) {
 		this.isInitial = isInitial;
 	}
@@ -38,7 +39,7 @@ public class SetInitialModeCommand {
 	public Object getBusinessObjectToModify(@Named(Names.BUSINESS_OBJECT) final Mode mode) {
 		return mode.getContainingClassifier();
 	}
-	
+
 	@Activate
 	public boolean activate(@Named(Names.BUSINESS_OBJECT) final Mode mode) {
 		// Reset the current initial mode. Only look in the current classifier and not in classifiers that have been extended
@@ -51,7 +52,7 @@ public class SetInitialModeCommand {
 			}
 		}
 
-		mode.setInitial(isInitial);			
+		mode.setInitial(isInitial);
 
 		return true;
 	}

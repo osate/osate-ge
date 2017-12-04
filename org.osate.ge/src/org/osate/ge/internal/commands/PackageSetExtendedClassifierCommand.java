@@ -7,7 +7,7 @@ import javax.inject.Named;
 
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.osate.aadl2.Aadl2Factory;
@@ -25,6 +25,7 @@ import org.osate.ge.internal.di.GetBusinessObjectToModify;
 import org.osate.ge.internal.ui.dialogs.ElementSelectionDialog;
 import org.osate.ge.internal.util.ScopedEMFIndexRetrieval;
 
+// TODO launch dialog, have label that shows current
 public class PackageSetExtendedClassifierCommand {
 	@GetLabel
 	public String getLabel() {
@@ -40,14 +41,14 @@ public class PackageSetExtendedClassifierCommand {
 	public Object getBusinessObjectToModify(@Named(Names.BUSINESS_OBJECT) final Object bo) {
 		return bo;
 	}
-	
+
 	@Activate
-	public boolean Activate(@Named(Names.BUSINESS_OBJECT) final Classifier classifier) {		
+	public boolean Activate(@Named(Names.BUSINESS_OBJECT) final Classifier classifier) {
 		// Prompt the user for the element
 		final ElementSelectionDialog dlg = new ElementSelectionDialog(Display.getCurrent().getActiveShell(), "Select a Classifier", "Select a classifier to extend.", getExtensibleClassifierDescriptions(classifier));
-		if(dlg.open() == Dialog.CANCEL) {
+		if(dlg.open() == Window.CANCEL) {
 			return false;
-		}		
+		}
 
 		final AadlPackage pkg = (AadlPackage)classifier.eResource().getContents().get(0);
 		final PackageSection section = pkg.getPublicSection();
@@ -76,7 +77,7 @@ public class PackageSetExtendedClassifierCommand {
 		}
 
 		return true;
-	}			
+	}
 
 	/**
 	 * Return a list of EObjectDescriptions for classifiers that could be extended.
@@ -87,7 +88,7 @@ public class PackageSetExtendedClassifierCommand {
 		final String name = classifier.getQualifiedName();
 
 		// Populate the list with valid classifier descriptions
-		if(name != null) {		
+		if(name != null) {
 			for(final IEObjectDescription desc : ScopedEMFIndexRetrieval.getAllEObjectsByType(classifier.eResource(), classifier.eClass())) {
 				if(!name.equalsIgnoreCase(desc.getName().toString("::"))) {
 					objectDescriptions.add(desc);
@@ -111,7 +112,7 @@ public class PackageSetExtendedClassifierCommand {
 						}
 					}
 				}
-			}	
+			}
 		}
 
 		return objectDescriptions;

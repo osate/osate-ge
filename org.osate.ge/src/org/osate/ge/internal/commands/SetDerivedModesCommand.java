@@ -14,6 +14,7 @@ import org.osate.ge.internal.di.GetBusinessObjectToModify;
 public class SetDerivedModesCommand {
 	private final boolean derivedModes;
 
+// TODO yes
 	public SetDerivedModesCommand(final boolean derivedModes) {
 		this.derivedModes = derivedModes;
 	}

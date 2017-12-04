@@ -15,6 +15,7 @@ import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
 
 public class RefineConnectionCommand {
+	// TODO checkbox
 	private static final StandaloneQuery parentQuery = StandaloneQuery.create((root) -> root.ancestor(1));
 
 	@GetLabel

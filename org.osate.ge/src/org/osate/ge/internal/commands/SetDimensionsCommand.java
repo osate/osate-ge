@@ -26,6 +26,7 @@ import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
 
 public class SetDimensionsCommand {
+	// TODO show current and modify button (Not Array if empty) look into wording
 	private static final StandaloneQuery parentQuery = StandaloneQuery.create((root) -> root.ancestor(1));
 
 	@GetLabel
@@ -45,7 +46,7 @@ public class SetDimensionsCommand {
 	public Object getBusinessObjectToModify(@Named(Names.BUSINESS_OBJECT) final Object bo) {
 		return bo;
 	}
-	
+
 	@Activate
 	public boolean activate(@Named(Names.BUSINESS_OBJECT) final ArrayableElement ae) {
 		final EditDimensionsDialog dlg = new EditDimensionsDialog(Display.getCurrent().getActiveShell(), SelectionUtil.getProject(ae.eResource()), ae.getArrayDimensions(), ae instanceof Subcomponent);
@@ -85,7 +86,7 @@ public class SetDimensionsCommand {
 			} else {
 				// Add the array dimension
 				ae.getArrayDimensions().add(newDimension);
-			}     				
+			}
 		}
 
 		// Remove array dimensions that are not in the specified list so that the dimensions will match

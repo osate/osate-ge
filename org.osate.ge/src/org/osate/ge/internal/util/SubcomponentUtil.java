@@ -13,12 +13,12 @@ import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.Subcomponent;
 
 public class SubcomponentUtil {
-	private static final Map<EClass, String> subcomponentTypeToCreateMethodNameMap = createConnectionTypeToMethodMap();
-	
+	private static final Map<EClass, String> subcomponentTypeToCreateMethodNameMap = createSubcomponentTypeToMethodMap();
+
 	/**
 	 * Returns an unmodifiable map that contains the subcomponent type to create method name mapping
 	 */
-	private static Map<EClass,String> createConnectionTypeToMethodMap() {
+	private static Map<EClass,String> createSubcomponentTypeToMethodMap() {
 		final LinkedHashMap<EClass, String> map = new LinkedHashMap<EClass, String>();
 		final Aadl2Package p = Aadl2Factory.eINSTANCE.getAadl2Package();
 		map.put(p.getAbstractSubcomponent(), "createOwnedAbstractSubcomponent");
@@ -38,11 +38,11 @@ public class SubcomponentUtil {
 
 		return Collections.unmodifiableMap(map);
 	}
-	
+
 	public static Collection<EClass> getSubcomponentTypes() {
 		return subcomponentTypeToCreateMethodNameMap.keySet();
 	}
-	
+
 	/**
 	 * Returns whether the specified component implementation supports subcomponents of the specified type
 	 * @param subcomponentOwner
@@ -52,14 +52,14 @@ public class SubcomponentUtil {
 	public static boolean canContainSubcomponentType(final ComponentImplementation subcomponentOwner, final EClass subcomponentClass) {
 		return getSubcomponentCreateMethod(subcomponentOwner, subcomponentClass) != null;
 	}
-	
+
 	private static Method getSubcomponentCreateMethod(final ComponentImplementation subcomponentOwner, final EClass subcomponentType) {
 		// Determine the method name of the type of subcomponent
 		final String methodName = subcomponentTypeToCreateMethodNameMap.get(subcomponentType);
 		if(methodName == null) {
 			return null;
 		}
-		
+
 		// Get the method
 		try {
 			final Method method = subcomponentOwner.getClass().getMethod(methodName);
@@ -68,7 +68,7 @@ public class SubcomponentUtil {
 			return null;
 		}
 	}
-	
+
 	public static Subcomponent createSubcomponent(final ComponentImplementation subcomponentOwner, final EClass subcomponentClass) {
 		try {
 			return (Subcomponent)getSubcomponentCreateMethod(subcomponentOwner, subcomponentClass).invoke(subcomponentOwner);
