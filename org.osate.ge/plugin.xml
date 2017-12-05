@@ -1561,6 +1561,20 @@
                id="org.osate.ge.ui.properties.setSubprogramCallSequenceOrderPropertySection"
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.SetExtendedClassifierPropertySection"
+               filter="org.osate.ge.internal.ui.properties.SetExtendedClassifierPropertySection$Filter"
+               id="org.osate.ge.ui.properties.setExtendedClassifierPropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.RefineElementPropertySection"
+               filter="org.osate.ge.internal.ui.properties.RefineElementPropertySection$Filter"
+               id="org.osate.ge.ui.properties.refineElementPropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
       </propertySections>
    </extension>
    <extension
