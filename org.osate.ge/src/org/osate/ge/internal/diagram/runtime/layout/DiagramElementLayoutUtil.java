@@ -323,8 +323,7 @@ public class DiagramElementLayoutUtil {
 				final double heightForFlowIndicators = portSidesWithFlowIndicators.getOrDefault(PortSide.NORTH, 0.0)
 						+ portSidesWithFlowIndicators.getOrDefault(PortSide.SOUTH, 0.0);
 
-				final double minWidth;
-
+				double minWidth = 0;
 				if (n.getProperty(CoreOptions.NODE_LABELS_PLACEMENT).contains(NodeLabelPlacement.H_CENTER)) {
 					// Ensure the minimum width is such that the label can be centered without overlapping with ports.
 					// This happens because ports are inside the node due to the PORT_BORDER_OFFSET and ELK centers the labels in the remaining space.
@@ -336,7 +335,14 @@ public class DiagramElementLayoutUtil {
 					minWidth = Math.max(40, Math.max(Math.max(maxLabelWidth, widthForPorts), widthForFlowIndicators));
 				}
 
-				final double minHeight = Math.max(Math.max(25, labelHeightSum), heightForFlowIndicators);
+				double minHeight = Math.max(Math.max(25, labelHeightSum), heightForFlowIndicators);
+
+				// Increase min width and min height for top level nodes.
+				if (dn != null && dn.getParent() instanceof AgeDiagram) {
+					minWidth = Math.max(minWidth, 200);
+					minHeight = Math.max(minHeight, 100);
+				}
+
 				n.setProperty(CoreOptions.NODE_SIZE_MINIMUM, new KVector(minWidth, minHeight));
 			}
 		};
@@ -485,9 +491,9 @@ public class DiagramElementLayoutUtil {
 			final List<Point> bendpointsInParentCoordinateSystem = edgeSection.getBendPoints().stream()
 					.map(bp -> new Point(bp.getX(), bp.getY())).collect(Collectors.toCollection(LinkedList::new));
 
+			//
 			// Set bendpoints
-			final Point elkContainerPosition = getAbsolutePosition(
-					(DiagramNode) mapping.getGraphMap().get(edge.getContainingNode()));
+			//
 
 			// Add the start and end points to the bendpoints list if the the start/end element is not a node. This is needed
 			// because the behavior of Graphiti chopbox anchors differ from ELK routing.
@@ -516,6 +522,24 @@ public class DiagramElementLayoutUtil {
 						bendpointsInParentCoordinateSystem.get(bendpointsInParentCoordinateSystem.size() - 1),
 						bendpointsInParentCoordinateSystem.get(bendpointsInParentCoordinateSystem.size() - 2),
 						startAndEndBendpointDistance));
+			}
+
+
+			// Get the absolute coordinate in the diagram of the edge's ELK container.
+			final Point elkContainerPosition;
+			if (edge.getContainingNode() == mapping.getLayoutGraph()) {
+				// Special handling for edges that are children of the ELK root. Usually occurs when Layout Contents is used. In that case there isn't a Diagram
+				// Node available. Use the first and only child of the top level ELK node.
+				if (mapping.getLayoutGraph().getChildren().size() == 1) {
+					final ElkNode topLayoutElkNode = mapping.getLayoutGraph().getChildren().get(0);
+					final Point topLayoutElkNodePosition = getAbsolutePosition((DiagramNode) mapping.getGraphMap().get(topLayoutElkNode));
+					elkContainerPosition = new Point(topLayoutElkNodePosition.x - topLayoutElkNode.getX(), topLayoutElkNodePosition.y - topLayoutElkNode.getY());
+				} else {
+					elkContainerPosition = new Point(0, 0);
+				}
+			} else {
+				elkContainerPosition = getAbsolutePosition(
+						(DiagramNode) mapping.getGraphMap().get(edge.getContainingNode()));
 			}
 
 			final List<Point> bendpointsInAbsoluteCoordinateSystem = bendpointsInParentCoordinateSystem.stream()
