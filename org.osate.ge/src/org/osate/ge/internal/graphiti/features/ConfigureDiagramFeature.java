@@ -17,7 +17,8 @@ import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.boTree.BusinessObjectNode;
 import org.osate.ge.internal.diagram.runtime.boTree.DiagramToBusinessObjectTreeConverter;
 import org.osate.ge.internal.diagram.runtime.boTree.TreeUpdater;
-import org.osate.ge.internal.diagram.runtime.layout.DiagramLayoutUtil;
+import org.osate.ge.internal.diagram.runtime.layout.DiagramElementLayoutUtil;
+import org.osate.ge.internal.diagram.runtime.layout.LayoutInfoProvider;
 import org.osate.ge.internal.diagram.runtime.updating.DiagramUpdater;
 import org.osate.ge.internal.graphiti.GraphitiAgeDiagramProvider;
 import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram;
@@ -34,6 +35,7 @@ public class ConfigureDiagramFeature extends AbstractCustomFeature implements IC
 	private final ProjectReferenceService referenceService;
 	private final ExtensionService extService;
 	private final ProjectProvider projectProvider;
+	private final LayoutInfoProvider layoutInfoProvider;
 
 	@Inject
 	public ConfigureDiagramFeature(final IFeatureProvider fp,
@@ -42,7 +44,7 @@ public class ConfigureDiagramFeature extends AbstractCustomFeature implements IC
 			final GraphitiAgeDiagramProvider graphitiAgeDiagramProvider,
 			final ProjectReferenceService referenceService,
 			final ExtensionService extService,
-			final ProjectProvider projectProvider) {
+			final ProjectProvider projectProvider, final LayoutInfoProvider layoutInfoProvider) {
 		super(fp);
 		this.boTreeExpander = Objects.requireNonNull(boTreeExpander, "boTreeExpander must not be null");
 		this.diagramUpdater = Objects.requireNonNull(diagramUpdater, "diagramUpdater must not be null");
@@ -50,6 +52,7 @@ public class ConfigureDiagramFeature extends AbstractCustomFeature implements IC
 		this.referenceService = Objects.requireNonNull(referenceService, "referenceService must not be null");
 		this.extService = Objects.requireNonNull(extService, "extService must not be null");
 		this.projectProvider = Objects.requireNonNull(projectProvider, "projectProvider must not be null");
+		this.layoutInfoProvider = Objects.requireNonNull(layoutInfoProvider, "layoutInfoProvider must not be null");
 	}
 
 	@Override
@@ -74,16 +77,17 @@ public class ConfigureDiagramFeature extends AbstractCustomFeature implements IC
 
 		final long nextElementId = BusinessObjectNode.getMaxId(boTree) + 1;
 
-		try(final DefaultDiagramConfigurationDialogModel model = new DefaultDiagramConfigurationDialogModel(referenceService, extService, projectProvider, nextElementId)) {
+		try (final DefaultDiagramConfigurationDialogModel model = new DefaultDiagramConfigurationDialogModel(
+				referenceService, extService, projectProvider, nextElementId)) {
 			// Create a BO path for the initial selection
 			Object[] initialSelectionBoPath = null;
-			if(context.getPictogramElements() != null && context.getPictogramElements().length == 1) {
+			if (context.getPictogramElements() != null && context.getPictogramElements().length == 1) {
 				final PictogramElement pe = context.getPictogramElements()[0];
 				final DiagramElement element = graphitiAgeDiagram.getDiagramElement(pe);
-				if(element != null && model.showBusinessObject(element.getBusinessObject())) { // Only build a selection path if the BO will be shown
+				if (element != null && model.showBusinessObject(element.getBusinessObject())) { // Only build a selection path if the BO will be shown
 					DiagramNode tmp = element;
 					final LinkedList<Object> boList = new LinkedList<>();
-					while(tmp instanceof DiagramElement) {
+					while (tmp instanceof DiagramElement) {
 						boList.addFirst(tmp.getBusinessObject());
 						tmp = tmp.getParent();
 					}
@@ -93,18 +97,18 @@ public class ConfigureDiagramFeature extends AbstractCustomFeature implements IC
 			}
 
 			// Show the dialog
-			final DiagramConfigurationDialog.Result result = DiagramConfigurationDialog.show(null, model, diagram.getConfiguration(), boTree, initialSelectionBoPath);
-			if(result != null) {
+			final DiagramConfigurationDialog.Result result = DiagramConfigurationDialog.show(null, model,
+					diagram.getConfiguration(), boTree, initialSelectionBoPath);
+			if (result != null) {
 				diagram.modify("Set Diagram Configuration", m -> {
 					m.setDiagramConfiguration(result.getDiagramConfiguration());
 					diagramUpdater.updateDiagram(diagram, result.getBusinessObjectTree());
 				});
-
 				// Clear ghosts triggered by this update to prevent them from being unghosted during the next update.
 				diagramUpdater.clearGhosts();
 
-				// Perform the layout as a separate operation because the sizes for the shapes are assigned by the Graphiti modification listener.
-				diagram.modify("Layout", m -> DiagramLayoutUtil.layout(diagram, m, false));
+				diagram.modify("Layout",
+						m -> DiagramElementLayoutUtil.layoutIncrementally(diagram, m, layoutInfoProvider));
 			}
 		}
 	}
