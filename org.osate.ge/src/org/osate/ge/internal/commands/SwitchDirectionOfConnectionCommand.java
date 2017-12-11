@@ -19,6 +19,9 @@ public class SwitchDirectionOfConnectionCommand {
 
 	@IsAvailable
 	public boolean isAvailable(@Named(Names.BUSINESS_OBJECT) final Connection connection) {
+		if (connection.getSource() == null) {
+			return false;
+		}
 		final ComponentImplementation ci = connection.getSource().getContainingComponentImpl();
 		return ci != null && connection.getContainingClassifier() == ci && connection.getRefined() == null;
 	}
@@ -27,7 +30,7 @@ public class SwitchDirectionOfConnectionCommand {
 	public Object getBusinessObjectToModify(@Named(Names.BUSINESS_OBJECT) final Object bo) {
 		return bo;
 	}
-	
+
 	@Activate
 	public boolean activate(@Named(Names.BUSINESS_OBJECT) final Connection connection) {
 		final ConnectedElement ceSource = connection.getSource();

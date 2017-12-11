@@ -32,9 +32,15 @@ public class SwitchDirectionOfConnectionPropertySection extends AbstractProperty
 		public boolean select(final Object toTest) {
 			return PropertySectionUtil.isBoCompatible(toTest, bo -> {
 				if (bo instanceof Connection) {
-					final Connection connection = (Connection) bo;
+					Connection connection = (Connection) bo;
+					if (connection.getRefined() != null) {
+						connection = connection.getRefined();
+					}
+
 					final ComponentImplementation ci = connection.getSource().getContainingComponentImpl();
-					return ci != null && connection.getContainingClassifier() == ci && connection.getRefined() == null;
+					return ci != null
+							&& connection.getContainingClassifier() == ci/* && connection.getRefined() == null */;
+
 				}
 
 				return false;
@@ -53,7 +59,13 @@ public class SwitchDirectionOfConnectionPropertySection extends AbstractProperty
 			final Button btn = (Button) e.widget;
 			if (btn.getSelection()) {
 				final Boolean bidirectionalValue = (Boolean) e.widget.getData();
-				selectedBos.modify(Connection.class, connection -> connection.setBidirectional(bidirectionalValue));
+				selectedBos.modify(Connection.class, connection -> {
+					if (connection.getRefined() != null) {
+						connection = connection.getRefined();
+					}
+
+					connection.setBidirectional(bidirectionalValue);
+				});
 			}
 		}
 	};
@@ -62,6 +74,10 @@ public class SwitchDirectionOfConnectionPropertySection extends AbstractProperty
 		@Override
 		public void widgetSelected(SelectionEvent e) {
 			selectedBos.modify(Connection.class, connection -> {
+				if (connection.getRefined() != null) {
+					connection = connection.getRefined();
+				}
+
 				if (!(connection instanceof ParameterConnection)) {
 					final ConnectedElement ceSource = connection.getSource();
 					connection.setSource(connection.getDestination());

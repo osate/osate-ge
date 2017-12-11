@@ -68,7 +68,7 @@ public class SetExtendedClassifierPropertySection extends AbstractPropertySectio
 		fd.top = new FormAttachment(sectionLabel, 0, SWT.CENTER);
 		container.setLayoutData(fd);
 
-		curExtendedClassifier = getWidgetFactory().createLabel(container, "Current:");
+		curExtendedClassifier = getWidgetFactory().createLabel(container, "");
 		fd = new FormData();
 		fd.left = new FormAttachment(0, 0);
 		fd.top = new FormAttachment(0, ITabbedPropertyConstants.VSPACE);
@@ -147,7 +147,14 @@ public class SetExtendedClassifierPropertySection extends AbstractPropertySectio
 		final List<Classifier> elements = selectedBos.boStream(Classifier.class).collect(Collectors.toList());
 		final Classifier classifier = elements.get(0);
 		final Classifier extClassifier = getExtended(classifier);
-		curExtendedClassifier.setText(extClassifier == null ? "None" : extClassifier.getName());
+		// TODO extClassifier is null when an element is refined???
+		if (extClassifier != null) {
+			if (extClassifier.getName() != null) {
+				curExtendedClassifier.setText(extClassifier == null ? "<None>" : extClassifier.getName());
+			}
+		} else {
+			curExtendedClassifier.setText("<None>");
+		}
 	}
 
 	private static Classifier getExtended(final Classifier classifier) {

@@ -94,7 +94,10 @@ public class ChangeSubcomponentTypePropertySection extends AbstractPropertySecti
 		for (final EClass subcomponentType : SubcomponentUtil.getSubcomponentTypes()) {
 			boolean addSubType = false;
 			for (final BusinessObjectContext boc : bocs) {
-				final Subcomponent sc = (Subcomponent) boc.getBusinessObject();
+				Subcomponent sc = (Subcomponent) boc.getBusinessObject();
+				if (sc.getRefined() != null) {
+					sc = sc.getRefined();
+				}
 				addSubType = isCompatibleSupcomponentType(sc, subcomponentType);
 				if (!addSubType) {
 					break;

@@ -38,8 +38,34 @@ public class ChangeFeatureTypePropertySection extends AbstractPropertySection {
 	public static class Filter implements IFilter {
 		@Override
 		public boolean select(final Object toTest) {
+
+			/*
+			 * if (!(AadlFeatureUtil.canOwnFeatureType(feature.getContainingClassifier(), featureType)
+						&& (!(feature instanceof Feature) || (((Feature) feature).getRefined() == null
+						|| ((Feature) feature).getRefined() instanceof AbstractFeature)))) {
+					addFeatureType = false;
+					break;
+				} else {
+					System.err.println(featureType + " featureType");
+				}
+			 */
+
 			return PropertySectionUtil.isBoCompatible(toTest,
-					bo -> bo instanceof Feature || bo instanceof InternalFeature || bo instanceof ProcessorFeature);
+					bo -> {
+						if (bo instanceof Feature || bo instanceof InternalFeature || bo instanceof ProcessorFeature) {
+							final NamedElement feature = (NamedElement) bo;
+							for (final EClass featureType : AadlFeatureUtil.getFeatureTypes()) {
+								if (AadlFeatureUtil.canOwnFeatureType(feature.getContainingClassifier(), featureType)
+										&& (!(feature instanceof Feature) || (((Feature) feature).getRefined() == null
+										|| ((Feature) feature).getRefined() instanceof AbstractFeature))) {
+									return true;
+								}
+							}
+						}
+
+						return false;
+						// return bo instanceof Feature || bo instanceof InternalFeature || bo instanceof ProcessorFeature;
+					});
 		}
 	}
 	// TODO Look into why it breaks with certain type changes, do these need a field initialized?
@@ -114,11 +140,13 @@ public class ChangeFeatureTypePropertySection extends AbstractPropertySection {
 		final List<EClass> featureTypes = new ArrayList<>();
 		EClass selectedFeatureType = null;
 
+		// TODO allow breaking or stop??
 		for (final EClass featureType : AadlFeatureUtil.getFeatureTypes()) {
 			boolean addFeatureType = true;
 			for (final BusinessObjectContext boc : bocs) {
 				final NamedElement feature = (NamedElement) boc.getBusinessObject();
 				selectedFeatureType = feature.eClass();
+
 				if (!(AadlFeatureUtil.canOwnFeatureType(feature.getContainingClassifier(), featureType)
 						&& (!(feature instanceof Feature) || (((Feature) feature).getRefined() == null
 						|| ((Feature) feature).getRefined() instanceof AbstractFeature)))) {

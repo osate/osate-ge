@@ -1461,7 +1461,6 @@
              </with></enablement>
        </renameParticipant>
     </extension>
-    
     <extension
          point="org.eclipse.ui.views.properties.tabbed.propertyContributor">
       <propertyContributor
@@ -1573,6 +1572,34 @@
                class="org.osate.ge.internal.ui.properties.RefineElementPropertySection"
                filter="org.osate.ge.internal.ui.properties.RefineElementPropertySection$Filter"
                id="org.osate.ge.ui.properties.refineElementPropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.SetDerivedModesPropertySection"
+               filter="org.osate.ge.internal.ui.properties.SetDerivedModesPropertySection$Filter"
+               id="org.osate.ge.ui.properties.setDerivedModesPropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.SetDimensionsPropertySection"
+               filter="org.osate.ge.internal.ui.properties.SetDimensionsPropertySection$Filter"
+               id="org.osate.ge.ui.properties.setDimensionsPropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.SetFeatureClassifierPropertySection"
+               filter="org.osate.ge.internal.ui.properties.SetFeatureClassifierPropertySection$Filter"
+               id="org.osate.ge.ui.properties.setFeatureClassifierPropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.SetFeatureGroupInversePropertySection"
+               filter="org.osate.ge.internal.ui.properties.SetFeatureGroupInversePropertySection$Filter"
+               id="org.osate.ge.ui.properties.setFeatureGroupInversePropertySection"
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
       </propertySections>

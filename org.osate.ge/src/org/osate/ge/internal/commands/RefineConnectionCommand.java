@@ -28,8 +28,11 @@ public class RefineConnectionCommand {
 			@Named(Names.BUSINESS_OBJECT_CONTEXT) final BusinessObjectContext boc,
 			final QueryService queryService) {
 		final Object parent = queryService.getFirstBusinessObject(parentQuery, boc);
+		System.err.println(parent + " cmdParent");
 		if(parent instanceof ComponentImplementation) {
 			final ComponentImplementation ci = (ComponentImplementation)parent;
+			System.err.println(ci + " cmdCI");
+			System.err.println(connection.getContainingClassifier() + " cmdcc");
 			return connection.getContainingClassifier() != ci;
 		}
 

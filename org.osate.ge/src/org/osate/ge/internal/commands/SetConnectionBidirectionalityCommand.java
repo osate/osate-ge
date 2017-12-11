@@ -25,6 +25,10 @@ public class SetConnectionBidirectionalityCommand {
 
 	@IsAvailable
 	public boolean isAvailable(@Named(Names.BUSINESS_OBJECT) final Connection connection) {
+		if (connection.getSource() == null) {
+			return false;
+		}
+
 		final ComponentImplementation ci = connection.getSource().getContainingComponentImpl();
 
 		return connection.isBidirectional() != bidirectionalValue &&
@@ -41,7 +45,7 @@ public class SetConnectionBidirectionalityCommand {
 
 		return true;
 	}
-	
+
 	@GetBusinessObjectToModify
 	public Object getBusinessObjectToModify(@Named(Names.BUSINESS_OBJECT) final Object bo) {
 		return bo;

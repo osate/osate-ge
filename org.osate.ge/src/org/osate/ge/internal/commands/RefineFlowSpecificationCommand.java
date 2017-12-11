@@ -43,6 +43,8 @@ public class RefineFlowSpecificationCommand {
 	@Activate
 	public boolean activate(@Named(Names.BUSINESS_OBJECT) final FlowSpecification fs,
 			@Named(Names.MODIFY_BO) final ComponentType ct) {
+		System.err.println(ct + " ct");
+		System.err.println(fs + " fs");
 		// Refine the flow specification
 		final FlowSpecification newFs = ct.createOwnedFlowSpecification();
 		newFs.setKind(fs.getKind());

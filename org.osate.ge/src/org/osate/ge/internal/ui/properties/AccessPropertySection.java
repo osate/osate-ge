@@ -46,7 +46,7 @@ public class AccessPropertySection extends AbstractPropertySection {
 	@Override
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
-		Composite composite = getWidgetFactory().createFlatFormComposite(parent);
+		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
 
 		final Composite directionContainer = PropertySectionUtil.createRowLayoutComposite(getWidgetFactory(), composite,
 				STANDARD_LABEL_WIDTH);
