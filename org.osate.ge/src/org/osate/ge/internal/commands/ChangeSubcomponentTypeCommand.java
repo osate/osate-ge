@@ -14,8 +14,8 @@ import org.osate.ge.di.GetLabel;
 import org.osate.ge.di.IsAvailable;
 import org.osate.ge.di.Names;
 import org.osate.ge.internal.di.GetBusinessObjectToModify;
+import org.osate.ge.internal.util.AadlSubcomponentUtil;
 import org.osate.ge.internal.util.StringUtil;
-import org.osate.ge.internal.util.SubcomponentUtil;
 import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
 import org.osate.ge.ui.properties.PropertySectionUtil;
@@ -45,7 +45,8 @@ public class ChangeSubcomponentTypeCommand {
 
 		final ComponentImplementation ci = (ComponentImplementation)parent;
 		return sc.getContainingClassifier() == ci &&
-				SubcomponentUtil.canContainSubcomponentType(ci, subcomponentType) &&
+				AadlSubcomponentUtil.canContainSubcomponentType(ci, subcomponentType)
+				&&
 				(sc.getRefined() == null || sc.getRefined() instanceof AbstractSubcomponent);
 	}
 
@@ -66,7 +67,7 @@ public class ChangeSubcomponentTypeCommand {
 	@Activate
 	public boolean activate(@Named(Names.BUSINESS_OBJECT) final Subcomponent sc) {
 		final ComponentImplementation ci = sc.getContainingComponentImpl();
-		final Subcomponent replacementSc = SubcomponentUtil.createSubcomponent(ci, subcomponentType);
+		final Subcomponent replacementSc = AadlSubcomponentUtil.createSubcomponent(ci, subcomponentType);
 
 		// Copy structural feature values to the replacement object.
 		PropertySectionUtil.transferStructuralFeatureValues(sc, replacementSc);
