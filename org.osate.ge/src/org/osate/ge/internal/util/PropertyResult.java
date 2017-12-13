@@ -9,6 +9,7 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.osate.aadl2.ListValue;
 import org.osate.aadl2.ModalPropertyValue;
 import org.osate.aadl2.NamedElement;
@@ -19,6 +20,7 @@ import org.osate.aadl2.ReferenceValue;
 import org.osate.ge.internal.query.Queryable;
 import org.osate.ge.internal.util.AadlPropertyResolver.ProcessedPropertyAssociation;
 import org.osate.ge.services.QueryService;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;

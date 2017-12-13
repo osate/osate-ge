@@ -22,6 +22,8 @@ import org.osate.aadl2.ListType;
 import org.osate.aadl2.Property;
 import org.osate.aadl2.ReferenceType;
 import org.osate.aadl2.Type;
+import org.osate.aadl2.instance.InstanceObject;
+import org.osate.aadl2.instance.InstanceReferenceValue;
 import org.osate.aadl2.modelsupport.resources.OsateResourceUtil;
 import org.osate.aadl2.util.Aadl2Util;
 import org.osate.ge.BusinessObjectContext;
@@ -329,6 +331,11 @@ public class DefaultTreeUpdater implements TreeUpdater {
 				fullyResolved = !rr.isPartial;
 			} else if(value instanceof ClassifierValue) {
 				dst = (BusinessObjectNode)PropertyValueUtil.getReferencedClassifier(node, (ClassifierValue)value, queryService);
+			} else if (value instanceof InstanceReferenceValue) {
+				final InstanceReferenceValue irv = (InstanceReferenceValue) value;
+				final InstanceObject referencedInstanceObject = irv.getReferencedInstanceObject();
+				dst = referencedInstanceObject == null ? null : (BusinessObjectNode) PropertyValueUtil.getReferencedInstanceObject(node,
+						referencedInstanceObject, queryService);
 			} else {
 				dst = null;
 			}
