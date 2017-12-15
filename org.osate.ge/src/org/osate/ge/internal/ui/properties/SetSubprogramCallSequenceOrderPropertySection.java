@@ -51,6 +51,8 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 			});
 		}
 	}
+	// TODO add move up down buttons to call sequence and change index to order
+	//TODO make sure multi selection doesnt work
 
 	private BusinessObjectSelection selectedBos;
 	private TableViewer tableViewer;
@@ -78,7 +80,8 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 		tableViewer.addDropSupport(operations, types, dNDSupport.dropTargetListener);
 		tableViewer.addDragSupport(operations, types, dNDSupport.dragSourceListener);
 
-		final TableViewerColumn numColumn = createTableColumnViewer(tableViewer, "Index", new CellLabelProvider() {
+		final TableViewerColumn numColumn = PropertySectionUtil.createTableColumnViewer(tableViewer, "Index",
+				SWT.RESIZE, new CellLabelProvider() {
 			@Override
 			public void update(final ViewerCell cell) {
 				final SubprogramCallElement element = (SubprogramCallElement) cell.getElement();
@@ -89,7 +92,9 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 		// Editing support for changing call sequence
 		numColumn.setEditingSupport(new OptionEditingSupport(numColumn.getViewer()));
 
-		final TableViewerColumn subprogramCallColumn = createTableColumnViewer(tableViewer, "Subprogram Call",
+		final TableViewerColumn subprogramCallColumn = PropertySectionUtil.createTableColumnViewer(tableViewer,
+				"Subprogram Call",
+				SWT.RESIZE,
 				new CellLabelProvider() {
 			@Override
 			public void update(final ViewerCell cell) {
@@ -102,17 +107,10 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 		PropertySectionUtil.createSectionLabel(composite, tableViewer.getControl(), getWidgetFactory(), "Call Order:");
 	}
 
-	private static TableViewerColumn createTableColumnViewer(final TableViewer tableViewer, final String colHeader,
-			final CellLabelProvider cellLabelProvider) {
-		final TableViewerColumn tableViewerColumn = new TableViewerColumn(tableViewer, SWT.RESIZE);
-		tableViewerColumn.getColumn().setText(colHeader);
-		tableViewerColumn.setLabelProvider(cellLabelProvider);
-		return tableViewerColumn;
-	}
-
 	private static TableColumnLayout createTableColumnLayout(final TableColumn numColumn,
 			final TableColumn subprogramCallColumn) {
 		final TableColumnLayout tcl = new TableColumnLayout(true);
+		// TODO is false on trigger table??
 		tcl.setColumnData(numColumn, new ColumnWeightData(12, 20));
 		tcl.setColumnData(subprogramCallColumn, new ColumnWeightData(75, 50));
 		return tcl;

@@ -1,5 +1,6 @@
 package org.osate.ge.internal.ui.properties;
 
+import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -76,8 +77,19 @@ public class SetDerivedModesPropertySection extends AbstractPropertySection {
 	@Override
 	public void refresh() {
 		final Set<ComponentType> componentTypes = selectedBos.boStream(ComponentType.class).collect(Collectors.toSet());
-		for (final ComponentType ct : componentTypes) {
-			final boolean isDerived = ct.isDerivedModes();
+		final Iterator<ComponentType> it = componentTypes.iterator();
+		// Initial value of buttons
+		Boolean isDerived = it.next().isDerivedModes();
+		while (it.hasNext()) {
+			// Check if all elements are derived or not derived
+			if (isDerived != (it.next().isDerivedModes())) {
+				isDerived = null;
+				break;
+			}
+		}
+
+		// No selection set if elements are mixed derived and not not derived
+		if(isDerived != null) {
 			trueBtn.setSelection(isDerived);
 			falseBtn.setSelection(!isDerived);
 		}

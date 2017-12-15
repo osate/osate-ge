@@ -37,7 +37,8 @@ public class EditFlowsPropertySection extends AbstractPropertySection {
 	private BusinessObjectSelection selectedBos;
 	private Button editFlowsBtn;
 
-	private final SelectionListener directionSelectionListener = new SelectionAdapter() {
+	// TODO allow multiple selection on edit flows??
+	private final SelectionListener editFlowsSelectionListener = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(final SelectionEvent e) {
 			selectedBos.modify(ComponentImplementation.class, compImpl -> {
@@ -68,8 +69,8 @@ public class EditFlowsPropertySection extends AbstractPropertySection {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
 
-		editFlowsBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, null, directionSelectionListener,
-				"Edit Flows...", SWT.PUSH);
+		editFlowsBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, null, editFlowsSelectionListener,
+				"Edit...", SWT.PUSH);
 		final FormData fd = new FormData();
 		fd.top = new FormAttachment(editFlowsBtn, 0, SWT.CENTER);
 		fd.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);

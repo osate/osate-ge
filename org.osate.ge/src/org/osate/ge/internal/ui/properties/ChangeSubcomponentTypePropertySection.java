@@ -1,6 +1,7 @@
 package org.osate.ge.internal.ui.properties;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -22,7 +23,6 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.osate.aadl2.AbstractSubcomponent;
 import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.Subcomponent;
-import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.BusinessObjectSelection;
 import org.osate.ge.internal.util.StringUtil;
 import org.osate.ge.internal.util.SubcomponentUtil;
@@ -32,7 +32,6 @@ public class ChangeSubcomponentTypePropertySection extends AbstractPropertySecti
 	public static class Filter implements IFilter {
 		@Override
 		public boolean select(final Object toTest) {
-			// TODO revisit filter
 			return PropertySectionUtil.isBoCompatible(toTest, bo -> {
 				return bo instanceof Subcomponent
 						&& ((Subcomponent) bo).getContainingClassifier() instanceof ComponentImplementation;
@@ -42,18 +41,17 @@ public class ChangeSubcomponentTypePropertySection extends AbstractPropertySecti
 
 	private BusinessObjectSelection selectedBos;
 	private ComboViewer comboViewer;
+	private EClass selectedSubcomponentType = null;
 
 	@Override
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite container = getWidgetFactory().createFlatFormComposite(parent);
-
-		comboViewer = PropertySectionUtil.createComboViewer(container, STANDARD_LABEL_WIDTH, listener, labelProvider);
-
+		comboViewer = PropertySectionUtil.createComboViewer(container, STANDARD_LABEL_WIDTH, subcompTypeSelectionListener, subcompTypeLabelProvider);
 		PropertySectionUtil.createSectionLabel(container, comboViewer.getCombo(), getWidgetFactory(), "Type:");
 	}
 
-	private final SelectionAdapter listener = new SelectionAdapter() {
+	private final SelectionAdapter subcompTypeSelectionListener = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(final SelectionEvent e) {
 			selectedBos.modify(Subcomponent.class, sc -> {
@@ -70,7 +68,7 @@ public class ChangeSubcomponentTypePropertySection extends AbstractPropertySecti
 		}
 	};
 
-	private final LabelProvider labelProvider = new LabelProvider() {
+	private final LabelProvider subcompTypeLabelProvider = new LabelProvider() {
 		@Override
 		public String getText(final Object element) {
 			final EClass subcompType = (EClass) element;
@@ -86,38 +84,50 @@ public class ChangeSubcomponentTypePropertySection extends AbstractPropertySecti
 
 	@Override
 	public void refresh() {
-		final Set<BusinessObjectContext> bocs = selectedBos.bocStream()
-				.filter(boc -> boc.getBusinessObject() instanceof Subcomponent).collect(Collectors.toSet());
+		final Set<Subcomponent> bocs = selectedBos.boStream(Subcomponent.class).collect(Collectors.toSet());
 		final List<EClass> subcomponentTypes = new ArrayList<>();
-		EClass selectedSubcomponentType = null;
+		selectedSubcomponentType = null;
 
 		for (final EClass subcomponentType : SubcomponentUtil.getSubcomponentTypes()) {
+			final Iterator<Subcomponent> it = bocs.iterator();
+			Subcomponent sc = it.next();
 			boolean addSubType = false;
-			for (final BusinessObjectContext boc : bocs) {
-				Subcomponent sc = (Subcomponent) boc.getBusinessObject();
-				if (sc.getRefined() != null) {
-					sc = sc.getRefined();
-				}
-				addSubType = isCompatibleSupcomponentType(sc, subcomponentType);
-				if (!addSubType) {
-					break;
-				}
 
-				selectedSubcomponentType = sc.eClass();
+			if (sc.getRefined() != null) {
+				sc = sc.getRefined();
 			}
 
+			addSubType = isCompatibleSupcomponentType(sc, subcomponentType);
 			if (addSubType) {
-				subcomponentTypes.add(subcomponentType);
+				selectedSubcomponentType = sc.eClass();
+
+				// Check the rest of selected elements if necessary
+				while (addSubType && it.hasNext()) {
+					Subcomponent nextSc = it.next();
+					if (nextSc.getRefined() != null) {
+						nextSc = nextSc.getRefined();
+					}
+
+					if (selectedSubcomponentType != nextSc.eClass()) {
+						selectedSubcomponentType = null;
+					}
+
+					addSubType = isCompatibleSupcomponentType(nextSc, subcomponentType);
+				}
+
+				if (addSubType) {
+					subcomponentTypes.add(subcomponentType);
+				}
 			}
 		}
 
 		comboViewer.setInput(subcomponentTypes);
-		if (bocs.size() == 1) {
+		if (selectedSubcomponentType != null) {
 			comboViewer.setSelection(new StructuredSelection(selectedSubcomponentType));
 		}
 	}
 
-	private boolean isCompatibleSupcomponentType(final Subcomponent sc,
+	private static boolean isCompatibleSupcomponentType(final Subcomponent sc,
 			final EClass subcomponentType) {
 		final ComponentImplementation ci = (ComponentImplementation) sc.getContainingClassifier();
 		return SubcomponentUtil.canContainSubcomponentType(ci, subcomponentType)

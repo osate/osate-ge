@@ -1805,23 +1805,9 @@
          </propertySection>
          <propertySection
                afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
-               class="org.osate.ge.internal.ui.properties.ChangeComponentTypePropertySection"
-               filter="org.osate.ge.internal.ui.properties.ChangeComponentTypePropertySection$Filter"
-               id="org.osate.ge.ui.properties.changeComponentTypePropertySection"
-               tab="org.osate.ge.ui.properties.aadlTab">
-         </propertySection>
-         <propertySection
-               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
                class="org.osate.ge.internal.ui.properties.EditFlowsPropertySection"
                filter="org.osate.ge.internal.ui.properties.EditFlowsPropertySection$Filter"
                id="org.osate.ge.ui.properties.editFlowsPropertySection"
-               tab="org.osate.ge.ui.properties.aadlTab">
-         </propertySection>
-         <propertySection
-               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
-               class="org.osate.ge.internal.ui.properties.ChangeComponentImplPropertySection"
-               filter="org.osate.ge.internal.ui.properties.ChangeComponentImplPropertySection$Filter"
-               id="org.osate.ge.ui.properties.changeComponentImplPropertySection"
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
          <propertySection
@@ -1873,6 +1859,28 @@
                id="org.osate.ge.ui.properties.setFeatureGroupInversePropertySection"
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.SetInitialModePropertySection"
+               filter="org.osate.ge.internal.ui.properties.SetInitialModePropertySection$Filter"
+               id="org.osate.ge.ui.properties.setInitialModePropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.SetModeTransitionTriggerPropertySection"
+               filter="org.osate.ge.internal.ui.properties.SetModeTransitionTriggerPropertySection$Filter"
+               id="org.osate.ge.ui.properties.setModeTransitionTriggerPropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               class="org.osate.ge.internal.ui.properties.SetSubcomponentClassifierPropertySection"
+               filter="org.osate.ge.internal.ui.properties.SetSubcomponentClassifierPropertySection$Filter"
+               id="org.osate.ge.ui.properties.setSubcomponentClassifierPropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         
       </propertySections>
    </extension>
    <extension

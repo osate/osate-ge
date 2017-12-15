@@ -157,11 +157,10 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 						"Select a Classifier", "Select a classifier.", potentialFeatureClassifiers);
 				if (dlg.open() != Window.CANCEL) {
 					// Import the package if necessary
-					EObject selectedType = (EObject) dlg.getFirstSelectedElement();
-					if (selectedType != null) {
+					final EObject selectedType;
+					if (dlg.getFirstSelectedElement() != null) {
 						// Resolve the reference
-						selectedType = EcoreUtil.resolve(selectedType, feature.eResource());
-
+						selectedType = EcoreUtil.resolve((EObject) dlg.getFirstSelectedElement(), feature.eResource());
 						// Import its package if necessary
 						final AadlPackage pkg = (AadlPackage) feature.getElementRoot();
 						if (selectedType instanceof Classifier && ((Classifier) selectedType).getNamespace() != null
@@ -174,11 +173,15 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 								section.getImportedUnits().add(selectedClassifierPkg);
 							}
 						}
+					} else {
+						selectedType = null;
 					}
 
 					// Set the classifier
-					selectedBos.modify(NamedElement.class,
-							f -> setFeatureClassifier(f, dlg.getFirstSelectedElement()));
+					selectedBos.modify(Feature.class,
+							f -> {
+								setFeatureClassifier(f, selectedType);
+							});
 				}
 			}
 		}, "Choose...", SWT.PUSH);
@@ -197,18 +200,30 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 
 	@Override
 	public void refresh() {
-		final List<Feature> elements = selectedBos.boStream(Feature.class).collect(Collectors.toList());
-		final Feature feature = elements.get(0);
-		curFeatureClassifier.setText(getFeatureClassifierName(feature.getFeatureClassifier()));
+		final List<Feature> features = selectedBos.boStream(Feature.class).collect(Collectors.toList());
+		final String fcLbl = getFeatureClassifierLabel(features);
+		curFeatureClassifier.setText(fcLbl);
+	}
+
+	private static String getFeatureClassifierLabel(final List<Feature> features) {
+		final Iterator<Feature> it = features.iterator();
+		final FeatureClassifier fc = it.next().getFeatureClassifier();
+		while (it.hasNext()) {
+			if (fc != it.next().getFeatureClassifier()) {
+				return "<Multiple>";
+			}
+		}
+
+		return getFeatureClassifierName(fc);
 	}
 
 	private static String getFeatureClassifierName(final FeatureClassifier fc) {
-		String fcName = null;
-		if (fc != null) {
-			fcName = ((NamedElement) fc).getName();
+		if (fc != null && fc.eResource() != null) {
+			return fc.eResource().getURI().trimFileExtension().lastSegment() + "::"
+					+ ((NamedElement) fc).getName();
 		}
 
-		return fcName == null ? "<None>" : fcName;
+		return "<None>";
 	}
 
 	/**

@@ -26,6 +26,7 @@ import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
 import org.osate.ge.ui.properties.PropertySectionUtil;
 
+// TODO reviewing
 public class ChangeFeatureTypeCommand {
 	private static final StandaloneQuery parentQuery = StandaloneQuery.create((root) -> root.ancestor(1));
 	private final EClass featureType;

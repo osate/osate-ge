@@ -1,6 +1,7 @@
 package org.osate.ge.internal.ui.properties;
 
-import java.util.Set;
+import java.util.Iterator;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.Adapters;
@@ -12,7 +13,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
-import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IWorkbenchPart;
@@ -39,8 +39,7 @@ public class SwitchDirectionOfConnectionPropertySection extends AbstractProperty
 
 					final ComponentImplementation ci = connection.getSource().getContainingComponentImpl();
 					return ci != null
-							&& connection.getContainingClassifier() == ci/* && connection.getRefined() == null */;
-
+							&& connection.getContainingClassifier() == ci;
 				}
 
 				return false;
@@ -91,31 +90,24 @@ public class SwitchDirectionOfConnectionPropertySection extends AbstractProperty
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		Composite composite = getWidgetFactory().createFlatFormComposite(parent);
-		FormData ld;
-//TODO revisit is the second composite necessary? (btnComp)
-		final Composite btnComposite = getWidgetFactory().createComposite(composite);
-		btnComposite.setLayout(new FormLayout());
-		ld = new FormData();
-		ld.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
-		btnComposite.setLayoutData(ld);
 
-		final Composite directionContainer = PropertySectionUtil.createRowLayoutComposite(getWidgetFactory(),
-				btnComposite, 0);
-
+		final Composite directionContainer = PropertySectionUtil.createRowLayoutComposite(getWidgetFactory(), composite,
+				STANDARD_LABEL_WIDTH);
 		bidirectionalBtn = PropertySectionUtil.createButton(getWidgetFactory(), directionContainer, true,
 				directionSelectionListener,
 				"Bidirectional", SWT.RADIO);
 		unidirectionalBtn = PropertySectionUtil.createButton(getWidgetFactory(), directionContainer, false,
 				directionSelectionListener,
 				"Unidirectional", SWT.RADIO);
-
-		switchDirectionBtn = getWidgetFactory().createButton(btnComposite, "Switch Direction", SWT.PUSH);
-		ld = new FormData();
+		switchDirectionBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, null,
+				switchDirectionListener, "SwitchDirection", SWT.PUSH);
+		final FormData ld = new FormData();
 		ld.left = new FormAttachment(directionContainer, ITabbedPropertyConstants.HSPACE);
+		ld.top = new FormAttachment(directionContainer, 0, SWT.CENTER);
 		switchDirectionBtn.setLayoutData(ld);
-		switchDirectionBtn.addSelectionListener(switchDirectionListener);
 
-		PropertySectionUtil.createSectionLabel(composite, btnComposite, getWidgetFactory(), "Direction:");
+		PropertySectionUtil.createSectionLabel(composite, directionContainer, getWidgetFactory(),
+				"Direction:");
 	}
 
 	@Override
@@ -126,32 +118,48 @@ public class SwitchDirectionOfConnectionPropertySection extends AbstractProperty
 
 	@Override
 	public void refresh() {
-		final Set<Connection> selectedConnections = selectedBos.boStream(Connection.class).collect(Collectors.toSet());
-		Boolean init = null;
-		boolean enableSwitchDirection = true;
-		for (final Connection connection : selectedConnections) {
-			if (connection instanceof ParameterConnection) {
-				enableSwitchDirection = false;
+		final List<Connection> selectedConnections = selectedBos.boStream(Connection.class)
+				.collect(Collectors.toList());
+
+		if (selectedConnections.size() == 1) {
+			final Connection connection = selectedConnections.get(0);
+			final boolean isBidirectional = connection.isAllBidirectional();
+			bidirectionalBtn.setSelection(isBidirectional);
+			unidirectionalBtn.setSelection(!isBidirectional);
+			switchDirectionBtn.setEnabled(connection instanceof ParameterConnection);
+		} else {
+			boolean enableSwitchDirection = false;
+			final Iterator<Connection> it = selectedConnections.iterator();
+			final Connection connection = it.next();
+			if (!(connection instanceof ParameterConnection)) {
+				enableSwitchDirection = true;
 			}
-			if (init == null) {
-				init = connection.isAllBidirectional();
-			} else {
-				if (init != connection.isAllBidirectional()) {
-					init = null;
-					break;
+
+			Boolean isBidirectional = connection.isAllBidirectional();
+			while (it.hasNext()) {
+				final Connection nxtConnection = it.next();
+				if (!Boolean.valueOf(nxtConnection.isAllBidirectional()).equals(isBidirectional)) {
+					isBidirectional = null;
+					// Exit loop if obtained both initial control values
+					if (enableSwitchDirection) {
+						break;
+					}
+				}
+
+				if (!enableSwitchDirection && !(nxtConnection instanceof ParameterConnection)) {
+					enableSwitchDirection = true;
 				}
 			}
-		}
 
-		// TODO handle null objects or keep the same?
-		if (init != null) {
-			bidirectionalBtn.setSelection(init);
-			unidirectionalBtn.setSelection(!init);
-		} else {
-			bidirectionalBtn.setSelection(false);
-			unidirectionalBtn.setSelection(false);
-		}
+			if (isBidirectional != null) {
+				bidirectionalBtn.setSelection(isBidirectional);
+				unidirectionalBtn.setSelection(!isBidirectional);
+			} else {
+				bidirectionalBtn.setSelection(false);
+				unidirectionalBtn.setSelection(false);
+			}
 
-		switchDirectionBtn.setEnabled(enableSwitchDirection);
+			switchDirectionBtn.setEnabled(enableSwitchDirection);
+		}
 	}
 }

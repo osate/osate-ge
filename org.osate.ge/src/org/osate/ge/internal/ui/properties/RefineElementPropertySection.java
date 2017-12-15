@@ -1,5 +1,6 @@
 package org.osate.ge.internal.ui.properties;
 
+import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,73 +32,42 @@ import org.osate.ge.BusinessObjectSelection;
 import org.osate.ge.internal.util.AadlConnectionUtil;
 import org.osate.ge.internal.util.AadlFeatureUtil;
 import org.osate.ge.internal.util.SubcomponentUtil;
-import org.osate.ge.query.StandaloneQuery;
-import org.osate.ge.services.QueryService;
 import org.osate.ge.ui.properties.PropertySectionUtil;
 
 public class RefineElementPropertySection extends AbstractPropertySection {
+	// TODO keep restrictions on refined elements?
 	public static class Filter implements IFilter {
 		@Override
 		public boolean select(final Object toTest) {
 			return PropertySectionUtil.isBocCompatible(toTest, boc -> {
 				final Object bo = boc.getBusinessObject();
-				final Object parent = boc.getParent().getBusinessObject();
-				if (bo instanceof Feature) {
-					if (!(parent instanceof Classifier)) {
-						return false;
-					}
-
-					final Feature feature = (Feature) bo;
-					if (feature.getRefined() != null) {
-						return true;
-					}
-					return feature.getContainingClassifier() != parent
-							&& (parent instanceof FeatureGroupType || parent instanceof ComponentType);
-				} else if (bo instanceof Connection) {
-					if (!(parent instanceof ComponentImplementation)) {
-						return false;
-					}
-
-					final Connection connection = (Connection) bo;
-					if (connection.getRefined() != null) {
+				if (bo instanceof RefinableElement) {
+					final RefinableElement re = (RefinableElement) bo;
+					final Object parent = boc.getParent().getBusinessObject();
+					// Return true if element is refined
+					if (re.getRefinedElement() != null) {
 						return true;
 					}
 
-					final ComponentImplementation ci = (ComponentImplementation) parent;
-					return connection.getContainingClassifier() != ci;
-				} else if (bo instanceof FlowSpecification) {
-					if (!(parent instanceof ComponentType)) {
-						return false;
+					if (re instanceof Feature) {
+						return parent instanceof Classifier && re.getContainingClassifier() != parent
+								&& (parent instanceof FeatureGroupType || parent instanceof ComponentType);
+					} else if (re instanceof Connection) {
+						return parent instanceof ComponentImplementation && re.getContainingClassifier() != parent;
+					} else if (re instanceof FlowSpecification) {
+						return parent instanceof ComponentType && re.getContainingClassifier() != parent;
+					} else if (re instanceof Subcomponent) {
+						return parent instanceof ComponentImplementation && re.getContainingClassifier() != parent
+								&& SubcomponentUtil.canContainSubcomponentType((ComponentImplementation) parent,
+										re.eClass());
 					}
-
-					final FlowSpecification fs = (FlowSpecification) bo;
-					if (fs.getRefined() != null) {
-						return true;
-					}
-
-					return fs.getContainingClassifier() != parent;
-				} else if (bo instanceof Subcomponent) {
-					if (!(parent instanceof ComponentImplementation)) {
-						return false;
-					}
-
-					final Subcomponent sc = (Subcomponent) bo;
-					if (sc.getRefined() != null) {
-						return true;
-					}
-
-					final ComponentImplementation ci = (ComponentImplementation) parent;
-					return sc.getContainingClassifier() != ci
-							&& SubcomponentUtil.canContainSubcomponentType(ci, sc.eClass());
 				}
 				return false;
 			});
 		}
 	}
 
-	private static final StandaloneQuery parentQuery = StandaloneQuery.create((root) -> root.ancestor(1));
 	private BusinessObjectSelection selectedBos;
-	private QueryService queryService;
 	private Button trueBtn;
 	private Button falseBtn;
 
@@ -105,43 +75,35 @@ public class RefineElementPropertySection extends AbstractPropertySection {
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite container = getWidgetFactory().createFlatFormComposite(parent);
-
 		final Composite refinedContainer = PropertySectionUtil.createRowLayoutComposite(getWidgetFactory(), container,
 				STANDARD_LABEL_WIDTH);
 
-		trueBtn = PropertySectionUtil.createButton(getWidgetFactory(), refinedContainer, true, selectionAdapter, "True",
+		trueBtn = PropertySectionUtil.createButton(getWidgetFactory(), refinedContainer, true, refineSelectionListener, "True",
 				SWT.RADIO);
-		falseBtn = PropertySectionUtil.createButton(getWidgetFactory(), refinedContainer, false, selectionAdapter,
-				"False", SWT.RADIO);
+		falseBtn = PropertySectionUtil.createButton(getWidgetFactory(), refinedContainer, false,
+				refineSelectionListener, "False", SWT.RADIO);
 
 		PropertySectionUtil.createSectionLabel(container, refinedContainer, getWidgetFactory(), "Refine:");
 	}
 
-	private SelectionAdapter selectionAdapter = new SelectionAdapter() {
+	private SelectionAdapter refineSelectionListener = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(SelectionEvent e) {
 			final Button btn = (Button) e.widget;
 			if (btn == falseBtn && btn.getSelection()) {
-				selectedBos.modify(boc -> {
-					if (boc.getBusinessObject() instanceof FlowSpecification) {
-						return boc.getBusinessObject();
-					}
+				selectedBos.modify(NamedElement.class, ne -> {
 
-					return boc.getBusinessObject();
-				}, (modify, boc) -> {
-					EcoreUtil.remove(modify);
+					EcoreUtil.remove(ne);
 				});
 			} else if (btn == trueBtn && btn.getSelection()) {
-				// TODO remove parentQuery and just used boc.getParent???
-				selectedBos.modify(boc -> queryService.getFirstBusinessObject(parentQuery, boc), (container, boc) -> {
+				selectedBos.modify(boc -> boc.getParent().getBusinessObject(), (container, boc) -> {
 					if (boc.getBusinessObject() instanceof Feature) {
 						final Feature feature = (Feature) boc.getBusinessObject();
-						// Refine the feature
 						final NamedElement newFeatureEl = AadlFeatureUtil.createFeature((Classifier) container,
 								feature.eClass());
 						final Feature newFeature = (Feature) newFeatureEl;
+						// Refine the feature
 						newFeature.setRefined(feature);
-
 						if (feature instanceof DirectedFeature) {
 							final DirectedFeature refinedDirectedFeature = (DirectedFeature) feature;
 							final DirectedFeature newDirectedFeature = (DirectedFeature) newFeature;
@@ -154,9 +116,8 @@ public class RefineElementPropertySection extends AbstractPropertySection {
 						final Connection connection = (Connection) boc.getBusinessObject();
 						final org.osate.aadl2.Connection newAadlConnection = AadlConnectionUtil
 								.createConnection((ComponentImplementation) container, connection.eClass());
-						if (newAadlConnection != null) {
-							newAadlConnection.setRefined(connection);
-						}
+						// Refine the connection
+						newAadlConnection.setRefined(connection);
 					} else if (boc.getBusinessObject() instanceof FlowSpecification) {
 						final FlowSpecification fs = (FlowSpecification) boc.getBusinessObject();
 						final ComponentType ct = (ComponentType) container;
@@ -180,18 +141,32 @@ public class RefineElementPropertySection extends AbstractPropertySection {
 	public void setInput(final IWorkbenchPart part, final ISelection selection) {
 		super.setInput(part, selection);
 		selectedBos = Adapters.adapt(selection, BusinessObjectSelection.class);
-		queryService = Adapters.adapt(part, QueryService.class);
 	}
 
 	@Override
 	public void refresh() {
-		// TODO make sure it handles multiple selections
 		final Set<RefinableElement> refinableElements = selectedBos.boStream(RefinableElement.class)
 				.collect(Collectors.toSet());
-		for (final RefinableElement refinable : refinableElements) {
-			final boolean isRefined = refinable.getRefinedElement() != null;
+		final Iterator<RefinableElement> it = refinableElements.iterator();
+		// Initial value of buttons
+		Boolean isRefined = it.next().getRefinedElement() != null;
+
+		while (it.hasNext()) {
+			// Check if all elements are refined or not refined
+			if (isRefined != (it.next().getRefinedElement() != null)) {
+				isRefined = null;
+				break;
+			}
+		}
+
+		// No selection set if elements are mixed refined and not refined
+		if (isRefined != null) {
+			// Set initial selection
 			trueBtn.setSelection(isRefined);
 			falseBtn.setSelection(!isRefined);
+		} else {
+			trueBtn.setSelection(false);
+			falseBtn.setSelection(false);
 		}
 	}
 }

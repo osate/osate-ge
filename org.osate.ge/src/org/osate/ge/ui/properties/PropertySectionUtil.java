@@ -8,8 +8,11 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.jface.layout.RowLayoutFactory;
 import org.eclipse.jface.viewers.ArrayContentProvider;
+import org.eclipse.jface.viewers.CellLabelProvider;
 import org.eclipse.jface.viewers.ComboViewer;
 import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionListener;
@@ -25,7 +28,6 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 import org.osate.ge.BusinessObjectContext;
 
 public class PropertySectionUtil {
-	// TODO some of this code is copy pasted, make sure names are changed to neutral terms (no longer directionBtn example)
 	public static boolean isBocCompatible(final Object toTest, final Predicate<BusinessObjectContext> predicate) {
 		final BusinessObjectContext boc = Adapters.adapt(toTest, BusinessObjectContext.class);
 		return boc != null && predicate.test(boc);
@@ -75,11 +77,9 @@ public class PropertySectionUtil {
 		fd.left = new FormAttachment(0, lblWidth);
 		combo.setLayoutData(fd);
 		combo.addSelectionListener(selectionAdapter);
-
 		return comboViewer;
 	}
 
-	// TODO return void?
 	public static Label createSectionLabel(final Composite container, final Control control,
 			final TabbedPropertySheetWidgetFactory widgetFactory, final String lblTxt) {
 		final Label label = widgetFactory.createLabel(container, lblTxt);
@@ -87,7 +87,6 @@ public class PropertySectionUtil {
 		fd.left = new FormAttachment(0, 0);
 		fd.top = new FormAttachment(control, 0, SWT.CENTER);
 		label.setLayoutData(fd);
-
 		return label;
 	}
 
@@ -107,7 +106,14 @@ public class PropertySectionUtil {
 		ld.left = new FormAttachment(0, offset);
 		ld.top = new FormAttachment(0, ITabbedPropertyConstants.VSPACE);
 		container.setLayoutData(ld);
-
 		return container;
+	}
+
+	public static TableViewerColumn createTableColumnViewer(final TableViewer tableViewer, final String colHeader,
+			final int style, final CellLabelProvider cellLabelProvider) {
+		final TableViewerColumn tableViewerColumn = new TableViewerColumn(tableViewer, style);
+		tableViewerColumn.getColumn().setText(colHeader);
+		tableViewerColumn.setLabelProvider(cellLabelProvider);
+		return tableViewerColumn;
 	}
 }

@@ -65,9 +65,6 @@ public class AadlFeatureUtil {
 
 	public static NamedElement createFeature(final Classifier featureOwner, final EClass featureClass) {
 		try {
-			System.err.println(featureOwner + " featureowner");
-			System.err.println(featureClass + " featureClass");
-
 			return (NamedElement)getFeatureCreateMethod(featureOwner, featureClass).invoke(featureOwner);
 		} catch (final Exception e) {
 			throw new RuntimeException(e);
