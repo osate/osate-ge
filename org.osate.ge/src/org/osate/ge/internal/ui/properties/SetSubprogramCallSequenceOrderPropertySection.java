@@ -26,16 +26,19 @@ import org.eclipse.swt.dnd.DragSourceEvent;
 import org.eclipse.swt.dnd.DropTargetAdapter;
 import org.eclipse.swt.dnd.DropTargetEvent;
 import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
+import org.eclipse.ui.views.properties.tabbed.ITabbedPropertyConstants;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.osate.aadl2.SubprogramCall;
 import org.osate.aadl2.SubprogramCallSequence;
@@ -60,10 +63,11 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 
 	@Override
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
+		FormData fd;
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
 		final Composite tableComposite = getWidgetFactory().createComposite(composite);
-		final FormData fd = new FormData();
+		fd = new FormData();
 		fd.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
 		fd.height = 150;
 		fd.width = 325;
@@ -80,7 +84,7 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 		tableViewer.addDropSupport(operations, types, dNDSupport.dropTargetListener);
 		tableViewer.addDragSupport(operations, types, dNDSupport.dragSourceListener);
 
-		final TableViewerColumn numColumn = PropertySectionUtil.createTableColumnViewer(tableViewer, "Index",
+		final TableViewerColumn numColumn = PropertySectionUtil.createTableColumnViewer(tableViewer, "Order",
 				SWT.RESIZE, new CellLabelProvider() {
 			@Override
 			public void update(final ViewerCell cell) {
@@ -104,12 +108,22 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 		});
 
 		tableComposite.setLayout(createTableColumnLayout(numColumn.getColumn(), subprogramCallColumn.getColumn()));
+
+		final Button upBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, null,
+				new SelectionAdapter() {
+		}, "Up", SWT.PUSH);
+
+		fd = new FormData();
+		fd.left = new FormAttachment(tableComposite, ITabbedPropertyConstants.HMARGIN);
+		fd.top = new FormAttachment(tableComposite, -ITabbedPropertyConstants.VSPACE, SWT.CENTER);
+		upBtn.setLayoutData(fd);
+
 		PropertySectionUtil.createSectionLabel(composite, tableViewer.getControl(), getWidgetFactory(), "Call Order:");
 	}
 
 	private static TableColumnLayout createTableColumnLayout(final TableColumn numColumn,
 			final TableColumn subprogramCallColumn) {
-		final TableColumnLayout tcl = new TableColumnLayout(true);
+		final TableColumnLayout tcl = new TableColumnLayout(false);
 		// TODO is false on trigger table??
 		tcl.setColumnData(numColumn, new ColumnWeightData(12, 20));
 		tcl.setColumnData(subprogramCallColumn, new ColumnWeightData(75, 50));
