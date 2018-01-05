@@ -32,7 +32,6 @@ import org.osate.aadl2.ComponentTypeRename;
 import org.osate.aadl2.FeatureGroupType;
 import org.osate.aadl2.GroupExtension;
 import org.osate.aadl2.ImplementationExtension;
-import org.osate.aadl2.NamedElement;
 import org.osate.aadl2.PackageSection;
 import org.osate.aadl2.Realization;
 import org.osate.aadl2.TypeExtension;
@@ -70,6 +69,7 @@ public class ClassifierHandler {
 	private static final StandaloneQuery packageQuery = StandaloneQuery.create((root) -> root.ancestors().filter((fa) -> fa.getBusinessObject() instanceof AadlPackage));
 
 	@IsApplicable
+	@CanRename
 	@CanDelete
 	public boolean isApplicable(final @Named(Names.BUSINESS_OBJECT) Classifier bo) {
 		return true;
@@ -345,11 +345,6 @@ public class ClassifierHandler {
 				build();
 	}
 
-	@CanRename
-	public boolean canRename(final @Named(Names.BUSINESS_OBJECT) Classifier classifier, final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc, final QueryService queryService) {
-		return classifierIsOwnedByPackage(classifier, boc, queryService);
-	}
-
 	@GetName
 	public String getName(final @Named(Names.BUSINESS_OBJECT) Classifier classifier) {
 		return classifier.getName();
@@ -358,16 +353,6 @@ public class ClassifierHandler {
 	@GetNameForEditing
 	public String getName(final @Named(Names.BUSINESS_OBJECT) ComponentImplementation ci) {
 		return ci.getImplementationName();
-	}
-
-	// Returns whether the classifier is owned by the package in which the diagram element is contained.
-	private boolean classifierIsOwnedByPackage(final Classifier classifier, final BusinessObjectContext boc, final QueryService queryService) {
-		final AadlPackage containingAadlPackage = (AadlPackage)queryService.getFirstBusinessObject(packageQuery, boc);
-		if(containingAadlPackage == null || classifier == null || classifier.getNamespace() == null || classifier.getNamespace().getOwner() == null) {
-			return false;
-		}
-
-		return containingAadlPackage.getQualifiedName().equalsIgnoreCase(((NamedElement)classifier.getNamespace().getOwner()).getQualifiedName()) ? true : false;
 	}
 
 	@ValidateName

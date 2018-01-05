@@ -32,16 +32,14 @@ import org.osate.ge.graphics.internal.ModeGraphicBuilder;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
-import org.osate.ge.query.StandaloneQuery;
-import org.osate.ge.services.QueryService;
 
 public class ModeHandler {
-	private static final StandaloneQuery parentQuery = StandaloneQuery.create((root) -> root.ancestor(1).first());
-
 	private Graphic initialModeGraphic = ModeGraphicBuilder.create().initialMode().build();
 	private Graphic modeGraphic = ModeGraphicBuilder.create().build();
 
 	@IsApplicable
+	@CanRename
+	@CanDelete
 	public boolean isApplicable(final @Named(Names.BUSINESS_OBJECT) Mode mode) {
 		return true;
 	}
@@ -112,12 +110,5 @@ public class ModeHandler {
 	@ValidateName
 	public String validateName(final @Named(Names.BUSINESS_OBJECT) Mode mode, final @Named(Names.NAME) String value, final NamingService namingService) {
 		return namingService.checkNameValidity(mode, value);
-	}
-
-	@CanRename
-	@CanDelete
-	public boolean canEdit(final @Named(Names.BUSINESS_OBJECT) Mode mode, final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc, final QueryService queryService) {
-		final Object containerBo = queryService.getFirstBusinessObject(parentQuery, boc);
-		return mode.getContainingClassifier() == containerBo;
 	}
 }

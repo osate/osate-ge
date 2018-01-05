@@ -41,7 +41,6 @@ import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
 
 public class ModeTransitionHandler {
-	private static final StandaloneQuery parentQuery = StandaloneQuery.create((root) -> root.ancestor(1).first());
 	private static final StandaloneQuery componentClassifierQuery = StandaloneQuery.create((root) -> root.ancestors().filter((fa) -> fa.getBusinessObject() instanceof ComponentClassifier).first());
 	private static final Graphic graphic = ConnectionBuilder.create()
 			.destinationTerminator(ArrowBuilder.create().small().build()).build();
@@ -49,6 +48,8 @@ public class ModeTransitionHandler {
 	private static StandaloneQuery dstQuery = StandaloneQuery.create((rootQuery) -> rootQuery.parent().children().filterByBusinessObjectRelativeReference((ModeTransition mt) -> mt.getDestination()));
 
 	@IsApplicable
+	@CanRename
+	@CanDelete
 	public boolean isApplicable(final @Named(Names.BUSINESS_OBJECT) ModeTransition mt) {
 		return true;
 	}
@@ -156,13 +157,6 @@ public class ModeTransitionHandler {
 		}
 
 		return newModeTransition;
-	}
-
-	@CanRename
-	@CanDelete
-	public boolean canDelete(final @Named(Names.BUSINESS_OBJECT) ModeTransition mt, final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc, final QueryService queryService) {
-		final Object containerBo = queryService.getFirstBusinessObject(parentQuery, boc);
-		return mt.getContainingClassifier() == containerBo;
 	}
 
 	@ValidateName

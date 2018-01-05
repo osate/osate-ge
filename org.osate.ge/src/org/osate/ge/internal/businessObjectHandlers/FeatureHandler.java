@@ -61,29 +61,13 @@ import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.AadlPrototypeUtil;
 import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.internal.util.StringUtil;
-import org.osate.ge.query.StandaloneQuery;
-import org.osate.ge.services.QueryService;
 
 public class FeatureHandler {
-	private static final StandaloneQuery parentQuery = StandaloneQuery.create((root) -> root.ancestors().first());
-
 	@IsApplicable
+	@CanRename
+	@CanDelete
 	public boolean isApplicable(final @Named(Names.BUSINESS_OBJECT) Object bo) {
 		return bo instanceof Feature || bo instanceof InternalFeature || bo instanceof ProcessorFeature;
-	}
-
-	@CanDelete
-	public boolean canEdit(final @Named(Names.BUSINESS_OBJECT) NamedElement feature,
-			final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc, final QueryService queryService) {
-		final Object containerBo = queryService.getFirstBusinessObject(parentQuery, boc);
-		return feature.getContainingClassifier() == containerBo;
-	}
-
-	@CanRename
-	public boolean canRename(final @Named(Names.BUSINESS_OBJECT) NamedElement feature,
-			final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc, final QueryService queryService) {
-		return canEdit(feature, boc, queryService)
-				&& (!(feature instanceof Feature) || ((Feature) feature).getRefined() == null);
 	}
 
 	@GetPaletteEntries

@@ -37,13 +37,11 @@ import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.AadlSubcomponentUtil;
 import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.internal.util.StringUtil;
-import org.osate.ge.query.StandaloneQuery;
-import org.osate.ge.services.QueryService;
 
 public class SubcomponentHandler {
-	private static final StandaloneQuery componentImplementationQuery = StandaloneQuery.create((root) -> root.ancestors().filter((fa) -> fa.getBusinessObject() instanceof ComponentImplementation).first());
-
 	@IsApplicable
+	@CanRename
+	@CanDelete
 	public boolean isApplicable(final @Named(Names.BUSINESS_OBJECT) Subcomponent sc) {
 		return true;
 	}
@@ -146,21 +144,8 @@ public class SubcomponentHandler {
 	}
 
 	// Renaming
-	@CanRename
-	public boolean canRename(final @Named(Names.BUSINESS_OBJECT) Subcomponent sc, final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc, final QueryService queryService) {
-		final ComponentImplementation ci = (ComponentImplementation)queryService.getFirstBusinessObject(componentImplementationQuery, boc);
-		return sc.getContainingClassifier() == ci && sc.getRefined() == null;
-	}
-
 	@ValidateName
 	public String validateName(final @Named(Names.BUSINESS_OBJECT) Subcomponent sc, final @Named(Names.NAME) String value, final NamingService namingService) {
 		return namingService.checkNameValidity(sc, value);
-	}
-
-	// Deleting
-	@CanDelete
-	public boolean canDelete(final @Named(Names.BUSINESS_OBJECT) Subcomponent sc, final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc, final QueryService queryService) {
-		final ComponentImplementation ci = (ComponentImplementation)queryService.getFirstBusinessObject(componentImplementationQuery, boc);
-		return sc.getContainingClassifier() == ci;
 	}
 }

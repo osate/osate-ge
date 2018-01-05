@@ -69,6 +69,8 @@ public class ConnectionHandler {
 	private static StandaloneQuery partialDstQuery = StandaloneQuery.create((rootQuery) -> rootQuery.parent().descendantsByBusinessObjectsRelativeReference((Connection c) -> getBusinessObjectsPathToConnectedElement(c.getAllDestinationContext(), c.getRootConnection().getDestination()), 1).first());
 
 	@IsApplicable
+	@CanRename
+	@CanDelete
 	public boolean isApplicable(final @Named(Names.BUSINESS_OBJECT) Connection c) {
 		return true;
 	}
@@ -358,21 +360,8 @@ public class ConnectionHandler {
 	}
 
 	// Renaming
-	@CanRename
-	public boolean canRename(final @Named(Names.BUSINESS_OBJECT) Connection c, final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc, final QueryService queryService) {
-		final ComponentImplementation ci = getComponentImplementation(boc, queryService);
-		return c.getContainingClassifier() == ci && c.getRefined() == null;
-	}
-
 	@ValidateName
 	public String validateName(final @Named(Names.BUSINESS_OBJECT) Connection c, final @Named(Names.NAME) String value, final NamingService namingService) {
 		return namingService.checkNameValidity(c, value);
-	}
-
-	// Deleting
-	@CanDelete
-	public boolean canDelete(final @Named(Names.BUSINESS_OBJECT) Connection c, final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc, final QueryService queryService) {
-		final ComponentImplementation ci = (ComponentImplementation)queryService.getFirstBusinessObject(componentImplementationQuery, boc);
-		return c.getContainingClassifier() == ci;
 	}
 }
