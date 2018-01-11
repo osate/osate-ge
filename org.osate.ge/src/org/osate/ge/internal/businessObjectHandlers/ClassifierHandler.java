@@ -11,7 +11,10 @@
 package org.osate.ge.internal.businessObjectHandlers;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Named;
 
@@ -19,7 +22,6 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.osate.aadl2.Aadl2Factory;
@@ -56,7 +58,9 @@ import org.osate.ge.di.ValidateName;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.graphics.AadlGraphics;
 import org.osate.ge.internal.services.NamingService;
-import org.osate.ge.internal.ui.dialogs.ElementSelectionDialog;
+import org.osate.ge.internal.ui.dialogs.DefaultSelectClassifierDialogModel;
+import org.osate.ge.internal.ui.dialogs.classifier.ClassifierOperation;
+import org.osate.ge.internal.ui.dialogs.classifier.CreateSelectClassifierDialog;
 import org.osate.ge.internal.util.AadlImportsUtil;
 import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.internal.util.Log;
@@ -141,31 +145,6 @@ public class ClassifierHandler {
 		return containerIsValidBaseClassifier;
 	}
 
-	private EObject determineBaseClassifier(final EObject targetBo, final EClass classifierType, final IProject project) {
-		// Determine the base classifier using the container. The base classifier is the classifier that should be extended or implemented(if any)
-		final EObject baseClassifier;
-
-		// Determine if the container is a valid base classifier
-		boolean containerIsValidBaseClassifier = isValidBaseClassifier(targetBo, classifierType);
-
-		// Set the base classifier
-		if(containerIsValidBaseClassifier) {
-			baseClassifier = targetBo;
-		} else {
-			if(isComponentImplementation(classifierType)) {
-				final ElementSelectionDialog dlg = new ElementSelectionDialog(Display.getCurrent().getActiveShell(), "Select a Classifier", "Select a classifier to implement or extend.", getValidBaseClassifierDescriptions(project, classifierType));
-				if(dlg.open() == Window.CANCEL) {
-					return null;
-				}
-				baseClassifier = (EObject)dlg.getFirstSelectedElement();
-			} else {
-				baseClassifier = null;
-			}
-		}
-
-		return (baseClassifier != null && baseClassifier.eIsProxy()) ? EcoreUtil.resolve(baseClassifier, targetBo.eResource()) : baseClassifier;
-	}
-
 	@GetCreateOwner
 	public BusinessObjectContext getCreateOwner(final @Named(Names.TARGET_BO) EObject targetBo,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
@@ -208,55 +187,111 @@ public class ClassifierHandler {
 	public Classifier createBusinessObject(@Named(Names.MODIFY_BO) final AadlPackage pkg, @Named(Names.TARGET_BO) final EObject targetBo,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass classifierType, final @Named(InternalNames.PROJECT) IProject project,
 			final NamingService namingService) {
-		final EObject baseClassifier = determineBaseClassifier(targetBo, classifierType, project);
-		if(baseClassifier == null && isComponentImplementation(classifierType)) {
-			return null;
-		}
 
-		final PackageSection section = pkg.getPublicSection();
-		if(section == null) {
-			return null;
-		}
+		// Handle case where target is a valid base classifier for quick creation.
+		// Determine if the container is a valid base classifier
+		final boolean targetIsValidBase = isValidBaseClassifier(targetBo, classifierType);
+		if (targetIsValidBase || !isComponentImplementation(classifierType)) {
+			EObject baseClassifier = targetIsValidBase ? targetBo : null;
+			baseClassifier = (baseClassifier != null && baseClassifier.eIsProxy())
+					? EcoreUtil.resolve(baseClassifier, targetBo.eResource())
+							: baseClassifier;
 
-		// Create the new classifier
-		final Classifier newClassifier = section.createOwnedClassifier(classifierType);
+					if(baseClassifier == null && isComponentImplementation(classifierType)) {
+						return null;
+					}
 
-		// Determine the name
-		final String newName = buildNewName(section, classifierType, baseClassifier, namingService);
-		if(newName == null) {
-			return null;
-		}
+					final PackageSection section = pkg.getPublicSection();
+					if(section == null) {
+						return null;
+					}
 
-		// Handle implementations
-		if(newClassifier instanceof ComponentImplementation) {
-			final ComponentImplementation newImpl = (ComponentImplementation)newClassifier;
-			if(baseClassifier instanceof ComponentType) {
-				final Realization realization = newImpl.createOwnedRealization();
-				realization.setImplemented((ComponentType)baseClassifier);
-			} else if(baseClassifier instanceof ComponentImplementation) {
-				final ComponentImplementation baseImpl = (ComponentImplementation)baseClassifier;
-				final ImplementationExtension extension = newImpl.createOwnedExtension();
-				extension.setExtended(baseImpl);
+					// Create the new classifier
+					final Classifier newClassifier = section.createOwnedClassifier(classifierType);
 
-				final Realization realization = newImpl.createOwnedRealization();
-				realization.setImplemented(baseImpl.getType());
+					// Determine the name
+					final String newName = buildNewName(section, classifierType, baseClassifier, namingService);
+					if(newName == null) {
+						return null;
+					}
+
+					// Handle implementations
+					if(newClassifier instanceof ComponentImplementation) {
+						final ComponentImplementation newImpl = (ComponentImplementation)newClassifier;
+						if(baseClassifier instanceof ComponentType) {
+							final Realization realization = newImpl.createOwnedRealization();
+							realization.setImplemented((ComponentType)baseClassifier);
+						} else if(baseClassifier instanceof ComponentImplementation) {
+							final ComponentImplementation baseImpl = (ComponentImplementation)baseClassifier;
+							final ImplementationExtension extension = newImpl.createOwnedExtension();
+							extension.setExtended(baseImpl);
+
+							final Realization realization = newImpl.createOwnedRealization();
+							realization.setImplemented(baseImpl.getType());
+						}
+					} else if(newClassifier instanceof ComponentType && baseClassifier instanceof ComponentType) {
+						final ComponentType newType = (ComponentType)newClassifier;
+						final TypeExtension extension = newType.createOwnedExtension();
+						extension.setExtended((ComponentType)baseClassifier);
+					} else if(newClassifier instanceof FeatureGroupType && baseClassifier instanceof FeatureGroupType) {
+						final FeatureGroupType newFgt = (FeatureGroupType)newClassifier;
+						final GroupExtension extension = newFgt.createOwnedExtension();
+						extension.setExtended((FeatureGroupType)baseClassifier);
+					}
+
+					// Set the name
+					newClassifier.setName(newName);
+
+					Log.info("Created classifier with name: " + newClassifier.getName());
+
+					return newClassifier;
+
+		} else {
+			final CreateSelectClassifierDialog.Model model = new DefaultSelectClassifierDialogModel(project) {
+				@Override
+				public String getTitle() {
+					return "Create Component Implementation";
+				}
+
+				@Override
+				public String getMessage() {
+					return "Configure component implementation.";
+				}
+
+				@Override
+				public Collection<?> getBaseSelectOptions(final ClassifierOperation primaryOperation) {
+					return getValidBaseClassifierDescriptions(project, classifierType);
+				}
+
+				@Override
+				public Collection<?> getUnfilteredBaseSelectOptions(final ClassifierOperation primaryOperation) {
+					return ScopedEMFIndexRetrieval
+							.getAllEObjectsByType(project,
+									Aadl2Factory.eINSTANCE.getAadl2Package().getComponentClassifier())
+							.stream().collect(Collectors.toList());
+				}
+			};
+
+
+			final CreateSelectClassifierDialog.Result result = CreateSelectClassifierDialog.show(
+					Display.getCurrent().getActiveShell(),
+					new CreateSelectClassifierDialog.ArgumentBuilder(model,
+							EnumSet.of(ClassifierOperation.NEW_COMPONENT_IMPLEMENTATION)).defaultPackage(pkg)
+					.showPrimaryPackageSelector(false)
+					.create());
+			if (result == null) {
+				return null;
 			}
-		} else if(newClassifier instanceof ComponentType && baseClassifier instanceof ComponentType) {
-			final ComponentType newType = (ComponentType)newClassifier;
-			final TypeExtension extension = newType.createOwnedExtension();
-			extension.setExtended((ComponentType)baseClassifier);
-		} else if(newClassifier instanceof FeatureGroupType && baseClassifier instanceof FeatureGroupType) {
-			final FeatureGroupType newFgt = (FeatureGroupType)newClassifier;
-			final GroupExtension extension = newFgt.createOwnedExtension();
-			extension.setExtended((FeatureGroupType)baseClassifier);
+
+			// TODO: Need generic method that can be used anytime CreateSelectClassifierDialog is used. Should process a ConfiguredClassifierOperator and return
+			// a result.
+			// TODO: Need helper methods that can be shared with case which doesn't use dialog
+			// TODO: Base first then primary
+
+			System.err.println("OP: " + result.getPrimaryOperation());
+
+			throw new RuntimeException("TODO: Implement");
 		}
-
-		// Set the name
-		newClassifier.setName(newName);
-
-		Log.info("Created classifier with name: " + newClassifier.getName());
-
-		return newClassifier;
 	}
 
 	private String buildNewName(final PackageSection section, final EClass classifierType, final Object contextBo, final NamingService namingService) {
