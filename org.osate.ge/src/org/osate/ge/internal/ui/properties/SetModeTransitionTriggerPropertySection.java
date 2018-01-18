@@ -43,12 +43,10 @@ public class SetModeTransitionTriggerPropertySection extends AbstractPropertySec
 	public static class Filter implements IFilter {
 		@Override
 		public boolean select(final Object toTest) {
-			return PropertySectionUtil.isBocCompatible(toTest, boc -> {
-				if (boc.getBusinessObject() instanceof ModeTransition) {
-					final ModeTransition modeTransition = (ModeTransition) boc.getBusinessObject();
-					final Object parent = boc.getParent().getBusinessObject();
-					// Check that the container is the same shape that owns the mode transition
-					return parent instanceof ComponentClassifier && modeTransition.getContainingClassifier() == parent;
+			return PropertySectionUtil.isBoCompatible(toTest, bo -> {
+				if (bo instanceof ModeTransition) {
+					final ModeTransition mt = (ModeTransition) bo;
+					return mt.getContainingClassifier() instanceof ComponentClassifier;
 				}
 
 				return false;
@@ -84,9 +82,7 @@ public class SetModeTransitionTriggerPropertySection extends AbstractPropertySec
 				new CellLabelProvider() {
 			@Override
 			public void update(final ViewerCell cell) {
-				final TriggerPortElement tte = (TriggerPortElement) cell.getElement();
-				final String portName = tte.union ? tte.tp.getName() : "<" + tte.tp.getName() + ">";
-				cell.setText(portName);
+				cell.setText((String) cell.getElement());
 			}
 		});
 
@@ -101,7 +97,7 @@ public class SetModeTransitionTriggerPropertySection extends AbstractPropertySec
 		fd.top = new FormAttachment(tableComposite, 0, SWT.CENTER);
 		chooseBtn.setLayoutData(fd);
 
-		PropertySectionUtil.createSectionLabel(composite, tableComposite,
+		PropertySectionUtil.createSectionLabel(composite,
 				getWidgetFactory(), "Triggers:");
 	}
 
@@ -119,19 +115,16 @@ public class SetModeTransitionTriggerPropertySection extends AbstractPropertySec
 					mt.getOwnedTriggers().clear();
 
 					// Add the selected ones to it
-					for (ModeTransitionTriggerInfo selectedPort : selectedTriggers) {
+					for (final ModeTransitionTriggerInfo selectedPort : selectedTriggers) {
 						final ModeTransitionTrigger mtt = mt.createOwnedTrigger();
 						mtt.setTriggerPort(selectedPort.port);
 						mtt.setContext(selectedPort.context);
 					}
 				});
-				// TODO make sure no other sections need a manual refresh Manually refresh to show changes in input
-				refresh();
 			}
 		}
 	};
 
-	// TODO move to util? used in setDimsPropertySEction
 	private static TableColumnLayout createTableColumnLayout(final TableColumn numColumn) {
 		final TableColumnLayout tcl = new TableColumnLayout(false);
 		tcl.setColumnData(numColumn, new ColumnWeightData(100, 20));
@@ -148,39 +141,30 @@ public class SetModeTransitionTriggerPropertySection extends AbstractPropertySec
 	public void refresh() {
 		final List<ModeTransition> modeTransitions = selectedBos.boStream(ModeTransition.class)
 				.collect(Collectors.toList());
-		final Set<TriggerPortElement> input;
+		final Set<String> input;
 		if (modeTransitions.size() == 1) {
 			input = modeTransitions.stream().flatMap(mt -> mt.getOwnedTriggers().stream())
-					.map(mtt -> new TriggerPortElement(mtt.getTriggerPort(), true)).collect(Collectors.toSet());
+					.map(mtt -> mtt.getTriggerPort().getName()).collect(Collectors.toSet());
 		} else {
 			final Iterator<ModeTransition> it = modeTransitions.iterator();
-			final Set<TriggerPort> inTriggerPorts = it.next().getOwnedTriggers().stream()
+			// Intersection of trigger ports from selected transitions
+			final Set<TriggerPort> intTriggerPorts = it.next().getOwnedTriggers().stream()
 					.map(mtt -> mtt.getTriggerPort()).collect(Collectors.toSet());
-			final Set<TriggerPort> outTriggerPorts = new HashSet<>();
+			// Difference of trigger ports from selected transitions
+			final Set<TriggerPort> diffTriggerPorts = new HashSet<>(intTriggerPorts);
 			while (it.hasNext()) {
 				final Set<TriggerPort> nextTriggerPorts = it.next().getOwnedTriggers().stream()
 						.map(mtt -> mtt.getTriggerPort()).collect(Collectors.toSet());
-
-				inTriggerPorts.retainAll(nextTriggerPorts);
-				outTriggerPorts.addAll(nextTriggerPorts);
+				intTriggerPorts.retainAll(nextTriggerPorts);
+				diffTriggerPorts.addAll(nextTriggerPorts);
 			}
 
-			input = Streams.concat(inTriggerPorts.stream().map(tp -> new TriggerPortElement(tp, true)),
-					outTriggerPorts.stream().filter(tp -> !inTriggerPorts.contains(tp))
-					.map(tp -> new TriggerPortElement(tp, false)))
+			input = Streams.concat(intTriggerPorts.stream().map(tp -> tp.getName()),
+					diffTriggerPorts.stream().filter(tp -> !intTriggerPorts.contains(tp))
+					.map(tp -> "<" + tp.getName() + ">")) // Annotate triggers not in common with brackets
 					.collect(Collectors.toSet());
 		}
 
 		tableViewer.setInput(input);
-	}
-
-	private class TriggerPortElement {
-		final TriggerPort tp;
-		boolean union;
-
-		private TriggerPortElement(final TriggerPort tp, final boolean union) {
-			this.tp = tp;
-			this.union = union;
-		}
 	}
 }

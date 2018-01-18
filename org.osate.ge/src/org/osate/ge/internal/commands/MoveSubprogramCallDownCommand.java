@@ -12,20 +12,22 @@ public class MoveSubprogramCallDownCommand extends ReorderSubprogramCallCommand 
 	public MoveSubprogramCallDownCommand() {
 		super();
 	}
-	
+
 	@GetLabel
 	public String getLabel() {
 		return "Move Down";
 	}
-	
+
 	@GetBusinessObjectToModify
 	public Object getBusinessObjectToModify(@Named(Names.BUSINESS_OBJECT) final SubprogramCall call) {
+		System.err.println(call.eContainer() + " modifiedObject");
 		return call.eContainer();
 	}
-	
-    protected int getNewIndex(final SubprogramCall call) {
-    	final SubprogramCallSequence cs = (SubprogramCallSequence)call.eContainer();
-    	final int currentIndex = cs.getOwnedSubprogramCalls().indexOf(call);
-    	return currentIndex == -1 ? -1 : currentIndex + 1;
-    }
+
+	@Override
+	protected int getNewIndex(final SubprogramCall call) {
+		final SubprogramCallSequence cs = (SubprogramCallSequence)call.eContainer();
+		final int currentIndex = cs.getOwnedSubprogramCalls().indexOf(call);
+		return currentIndex == -1 ? -1 : currentIndex + 1;
+	}
 }

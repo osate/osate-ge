@@ -125,7 +125,7 @@ public class SetFeatureClassifierCommand {
 	}
 
 	/**
-	 * Return a list of EObjectDescriptions and NamedElements for potential subcomponent types for the specified subcomponent
+	 * Return a list of EObjectDescriptions and NamedElements for potential feature types for the specified feature
 	 * @return
 	 */
 	private List<Object> getPotentialFeatureClassifiers(final NamedElement feature) {

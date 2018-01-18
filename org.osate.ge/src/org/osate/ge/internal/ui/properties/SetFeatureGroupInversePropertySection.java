@@ -30,10 +30,8 @@ public class SetFeatureGroupInversePropertySection extends AbstractPropertySecti
 			return PropertySectionUtil.isBocCompatible(toTest, boc -> {
 				if(boc.getBusinessObject() instanceof FeatureGroup) {
 					final FeatureGroup fg = (FeatureGroup) boc.getBusinessObject();
-					final Object containerBo = boc.getParent().getBusinessObject();
 					final Classifier classifier = fg.getContainingClassifier();
-					if (classifier == containerBo
-							&& (classifier instanceof FeatureGroupType || classifier instanceof ComponentType)) {
+					if ((classifier instanceof FeatureGroupType || classifier instanceof ComponentType)) {
 						return AadlFeatureUtil.getFeatureGroupType(boc, fg) != null;
 					}
 				}
@@ -71,7 +69,7 @@ public class SetFeatureGroupInversePropertySection extends AbstractPropertySecti
 		falseBtn = PropertySectionUtil.createButton(getWidgetFactory(), inverseContainer, false,
 				inverseSelectionListener, "False", SWT.RADIO);
 
-		PropertySectionUtil.createSectionLabel(composite, inverseContainer, getWidgetFactory(), "Inverse:");
+		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Inverse:");
 	}
 
 	@Override

@@ -15,6 +15,7 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
@@ -73,19 +74,12 @@ public class SetSubcomponentClassifierPropertySection extends AbstractPropertySe
 	public static class Filter implements IFilter {
 		@Override
 		public boolean select(final Object toTest) {
-			return PropertySectionUtil.isBocCompatible(toTest, boc -> {
-				if (boc.getBusinessObject() instanceof Subcomponent) {
-					final Subcomponent sc = (Subcomponent) boc.getBusinessObject();
-					return sc.getContainingClassifier() == boc.getParent().getBusinessObject();
-				}
-
-				return false;
-			});
+			return PropertySectionUtil.isBoCompatible(toTest, bo -> bo instanceof Subcomponent);
 		}
 	}
 
 	private BusinessObjectSelection selectedBos;
-	private Label curSCClassifier;
+	private Label curScClassifier;
 	private Button chooseBtn;
 
 	@Override
@@ -95,7 +89,7 @@ public class SetSubcomponentClassifierPropertySection extends AbstractPropertySe
 
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
 		final Composite container = getWidgetFactory().createComposite(composite);
-		final Label sectionLabel = PropertySectionUtil.createSectionLabel(composite, container, getWidgetFactory(),
+		final Label sectionLabel = PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(),
 				"Classifier:");
 
 		container.setLayout(new FormLayout());
@@ -104,114 +98,114 @@ public class SetSubcomponentClassifierPropertySection extends AbstractPropertySe
 		fd.top = new FormAttachment(sectionLabel, 0, SWT.CENTER);
 		container.setLayoutData(fd);
 
-		curSCClassifier = getWidgetFactory().createLabel(container, "");
+		curScClassifier = getWidgetFactory().createLabel(container, "");
 		fd = new FormData();
 		fd.left = new FormAttachment(0, 0);
 		fd.top = new FormAttachment(0, ITabbedPropertyConstants.VSPACE);
-		curSCClassifier.setLayoutData(fd);
+		curScClassifier.setLayoutData(fd);
 
-		chooseBtn = PropertySectionUtil.createButton(getWidgetFactory(), container, null, new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				final List<Subcomponent> scs = selectedBos.boStream(Subcomponent.class).collect(Collectors.toList());
-				final Iterator<Subcomponent> it = scs.iterator();
-				final Subcomponent subComp = it.next();
-				final List<Object> potentialFeatureClassifiers = new ArrayList<>(
-						getPotentialSubcomponentTypes(subComp));
-				while (it.hasNext()) {
-					potentialFeatureClassifiers.retainAll(getPotentialSubcomponentTypes(it.next()));
-				}
-
-				// Prompt the user for the element
-				final ElementSelectionDialog dlg = new ElementSelectionDialog(Display.getCurrent().getActiveShell(),
-						"Select a Classifier", "Select a classifier.", potentialFeatureClassifiers);
-				if (dlg.open() != Window.CANCEL) {
-					// Set the classifier
-					// Import the package if necessary
-					final SubcomponentType selectedSubcomponentType;
-					if (dlg.getFirstSelectedElement() != null) {
-						// Resolve the reference
-						selectedSubcomponentType = (SubcomponentType) EcoreUtil
-								.resolve((EObject) dlg.getFirstSelectedElement(),
-										subComp);
-
-						// Import its package if necessary
-						final AadlPackage pkg = (AadlPackage) subComp.getElementRoot();
-						if (selectedSubcomponentType instanceof ComponentClassifier
-								&& selectedSubcomponentType.getNamespace() != null && pkg != null) {
-							final PackageSection section = pkg.getPublicSection();
-							final AadlPackage selectedClassifierPkg = (AadlPackage) selectedSubcomponentType
-									.getNamespace().getOwner();
-							if (pkg != selectedClassifierPkg
-									&& !section.getImportedUnits().contains(selectedClassifierPkg)) {
-								section.getImportedUnits().add(selectedClassifierPkg);
-							}
-						}
-					} else {
-						selectedSubcomponentType = null;
-					}
-
-					// Set the classifier
-					selectedBos.modify(Subcomponent.class, sc -> {
-						// Set the classifier
-						if (sc instanceof SystemSubcomponent) {
-							((SystemSubcomponent) sc)
-							.setSystemSubcomponentType((SystemSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof AbstractSubcomponent) {
-							((AbstractSubcomponent) sc)
-							.setAbstractSubcomponentType((AbstractSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof ThreadGroupSubcomponent) {
-							((ThreadGroupSubcomponent) sc).setThreadGroupSubcomponentType(
-									(ThreadGroupSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof ThreadSubcomponent) {
-							((ThreadSubcomponent) sc)
-							.setThreadSubcomponentType((ThreadSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof SubprogramSubcomponent) {
-							((SubprogramSubcomponent) sc).setSubprogramSubcomponentType(
-									(SubprogramSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof SubprogramGroupSubcomponent) {
-							((SubprogramGroupSubcomponent) sc).setSubprogramGroupSubcomponentType(
-									(SubprogramGroupSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof DataSubcomponent) {
-							((DataSubcomponent) sc)
-							.setDataSubcomponentType((DataSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof AbstractSubcomponent) {
-							((AbstractSubcomponent) sc)
-							.setAbstractSubcomponentType((AbstractSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof VirtualBusSubcomponent) {
-							((VirtualBusSubcomponent) sc).setVirtualBusSubcomponentType(
-									(VirtualBusSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof VirtualProcessorSubcomponent) {
-							((VirtualProcessorSubcomponent) sc).setVirtualProcessorSubcomponentType(
-									(VirtualProcessorSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof BusSubcomponent) {
-							((BusSubcomponent) sc)
-							.setBusSubcomponentType((BusSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof ProcessSubcomponent) {
-							((ProcessSubcomponent) sc)
-							.setProcessSubcomponentType((ProcessSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof ProcessorSubcomponent) {
-							((ProcessorSubcomponent) sc)
-							.setProcessorSubcomponentType((ProcessorSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof DeviceSubcomponent) {
-							((DeviceSubcomponent) sc)
-							.setDeviceSubcomponentType((DeviceSubcomponentType) selectedSubcomponentType);
-						} else if (sc instanceof MemorySubcomponent) {
-							((MemorySubcomponent) sc)
-							.setMemorySubcomponentType((MemorySubcomponentType) selectedSubcomponentType);
-						} else {
-							throw new RuntimeException("Unexpected type: " + sc.getClass().getName());
-						}
-					});
-				}
-			}
-		}, "Choose...", SWT.PUSH);
+		chooseBtn = PropertySectionUtil.createButton(getWidgetFactory(), container, null, setClassifierListener,
+				"Choose...", SWT.PUSH);
 
 		fd = new FormData();
-		fd.left = new FormAttachment(curSCClassifier, ITabbedPropertyConstants.HSPACE);
-		fd.top = new FormAttachment(curSCClassifier, 0, SWT.CENTER);
+		fd.left = new FormAttachment(curScClassifier, ITabbedPropertyConstants.HSPACE);
+		fd.top = new FormAttachment(curScClassifier, 0, SWT.CENTER);
 		chooseBtn.setLayoutData(fd);
 	}
+
+	final SelectionListener setClassifierListener = new SelectionAdapter() {
+		@Override
+		public void widgetSelected(final SelectionEvent e) {
+			final List<Subcomponent> scs = selectedBos.boStream(Subcomponent.class).collect(Collectors.toList());
+			final Iterator<Subcomponent> it = scs.iterator();
+			final Subcomponent sc = it.next();
+			final List<Object> potentialFeatureClassifiers = new ArrayList<>(
+					getPotentialSubcomponentTypes(sc));
+			while (it.hasNext()) {
+				potentialFeatureClassifiers.retainAll(getPotentialSubcomponentTypes(it.next()));
+			}
+
+			// Prompt the user for the element
+			final ElementSelectionDialog dlg = new ElementSelectionDialog(Display.getCurrent().getActiveShell(),
+					"Select a Classifier", "Select a classifier.", potentialFeatureClassifiers);
+			if (dlg.open() != Window.CANCEL) {
+				// Set the classifier
+				// Import the package if necessary
+				final SubcomponentType selectedSubcomponentType;
+				if (dlg.getFirstSelectedElement() != null) {
+					// Resolve the reference
+					selectedSubcomponentType = (SubcomponentType) EcoreUtil
+							.resolve((EObject) dlg.getFirstSelectedElement(),
+									sc);
+
+					// Import its package if necessary
+					final AadlPackage pkg = (AadlPackage) sc.getElementRoot();
+					if (selectedSubcomponentType instanceof ComponentClassifier
+							&& selectedSubcomponentType.getNamespace() != null && pkg != null) {
+						final PackageSection section = pkg.getPublicSection();
+						final AadlPackage selectedClassifierPkg = (AadlPackage) selectedSubcomponentType
+								.getNamespace().getOwner();
+						if (pkg != selectedClassifierPkg
+								&& !section.getImportedUnits().contains(selectedClassifierPkg)) {
+							section.getImportedUnits().add(selectedClassifierPkg);
+						}
+					}
+				} else {
+					selectedSubcomponentType = null;
+				}
+
+				// Set the classifier
+				selectedBos.modify(Subcomponent.class, subcomponent -> {
+					setClassifier(subcomponent, selectedSubcomponentType);
+				});
+			}
+		}
+
+		private void setClassifier(final Subcomponent sc, final SubcomponentType selectedSubcomponentType) {
+			if (sc instanceof SystemSubcomponent) {
+				((SystemSubcomponent) sc).setSystemSubcomponentType((SystemSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof AbstractSubcomponent) {
+				((AbstractSubcomponent) sc)
+				.setAbstractSubcomponentType((AbstractSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof ThreadGroupSubcomponent) {
+				((ThreadGroupSubcomponent) sc)
+				.setThreadGroupSubcomponentType((ThreadGroupSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof ThreadSubcomponent) {
+				((ThreadSubcomponent) sc).setThreadSubcomponentType((ThreadSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof SubprogramSubcomponent) {
+				((SubprogramSubcomponent) sc)
+				.setSubprogramSubcomponentType((SubprogramSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof SubprogramGroupSubcomponent) {
+				((SubprogramGroupSubcomponent) sc)
+				.setSubprogramGroupSubcomponentType((SubprogramGroupSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof DataSubcomponent) {
+				((DataSubcomponent) sc).setDataSubcomponentType((DataSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof AbstractSubcomponent) {
+				((AbstractSubcomponent) sc)
+				.setAbstractSubcomponentType((AbstractSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof VirtualBusSubcomponent) {
+				((VirtualBusSubcomponent) sc)
+				.setVirtualBusSubcomponentType((VirtualBusSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof VirtualProcessorSubcomponent) {
+				((VirtualProcessorSubcomponent) sc).setVirtualProcessorSubcomponentType(
+						(VirtualProcessorSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof BusSubcomponent) {
+				((BusSubcomponent) sc).setBusSubcomponentType((BusSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof ProcessSubcomponent) {
+				((ProcessSubcomponent) sc)
+				.setProcessSubcomponentType((ProcessSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof ProcessorSubcomponent) {
+				((ProcessorSubcomponent) sc)
+				.setProcessorSubcomponentType((ProcessorSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof DeviceSubcomponent) {
+				((DeviceSubcomponent) sc).setDeviceSubcomponentType((DeviceSubcomponentType) selectedSubcomponentType);
+			} else if (sc instanceof MemorySubcomponent) {
+				((MemorySubcomponent) sc).setMemorySubcomponentType((MemorySubcomponentType) selectedSubcomponentType);
+			} else {
+				throw new RuntimeException("Unexpected type: " + sc.getClass().getName());
+			}
+		}
+	};
 
 	@Override
 	public void setInput(final IWorkbenchPart part, final ISelection selection) {
@@ -223,7 +217,7 @@ public class SetSubcomponentClassifierPropertySection extends AbstractPropertySe
 	public void refresh() {
 		final List<Subcomponent> scs = selectedBos.boStream(Subcomponent.class).collect(Collectors.toList());
 		final String scLbl = getSubcomponentClassifierLabel(scs);
-		curSCClassifier.setText(scLbl);
+		curScClassifier.setText(scLbl);
 	}
 
 	private EClass componentCategoryToEClass(final ComponentCategory category) {
@@ -278,7 +272,7 @@ public class SetSubcomponentClassifierPropertySection extends AbstractPropertySe
 	}
 
 	/**
-	 * Return a list of EObjectDescriptions and NamedElements for potential subcomponent types for the specified subcomponent
+	 * Return a list of EObjectDescriptions and NamedElements for potential classifiers for the specified subcomponent
 	 * @return
 	 */
 	private List<Object> getPotentialSubcomponentTypes(final Subcomponent sc) {

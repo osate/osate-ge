@@ -1,5 +1,6 @@
 package org.osate.ge.internal.ui.properties;
 
+import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -47,7 +48,6 @@ public class AccessPropertySection extends AbstractPropertySection {
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
-
 		final Composite directionContainer = PropertySectionUtil.createRowLayoutComposite(getWidgetFactory(), composite,
 				STANDARD_LABEL_WIDTH);
 
@@ -56,7 +56,7 @@ public class AccessPropertySection extends AbstractPropertySection {
 		requiresBtn = PropertySectionUtil.createButton(getWidgetFactory(), directionContainer, AccessType.REQUIRES,
 				directionSelectionListener, "Requires", SWT.RADIO);
 
-		PropertySectionUtil.createSectionLabel(composite, directionContainer, getWidgetFactory(), "Access Type:");
+		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Access Type:");
 	}
 
 	@Override
@@ -68,10 +68,25 @@ public class AccessPropertySection extends AbstractPropertySection {
 
 	@Override
 	public void refresh() {
-		final Set<AccessType> selectedDirections = selectedBos.boStream(Access.class)
-				.map(a -> a.getKind()).collect(Collectors.toSet());
+		final Set<Access> selectedAccesses = selectedBos.boStream(Access.class).collect(Collectors.toSet());
+		final Iterator<Access> it = selectedAccesses.iterator();
+		// Initial value of buttons
+		Boolean isProvides = it.next().getKind() == AccessType.PROVIDES;
 
-		providesBtn.setSelection(selectedDirections.contains(AccessType.PROVIDES));
-		requiresBtn.setSelection(selectedDirections.contains(AccessType.REQUIRES));
+		while (it.hasNext()) {
+			// Check if all elements are of same access type
+			if (isProvides != (it.next().getKind() == AccessType.PROVIDES)) {
+				isProvides = null;
+				break;
+			}
+		}
+
+		if (isProvides != null) {
+			providesBtn.setSelection(isProvides);
+			requiresBtn.setSelection(!isProvides);
+		} else {
+			providesBtn.setSelection(false);
+			requiresBtn.setSelection(false);
+		}
 	}
 }

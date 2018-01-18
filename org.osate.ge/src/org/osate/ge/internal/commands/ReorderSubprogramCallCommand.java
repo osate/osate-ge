@@ -4,11 +4,11 @@ import javax.inject.Named;
 
 import org.osate.aadl2.SubprogramCall;
 import org.osate.aadl2.SubprogramCallSequence;
+import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.di.Activate;
 import org.osate.ge.di.CanActivate;
 import org.osate.ge.di.IsAvailable;
 import org.osate.ge.di.Names;
-import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
 
@@ -17,7 +17,7 @@ public abstract class ReorderSubprogramCallCommand {
 	private static final StandaloneQuery grandparentQuery = StandaloneQuery.create((root) -> root.ancestor(2));
 
 	/**
-	 * Returns the new index for a subprogram call on which this feature is executed 
+	 * Returns the new index for a subprogram call on which this feature is executed
 	 */
 	abstract protected int getNewIndex(final SubprogramCall call);
 
@@ -41,6 +41,9 @@ public abstract class ReorderSubprogramCallCommand {
 	@Activate
 	public boolean activate(@Named(Names.BUSINESS_OBJECT) final SubprogramCall subprogramCall) {
 		final SubprogramCallSequence cs = (SubprogramCallSequence)subprogramCall.eContainer();
+		System.err.println(cs + " callSequenceActivate");
+		System.err.println(subprogramCall + " subprogramCalll");
+		System.err.println(getNewIndex(subprogramCall));
 		cs.getOwnedSubprogramCalls().move(getNewIndex(subprogramCall), subprogramCall);
 		return true;
 	}

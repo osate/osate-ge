@@ -73,10 +73,6 @@ public class SwitchDirectionOfConnectionPropertySection extends AbstractProperty
 		@Override
 		public void widgetSelected(SelectionEvent e) {
 			selectedBos.modify(Connection.class, connection -> {
-				if (connection.getRefined() != null) {
-					connection = connection.getRefined();
-				}
-
 				if (!(connection instanceof ParameterConnection)) {
 					final ConnectedElement ceSource = connection.getSource();
 					connection.setSource(connection.getDestination());
@@ -106,7 +102,7 @@ public class SwitchDirectionOfConnectionPropertySection extends AbstractProperty
 		ld.top = new FormAttachment(directionContainer, 0, SWT.CENTER);
 		switchDirectionBtn.setLayoutData(ld);
 
-		PropertySectionUtil.createSectionLabel(composite, directionContainer, getWidgetFactory(),
+		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(),
 				"Direction:");
 	}
 
@@ -121,45 +117,37 @@ public class SwitchDirectionOfConnectionPropertySection extends AbstractProperty
 		final List<Connection> selectedConnections = selectedBos.boStream(Connection.class)
 				.collect(Collectors.toList());
 
-		if (selectedConnections.size() == 1) {
-			final Connection connection = selectedConnections.get(0);
-			final boolean isBidirectional = connection.isAllBidirectional();
-			bidirectionalBtn.setSelection(isBidirectional);
-			unidirectionalBtn.setSelection(!isBidirectional);
-			switchDirectionBtn.setEnabled(connection instanceof ParameterConnection);
-		} else {
-			boolean enableSwitchDirection = false;
-			final Iterator<Connection> it = selectedConnections.iterator();
-			final Connection connection = it.next();
-			if (!(connection instanceof ParameterConnection)) {
+		boolean enableSwitchDirection = false;
+		final Iterator<Connection> it = selectedConnections.iterator();
+		final Connection connection = it.next();
+		if (!(connection instanceof ParameterConnection)) {
+			enableSwitchDirection = true;
+		}
+
+		Boolean isBidirectional = connection.isAllBidirectional();
+		while (it.hasNext()) {
+			final Connection nxtConnection = it.next();
+			if (!Boolean.valueOf(nxtConnection.isAllBidirectional()).equals(isBidirectional)) {
+				isBidirectional = null;
+				// Exit loop if obtained both initial control values
+				if (enableSwitchDirection) {
+					break;
+				}
+			}
+
+			if (!(nxtConnection instanceof ParameterConnection)) {
 				enableSwitchDirection = true;
 			}
-
-			Boolean isBidirectional = connection.isAllBidirectional();
-			while (it.hasNext()) {
-				final Connection nxtConnection = it.next();
-				if (!Boolean.valueOf(nxtConnection.isAllBidirectional()).equals(isBidirectional)) {
-					isBidirectional = null;
-					// Exit loop if obtained both initial control values
-					if (enableSwitchDirection) {
-						break;
-					}
-				}
-
-				if (!enableSwitchDirection && !(nxtConnection instanceof ParameterConnection)) {
-					enableSwitchDirection = true;
-				}
-			}
-
-			if (isBidirectional != null) {
-				bidirectionalBtn.setSelection(isBidirectional);
-				unidirectionalBtn.setSelection(!isBidirectional);
-			} else {
-				bidirectionalBtn.setSelection(false);
-				unidirectionalBtn.setSelection(false);
-			}
-
-			switchDirectionBtn.setEnabled(enableSwitchDirection);
 		}
+
+		if (isBidirectional != null) {
+			bidirectionalBtn.setSelection(isBidirectional);
+			unidirectionalBtn.setSelection(!isBidirectional);
+		} else {
+			bidirectionalBtn.setSelection(false);
+			unidirectionalBtn.setSelection(false);
+		}
+
+		switchDirectionBtn.setEnabled(enableSwitchDirection);
 	}
 }

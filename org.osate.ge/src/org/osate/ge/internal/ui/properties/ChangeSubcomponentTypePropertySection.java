@@ -1,8 +1,6 @@
 package org.osate.ge.internal.ui.properties;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -22,6 +20,7 @@ import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.osate.aadl2.AbstractSubcomponent;
 import org.osate.aadl2.ComponentImplementation;
+import org.osate.aadl2.NamedElement;
 import org.osate.aadl2.Subcomponent;
 import org.osate.ge.BusinessObjectSelection;
 import org.osate.ge.internal.util.StringUtil;
@@ -41,38 +40,43 @@ public class ChangeSubcomponentTypePropertySection extends AbstractPropertySecti
 
 	private BusinessObjectSelection selectedBos;
 	private ComboViewer comboViewer;
-	private EClass selectedSubcomponentType = null;
+	private EClass selectedEClass = null;
 
 	@Override
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite container = getWidgetFactory().createFlatFormComposite(parent);
-		comboViewer = PropertySectionUtil.createComboViewer(container, STANDARD_LABEL_WIDTH, subcompTypeSelectionListener, subcompTypeLabelProvider);
-		PropertySectionUtil.createSectionLabel(container, comboViewer.getCombo(), getWidgetFactory(), "Type:");
+		comboViewer = PropertySectionUtil.createComboViewer(container, STANDARD_LABEL_WIDTH, scTypeSelectionListener, subcompTypeLabelProvider);
+		PropertySectionUtil.createSectionLabel(container, getWidgetFactory(), "Type:");
 	}
 
-	private final SelectionAdapter subcompTypeSelectionListener = new SelectionAdapter() {
+	private final SelectionAdapter scTypeSelectionListener = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(final SelectionEvent e) {
-			selectedBos.modify(Subcomponent.class, sc -> {
-				final ComponentImplementation ci = sc.getContainingComponentImpl();
-				final Subcomponent replacementSc = SubcomponentUtil.createSubcomponent(ci,
-						(EClass) comboViewer.getStructuredSelection().getFirstElement());
+			final SubcomponentTypeElement ste = (SubcomponentTypeElement) comboViewer.getStructuredSelection().getFirstElement();
+			// Check if selection has changed
+			if (selectedEClass != ste.getEClass()) {
+				selectedBos.modify(Subcomponent.class, sc -> {
+					if (sc.eClass() != ste.getEClass()) {
+						final ComponentImplementation ci = sc.getContainingComponentImpl();
 
-				// Copy structural feature values to the replacement object.
-				PropertySectionUtil.transferStructuralFeatureValues(sc, replacementSc);
+						// Copy structural feature values to the replacement object.
+						PropertySectionUtil.transferStructuralFeatureValues(sc,
+								SubcomponentUtil.createSubcomponent(ci, ste.getEClass()));
 
-				// Remove the old object
-				EcoreUtil.remove(sc);
-			});
+						// Remove the old object
+						EcoreUtil.remove(sc);
+					}
+				});
+			}
 		}
 	};
 
 	private final LabelProvider subcompTypeLabelProvider = new LabelProvider() {
 		@Override
 		public String getText(final Object element) {
-			final EClass subcompType = (EClass) element;
-			return StringUtil.camelCaseToUser(subcompType.getName());
+			final SubcomponentTypeElement ste = (SubcomponentTypeElement) element;
+			return ste.getEClassName();
 		}
 	};
 
@@ -84,53 +88,58 @@ public class ChangeSubcomponentTypePropertySection extends AbstractPropertySecti
 
 	@Override
 	public void refresh() {
-		final Set<Subcomponent> bocs = selectedBos.boStream(Subcomponent.class).collect(Collectors.toSet());
-		final List<EClass> subcomponentTypes = new ArrayList<>();
-		selectedSubcomponentType = null;
+		final Set<NamedElement> subcomponents = selectedBos.boStream(NamedElement.class).collect(Collectors.toSet());
+		selectedEClass = null;
 
-		for (final EClass subcomponentType : SubcomponentUtil.getSubcomponentTypes()) {
-			final Iterator<Subcomponent> it = bocs.iterator();
-			Subcomponent sc = it.next();
-			boolean addSubType = false;
+		final Set<EClass> availableEClasses = new HashSet<>();
+		selectedEClass = PropertySectionUtil.getSelectedEClassAndPopulateOptionsList(subcomponents,
+				SubcomponentUtil.getSubcomponentTypes(),
+				(sc, eClass) -> isCompatibleSupcomponentType(sc, eClass), availableEClasses);
 
-			if (sc.getRefined() != null) {
-				sc = sc.getRefined();
-			}
+		final Set<SubcomponentTypeElement> availableScTypeElements = availableEClasses.stream()
+				.map(eClass -> new SubcomponentTypeElement(eClass)).collect(Collectors.toSet());
 
-			addSubType = isCompatibleSupcomponentType(sc, subcomponentType);
-			if (addSubType) {
-				selectedSubcomponentType = sc.eClass();
-
-				// Check the rest of selected elements if necessary
-				while (addSubType && it.hasNext()) {
-					Subcomponent nextSc = it.next();
-					if (nextSc.getRefined() != null) {
-						nextSc = nextSc.getRefined();
-					}
-
-					if (selectedSubcomponentType != nextSc.eClass()) {
-						selectedSubcomponentType = null;
-					}
-
-					addSubType = isCompatibleSupcomponentType(nextSc, subcomponentType);
-				}
-
-				if (addSubType) {
-					subcomponentTypes.add(subcomponentType);
-				}
-			}
-		}
-
-		comboViewer.setInput(subcomponentTypes);
-		if (selectedSubcomponentType != null) {
-			comboViewer.setSelection(new StructuredSelection(selectedSubcomponentType));
+		comboViewer.setInput(availableScTypeElements);
+		// Set comboviewer selection
+		if (selectedEClass != null) {
+			availableScTypeElements.stream().filter(scTypeElement -> selectedEClass == scTypeElement.getEClass())
+			.findAny().ifPresent(scTypeElement -> {
+				comboViewer.setSelection(new StructuredSelection(scTypeElement));
+			});
 		}
 	}
 
-	private static boolean isCompatibleSupcomponentType(final Subcomponent sc,
+	private static boolean isCompatibleSupcomponentType(final NamedElement ne,
 			final EClass subcomponentType) {
+		Subcomponent sc = (Subcomponent) ne;
+		if (sc.getRefined() != null) {
+			sc = sc.getRefined();
+		}
 		final ComponentImplementation ci = (ComponentImplementation) sc.getContainingClassifier();
 		return SubcomponentUtil.canContainSubcomponentType(ci, subcomponentType)
 				&& (sc.getRefined() == null || sc.getRefined() instanceof AbstractSubcomponent);
+	}
+
+	private class SubcomponentTypeElement {
+		final EClass eClass;
+		final String eClassName;
+
+		private SubcomponentTypeElement(final EClass eClass) {
+			this.eClass = eClass;
+			this.eClassName = setEClassName(eClass.getName());
+		}
+
+		private String setEClassName(final String eClassName) {
+			final String tmpEClassName = StringUtil.camelCaseToUser(eClassName);
+			return tmpEClassName.substring(0, tmpEClassName.lastIndexOf(" "));
+		}
+
+		private String getEClassName() {
+			return eClassName;
+		}
+
+		private EClass getEClass() {
+			return eClass;
+		}
 	}
 }

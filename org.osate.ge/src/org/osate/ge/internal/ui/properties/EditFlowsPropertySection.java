@@ -37,7 +37,6 @@ public class EditFlowsPropertySection extends AbstractPropertySection {
 	private BusinessObjectSelection selectedBos;
 	private Button editFlowsBtn;
 
-	// TODO allow multiple selection on edit flows??
 	private final SelectionListener editFlowsSelectionListener = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(final SelectionEvent e) {
@@ -72,10 +71,9 @@ public class EditFlowsPropertySection extends AbstractPropertySection {
 		editFlowsBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, null, editFlowsSelectionListener,
 				"Edit...", SWT.PUSH);
 		final FormData fd = new FormData();
-		fd.top = new FormAttachment(editFlowsBtn, 0, SWT.CENTER);
 		fd.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
 		editFlowsBtn.setLayoutData(fd);
-		PropertySectionUtil.createSectionLabel(composite, editFlowsBtn, getWidgetFactory(), "Flows:");
+		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Flows:");
 	}
 
 	@Override

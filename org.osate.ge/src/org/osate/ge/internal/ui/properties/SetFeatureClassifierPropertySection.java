@@ -19,6 +19,7 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
@@ -57,11 +58,10 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 	public static class Filter implements IFilter {
 		@Override
 		public boolean select(final Object toTest) {
-			return PropertySectionUtil.isBocCompatible(toTest, boc -> {
-				if (boc.getBusinessObject() instanceof Feature) {
-					final Feature feature = (Feature) boc.getBusinessObject();
-					return feature.getContainingClassifier() == boc.getParent().getBusinessObject()
-							&& featureTypeToClassifierSetterMap.containsKey(feature.eClass());
+			return PropertySectionUtil.isBoCompatible(toTest, bo -> {
+				if (bo instanceof Feature) {
+					final Feature feature = (Feature) bo;
+					return featureTypeToClassifierSetterMap.containsKey(feature.eClass());
 				}
 
 				return false;
@@ -124,7 +124,7 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
 		final Composite container = getWidgetFactory().createComposite(composite);
-		final Label sectionLabel = PropertySectionUtil.createSectionLabel(composite, container, getWidgetFactory(),
+		final Label sectionLabel = PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(),
 				"Classifier:");
 
 		container.setLayout(new FormLayout());
@@ -133,64 +133,82 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 		fd.top = new FormAttachment(sectionLabel, 0, SWT.CENTER);
 		container.setLayoutData(fd);
 
-		curFeatureClassifier = getWidgetFactory().createLabel(container, "");
+		curFeatureClassifier = getWidgetFactory().createLabel(container, new String());
 		fd = new FormData();
 		fd.left = new FormAttachment(0, 0);
 		fd.top = new FormAttachment(0, ITabbedPropertyConstants.VSPACE);
 		curFeatureClassifier.setLayoutData(fd);
 
-		chooseBtn = PropertySectionUtil.createButton(getWidgetFactory(), container, null, new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				final List<Feature> features = selectedBos.boStream(Feature.class)
-						.collect(Collectors.toList());
-				final Iterator<Feature> it = features.iterator();
-				final Feature feature = it.next();
-				final List<Object> potentialFeatureClassifiers = new ArrayList<>(
-						getPotentialFeatureClassifiers(feature));
-				while (it.hasNext()) {
-					potentialFeatureClassifiers.retainAll(getPotentialFeatureClassifiers(it.next()));
-				}
-
-				// Prompt the user for the element
-				final ElementSelectionDialog dlg = new ElementSelectionDialog(Display.getCurrent().getActiveShell(),
-						"Select a Classifier", "Select a classifier.", potentialFeatureClassifiers);
-				if (dlg.open() != Window.CANCEL) {
-					// Import the package if necessary
-					final EObject selectedType;
-					if (dlg.getFirstSelectedElement() != null) {
-						// Resolve the reference
-						selectedType = EcoreUtil.resolve((EObject) dlg.getFirstSelectedElement(), feature.eResource());
-						// Import its package if necessary
-						final AadlPackage pkg = (AadlPackage) feature.getElementRoot();
-						if (selectedType instanceof Classifier && ((Classifier) selectedType).getNamespace() != null
-								&& pkg != null) {
-							final PackageSection section = pkg.getPublicSection();
-							final AadlPackage selectedClassifierPkg = (AadlPackage) ((Classifier) selectedType)
-									.getNamespace().getOwner();
-							if (pkg != selectedClassifierPkg
-									&& !section.getImportedUnits().contains(selectedClassifierPkg)) {
-								section.getImportedUnits().add(selectedClassifierPkg);
-							}
-						}
-					} else {
-						selectedType = null;
-					}
-
-					// Set the classifier
-					selectedBos.modify(Feature.class,
-							f -> {
-								setFeatureClassifier(f, selectedType);
-							});
-				}
-			}
-		}, "Choose...", SWT.PUSH);
+		chooseBtn = PropertySectionUtil.createButton(getWidgetFactory(), container, null, setClassifierListener,
+				"Choose...", SWT.PUSH);
 
 		fd = new FormData();
 		fd.left = new FormAttachment(curFeatureClassifier, ITabbedPropertyConstants.HSPACE);
 		fd.top = new FormAttachment(curFeatureClassifier, 0, SWT.CENTER);
 		chooseBtn.setLayoutData(fd);
 	}
+
+	final SelectionListener setClassifierListener = new SelectionAdapter() {
+		@Override
+		public void widgetSelected(final SelectionEvent e) {
+			final List<Feature> features = selectedBos.boStream(Feature.class).collect(Collectors.toList());
+			final Iterator<Feature> it = features.iterator();
+			final Feature feature = it.next();
+			final List<Object> potentialFeatureClassifiers = new ArrayList<>(getPotentialFeatureClassifiers(feature));
+			while (it.hasNext()) {
+				potentialFeatureClassifiers.retainAll(getPotentialFeatureClassifiers(it.next()));
+			}
+
+			// Prompt the user for the element
+			final ElementSelectionDialog dlg = new ElementSelectionDialog(Display.getCurrent().getActiveShell(),
+					"Select a Classifier", "Select a classifier.", potentialFeatureClassifiers);
+			if (dlg.open() != Window.CANCEL) {
+				// Import the package if necessary
+				final EObject selectedType;
+				if (dlg.getFirstSelectedElement() != null) {
+					// Resolve the reference
+					selectedType = EcoreUtil.resolve((EObject) dlg.getFirstSelectedElement(), feature.eResource());
+					// Import its package if necessary
+					final AadlPackage pkg = (AadlPackage) feature.getElementRoot();
+					if (selectedType instanceof Classifier && ((Classifier) selectedType).getNamespace() != null
+							&& pkg != null) {
+						final PackageSection section = pkg.getPublicSection();
+						final AadlPackage selectedClassifierPkg = (AadlPackage) ((Classifier) selectedType)
+								.getNamespace().getOwner();
+						if (pkg != selectedClassifierPkg
+								&& !section.getImportedUnits().contains(selectedClassifierPkg)) {
+							section.getImportedUnits().add(selectedClassifierPkg);
+						}
+					}
+				} else {
+					selectedType = null;
+				}
+
+				// Set the classifier
+				selectedBos.modify(Feature.class, f -> {
+					setFeatureClassifier(f, selectedType);
+				});
+			}
+		}
+
+		private void setFeatureClassifier(final NamedElement feature, final Object classifier) {
+			final FeatureClassifierSetterInfo setterInfo = featureTypeToClassifierSetterMap.get(feature.eClass());
+			try {
+				final Method method = feature.getClass().getMethod(setterInfo.setterName, setterInfo.classifierClass);
+				method.invoke(feature, classifier);
+			} catch (NoSuchMethodException e) {
+				throw new RuntimeException(e);
+			} catch (SecurityException e) {
+				throw new RuntimeException(e);
+			} catch (IllegalAccessException e) {
+				throw new RuntimeException(e);
+			} catch (IllegalArgumentException e) {
+				throw new RuntimeException(e);
+			} catch (InvocationTargetException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	};
 
 	@Override
 	public void setInput(final IWorkbenchPart part, final ISelection selection) {
@@ -201,8 +219,7 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 	@Override
 	public void refresh() {
 		final List<Feature> features = selectedBos.boStream(Feature.class).collect(Collectors.toList());
-		final String fcLbl = getFeatureClassifierLabel(features);
-		curFeatureClassifier.setText(fcLbl);
+		curFeatureClassifier.setText(getFeatureClassifierLabel(features));
 	}
 
 	private static String getFeatureClassifierLabel(final List<Feature> features) {
@@ -227,7 +244,7 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 	}
 
 	/**
-	 * Return a list of EObjectDescriptions and NamedElements for potential subcomponent types for the specified subcomponent
+	 * Return a list of EObjectDescriptions and NamedElements for potential classifiers for the specified feature
 	 * @return
 	 */
 	private List<Object> getPotentialFeatureClassifiers(final NamedElement feature) {
@@ -251,23 +268,5 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 		}
 
 		return featureClassifiers;
-	}
-
-	private static void setFeatureClassifier(final NamedElement feature, final Object classifier) {
-		final FeatureClassifierSetterInfo setterInfo = featureTypeToClassifierSetterMap.get(feature.eClass());
-		try {
-			final Method method = feature.getClass().getMethod(setterInfo.setterName, setterInfo.classifierClass);
-			method.invoke(feature, classifier);
-		} catch (NoSuchMethodException e) {
-			throw new RuntimeException(e);
-		} catch (SecurityException e) {
-			throw new RuntimeException(e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException(e);
-		} catch (IllegalArgumentException e) {
-			throw new RuntimeException(e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException(e);
-		}
 	}
 }

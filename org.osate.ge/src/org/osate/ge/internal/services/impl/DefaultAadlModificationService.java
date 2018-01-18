@@ -203,7 +203,6 @@ public class DefaultAadlModificationService implements AadlModificationService {
 								}
 							}
 						});
-				System.err.println(modifySafelyResult + " modifiySafely");
 				modifierResult = modifySafelyResult.modifierResult;
 
 				// Call the after modification callback

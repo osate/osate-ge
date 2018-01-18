@@ -27,7 +27,8 @@ public class SetDerivedModesPropertySection extends AbstractPropertySection {
 			return PropertySectionUtil.isBoCompatible(toTest, bo -> {
 				if (bo instanceof ComponentType) {
 					final ComponentType ct = (ComponentType) bo;
-					return (ct.getOwnedModes().size() > 0 || ct.getOwnedModeTransitions().size() > 0)
+					return ct.getOwnedModeTransitions().size() == 0
+							&& ct.getOwnedModes().size() > 0
 							&& ct.getAllModes().size() == ct.getOwnedModes().size()
 							&& ct.getAllModeTransitions().size() == ct.getOwnedModeTransitions().size();
 				}
@@ -45,8 +46,8 @@ public class SetDerivedModesPropertySection extends AbstractPropertySection {
 		@Override
 		public void widgetSelected(final SelectionEvent e) {
 			final Button btn = (Button) e.widget;
-			final boolean isDerived = (boolean) btn.getData();
 			if (btn.getSelection()) {
+				final boolean isDerived = (boolean) btn.getData();
 				selectedBos.modify(ComponentType.class, ct -> ct.setDerivedModes(isDerived));
 			}
 		}
@@ -65,7 +66,7 @@ public class SetDerivedModesPropertySection extends AbstractPropertySection {
 		falseBtn = PropertySectionUtil.createButton(getWidgetFactory(), derivedContainer, false,
 				derivedListener, "False", SWT.RADIO);
 
-		PropertySectionUtil.createSectionLabel(composite, derivedContainer, getWidgetFactory(), "Derived Modes:");
+		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Derived Modes:");
 	}
 
 	@Override
@@ -92,6 +93,9 @@ public class SetDerivedModesPropertySection extends AbstractPropertySection {
 		if(isDerived != null) {
 			trueBtn.setSelection(isDerived);
 			falseBtn.setSelection(!isDerived);
+		} else {
+			trueBtn.setSelection(false);
+			falseBtn.setSelection(false);
 		}
 	}
 }

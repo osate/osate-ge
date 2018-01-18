@@ -194,7 +194,7 @@ public class SetSubcomponentClassifierCommand {
 	}
 
 	/**
-	 * Return a list of EObjectDescriptions and NamedElements for potential subcomponent types for the specified subcomponent
+	 * Return a list of EObjectDescriptions and NamedElements of potential classifiers for the specified subcomponent
 	 * @return
 	 */
 	private List<Object> getPotentialSubcomponentTypes(final Subcomponent sc) {

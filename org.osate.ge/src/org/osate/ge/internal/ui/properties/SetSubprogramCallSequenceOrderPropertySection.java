@@ -1,12 +1,11 @@
 package org.osate.ge.internal.ui.properties;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.Adapters;
+import org.eclipse.emf.common.util.EList;
 import org.eclipse.jface.layout.TableColumnLayout;
-import org.eclipse.jface.util.LocalSelectionTransfer;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.CellLabelProvider;
 import org.eclipse.jface.viewers.ColumnViewer;
@@ -20,22 +19,12 @@ import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.dnd.DND;
-import org.eclipse.swt.dnd.DragSourceAdapter;
-import org.eclipse.swt.dnd.DragSourceEvent;
-import org.eclipse.swt.dnd.DropTargetAdapter;
-import org.eclipse.swt.dnd.DropTargetEvent;
 import org.eclipse.swt.dnd.Transfer;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
 import org.eclipse.ui.views.properties.tabbed.ITabbedPropertyConstants;
@@ -44,6 +33,10 @@ import org.osate.aadl2.SubprogramCall;
 import org.osate.aadl2.SubprogramCallSequence;
 import org.osate.ge.BusinessObjectSelection;
 import org.osate.ge.ui.properties.PropertySectionUtil;
+import org.osate.ge.ui.properties.PropertySectionUtil.DragAndDropElement;
+import org.osate.ge.ui.properties.PropertySectionUtil.DragAndDropSupport;
+import org.osate.ge.ui.properties.PropertySectionUtil.ExecuteOrderChange;
+import org.osate.ge.ui.properties.PropertySectionUtil.UpDownButtonSelectionAdapter;
 
 public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPropertySection {
 	public static class Filter implements IFilter {
@@ -54,12 +47,12 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 			});
 		}
 	}
-	// TODO add move up down buttons to call sequence and change index to order
-	//TODO make sure multi selection doesnt work
 
 	private BusinessObjectSelection selectedBos;
+	private int selectedIndex = 0; // Default table index and user selected index
 	private TableViewer tableViewer;
-	private List<SubprogramCallElement> elements;
+	private Button upBtn;
+	private Button downBtn;
 
 	@Override
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
@@ -74,76 +67,100 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 		tableComposite.setLayoutData(fd);
 
 		tableViewer = new TableViewer(tableComposite,
-				SWT.BORDER | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.HIDE_SELECTION);
+				SWT.BORDER | SWT.NO_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.HIDE_SELECTION);
 		tableViewer.setContentProvider(new SubprogramCallSequenceContentProvider());
-
 		// Drag and drop support for changing call sequence
-		final DragAndDropSupport dNDSupport = new DragAndDropSupport();
-		final int operations = dNDSupport.operations;
-		final Transfer[] types = dNDSupport.types;
+		final DragAndDropSupport dNDSupport = new DragAndDropSupport(tableViewer.getTable(), executeChangeOrder);
+		final int operations = dNDSupport.getDragAndDropOperations();
+		final Transfer[] types = dNDSupport.getTransferTypes();
 		tableViewer.addDropSupport(operations, types, dNDSupport.dropTargetListener);
 		tableViewer.addDragSupport(operations, types, dNDSupport.dragSourceListener);
 
-		final TableViewerColumn numColumn = PropertySectionUtil.createTableColumnViewer(tableViewer, "Order",
-				SWT.RESIZE, new CellLabelProvider() {
+		final TableViewerColumn orderColumn = createTableViewerColumn("Order", new CellLabelProvider() {
 			@Override
 			public void update(final ViewerCell cell) {
-				final SubprogramCallElement element = (SubprogramCallElement) cell.getElement();
-				cell.setText(Integer.toString(element.getIndex() + 1));
+				final DragAndDropElement element = (DragAndDropElement) cell.getElement();
+				cell.setText(Integer.toString(element.getIndex()));
 			}
 		});
 
-		// Editing support for changing call sequence
-		numColumn.setEditingSupport(new OptionEditingSupport(numColumn.getViewer()));
+// Editing support for changing call sequence
+		orderColumn.setEditingSupport(new OptionEditingSupport(orderColumn.getViewer()));
 
-		final TableViewerColumn subprogramCallColumn = PropertySectionUtil.createTableColumnViewer(tableViewer,
-				"Subprogram Call",
-				SWT.RESIZE,
+		final TableViewerColumn subprogramCallColumn = createTableViewerColumn("Subprogram Call",
 				new CellLabelProvider() {
-			@Override
-			public void update(final ViewerCell cell) {
-				final SubprogramCallElement element = (SubprogramCallElement) cell.getElement();
-				cell.setText(element.getSubprogramCall().getName());
-			}
-		});
+					@Override
+					public void update(final ViewerCell cell) {
+						final DragAndDropElement element = (DragAndDropElement) cell.getElement();
+						cell.setText(element.getName());
+					}
+				});
 
-		tableComposite.setLayout(createTableColumnLayout(numColumn.getColumn(), subprogramCallColumn.getColumn()));
+		tableComposite.setLayout(createTableColumnLayout(orderColumn.getColumn(), subprogramCallColumn.getColumn()));
 
-		final Button upBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, null,
-				new SelectionAdapter() {
-		}, "Up", SWT.PUSH);
-
+		final Composite btnComposite = getWidgetFactory().createFlatFormComposite(composite);
 		fd = new FormData();
-		fd.left = new FormAttachment(tableComposite, ITabbedPropertyConstants.HMARGIN);
-		fd.top = new FormAttachment(tableComposite, -ITabbedPropertyConstants.VSPACE, SWT.CENTER);
+		fd.left = new FormAttachment(tableComposite, ITabbedPropertyConstants.HSPACE);
+		fd.top = new FormAttachment(tableComposite, 0, SWT.CENTER);
+		btnComposite.setLayoutData(fd);
+
+		final int btnWidth = 40;
+		final UpDownButtonSelectionAdapter moveBtnSelectionListener = new UpDownButtonSelectionAdapter(tableViewer,
+				executeChangeOrder);
+
+		upBtn = PropertySectionUtil.createButton(getWidgetFactory(), btnComposite, true, moveBtnSelectionListener, "Up",
+				SWT.PUSH);
+		fd = new FormData();
+		fd.width = btnWidth;
 		upBtn.setLayoutData(fd);
 
-		PropertySectionUtil.createSectionLabel(composite, tableViewer.getControl(), getWidgetFactory(), "Call Order:");
+		downBtn = PropertySectionUtil.createButton(getWidgetFactory(), btnComposite, false, moveBtnSelectionListener,
+				"Down", SWT.PUSH);
+		fd = new FormData();
+		fd.width = btnWidth;
+		fd.top = new FormAttachment(upBtn, ITabbedPropertyConstants.VSPACE);
+		downBtn.setLayoutData(fd);
+
+		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Call Order:");
 	}
 
-	private static TableColumnLayout createTableColumnLayout(final TableColumn numColumn,
+	private TableViewerColumn createTableViewerColumn(final String header, final CellLabelProvider cellLabelProvider) {
+		return PropertySectionUtil.createTableColumnViewer(tableViewer, header, SWT.RESIZE, cellLabelProvider);
+	}
+
+	private ExecuteOrderChange<Integer, Integer, DragAndDropElement> executeChangeOrder = (newIndex, curIndex,
+			dNDElement) -> {
+		if (newIndex != curIndex) {
+			selectedIndex = newIndex;
+			selectedBos.modify(SubprogramCallSequence.class, cs -> {
+				final SubprogramCall sc = cs.getOwnedSubprogramCalls().get(dNDElement.getIndex() - 1);
+				cs.getOwnedSubprogramCalls().move(newIndex, sc);
+			});
+		}
+	};
+
+	private static TableColumnLayout createTableColumnLayout(final TableColumn orderColumn,
 			final TableColumn subprogramCallColumn) {
-		final TableColumnLayout tcl = new TableColumnLayout(false);
-		// TODO is false on trigger table??
-		tcl.setColumnData(numColumn, new ColumnWeightData(12, 20));
-		tcl.setColumnData(subprogramCallColumn, new ColumnWeightData(75, 50));
+		final TableColumnLayout tcl = new TableColumnLayout();
+		tcl.setColumnData(orderColumn, new ColumnWeightData(15, 30));
+		tcl.setColumnData(subprogramCallColumn, new ColumnWeightData(85, 50));
 		return tcl;
 	}
 
 	private class SubprogramCallSequenceContentProvider implements IStructuredContentProvider {
 		@Override
 		public Object[] getElements(final Object inputElement) {
-			final SubprogramCallSequence sCSequence = (SubprogramCallSequence) inputElement;
-			elements = new ArrayList<>();
-			int i = 0;
-			for (final SubprogramCall sc : sCSequence.getOwnedSubprogramCalls()) {
-				elements.add(new SubprogramCallElement(sc, i++));
-			}
-
-			return elements.toArray();
-		}
+			@SuppressWarnings("unchecked")
+			final EList<SubprogramCall> subprogramCalls = (EList<SubprogramCall>) inputElement;
+			final int[] mutableIndex = { 0 };
+			return subprogramCalls.stream().map(sc -> {
+				mutableIndex[0] = ++mutableIndex[0];
+				return new DragAndDropElement(sc.getName(), mutableIndex[0]);
+			}).toArray();
+				}
 	}
 
+// Editing for order column
 	private class OptionEditingSupport extends EditingSupport {
 		private TextCellEditor textCellEditor;
 
@@ -155,7 +172,7 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 					Integer.parseInt((String) value);
 				} catch (final NumberFormatException e) {
 					return "Not a valid integer value";
-				}
+						}
 				return null;
 			});
 		}
@@ -172,33 +189,24 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 
 		@Override
 		protected Object getValue(final Object element) {
-			final SubprogramCallElement sCElement = (SubprogramCallElement) element;
-			return Integer.toString(sCElement.getIndex() + 1);
+			final DragAndDropElement dNDElement = (DragAndDropElement) element;
+			return Integer.toString(dNDElement.getIndex());
 		}
 
 		@Override
 		protected void setValue(final Object element, final Object value) {
-			final SubprogramCallElement sCElement = (SubprogramCallElement) element;
-			final int newIndex = getNewIndex(elements.size(), Integer.parseInt((String) value) - 1);
-
-			// Do not update if index has not changed
-			if (newIndex != sCElement.getIndex()) {
-				selectedBos.modify(SubprogramCallSequence.class, cs -> {
-					cs.getOwnedSubprogramCalls().move(newIndex,
-							sCElement.getSubprogramCall());
-				});
-			}
+			final DragAndDropElement dNDElement = (DragAndDropElement) element;
+			final int newIndex = getNewIndex(tableViewer.getTable().getItemCount(), Integer.parseInt((String) value));
+			executeChangeOrder.apply(newIndex, dNDElement.getIndex() - 1, dNDElement);
 		}
 	}
 
 	private static int getNewIndex(final int totalSize, final int newIndex) {
-		if (newIndex > totalSize) {
-			return totalSize - 1;
-		} else if (newIndex < 0) {
+		if (newIndex < 1) {
 			return 0;
 		}
 
-		return newIndex;
+		return (newIndex > totalSize ? totalSize : newIndex) - 1;
 	}
 
 	@Override
@@ -212,138 +220,16 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 		final List<SubprogramCallSequence> subprogramCallSeqs = selectedBos.boStream(SubprogramCallSequence.class)
 				.collect(Collectors.toList());
 		// Do not allow editing when multiple call sequences are selected
-		tableViewer.getTable().setEnabled(subprogramCallSeqs.size() == 1);
-		tableViewer.setInput(subprogramCallSeqs.get(0));
-	}
-
-	private class DragAndDropSupport {
-		private final int operations = DND.DROP_MOVE;
-		private final Transfer[] types = new Transfer[] { LocalSelectionTransfer.getTransfer() };
-		private final Table table;
-		private SubprogramCallElement dragElement; // Element moving indices
-		private SubprogramCallElement targetElement; // Element targeted
-
-		private DragAndDropSupport() {
-			table = tableViewer.getTable();
-			table.setHeaderVisible(true);
-			table.setLinesVisible(true);
-		}
-
-		private DragSourceAdapter dragSourceListener = new DragSourceAdapter() {
-			@Override
-			public void dragStart(final DragSourceEvent event) {
-				dragElement = elements.get(table.getSelectionIndex());
-			}
-		};
-
-		// Drag element will be placed above targeted element
-		private DropTargetAdapter dropTargetListener = new DropTargetAdapter() {
-			@Override
-			public void drop(final DropTargetEvent event) {
-				final SubprogramCall dragCall = dragElement.getSubprogramCall();
-				final int dragIndex = dragElement.getIndex();
-				final int newIndex = getNewIndex(targetElement, dragIndex);
-
-				if (newIndex != dragElement.getIndex()) {
-					selectedBos.modify(SubprogramCallSequence.class, cs -> {
-						cs.getOwnedSubprogramCalls().move(newIndex, dragCall);
-					});
-				}
-
-				dragElement = null;
-				targetElement = null;
+		setControlsEnabled(subprogramCallSeqs.size() == 1);
+		final EList<SubprogramCall> subprogramCalls = subprogramCallSeqs.get(0).getOwnedSubprogramCalls();
+		tableViewer.setInput(subprogramCalls);
+// Default table selection and keep selection after modification
+				tableViewer.getTable().setSelection(selectedIndex);
 			}
 
-			private int getNewIndex(final SubprogramCallElement targetElement, final int dragIndex) {
-				// Set in last index
-				if (targetElement == null) {
-					return elements.size() - 1;
-				}
-
-				final int targetIndex = targetElement.getIndex();
-				// If dragging up, subtract 1
-				return dragIndex < targetIndex ? targetIndex - 1 : targetIndex;
+			private void setControlsEnabled(final boolean isEnabled) {
+				tableViewer.getTable().setEnabled(isEnabled);
+				upBtn.setEnabled(isEnabled);
+				downBtn.setEnabled(isEnabled);
 			}
-
-			@Override
-			public void dragOver(final DropTargetEvent event) {
-				final TableItem tableItem;
-				final SubprogramCallElement dragTargetItem;
-				if (event.item instanceof TableItem) {
-					tableItem = (TableItem) event.item;
-					dragTargetItem = (SubprogramCallElement) tableItem.getData();
-				} else {
-					tableItem = null;
-					dragTargetItem = null;
-				}
-
-				if (dragTargetItem != targetElement) {
-					if (dragTargetItem != null) {
-						// Scroll while dragging
-						if (dragTargetItem.getIndex() > 0) {
-							table.showItem(table.getItem(dragTargetItem.getIndex() - 1));
-						}
-
-						if (dragTargetItem.getIndex() + 1 < table.getItemCount()) {
-							table.showItem(table.getItem(dragTargetItem.getIndex() + 1));
-						}
-					}
-
-					// Cleans up lines drawn for previous targeted index
-					table.redraw();
-				}
-
-				// Set next target element
-				targetElement = dragTargetItem;
-
-				// Draw the drop index line
-				final GC gc = new GC(table);
-				gc.setLineWidth(3);
-				final Rectangle bounds = getBounds(tableItem);
-				gc.drawLine(bounds.x, bounds.height, bounds.width, bounds.height);
-				gc.dispose();
-			}
-
-			// Bounds used for drawing target index line
-			private Rectangle getBounds(final TableItem targetItem) {
-				final Rectangle bounds;
-				final int y;
-
-				// Draw below last item for last index
-				if (targetItem == null) {
-					bounds = table.getItem(table.getItemCount() - 1).getBounds();
-					y = bounds.y + bounds.height;
-				} else {
-					bounds = targetItem.getBounds();
-					y = bounds.y + 1;
-				}
-
-				return new Rectangle(bounds.x - 5, y, bounds.x + table.getBounds().width, y);
-			}
-
-			@Override
-			public void dragLeave(final DropTargetEvent event) {
-				// Cleans up any leftover drawing
-				table.redraw();
-			}
-		};
-	}
-
-	private class SubprogramCallElement {
-		private final SubprogramCall subprogramCall;
-		private final int index;
-
-		private SubprogramCallElement(final SubprogramCall subprogramCall, final int index) {
-			this.subprogramCall = subprogramCall;
-			this.index = index;
-		}
-
-		private SubprogramCall getSubprogramCall() {
-			return subprogramCall;
-		}
-
-		private int getIndex() {
-			return index;
-		}
-	}
 }

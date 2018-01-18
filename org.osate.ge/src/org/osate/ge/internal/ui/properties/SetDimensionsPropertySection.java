@@ -1,17 +1,26 @@
 package org.osate.ge.internal.ui.properties;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.Adapters;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.CellLabelProvider;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.IFilter;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FormAttachment;
@@ -24,34 +33,40 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
 import org.eclipse.ui.views.properties.tabbed.ITabbedPropertyConstants;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
+import org.osate.aadl2.Aadl2Factory;
+import org.osate.aadl2.Aadl2Package;
 import org.osate.aadl2.ArrayDimension;
 import org.osate.aadl2.ArraySize;
 import org.osate.aadl2.ArrayableElement;
-import org.osate.aadl2.NamedElement;
-import org.osate.aadl2.Subcomponent;
+import org.osate.aadl2.Feature;
+import org.osate.aadl2.Property;
+import org.osate.aadl2.PropertyConstant;
 import org.osate.ge.BusinessObjectSelection;
-import org.osate.ge.internal.ui.dialogs.EditDimensionsDialog;
+import org.osate.ge.internal.ui.dialogs.EditDimensionsDialog.EditDimensionDialog;
 import org.osate.ge.internal.ui.util.SelectionUtil;
 import org.osate.ge.ui.properties.PropertySectionUtil;
+import org.osate.ge.ui.properties.PropertySectionUtil.DragAndDropElement;
+import org.osate.ge.ui.properties.PropertySectionUtil.DragAndDropSupport;
+import org.osate.ge.ui.properties.PropertySectionUtil.ExecuteOrderChange;
+import org.osate.ge.ui.properties.PropertySectionUtil.UpDownButtonSelectionAdapter;
 
-// TODO handle mult selection??? should it show current?
 public class SetDimensionsPropertySection extends AbstractPropertySection {
 	public static class Filter implements IFilter {
 		@Override
 		public boolean select(final Object toTest) {
-			return PropertySectionUtil.isBocCompatible(toTest, boc -> {
-				if (boc.getBusinessObject() instanceof ArrayableElement) {
-					final ArrayableElement ae = (ArrayableElement) boc.getBusinessObject();
-					return ae.getContainingClassifier() == boc.getParent().getBusinessObject();
-				}
-				return false;
-			});
+			return PropertySectionUtil.isBoCompatible(toTest, bo -> bo instanceof ArrayableElement);
 		}
 	}
 
+	private final String emptyString = "";
 	private BusinessObjectSelection selectedBos;
 	private TableViewer tableViewer;
-	private Button chooseBtn;
+	private Button modifyBtn;
+	private Button addBtn;
+	private Button deleteBtn;
+	private Button upBtn;
+	private Button downBtn;
+	private int selectedIndex = 0; // Default table index and user selected index
 
 	@Override
 	public void createControls(Composite parent, TabbedPropertySheetPage aTabbedPropertySheetPage) {
@@ -62,99 +77,251 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 		final Composite tableComposite = getWidgetFactory().createComposite(composite);
 		fd = new FormData();
 		fd.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
-		fd.height = 100;
-		fd.width = 200;
+		fd.height = 140;
+		fd.width = 250;
 		tableComposite.setLayoutData(fd);
-
-		tableViewer = new TableViewer(tableComposite, SWT.BORDER | SWT.HIDE_SELECTION);
-		// Hide selection and highlighting
-		tableViewer.getTable().addListener(SWT.EraseItem, event -> event.detail &= ~SWT.HOT & ~SWT.SELECTED);
-		tableViewer.setContentProvider(ArrayContentProvider.getInstance());
-
+		tableViewer = new TableViewer(tableComposite, SWT.V_SCROLL | SWT.NO_SCROLL | SWT.BORDER | SWT.FULL_SELECTION);
+		tableViewer.setContentProvider(new ArrayContentProvider());
+		tableViewer.getTable().setLinesVisible(true);
 		tableViewer.getTable().setHeaderVisible(true);
-		final TableViewerColumn portCol = PropertySectionUtil.createTableColumnViewer(tableViewer, "Trigger Port",
-				SWT.NONE, new CellLabelProvider() {
+
+		// Drag and drop support for changing call sequence
+		final DragAndDropSupport dNDSupport = new DragAndDropSupport(tableViewer.getTable(), executeChangeOrder);
+		final int operations = dNDSupport.getDragAndDropOperations();
+		final Transfer[] types = dNDSupport.getTransferTypes();
+		tableViewer.addDropSupport(operations, types, dNDSupport.dropTargetListener);
+		tableViewer.addDragSupport(operations, types, dNDSupport.dragSourceListener);
+
+		final TableViewerColumn portCol = PropertySectionUtil.createTableColumnViewer(tableViewer, "Array Dimensions",
+				SWT.RESIZE, new CellLabelProvider() {
 			@Override
 			public void update(final ViewerCell cell) {
-				// final TriggerPortElement tte = (TriggerPortElement) cell.getElement();
-				// final String portName = tte.union ? tte.tp.getName() : "<" + tte.tp.getName() + ">";
-				// cell.setText(portName);
+				final DragAndDropElement element = (DragAndDropElement) cell.getElement();
+				cell.setText("[" + element.getName() + "]");
 			}
 		});
 
-		portCol.getColumn().setResizable(false);
+		portCol.getColumn().setResizable(true);
 		tableComposite.setLayout(createTableColumnLayout(portCol.getColumn()));
-		chooseBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, null,
-				setDimensionsSelectionListener, "Modify...", SWT.PUSH);
-
+		modifyBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, null,
+				modifyDimensionSelectionListener, "Modify...", SWT.PUSH);
+		final int btnWidth = 60;
 		fd = new FormData();
-		fd.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
-		fd.top = new FormAttachment(composite, ITabbedPropertyConstants.VSPACE);
-		chooseBtn.setLayoutData(fd);
+		fd.left = new FormAttachment(tableComposite, ITabbedPropertyConstants.HSPACE);
+		fd.top = new FormAttachment(tableComposite, ITabbedPropertyConstants.VMARGIN, SWT.TOP);
+		fd.width = btnWidth;
+		modifyBtn.setLayoutData(fd);
 
-		PropertySectionUtil.createSectionLabel(composite, chooseBtn, getWidgetFactory(), "Dimensions:");
+// Add
+		addBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, SWT.NONE,
+				addDimensionSelectionListener, "Add", SWT.PUSH);
+		fd = new FormData();
+		fd.left = new FormAttachment(tableComposite, ITabbedPropertyConstants.HSPACE);
+		fd.top = new FormAttachment(modifyBtn, -ITabbedPropertyConstants.VMARGIN);
+		fd.width = btnWidth;
+		addBtn.setLayoutData(fd);
+
+// Delete
+		deleteBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, SWT.NONE,
+				deleteDimensionSelectionListener, "Delete", SWT.PUSH);
+		fd = new FormData();
+		fd.left = new FormAttachment(tableComposite, ITabbedPropertyConstants.HSPACE);
+		fd.top = new FormAttachment(addBtn, -ITabbedPropertyConstants.VMARGIN);
+		fd.width = btnWidth;
+		deleteBtn.setLayoutData(fd);
+
+		final UpDownButtonSelectionAdapter moveBtnSelectionListener = new UpDownButtonSelectionAdapter(tableViewer,
+				executeChangeOrder);
+
+// Up
+		upBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, true, moveBtnSelectionListener, "Up",
+				SWT.PUSH);
+		fd = new FormData();
+		fd.left = new FormAttachment(tableComposite, ITabbedPropertyConstants.HSPACE);
+		fd.top = new FormAttachment(deleteBtn, -ITabbedPropertyConstants.VMARGIN);
+		fd.width = btnWidth;
+		upBtn.setLayoutData(fd);
+
+// Down
+		downBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, false, moveBtnSelectionListener,
+				"Down", SWT.PUSH);
+		fd = new FormData();
+		fd.left = new FormAttachment(tableComposite, ITabbedPropertyConstants.HSPACE);
+		fd.top = new FormAttachment(upBtn, -ITabbedPropertyConstants.VMARGIN);
+		fd.width = btnWidth;
+		downBtn.setLayoutData(fd);
+
+		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Dimensions:");
 	}
 
-	private final SelectionAdapter setDimensionsSelectionListener = new SelectionAdapter() {
-		@Override
-		public void widgetSelected(final SelectionEvent e) {
-			selectedBos.modify(ArrayableElement.class, ae -> {
-				final EditDimensionsDialog dlg = new EditDimensionsDialog(Display.getCurrent().getActiveShell(),
-						SelectionUtil.getProject(ae.eResource()), ae.getArrayDimensions(), ae instanceof Subcomponent);
-				// Prompt the user for the element
-				if (dlg.open() != Window.CANCEL) {
-					// Replace the element's array dimensions in a round about way.
-					// For some reason, if the dimension is a dimension property and it is replaced with a copy, the aadl source is updated properly but the
-					// reference to the property is broken.
-					for (int dimIndex = 0; dimIndex < dlg.getDimensions().size(); dimIndex++) {
-						final ArrayDimension newDimension = dlg.getDimensions().get(dimIndex);
-						if (ae.getArrayDimensions().size() > dimIndex) {
-							// See if it changed
-							final ArrayDimension oldDimension = ae.getArrayDimensions().get(dimIndex);
-							final ArraySize oldSize = oldDimension.getSize();
-							final ArraySize newSize = newDimension.getSize();
-							boolean equals = false;
-							if (oldSize == null && newSize == null) {
-								equals = true;
-							} else if (oldSize != null && newSize != null) {
-								// Possibly equals
-								if (oldSize.getSizeProperty() == null && newSize.getSizeProperty() == null) {
-									if (oldSize.getSize() == newSize.getSize()) {
-										equals = true;
-									}
-								} else if (oldSize.getSizeProperty() instanceof NamedElement
-										&& newSize.getSizeProperty() instanceof NamedElement) {
-									final NamedElement oldSizeProperty = (NamedElement) oldSize.getSizeProperty();
-									final NamedElement newSizeProperty = (NamedElement) newSize.getSizeProperty();
-									if (newSizeProperty.getQualifiedName() != null && newSizeProperty.getQualifiedName()
-											.equalsIgnoreCase(oldSizeProperty.getQualifiedName())) {
-										equals = true;
-									}
-								}
-							}
+	private final ExecuteOrderChange<Integer, Integer, DragAndDropElement> executeChangeOrder = (newIndex, curIndex,
+			dNDElement) -> {
+				if (newIndex != curIndex) {
+					selectedIndex = newIndex;
+					selectedBos.modify(ArrayableElement.class, ae -> {
+						final ArrayDimension dim = ae.getArrayDimensions().get(dNDElement.getIndex() - 1);
+						ae.getArrayDimensions().move(newIndex, dim);
+					});
+				}
+			};
 
-							if (!equals) {
-								ae.getArrayDimensions().set(dimIndex, newDimension);
-							}
-						} else {
-							// Add the array dimension
-							ae.getArrayDimensions().add(newDimension);
-						}
+			private static ArrayDimension createArrayDimensionDuplicate(final Aadl2Package pkg, final ArrayDimension dim) {
+				final ArrayDimension newDim = (ArrayDimension) pkg.getEFactoryInstance().create(pkg.getArrayDimension());
+				if (dim.getSize() != null) {
+					final ArraySize newArraySize = (ArraySize) pkg.getEFactoryInstance().create(pkg.getArraySize());
+					newArraySize.setSize(dim.getSize().getSize());
+					newArraySize.setSizeProperty(dim.getSize().getSizeProperty());
+					newDim.setSize(newArraySize);
+				}
+
+				return newDim;
+			}
+
+			private ArrayDimension getSelectedDimension() {
+				final IStructuredSelection selection = tableViewer.getStructuredSelection();
+				if (!selection.isEmpty()) {
+					final Optional<ArrayableElement> optAe = selectedBos.boStream(ArrayableElement.class).findFirst();
+					if (optAe.isPresent()) {
+						return optAe.get().getArrayDimensions().get(tableViewer.getTable().getSelectionIndex());
 					}
 				}
-			});
-		}
-	};
 
-	private static TableColumnLayout createTableColumnLayout(final TableColumn numColumn) {
-		final TableColumnLayout tcl = new TableColumnLayout(false);
-		tcl.setColumnData(numColumn, new ColumnWeightData(100, 20));
-		return tcl;
-	}
+				return null;
+			}
 
-	@Override
-	public void setInput(final IWorkbenchPart part, final ISelection selection) {
-		super.setInput(part, selection);
-		selectedBos = Adapters.adapt(selection, BusinessObjectSelection.class);
-	}
+			private final SelectionAdapter modifyDimensionSelectionListener = new SelectionAdapter() {
+				@Override
+				public void widgetSelected(final SelectionEvent e) {
+					final ArrayDimension dim = getSelectedDimension();
+					if (dim != null && modifiedArrayDimension(dim, SelectionUtil.getProject(dim.eResource()))) {
+						final Aadl2Package pkg = Aadl2Factory.eINSTANCE.getAadl2Package();
+						selectedBos.modify(ArrayableElement.class, ae -> {
+							ae.getArrayDimensions().set(selectedIndex, createArrayDimensionDuplicate(pkg, dim));
+						});
+					}
+				}
+			};
+
+			private final SelectionAdapter addDimensionSelectionListener = new SelectionAdapter() {
+				@Override
+				public void widgetSelected(final SelectionEvent e) {
+					final Aadl2Package pkg = Aadl2Factory.eINSTANCE.getAadl2Package();
+					final ArrayDimension dim = (ArrayDimension) pkg.getEFactoryInstance().create(pkg.getArrayDimension());
+					selectedBos.boStream(ArrayableElement.class).findAny().ifPresent(ele -> {
+						if (modifiedArrayDimension(dim, SelectionUtil.getProject(ele.eResource()))) {
+							selectedBos.modify(ArrayableElement.class, ae -> {
+								ae.getArrayDimensions().add(createArrayDimensionDuplicate(pkg, dim));
+							});
+						}
+					});
+				}
+			};
+
+			private final SelectionAdapter deleteDimensionSelectionListener = new SelectionAdapter() {
+				@Override
+				public void widgetSelected(final SelectionEvent e) {
+					final boolean confirmDelete = MessageDialog.openQuestion(Display.getCurrent().getActiveShell(), "Confirm",
+							"Would you like to delete the selected dimension?");
+					if (confirmDelete) {
+						final int index = tableViewer.getTable().getSelectionIndex();
+						selectedBos.modify(ArrayableElement.class, ae -> {
+							ae.getArrayDimensions().remove(index);
+						});
+					}
+				}
+			};
+
+			private static TableColumnLayout createTableColumnLayout(final TableColumn column) {
+				final TableColumnLayout tcl = new TableColumnLayout();
+				tcl.setColumnData(column, new ColumnWeightData(1, true));
+				return tcl;
+			}
+
+			// Prompt user
+			private static boolean modifiedArrayDimension(final ArrayDimension dim, final IProject project) {
+				// Show the editor dimension dialog. If the user selects OK, it will modify the passed in object.
+				final EditDimensionDialog dlg = new EditDimensionDialog(Display.getCurrent().getActiveShell(), project, dim);
+				if (dlg.open() == Window.CANCEL) {
+					return false;
+				}
+
+				return true;
+			}
+
+			@Override
+			public void setInput(final IWorkbenchPart part, final ISelection selection) {
+				super.setInput(part, selection);
+				selectedBos = Adapters.adapt(selection, BusinessObjectSelection.class);
+			}
+
+			@Override
+			public void refresh() {
+				final List<ArrayableElement> arrayableElements = selectedBos.boStream(ArrayableElement.class)
+						.collect(Collectors.toList());
+				final Iterator<ArrayableElement> it = arrayableElements.iterator();
+				ArrayableElement ae = it.next();
+				boolean allowMultipleDimensions = !isFeature(ae);
+				final List<String> arrayableDimensions = ae.getArrayDimensions().stream().map(ad -> getLabel(ad))
+						.collect(Collectors.toList());
+				boolean tableEnabled = true;
+				while (it.hasNext()) {
+					ae = it.next();
+					if (allowMultipleDimensions) {
+						allowMultipleDimensions = !isFeature(ae);
+					}
+					if (arrayableDimensions
+							.equals(ae.getArrayDimensions().stream().map(ad -> getLabel(ad)).collect(Collectors.toList()))) {
+					} else {
+						// Table disabled and cleared
+						tableEnabled = false;
+						selectedIndex = 0;
+						arrayableDimensions.clear();
+						break;
+					}
+				}
+
+				final int[] mutableIndex = { 0 };
+				tableViewer.setInput(arrayableDimensions.stream().map(sc -> {
+					mutableIndex[0] = ++mutableIndex[0];
+					return new DragAndDropElement(sc, mutableIndex[0]);
+				}).toArray());
+
+				tableViewer.getTable().setSelection(selectedIndex);
+				setControlsEnabled(tableEnabled, arrayableDimensions.size(), allowMultipleDimensions);
+			}
+
+			private static boolean isFeature(final ArrayableElement ae) {
+				return ae instanceof Feature;
+			}
+
+			private void setControlsEnabled(final boolean tableEnabled, final int size, final boolean allowMultipleDimensions) {
+				final boolean isEmpty = size == 0;
+				tableViewer.getTable().setEnabled(tableEnabled);
+				modifyBtn.setEnabled(!isEmpty);
+				deleteBtn.setEnabled(!isEmpty);
+				addBtn.setEnabled(tableEnabled && (isEmpty || allowMultipleDimensions));
+				downBtn.setEnabled(selectedIndex + 1 <= (size - 1));
+				upBtn.setEnabled(selectedIndex - 1 >= 0);
+			}
+
+			private String getLabel(final ArrayDimension ad) {
+				final ArraySize dimSize = ad.getSize();
+
+				final String txt;
+				if (dimSize == null) {
+					txt = emptyString;
+				} else if (dimSize.getSizeProperty() != null) {
+					if (dimSize.getSizeProperty() instanceof Property) {
+						txt = ((Property) dimSize.getSizeProperty()).getQualifiedName();
+					} else if (dimSize.getSizeProperty() instanceof PropertyConstant) {
+						txt = ((PropertyConstant) dimSize.getSizeProperty()).getQualifiedName();
+					} else {
+						txt = "<Unsupported case>";
+					}
+				} else {
+					txt = Long.toString(dimSize.getSize());
+				}
+
+				return txt;
+			}
 }

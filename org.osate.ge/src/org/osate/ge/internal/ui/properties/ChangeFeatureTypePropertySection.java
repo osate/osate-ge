@@ -1,8 +1,6 @@
 package org.osate.ge.internal.ui.properties;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,8 +29,6 @@ import org.osate.aadl2.InternalFeature;
 import org.osate.aadl2.NamedElement;
 import org.osate.aadl2.ProcessorFeature;
 import org.osate.ge.BusinessObjectSelection;
-import org.osate.ge.internal.diagram.runtime.DiagramElement;
-import org.osate.ge.internal.diagram.runtime.DockArea;
 import org.osate.ge.internal.util.AadlFeatureUtil;
 import org.osate.ge.internal.util.StringUtil;
 import org.osate.ge.ui.properties.PropertySectionUtil;
@@ -63,65 +59,44 @@ public class ChangeFeatureTypePropertySection extends AbstractPropertySection {
 
 	private BusinessObjectSelection selectedBos;
 	private ComboViewer comboViewer;
-	private EClass selectedFeatureType = null;
+	private EClass selectedEClass = null;
 
 	@Override
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite container = getWidgetFactory().createFlatFormComposite(parent);
-		// TODO Quick selections cause problems?
 		comboViewer = PropertySectionUtil.createComboViewer(container, STANDARD_LABEL_WIDTH, featureTypeSelectionListener, featureTypeLabelProvider);
-		PropertySectionUtil.createSectionLabel(container, comboViewer.getCombo(), getWidgetFactory(), "Type:");
+		PropertySectionUtil.createSectionLabel(container, getWidgetFactory(), "Type:");
 	}
 
 	private final SelectionAdapter featureTypeSelectionListener = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(final SelectionEvent e) {
-			// Check if selection changed
-			if (selectedFeatureType != comboViewer.getStructuredSelection().getFirstElement()) {
-				selectedBos.modify(boc -> (NamedElement) boc.getBusinessObject(), (feature, boc) -> {
-					final Classifier featureOwner = feature.getContainingClassifier();
-					final NamedElement replacementFeature = AadlFeatureUtil.createFeature(featureOwner,
-							(EClass) comboViewer.getStructuredSelection().getFirstElement());
+			selectedBos.modify(NamedElement.class, feature -> {
+				final Classifier featureOwner = feature.getContainingClassifier();
+				final NamedElement replacementFeature = AadlFeatureUtil.createFeature(featureOwner,
+						(EClass) comboViewer.getStructuredSelection().getFirstElement());
 
-					// Copy structural feature values to the replacement object.
-					PropertySectionUtil.transferStructuralFeatureValues(feature, replacementFeature);
+				// Copy structural feature values to the replacement object.
+				PropertySectionUtil.transferStructuralFeatureValues(feature, replacementFeature);
 
-					// Set direction
-					if (!(feature instanceof DirectedFeature) && replacementFeature instanceof DirectedFeature) {
-						final DirectedFeature df = (DirectedFeature) replacementFeature;
-						// Only manually set if no direction is specified
-						if (!df.isIn() && !df.isOut()) {
-							final boolean in = getDirection((DiagramElement) boc);
-							df.setIn(in);
-							df.setOut(!in);
-						}
+				// Handle copying the data feature classifier
+				if (replacementFeature instanceof DirectedFeature) {
+					((DirectedFeature) replacementFeature).setIn(true);
+					if (replacementFeature instanceof EventDataPort) {
+						((EventDataPort) replacementFeature)
+						.setDataFeatureClassifier(getDataFeatureClassifier(feature));
+					} else if (replacementFeature instanceof DataPort) {
+						((DataPort) replacementFeature).setDataFeatureClassifier(getDataFeatureClassifier(feature));
 					}
+				}
 
-					// Handle copying the data feature classifier
-					if (replacementFeature instanceof DirectedFeature) {
-						if (replacementFeature instanceof EventDataPort) {
-							((EventDataPort) replacementFeature)
-							.setDataFeatureClassifier(getDataFeatureClassifier(feature));
-						} else if (replacementFeature instanceof DataPort) {
-							((DataPort) replacementFeature).setDataFeatureClassifier(getDataFeatureClassifier(feature));
-						}
-					}
-
-					// Remove the old object
-					EcoreUtil.remove(feature);
-
-				});
-			}
-		}
-
-		// TODO talk to philip about in or out based on top bottom
-		private boolean getDirection(final DiagramElement de) {
-			return de.getDockArea() == DockArea.LEFT || de.getDockArea() == DockArea.TOP;
+				// Remove the old object
+				EcoreUtil.remove(feature);
+			});
 		}
 	};
 
-	// TODO fix redundancy
 	private final LabelProvider featureTypeLabelProvider = new LabelProvider() {
 		@Override
 		public String getText(final Object element) {
@@ -148,40 +123,19 @@ public class ChangeFeatureTypePropertySection extends AbstractPropertySection {
 
 	@Override
 	public void refresh() {
-		final Set<NamedElement> bocs = selectedBos.boStream(NamedElement.class).collect(Collectors.toSet());
-		final List<EClass> featureTypes = new ArrayList<>();
+		final Set<NamedElement> features = selectedBos.boStream(NamedElement.class).collect(Collectors.toSet());
 		// Initial combo selected value
-		selectedFeatureType = null;
+		selectedEClass = null;
 
-		// Only add eligible feature types to the combo
-		for (final EClass featureType : AadlFeatureUtil.getFeatureTypes()) {
-			final Iterator<NamedElement> it = bocs.iterator();
-			boolean addFeatureType = true;
-			NamedElement feature = it.next();
+		final Set<EClass> availableEClasses = new HashSet<>();
+		// Populate available eclass options for comboviewer and get selected eclass
+		selectedEClass = PropertySectionUtil.getSelectedEClassAndPopulateOptionsList(features, AadlFeatureUtil.getFeatureTypes(),
+				(ne, eClass) -> isValidFeatureType(ne, eClass), availableEClasses);
 
-			// Check if selected element can be converted to type
-			addFeatureType = isValidFeatureType(feature, featureType);
-			if (addFeatureType) {
-				selectedFeatureType = feature.eClass();
-				// Check the rest of selected elements if necessary
-				while (addFeatureType && it.hasNext()) {
-					feature = it.next();
-					if (selectedFeatureType != feature.eClass()) {
-						selectedFeatureType = null;
-					}
-
-					addFeatureType = isValidFeatureType(feature, featureType);
-				}
-
-				if (addFeatureType) {
-					featureTypes.add(featureType);
-				}
-			}
-		}
-
-		comboViewer.setInput(featureTypes);
-		if (selectedFeatureType != null) {
-			comboViewer.setSelection(new StructuredSelection(selectedFeatureType));
+		comboViewer.setInput(availableEClasses);
+		// Set comboviewer selection
+		if (selectedEClass != null) {
+			comboViewer.setSelection(new StructuredSelection(selectedEClass));
 		}
 	}
 

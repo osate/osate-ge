@@ -14,6 +14,7 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
@@ -50,7 +51,7 @@ public class SetExtendedClassifierPropertySection extends AbstractPropertySectio
 	}
 
 	private BusinessObjectSelection selectedBos;
-	private Label curExtendedClassifier;
+	private Label extendedClassifier;
 	private Button chooseBtn;
 
 	@Override
@@ -60,7 +61,7 @@ public class SetExtendedClassifierPropertySection extends AbstractPropertySectio
 
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
 		final Composite container = getWidgetFactory().createComposite(composite);
-		final Label sectionLabel = PropertySectionUtil.createSectionLabel(composite, container, getWidgetFactory(), "Extends:");
+		final Label sectionLabel = PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Extends:");
 
 		container.setLayout(new FormLayout());
 		fd = new FormData();
@@ -68,73 +69,74 @@ public class SetExtendedClassifierPropertySection extends AbstractPropertySectio
 		fd.top = new FormAttachment(sectionLabel, 0, SWT.CENTER);
 		container.setLayoutData(fd);
 
-		curExtendedClassifier = getWidgetFactory().createLabel(container, "");
+		extendedClassifier = getWidgetFactory().createLabel(container, new String());
 		fd = new FormData();
 		fd.left = new FormAttachment(0, 0);
 		fd.top = new FormAttachment(0, ITabbedPropertyConstants.VSPACE);
-		curExtendedClassifier.setLayoutData(fd);
+		extendedClassifier.setLayoutData(fd);
 
-		chooseBtn = PropertySectionUtil.createButton(getWidgetFactory(), container, null, new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				final List<Classifier> classifiers = selectedBos.boStream(Classifier.class)
-						.collect(Collectors.toList());
-				Iterator<Classifier> it = classifiers.iterator();
-				final Classifier classifier = it.next();
-				final List<IEObjectDescription> extensibleClassifierDescs = new ArrayList<>(
-						getExtensibleClassifierDescriptions(classifier));
-				while (it.hasNext()) {
-					extensibleClassifierDescs.retainAll(getExtensibleClassifierDescriptions(it.next()));
-				}
-
-				// Prompt the user for the element
-				final ElementSelectionDialog dlg = new ElementSelectionDialog(Display.getCurrent().getActiveShell(),
-						"Select a Classifier", "Select a classifier to extend.",
-						extensibleClassifierDescs);
-				if (dlg.open() != Window.CANCEL) {
-					final AadlPackage pkg = (AadlPackage) classifier.eResource().getContents().get(0);
-					final PackageSection section = pkg.getPublicSection();
-
-					// Resolve the selected classifier
-					final Classifier selectedClassifier = (dlg.getFirstSelectedElement() != null
-							&& ((EObject) dlg.getFirstSelectedElement()).eIsProxy())
-							? (Classifier) EcoreUtil.resolve(((EObject) dlg.getFirstSelectedElement()),
-									classifier.eResource())
-									: (Classifier) dlg.getFirstSelectedElement();
-							if (selectedClassifier != null) {
-								// Import the package if necessary
-								if (selectedClassifier.getNamespace() != null) {
-									final AadlPackage selectedClassifierPkg = (AadlPackage) selectedClassifier.getNamespace()
-											.getOwner();
-									if (pkg != selectedClassifierPkg
-											&& !section.getImportedUnits().contains(selectedClassifierPkg)) {
-										section.getImportedUnits().add(selectedClassifierPkg);
-									}
-								}
-
-								selectedBos.modify(Classifier.class, selClassifier -> {
-									// Extend the classifier
-									if (selClassifier instanceof ComponentType) {
-										((ComponentType) selClassifier).createOwnedExtension()
-										.setExtended((ComponentType) selectedClassifier);
-									} else if (selClassifier instanceof ComponentImplementation) {
-										((ComponentImplementation) selClassifier).createOwnedExtension()
-										.setExtended((ComponentImplementation) selectedClassifier);
-									} else if (selClassifier instanceof FeatureGroupType) {
-										((FeatureGroupType) selClassifier).createOwnedExtension()
-										.setExtended((FeatureGroupType) selectedClassifier);
-									}
-								});
-							}
-				}
-			}
-		}, "Choose...", SWT.PUSH);
+		chooseBtn = PropertySectionUtil.createButton(getWidgetFactory(), container, null, setExtendedClassifierListener,
+				"Choose...", SWT.PUSH);
 
 		fd = new FormData();
-		fd.left = new FormAttachment(curExtendedClassifier, ITabbedPropertyConstants.HSPACE);
-		fd.top = new FormAttachment(curExtendedClassifier, 0, SWT.CENTER);
+		fd.left = new FormAttachment(extendedClassifier, ITabbedPropertyConstants.HSPACE);
+		fd.top = new FormAttachment(extendedClassifier, 0, SWT.CENTER);
 		chooseBtn.setLayoutData(fd);
 	}
+
+	final SelectionListener setExtendedClassifierListener = new SelectionAdapter() {
+		@Override
+		public void widgetSelected(final SelectionEvent e) {
+			final List<Classifier> classifiers = selectedBos.boStream(Classifier.class).collect(Collectors.toList());
+			final Iterator<Classifier> it = classifiers.iterator();
+			final Classifier classifier = it.next();
+			final List<IEObjectDescription> extensibleClassifierDescs = new ArrayList<>(
+					getExtensibleClassifierDescriptions(classifier));
+			while (it.hasNext()) {
+				extensibleClassifierDescs.retainAll(getExtensibleClassifierDescriptions(it.next()));
+			}
+
+			// Prompt the user for the element
+			final ElementSelectionDialog dlg = new ElementSelectionDialog(Display.getCurrent().getActiveShell(),
+					"Select a Classifier", "Select a classifier to extend.", extensibleClassifierDescs);
+			if (dlg.open() != Window.CANCEL) {
+				final AadlPackage pkg = (AadlPackage) classifier.eResource().getContents().get(0);
+				final PackageSection section = pkg.getPublicSection();
+
+				// Resolve the selected classifier
+				final Classifier selectedClassifier = (dlg.getFirstSelectedElement() != null
+						&& ((EObject) dlg.getFirstSelectedElement()).eIsProxy())
+						? (Classifier) EcoreUtil.resolve(((EObject) dlg.getFirstSelectedElement()),
+								classifier.eResource())
+								: (Classifier) dlg.getFirstSelectedElement();
+						if (selectedClassifier != null) {
+							// Import the package if necessary
+							if (selectedClassifier.getNamespace() != null) {
+								final AadlPackage selectedClassifierPkg = (AadlPackage) selectedClassifier.getNamespace()
+										.getOwner();
+								if (pkg != selectedClassifierPkg
+										&& !section.getImportedUnits().contains(selectedClassifierPkg)) {
+									section.getImportedUnits().add(selectedClassifierPkg);
+								}
+							}
+
+							selectedBos.modify(Classifier.class, selClassifier -> {
+								// Extend the classifier
+								if (selClassifier instanceof ComponentType) {
+									((ComponentType) selClassifier).createOwnedExtension()
+									.setExtended((ComponentType) selectedClassifier);
+								} else if (selClassifier instanceof ComponentImplementation) {
+									((ComponentImplementation) selClassifier).createOwnedExtension()
+									.setExtended((ComponentImplementation) selectedClassifier);
+								} else if (selClassifier instanceof FeatureGroupType) {
+									((FeatureGroupType) selClassifier).createOwnedExtension()
+									.setExtended((FeatureGroupType) selectedClassifier);
+								}
+							});
+						}
+			}
+		}
+	};
 
 	@Override
 	public void setInput(final IWorkbenchPart part, final ISelection selection) {
@@ -144,17 +146,20 @@ public class SetExtendedClassifierPropertySection extends AbstractPropertySectio
 
 	@Override
 	public void refresh() {
-		final List<Classifier> elements = selectedBos.boStream(Classifier.class).collect(Collectors.toList());
-		final Classifier classifier = elements.get(0);
-		final Classifier extClassifier = getExtended(classifier);
-		// TODO extClassifier is null when an element is refined???
-		if (extClassifier != null) {
-			if (extClassifier.getName() != null) {
-				curExtendedClassifier.setText(extClassifier == null ? "<None>" : extClassifier.getName());
+		final List<Classifier> classifiers = selectedBos.boStream(Classifier.class).collect(Collectors.toList());
+		extendedClassifier.setText(getExtendedClassifierLabel(classifiers));
+	}
+
+	private static String getExtendedClassifierLabel(final List<Classifier> elements) {
+		final Iterator<Classifier> it = elements.iterator();
+		final Classifier extClassifier = getExtended(it.next());
+		while (it.hasNext()) {
+			if (extClassifier != getExtended(it.next())) {
+				return "<Multiple>";
 			}
-		} else {
-			curExtendedClassifier.setText("<None>");
 		}
+
+		return extClassifier == null ? "<None>" : extClassifier.getName();
 	}
 
 	private static Classifier getExtended(final Classifier classifier) {

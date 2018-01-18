@@ -118,8 +118,6 @@ public class BoHandlerDeleteFeature extends AbstractFeature implements IDeleteFe
 		if(bo instanceof EObject) {
 			final EObject boEObj = (EObject)bo;
 			aadlModService.modify(boEObj, (resource, boEObj1) -> {
-				System.err.println("Modifying : " + boEObj);
-				System.err.println("EObject : " + boEObj1);
 				EcoreUtil.remove(boEObj1);
 				return null;
 			});

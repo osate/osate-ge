@@ -11,8 +11,11 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.layout.FormAttachment;
+import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
@@ -25,11 +28,10 @@ public class SetInitialModePropertySection extends AbstractPropertySection {
 	public static class Filter implements IFilter {
 		@Override
 		public boolean select(final Object toTest) {
-			return PropertySectionUtil.isBocCompatible(toTest, boc -> {
-				if(boc.getBusinessObject() instanceof Mode) {
-					final Mode mode = (Mode) boc.getBusinessObject();
-					final Object parent = boc.getParent().getBusinessObject();
-					return parent instanceof ComponentClassifier && mode.getContainingClassifier() == parent;
+			return PropertySectionUtil.isBoCompatible(toTest, bo -> {
+				if (bo instanceof Mode) {
+					final Mode mode = (Mode) bo;
+					return mode.getContainingClassifier() instanceof ComponentClassifier;
 				}
 
 				return false;
@@ -38,26 +40,31 @@ public class SetInitialModePropertySection extends AbstractPropertySection {
 	}
 
 	private BusinessObjectSelection selectedBos;
-	private Button trueBtn;
-	private Button falseBtn;
+	private Button setInitialModeBtn;
 
 	private final SelectionListener initialModeListener = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(final SelectionEvent e) {
 			final Button btn = (Button) e.widget;
-			final boolean isInitial = (boolean) btn.getData();
 			if (btn.getSelection()) {
 				selectedBos.modify(Mode.class, mode -> {
-					if (isInitial) {
-						final ComponentClassifier cc = (ComponentClassifier) mode.getContainingClassifier();
-						for (final Mode m : cc.getOwnedModes()) {
-							if (m.isInitial()) {
-								m.setInitial(false);
-							}
+					final ComponentClassifier cc = (ComponentClassifier) mode.getContainingClassifier();
+					for (final Mode m : cc.getOwnedModes()) {
+						if (m.isInitial()) {
+							m.setInitial(false);
 						}
 					}
 
-					mode.setInitial(isInitial);
+					mode.setInitial(true);
+				});
+			} else {
+				selectedBos.modify(Mode.class, mode -> {
+					final ComponentClassifier cc = (ComponentClassifier) mode.getContainingClassifier();
+					for (final Mode m : cc.getOwnedModes()) {
+						if (m.isInitial()) {
+							m.setInitial(false);
+						}
+					}
 				});
 			}
 		}
@@ -67,16 +74,14 @@ public class SetInitialModePropertySection extends AbstractPropertySection {
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
+		final Label sectionLabel = PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Initial:");
+		setInitialModeBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, SWT.NONE,
+				initialModeListener, "", SWT.CHECK);
 
-		final Composite initialModesContainer = PropertySectionUtil.createRowLayoutComposite(getWidgetFactory(), composite,
-				STANDARD_LABEL_WIDTH);
-
-		trueBtn = PropertySectionUtil.createButton(getWidgetFactory(), initialModesContainer, true, initialModeListener, "True",
-				SWT.RADIO);
-		falseBtn = PropertySectionUtil.createButton(getWidgetFactory(), initialModesContainer, false, initialModeListener,
-				"False", SWT.RADIO);
-
-		PropertySectionUtil.createSectionLabel(composite, initialModesContainer, getWidgetFactory(), "Initial:");
+		final FormData fd = new FormData();
+		fd.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
+		fd.top = new FormAttachment(sectionLabel, 0, SWT.CENTER);
+		setInitialModeBtn.setLayoutData(fd);
 	}
 
 	@Override
@@ -89,14 +94,16 @@ public class SetInitialModePropertySection extends AbstractPropertySection {
 	public void refresh() {
 		final Set<Mode> modes = selectedBos.boStream(Mode.class).collect(Collectors.toSet());
 		final Iterator<Mode> it = modes.iterator();
-		boolean isInitial = it.next().isInitial();
+		Boolean isInitial = it.next().isInitial();
 		while (it.hasNext()) {
 			if (isInitial != it.next().isInitial()) {
-				System.err.println("neither");
+				isInitial = null;
+				break;
 			}
 		}
 
-		trueBtn.setSelection(isInitial);
-		falseBtn.setSelection(!isInitial);
+		// No selection set if elements are mixed initial and not initial
+		// Set initial selection
+		setInitialModeBtn.setSelection(isInitial != null && isInitial);
 	}
 }
