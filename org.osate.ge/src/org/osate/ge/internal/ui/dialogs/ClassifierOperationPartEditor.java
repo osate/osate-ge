@@ -1,4 +1,4 @@
-package org.osate.ge.internal.ui.dialogs.classifier;
+package org.osate.ge.internal.ui.dialogs;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,14 +25,14 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
-import org.osate.ge.internal.ui.dialogs.ElementLabelProvider;
-import org.osate.ge.internal.ui.dialogs.ElementSelectionDialog;
+import org.osate.aadl2.ComponentCategory;
 import org.osate.ge.internal.util.StringUtil;
+import org.osate.ge.internal.util.classifiers.ClassifierOperationPart;
+import org.osate.ge.internal.util.classifiers.ClassifierOperationPartType;
 
 import com.google.common.base.CaseFormat;
 
-// TODO: Rename
-class ConfiguredClassifierOperationEditor extends Composite {
+class ClassifierOperationPartEditor extends Composite {
 	private ElementLabelProvider elementLabelProvider = new ElementLabelProvider();
 	private final CopyOnWriteArrayList<SelectionListener> selectionListeners = new CopyOnWriteArrayList<>();
 	private final Group operationGroup;
@@ -42,13 +42,14 @@ class ConfiguredClassifierOperationEditor extends Composite {
 	private final Label packageLabel;
 	private final Composite packageValueContainer;
 	private final Label selectedPackageLabel;
-	private final Label nameLabel;
-	private final Text nameField;
-	private final List<Button> operationBtns = new ArrayList<>();
+	private final Label identifierLabel;
+	private final Text identifierField;
+	private final List<Button> operationPartTypeBtns = new ArrayList<>();
 	private final boolean showPackageSelector;
-	Value currentValue = new Value();
+	private final ComponentCategory componentCategory;
+	private final Value currentValue = new Value();
 
-	static interface InnerWidgetModel {
+	static interface Model {
 		Collection<?> getPackageOptions();
 
 		Collection<?> getSelectOptions();
@@ -60,26 +61,29 @@ class ConfiguredClassifierOperationEditor extends Composite {
 		String getSelectMessage();
 	}
 
-	// TODO: Rename?
+	/**
+	 * Private class that stores mutable value.
+	 *
+	 */
 	private class Value {
-		ClassifierOperation operation;
+		ClassifierOperationPartType type;
 		private Object selectedPackage;
 		private Object selectedElement;
+		private String identifier = "";
 
-		public String getName() {
-			return nameField.getText();
-		}
-
-		public ConfiguredClassifierOperation toConfiguredOperation() {
-			return new ConfiguredClassifierOperation(operation, selectedPackage, getName(), selectedElement);
+		public ClassifierOperationPart toConfiguredOperation() {
+			return new ClassifierOperationPart(type, selectedPackage, identifier, componentCategory,
+					selectedElement);
 		}
 	}
 
-	public ConfiguredClassifierOperationEditor(final Composite parent, final EnumSet<ClassifierOperation> allowedOperations,
-			final boolean showPackageSelector,
-			final ConfiguredClassifierOperationEditor.InnerWidgetModel widgetModel) {
+	public ClassifierOperationPartEditor(final Composite parent,
+			final EnumSet<ClassifierOperationPartType> allowedOperations, final boolean showPackageSelector,
+			final ComponentCategory componentCategory,
+			final ClassifierOperationPartEditor.Model widgetModel) {
 		super(parent, SWT.NONE);
 		this.showPackageSelector = showPackageSelector;
+		this.componentCategory = componentCategory;
 		setLayout(GridLayoutFactory.fillDefaults().numColumns(2).create());
 
 		//
@@ -94,20 +98,20 @@ class ConfiguredClassifierOperationEditor extends Composite {
 			public void widgetSelected(final SelectionEvent e) {
 				final Button btn = ((Button) e.widget);
 				if (btn.getSelection()) {
-					currentValue.operation = (ClassifierOperation) btn.getData();
+					currentValue.type = (ClassifierOperationPartType) btn.getData();
 					notifySelectionListeners();
 					updateOperationDetailsVisibility();
 				}
 			}
 		};
 
-		for (final ClassifierOperation operation : ClassifierOperation.values()) {
+		for (final ClassifierOperationPartType operation : ClassifierOperationPartType.values()) {
 			final Button newBtn = new Button(operationGroup, SWT.RADIO);
 			newBtn.setText(StringUtil
 					.camelCaseToUser(CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, operation.toString())));
 			newBtn.setData(operation);
 			newBtn.addSelectionListener(operationSelectedListener);
-			operationBtns.add(newBtn);
+			operationPartTypeBtns.add(newBtn);
 		}
 
 		setAllowedOperations(allowedOperations);
@@ -115,10 +119,8 @@ class ConfiguredClassifierOperationEditor extends Composite {
 		//
 		// Select Existing
 		//
-		// TODO: Need way to select an existing element.
-		// TODO: Only show when existing is selecting
 		existingLabel = new Label(this, SWT.NONE);
-		existingLabel.setText("Existing:"); // TODO: Configurable?
+		existingLabel.setText("Existing:");
 		existingLabel.setLayoutData(GridDataFactory.fillDefaults().align(SWT.BEGINNING, SWT.CENTER).create());
 
 		final RowLayout existingValueContainerLayout = new RowLayout(SWT.HORIZONTAL);
@@ -128,7 +130,7 @@ class ConfiguredClassifierOperationEditor extends Composite {
 		existingValueContainer.setLayoutData(GridDataFactory.fillDefaults().create());
 
 		existingValueLabel = new Label(existingValueContainer, SWT.NONE);
-		existingValueLabel.setText(CreateSelectClassifierDialog.NOT_SELECTED_LABEL);
+		existingValueLabel.setText(ClassifierOperationDialog.NOT_SELECTED_LABEL);
 
 		final Button selectExistingBtn = new Button(existingValueContainer, SWT.NONE);
 		selectExistingBtn.setText("...");
@@ -151,8 +153,6 @@ class ConfiguredClassifierOperationEditor extends Composite {
 		//
 		// Create
 		//
-
-		// TODO: Only show when new is selecting
 		packageLabel = new Label(this, SWT.NONE);
 		packageLabel.setText("Package:");
 		packageLabel.setLayoutData(GridDataFactory.fillDefaults().align(SWT.BEGINNING, SWT.CENTER).create());
@@ -165,7 +165,7 @@ class ConfiguredClassifierOperationEditor extends Composite {
 		.setLayoutData(GridDataFactory.swtDefaults().align(SWT.BEGINNING, SWT.CENTER).create());
 
 		selectedPackageLabel = new Label(packageValueContainer, SWT.NONE);
-		selectedPackageLabel.setText(CreateSelectClassifierDialog.NOT_SELECTED_LABEL);
+		selectedPackageLabel.setText(ClassifierOperationDialog.NOT_SELECTED_LABEL);
 
 		final Button selectPackageBtn = new Button(packageValueContainer, SWT.NONE);
 		selectPackageBtn.setText("...");
@@ -183,17 +183,21 @@ class ConfiguredClassifierOperationEditor extends Composite {
 			}
 		});
 
-		nameLabel = new Label(this, SWT.NONE);
-		nameLabel.setText("Identifier:");
-		nameField = new Text(this, SWT.SINGLE | SWT.BORDER);
-		nameField.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).create());
-		nameField.addModifyListener(e -> notifySelectionListeners());
+		identifierLabel = new Label(this, SWT.NONE);
+		identifierLabel.setText("Identifier:");
+		identifierLabel.setLayoutData(GridDataFactory.fillDefaults().align(SWT.BEGINNING, SWT.CENTER).create());
+		identifierField = new Text(this, SWT.SINGLE | SWT.BORDER);
+		identifierField.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).create());
+		identifierField.addModifyListener(e -> {
+			currentValue.identifier = identifierField.getText();
+			notifySelectionListeners();
+		});
 
 		// Update widget visibility
 		updateOperationDetailsVisibility();
 	}
 
-	public void setAllowedOperations(final EnumSet<ClassifierOperation> allowedOperations) {
+	public void setAllowedOperations(final EnumSet<ClassifierOperationPartType> allowedOperations) {
 		if (allowedOperations == null || allowedOperations.size() == 0) {
 			throw new RuntimeException("allowedOperations must contain at least one operation.");
 		}
@@ -201,18 +205,30 @@ class ConfiguredClassifierOperationEditor extends Composite {
 		setGridChildVisible(operationGroup, allowedOperations.size() > 1);
 
 		if (allowedOperations.size() > 1) {
-			// TODO: Need to have helper?
-			for (final Button operationBtn : operationBtns) {
-				// TODO: Need to exclude?
-				final boolean visible = allowedOperations.contains(operationBtn.getData());
-				operationBtn.setVisible(visible);
-				operationBtn.setLayoutData(RowDataFactory.swtDefaults().exclude(!visible).create());
-				operationBtn.setSelection(operationBtn.getData() == currentValue.operation);
+			ClassifierOperationPartType newType = null;
+
+			// Update the visibility of the operation part type buttons
+			for (final Button typeBtn : operationPartTypeBtns) {
+				final boolean typeIsAllowed = allowedOperations.contains(typeBtn.getData());
+				typeBtn.setVisible(typeIsAllowed);
+				typeBtn.setLayoutData(RowDataFactory.swtDefaults().exclude(!typeIsAllowed).create());
+				if (typeIsAllowed && typeBtn.getData() == currentValue.type) {
+					newType = currentValue.type;
+				}
+			}
+
+			// Update the current operation to reflect the UI
+			setCurrentOperationPartType(newType);
+
+			// Update button selection to reflect the new type
+			for (final Button typeBtn : operationPartTypeBtns) {
+				final boolean isSelectedType = typeBtn.getData() == currentValue.type;
+				typeBtn.setSelection(isSelectedType);
 			}
 
 			operationGroup.requestLayout();
 		} else {
-			currentValue.operation = allowedOperations.iterator().next();
+			setCurrentOperationPartType(allowedOperations.iterator().next());
 		}
 
 		updateOperationDetailsVisibility();
@@ -229,6 +245,14 @@ class ConfiguredClassifierOperationEditor extends Composite {
 		selectionListeners.add(listener);
 	}
 
+	void setCurrentOperationPartType(final ClassifierOperationPartType value) {
+		final boolean opIsChanging = currentValue.type != value;
+		currentValue.type = value;
+		if (opIsChanging) {
+			notifySelectionListeners();
+		}
+	}
+
 	void setSelectedElement(final Object element) {
 		currentValue.selectedElement = element;
 		existingValueLabel.setText(getElementDescription(element));
@@ -243,7 +267,7 @@ class ConfiguredClassifierOperationEditor extends Composite {
 
 	private String getElementDescription(final Object value) {
 		if (value == null) {
-			return CreateSelectClassifierDialog.NOT_SELECTED_LABEL;
+			return ClassifierOperationDialog.NOT_SELECTED_LABEL;
 		}
 
 		final String desc = elementLabelProvider.getText(value);
@@ -273,13 +297,13 @@ class ConfiguredClassifierOperationEditor extends Composite {
 	}
 
 	private void updateOperationDetailsVisibility() {
-		final boolean selectExisting = currentValue.operation == ClassifierOperation.EXISTING;
+		final boolean selectExisting = currentValue.type == ClassifierOperationPartType.EXISTING;
 		setGridChildVisible(existingLabel, selectExisting);
 		setGridChildVisible(existingValueContainer, selectExisting);
 
-		final boolean createNew = ClassifierOperation.isCreate(currentValue.operation);
-		setGridChildVisible(nameLabel, createNew);
-		setGridChildVisible(nameField, createNew);
+		final boolean createNew = ClassifierOperationPartType.isCreate(currentValue.type);
+		setGridChildVisible(identifierLabel, createNew);
+		setGridChildVisible(identifierField, createNew);
 
 		final boolean showPackageWidgets = showPackageSelector && createNew;
 		setGridChildVisible(packageLabel, showPackageWidgets);
@@ -288,7 +312,7 @@ class ConfiguredClassifierOperationEditor extends Composite {
 		requestLayout();
 	}
 
-	public ConfiguredClassifierOperation getConfiguredOperation() {
+	public ClassifierOperationPart getConfiguredOperation() {
 		return currentValue.toConfiguredOperation();
 	}
 }
