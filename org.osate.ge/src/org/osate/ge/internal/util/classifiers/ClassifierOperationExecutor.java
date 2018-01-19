@@ -1,4 +1,4 @@
-package org.osate.ge.internal.util;
+package org.osate.ge.internal.util.classifiers;
 
 import java.util.Objects;
 
@@ -17,8 +17,9 @@ import org.osate.aadl2.PackageSection;
 import org.osate.aadl2.Realization;
 import org.osate.aadl2.TypeExtension;
 import org.osate.ge.internal.services.NamingService;
-import org.osate.ge.internal.util.classifiers.ClassifierOperation;
-import org.osate.ge.internal.util.classifiers.ClassifierOperationPart;
+import org.osate.ge.internal.util.AadlClassifierUtil;
+import org.osate.ge.internal.util.AadlImportsUtil;
+import org.osate.ge.internal.util.AadlNameUtil;
 
 public class ClassifierOperationExecutor {
 	private final ClassifierCreationHelper classifierCreationHelper;
