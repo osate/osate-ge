@@ -161,7 +161,7 @@ public class DefaultCreateSelectClassifierDialogModel implements ClassifierOpera
 			}
 		} else if (op.getType() == ClassifierOperationPartType.EXISTING) {
 			// Check that the classifier can be resolved.
-			if (classifierCreationHelper.getClassifier(op.getSelectedClassifier()) == null) {
+			if (classifierCreationHelper.getResolvedClassifier(op.getSelectedClassifier()) == null) {
 				return "Select a classifier.";
 			}
 		} else if (op.getType() == null) {

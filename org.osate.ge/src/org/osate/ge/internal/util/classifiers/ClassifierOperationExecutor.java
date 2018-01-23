@@ -57,7 +57,7 @@ public class ClassifierOperationExecutor {
 
 		switch (part.getType()) {
 		case EXISTING:
-			final Classifier existingClassifier = classifierCreationHelper.getClassifier(part.getSelectedClassifier());
+			final Classifier existingClassifier = classifierCreationHelper.getResolvedClassifier(part.getSelectedClassifier());
 			return () -> existingClassifier;
 
 		case NEW_COMPONENT_IMPLEMENTATION:
@@ -65,7 +65,7 @@ public class ClassifierOperationExecutor {
 		case NEW_FEATURE_GROUP_TYPE:
 			final EClass creationEClass = getCreationEClass(part);
 
-			final PackageSection section = classifierCreationHelper.getPublicSection(part.getSelectedPackage());
+			final PackageSection section = classifierCreationHelper.getResolvedPublicSection(part.getSelectedPackage());
 
 			class CreateClassifierStepHandler implements CreateOperation.CreateStepHandler<PackageSection> {
 				public CreateStepResult result;

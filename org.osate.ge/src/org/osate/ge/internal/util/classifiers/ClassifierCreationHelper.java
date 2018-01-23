@@ -84,8 +84,8 @@ public class ClassifierCreationHelper {
 				typePackage = getResolvedPackage(basePart.getSelectedPackage());
 				baseTypeName = basePart.getIdentifier();
 			} else if (basePart.getType() == ClassifierOperationPartType.EXISTING) {
-				final Classifier classifier = getClassifier(basePart.getSelectedClassifier());
-				final ComponentType ct = getComponentType(classifier);
+				final Classifier classifier = getResolvedClassifier(basePart.getSelectedClassifier());
+				final ComponentType ct = getResolvedComponentType(classifier);
 				typePackage = getPackage(ct);
 				baseTypeName = ct.getName();
 			} else {
@@ -119,7 +119,7 @@ public class ClassifierCreationHelper {
 		return ns.getOwner() instanceof AadlPackage ? (AadlPackage) ns.getOwner() : null;
 	}
 
-	private ComponentType getComponentType(final Classifier c) {
+	private ComponentType getResolvedComponentType(final Classifier c) {
 		if (c instanceof ComponentType) {
 			return (ComponentType) c;
 		} else if (c instanceof ComponentImplementation) {
@@ -134,12 +134,12 @@ public class ClassifierCreationHelper {
 		return ProxyUtil.resolveOrNull(value, AadlPackage.class, resourceSet);
 	}
 
-	public PublicPackageSection getPublicSection(final Object pkgValue) {
+	public PublicPackageSection getResolvedPublicSection(final Object pkgValue) {
 		final AadlPackage pkg = getResolvedPackage(pkgValue);
 		return pkg == null ? null : pkg.getPublicSection();
 	}
 
-	public Classifier getClassifier(final Object value) {
+	public Classifier getResolvedClassifier(final Object value) {
 		return ProxyUtil.resolveOrNull(value, Classifier.class, resourceSet);
 	}
 }
