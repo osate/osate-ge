@@ -2,6 +2,7 @@ package org.osate.ge.internal.ui.properties;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.Adapters;
@@ -59,41 +60,45 @@ public class ChangeFeatureTypePropertySection extends AbstractPropertySection {
 
 	private BusinessObjectSelection selectedBos;
 	private ComboViewer comboViewer;
-	private EClass selectedEClass = null;
+	private EClass selectedFeatureType = null;
 
 	@Override
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite container = getWidgetFactory().createFlatFormComposite(parent);
-		comboViewer = PropertySectionUtil.createComboViewer(container, STANDARD_LABEL_WIDTH, featureTypeSelectionListener, featureTypeLabelProvider);
+		comboViewer = PropertySectionUtil.createComboViewer(container, STANDARD_LABEL_WIDTH,
+				featureTypeSelectionListener, featureTypeLabelProvider);
 		PropertySectionUtil.createSectionLabel(container, getWidgetFactory(), "Type:");
 	}
 
 	private final SelectionAdapter featureTypeSelectionListener = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(final SelectionEvent e) {
-			selectedBos.modify(NamedElement.class, feature -> {
-				final Classifier featureOwner = feature.getContainingClassifier();
-				final NamedElement replacementFeature = AadlFeatureUtil.createFeature(featureOwner,
-						(EClass) comboViewer.getStructuredSelection().getFirstElement());
+			if (selectedFeatureType != comboViewer.getStructuredSelection().getFirstElement()) {
+				// combo.get
+				selectedBos.modify(NamedElement.class, feature -> {
+					final Classifier featureOwner = feature.getContainingClassifier();
+					final NamedElement replacementFeature = AadlFeatureUtil.createFeature(featureOwner,
+							(EClass) comboViewer.getStructuredSelection().getFirstElement());
 
-				// Copy structural feature values to the replacement object.
-				PropertySectionUtil.transferStructuralFeatureValues(feature, replacementFeature);
+					// Copy structural feature values to the replacement object.
+					PropertySectionUtil.transferStructuralFeatureValues(feature, replacementFeature);
 
-				// Handle copying the data feature classifier
-				if (replacementFeature instanceof DirectedFeature) {
-					((DirectedFeature) replacementFeature).setIn(true);
-					if (replacementFeature instanceof EventDataPort) {
-						((EventDataPort) replacementFeature)
-						.setDataFeatureClassifier(getDataFeatureClassifier(feature));
-					} else if (replacementFeature instanceof DataPort) {
-						((DataPort) replacementFeature).setDataFeatureClassifier(getDataFeatureClassifier(feature));
+// Handle copying the data feature classifier
+					if (replacementFeature instanceof DirectedFeature) {
+						((DirectedFeature) replacementFeature).setIn(true);
+						if (replacementFeature instanceof EventDataPort) {
+							((EventDataPort) replacementFeature)
+									.setDataFeatureClassifier(getDataFeatureClassifier(feature));
+						} else if (replacementFeature instanceof DataPort) {
+							((DataPort) replacementFeature).setDataFeatureClassifier(getDataFeatureClassifier(feature));
+						}
 					}
-				}
 
-				// Remove the old object
-				EcoreUtil.remove(feature);
-			});
+// Remove the old object
+					EcoreUtil.remove(feature);
+				});
+			}
 		}
 	};
 
@@ -105,7 +110,7 @@ public class ChangeFeatureTypePropertySection extends AbstractPropertySection {
 		}
 	};
 
-	private DataSubcomponentType getDataFeatureClassifier(final NamedElement feature) {
+	private static DataSubcomponentType getDataFeatureClassifier(final NamedElement feature) {
 		if (feature instanceof EventDataPort) {
 			return ((EventDataPort) feature).getDataFeatureClassifier();
 		} else if (feature instanceof DataPort) {
@@ -123,19 +128,20 @@ public class ChangeFeatureTypePropertySection extends AbstractPropertySection {
 
 	@Override
 	public void refresh() {
-		final Set<NamedElement> features = selectedBos.boStream(NamedElement.class).collect(Collectors.toSet());
-		// Initial combo selected value
-		selectedEClass = null;
+		final Set<NamedElement> selectedFeatures = selectedBos.boStream(NamedElement.class).collect(Collectors.toSet());
+		final Set<EClass> featureTypeOptions = new HashSet<>();
+		// Add to options
+		final Consumer<EClass> addFeatureTypeOption = (type) -> featureTypeOptions.add(type);
 
-		final Set<EClass> availableEClasses = new HashSet<>();
-		// Populate available eclass options for comboviewer and get selected eclass
-		selectedEClass = PropertySectionUtil.getSelectedEClassAndPopulateOptionsList(features, AadlFeatureUtil.getFeatureTypes(),
-				(ne, eClass) -> isValidFeatureType(ne, eClass), availableEClasses);
+// Get comboviewer selected value and populate available type options for comboviewer
+		selectedFeatureType = PropertySectionUtil.getTypeOptionsInformation(selectedFeatures,
+				AadlFeatureUtil.getFeatureTypes(), (feature, type) -> isValidFeatureType(feature, type),
+				addFeatureTypeOption);
 
-		comboViewer.setInput(availableEClasses);
-		// Set comboviewer selection
-		if (selectedEClass != null) {
-			comboViewer.setSelection(new StructuredSelection(selectedEClass));
+		comboViewer.setInput(featureTypeOptions);
+// Set comboviewer selection
+		if (selectedFeatureType != null) {
+			comboViewer.setSelection(new StructuredSelection(selectedFeatureType));
 		}
 	}
 

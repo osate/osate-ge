@@ -93,6 +93,7 @@ public class RefineElementPropertySection extends AbstractPropertySection {
 		public void widgetSelected(final SelectionEvent e) {
 			final Button btn = (Button) e.widget;
 			if (!btn.getSelection()) {
+				// Remove refinement
 				selectedBos.modify(NamedElement.class, ne -> {
 					final RefinableElement re = (RefinableElement) ne;
 					if (re.getRefinedElement() != null) {
@@ -100,6 +101,7 @@ public class RefineElementPropertySection extends AbstractPropertySection {
 					}
 				});
 			} else {
+				// Refine selected elements
 				selectedBos.modify(boc -> boc.getParent().getBusinessObject(), (container, boc) -> {
 					final RefinableElement re = (RefinableElement) boc.getBusinessObject();
 					if (re.getRefinedElement() == null) {
@@ -150,20 +152,26 @@ public class RefineElementPropertySection extends AbstractPropertySection {
 	public void refresh() {
 		final Set<RefinableElement> refinableElements = selectedBos.boStream(RefinableElement.class)
 				.collect(Collectors.toSet());
+		// Get refined state of selected elements
+		final Boolean isRefined = isRefined(refinableElements);
+		// Grayed state set if elements are mixed refined and not refined
+		refineBtn.setGrayed(isRefined == null);
+		// Set initial selection
+		refineBtn.setSelection(isRefined == Boolean.TRUE);
+	}
+
+	private static Boolean isRefined(final Set<RefinableElement> refinableElements) {
 		final Iterator<RefinableElement> it = refinableElements.iterator();
 		// Initial value of buttons
-		Boolean isRefined = it.next().getRefinedElement() != null;
+		final Boolean isRefined = it.next().getRefinedElement() != null;
 
 		while (it.hasNext()) {
 			// Check if all elements are refined or not refined
 			if (isRefined != (it.next().getRefinedElement() != null)) {
-				isRefined = null;
-				break;
+				return null;
 			}
 		}
 
-		// No selection set if elements are mixed refined and not refined
-		// Set initial selection
-		refineBtn.setSelection(isRefined != null && isRefined);
+		return isRefined;
 	}
 }

@@ -49,10 +49,10 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 	}
 
 	private BusinessObjectSelection selectedBos;
-	private int selectedIndex = 0; // Default table index and user selected index
 	private TableViewer tableViewer;
 	private Button upBtn;
 	private Button downBtn;
+	private int selectedIndex = 0; // Default table index and user selected index
 
 	@Override
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
@@ -66,9 +66,8 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 		fd.width = 325;
 		tableComposite.setLayoutData(fd);
 
-		tableViewer = new TableViewer(tableComposite,
-				SWT.BORDER | SWT.NO_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.HIDE_SELECTION);
-		tableViewer.setContentProvider(new SubprogramCallSequenceContentProvider());
+		tableViewer = createTableViewer(tableComposite);
+
 		// Drag and drop support for changing call sequence
 		final DragAndDropSupport dNDSupport = new DragAndDropSupport(tableViewer.getTable(), executeChangeOrder);
 		final int operations = dNDSupport.getDragAndDropOperations();
@@ -89,12 +88,12 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 
 		final TableViewerColumn subprogramCallColumn = createTableViewerColumn("Subprogram Call",
 				new CellLabelProvider() {
-					@Override
-					public void update(final ViewerCell cell) {
-						final DragAndDropElement element = (DragAndDropElement) cell.getElement();
-						cell.setText(element.getName());
-					}
-				});
+			@Override
+			public void update(final ViewerCell cell) {
+				final DragAndDropElement element = (DragAndDropElement) cell.getElement();
+				cell.setText(element.getName());
+			}
+		});
 
 		tableComposite.setLayout(createTableColumnLayout(orderColumn.getColumn(), subprogramCallColumn.getColumn()));
 
@@ -124,105 +123,115 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Call Order:");
 	}
 
+	private static TableViewer createTableViewer(final Composite tableComposite) {
+		final TableViewer tableViewer = new TableViewer(tableComposite,
+				SWT.NO_SCROLL | SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER | SWT.FULL_SELECTION | SWT.HIDE_SELECTION);
+		tableViewer.setContentProvider(new SubprogramCallSequenceContentProvider());
+		tableViewer.getTable().setLinesVisible(true);
+		tableViewer.getTable().setHeaderVisible(true);
+
+		return tableViewer;
+	}
+
 	private TableViewerColumn createTableViewerColumn(final String header, final CellLabelProvider cellLabelProvider) {
 		return PropertySectionUtil.createTableColumnViewer(tableViewer, header, SWT.RESIZE, cellLabelProvider);
 	}
 
 	private ExecuteOrderChange<Integer, Integer, DragAndDropElement> executeChangeOrder = (newIndex, curIndex,
 			dNDElement) -> {
-		if (newIndex != curIndex) {
-			selectedIndex = newIndex;
-			selectedBos.modify(SubprogramCallSequence.class, cs -> {
-				final SubprogramCall sc = cs.getOwnedSubprogramCalls().get(dNDElement.getIndex() - 1);
-				cs.getOwnedSubprogramCalls().move(newIndex, sc);
-			});
-		}
-	};
-
-	private static TableColumnLayout createTableColumnLayout(final TableColumn orderColumn,
-			final TableColumn subprogramCallColumn) {
-		final TableColumnLayout tcl = new TableColumnLayout();
-		tcl.setColumnData(orderColumn, new ColumnWeightData(15, 30));
-		tcl.setColumnData(subprogramCallColumn, new ColumnWeightData(85, 50));
-		return tcl;
-	}
-
-	private class SubprogramCallSequenceContentProvider implements IStructuredContentProvider {
-		@Override
-		public Object[] getElements(final Object inputElement) {
-			@SuppressWarnings("unchecked")
-			final EList<SubprogramCall> subprogramCalls = (EList<SubprogramCall>) inputElement;
-			final int[] mutableIndex = { 0 };
-			return subprogramCalls.stream().map(sc -> {
-				mutableIndex[0] = ++mutableIndex[0];
-				return new DragAndDropElement(sc.getName(), mutableIndex[0]);
-			}).toArray();
+				if (newIndex != curIndex) {
+					selectedIndex = newIndex;
+					selectedBos.modify(SubprogramCallSequence.class, cs -> {
+						final SubprogramCall sc = cs.getOwnedSubprogramCalls().get(dNDElement.getIndex() - 1);
+						cs.getOwnedSubprogramCalls().move(newIndex, sc);
+					});
 				}
-	}
+			};
+
+			private static TableColumnLayout createTableColumnLayout(final TableColumn orderColumn,
+					final TableColumn subprogramCallColumn) {
+				final TableColumnLayout tcl = new TableColumnLayout();
+				tcl.setColumnData(orderColumn, new ColumnWeightData(15, 30));
+				tcl.setColumnData(subprogramCallColumn, new ColumnWeightData(85, 50));
+				return tcl;
+			}
+
+			private static class SubprogramCallSequenceContentProvider implements IStructuredContentProvider {
+				@Override
+				public Object[] getElements(final Object inputElement) {
+					@SuppressWarnings("unchecked")
+					final EList<SubprogramCall> subprogramCalls = (EList<SubprogramCall>) inputElement;
+					final int[] mutableIndex = { 0 };
+					return subprogramCalls.stream().map(sc -> {
+						mutableIndex[0] = ++mutableIndex[0];
+						return new DragAndDropElement(sc.getName(), mutableIndex[0]);
+					}).toArray();
+				}
+			}
 
 // Editing for order column
-	private class OptionEditingSupport extends EditingSupport {
-		private TextCellEditor textCellEditor;
+			private class OptionEditingSupport extends EditingSupport {
+				private TextCellEditor textCellEditor;
 
-		public OptionEditingSupport(final ColumnViewer viewer) {
-			super(viewer);
-			textCellEditor = new TextCellEditor((Composite) viewer.getControl());
-			textCellEditor.setValidator(value -> {
-				try {
-					Integer.parseInt((String) value);
-				} catch (final NumberFormatException e) {
-					return "Not a valid integer value";
+				public OptionEditingSupport(final ColumnViewer viewer) {
+					super(viewer);
+					textCellEditor = new TextCellEditor((Composite) viewer.getControl());
+					textCellEditor.setValidator(value -> {
+						try {
+							Integer.parseInt((String) value);
+						} catch (final NumberFormatException e) {
+							return "Not a valid integer value";
 						}
-				return null;
-			});
-		}
+						return null;
+					});
+				}
 
-		@Override
-		protected CellEditor getCellEditor(final Object element) {
-			return textCellEditor;
-		}
+				@Override
+				protected CellEditor getCellEditor(final Object element) {
+					return textCellEditor;
+				}
 
-		@Override
-		protected boolean canEdit(final Object element) {
-			return true;
-		}
+				@Override
+				protected boolean canEdit(final Object element) {
+					return true;
+				}
 
-		@Override
-		protected Object getValue(final Object element) {
-			final DragAndDropElement dNDElement = (DragAndDropElement) element;
-			return Integer.toString(dNDElement.getIndex());
-		}
+				@Override
+				protected Object getValue(final Object element) {
+					final DragAndDropElement dNDElement = (DragAndDropElement) element;
+					return Integer.toString(dNDElement.getIndex());
+				}
 
-		@Override
-		protected void setValue(final Object element, final Object value) {
-			final DragAndDropElement dNDElement = (DragAndDropElement) element;
-			final int newIndex = getNewIndex(tableViewer.getTable().getItemCount(), Integer.parseInt((String) value));
-			executeChangeOrder.apply(newIndex, dNDElement.getIndex() - 1, dNDElement);
-		}
-	}
+				@Override
+				protected void setValue(final Object element, final Object value) {
+					final DragAndDropElement dNDElement = (DragAndDropElement) element;
+					final int newIndex = getNewIndex(tableViewer.getTable().getItemCount(), Integer.parseInt((String) value));
+					executeChangeOrder.apply(newIndex, dNDElement.getIndex() - 1, dNDElement);
+				}
+			}
 
-	private static int getNewIndex(final int totalSize, final int newIndex) {
-		if (newIndex < 1) {
-			return 0;
-		}
+			private static int getNewIndex(final int totalSize, final int newIndex) {
+				if (newIndex < 1) {
+					return 0;
+				}
 
-		return (newIndex > totalSize ? totalSize : newIndex) - 1;
-	}
+				return (newIndex > totalSize ? totalSize : newIndex) - 1;
+			}
 
-	@Override
-	public void setInput(final IWorkbenchPart part, final ISelection selection) {
-		super.setInput(part, selection);
-		selectedBos = Adapters.adapt(selection, BusinessObjectSelection.class);
-	}
+			@Override
+			public void setInput(final IWorkbenchPart part, final ISelection selection) {
+				super.setInput(part, selection);
+				selectedBos = Adapters.adapt(selection, BusinessObjectSelection.class);
+			}
 
-	@Override
-	public void refresh() {
-		final List<SubprogramCallSequence> subprogramCallSeqs = selectedBos.boStream(SubprogramCallSequence.class)
-				.collect(Collectors.toList());
-		// Do not allow editing when multiple call sequences are selected
-		setControlsEnabled(subprogramCallSeqs.size() == 1);
-		final EList<SubprogramCall> subprogramCalls = subprogramCallSeqs.get(0).getOwnedSubprogramCalls();
-		tableViewer.setInput(subprogramCalls);
+			@Override
+			public void refresh() {
+				final List<SubprogramCallSequence> subprogramCallSeqs = selectedBos.boStream(SubprogramCallSequence.class)
+						.collect(Collectors.toList());
+				// Do not allow editing when multiple call sequences are selected
+				setControlsEnabled(subprogramCallSeqs.size() == 1);
+				final EList<SubprogramCall> subprogramCalls = subprogramCallSeqs.get(0).getOwnedSubprogramCalls();
+				tableViewer.setInput(subprogramCalls);
 // Default table selection and keep selection after modification
 				tableViewer.getTable().setSelection(selectedIndex);
 			}

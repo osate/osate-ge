@@ -11,8 +11,11 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.layout.FormAttachment;
+import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
@@ -39,17 +42,14 @@ public class SetDerivedModesPropertySection extends AbstractPropertySection {
 	}
 
 	private BusinessObjectSelection selectedBos;
-	private Button trueBtn;
-	private Button falseBtn;
+	private Button derivedModesBtn;
 
 	private final SelectionListener derivedListener = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(final SelectionEvent e) {
 			final Button btn = (Button) e.widget;
-			if (btn.getSelection()) {
-				final boolean isDerived = (boolean) btn.getData();
-				selectedBos.modify(ComponentType.class, ct -> ct.setDerivedModes(isDerived));
-			}
+			final boolean isDerived = btn.getSelection();
+			selectedBos.modify(ComponentType.class, ct -> ct.setDerivedModes(isDerived));
 		}
 	};
 
@@ -57,16 +57,16 @@ public class SetDerivedModesPropertySection extends AbstractPropertySection {
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
+		final Label sectionLabel = PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(),
+				"Derived\nModes:");
 
-		final Composite derivedContainer = PropertySectionUtil.createRowLayoutComposite(getWidgetFactory(), composite,
-				STANDARD_LABEL_WIDTH);
+		derivedModesBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, SWT.NONE, derivedListener, "",
+				SWT.CHECK);
 
-		trueBtn = PropertySectionUtil.createButton(getWidgetFactory(), derivedContainer, true,
-				derivedListener, "True", SWT.RADIO);
-		falseBtn = PropertySectionUtil.createButton(getWidgetFactory(), derivedContainer, false,
-				derivedListener, "False", SWT.RADIO);
-
-		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Derived Modes:");
+		final FormData fd = new FormData();
+		fd.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
+		fd.bottom = new FormAttachment(sectionLabel, 0, SWT.BOTTOM);
+		derivedModesBtn.setLayoutData(fd);
 	}
 
 	@Override
@@ -78,24 +78,25 @@ public class SetDerivedModesPropertySection extends AbstractPropertySection {
 	@Override
 	public void refresh() {
 		final Set<ComponentType> componentTypes = selectedBos.boStream(ComponentType.class).collect(Collectors.toSet());
+		// Get derived state of selected elements
+		final Boolean isDerived = isDerived(componentTypes);
+		// Grayed state set if elements are mixed derived and not not derived
+		derivedModesBtn.setGrayed(isDerived == null);
+		// Set initial selection
+		derivedModesBtn.setSelection(isDerived == Boolean.TRUE);
+	}
+
+	private static Boolean isDerived(final Set<ComponentType> componentTypes) {
 		final Iterator<ComponentType> it = componentTypes.iterator();
 		// Initial value of buttons
-		Boolean isDerived = it.next().isDerivedModes();
+		final Boolean isDerived = it.next().isDerivedModes();
 		while (it.hasNext()) {
 			// Check if all elements are derived or not derived
 			if (isDerived != (it.next().isDerivedModes())) {
-				isDerived = null;
-				break;
+				return null;
 			}
 		}
 
-		// No selection set if elements are mixed derived and not not derived
-		if(isDerived != null) {
-			trueBtn.setSelection(isDerived);
-			falseBtn.setSelection(!isDerived);
-		} else {
-			trueBtn.setSelection(false);
-			falseBtn.setSelection(false);
-		}
+		return isDerived;
 	}
 }

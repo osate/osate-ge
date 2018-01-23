@@ -108,27 +108,26 @@ public class DirectionalFeaturePropertySection extends AbstractPropertySection {
 	public void refresh() {
 		final Set<DirectedFeature> selectedDirections = selectedBos.boStream(DirectedFeature.class)
 				.collect(Collectors.toSet());
+		// Get initial button value
+		final DirectionType directionType = getDirectionType(selectedDirections);
+		// Set selection
+		inBtn.setSelection(directionType == DirectionType.IN);
+		outBtn.setSelection(directionType == DirectionType.OUT);
+		inOutBtn.setSelection(directionType == DirectionType.IN_OUT);
+	}
 
+	private static DirectionType getDirectionType(final Set<DirectedFeature> selectedDirections) {
 		final Iterator<DirectedFeature> it = selectedDirections.iterator();
 		// Initial value of buttons
-		DirectionType directionType = it.next().getDirection();
+		final DirectionType directionType = it.next().getDirection();
 
 		while (it.hasNext()) {
 			// Check if all elements are of same direction type
 			if (directionType != it.next().getDirection()) {
-				directionType = null;
-				break;
+				return null;
 			}
 		}
 
-		if (directionType != null) {
-			inBtn.setSelection(directionType == DirectionType.IN);
-			outBtn.setSelection(directionType == DirectionType.OUT);
-			inOutBtn.setSelection(directionType == DirectionType.IN_OUT);
-		} else {
-			inBtn.setSelection(false);
-			outBtn.setSelection(false);
-			inOutBtn.setSelection(false);
-		}
+		return directionType;
 	}
 }

@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import org.eclipse.core.runtime.Adapters;
@@ -101,6 +103,7 @@ public class PropertySectionUtil {
 		return comboViewer;
 	}
 
+	// Create property section label
 	public static Label createSectionLabel(final Composite container,
 			final TabbedPropertySheetWidgetFactory widgetFactory, final String lblTxt) {
 		final Label label = widgetFactory.createLabel(container, lblTxt);
@@ -138,42 +141,37 @@ public class PropertySectionUtil {
 		return tableViewerColumn;
 	}
 
-	public interface Function<T, V> {
-		public boolean apply(NamedElement sc, EClass eClass);
-	}
-
-	public static EClass getSelectedEClassAndPopulateOptionsList(final Set<NamedElement> selectedElements,
-			final Collection<EClass> allEClasses, final Function<NamedElement, EClass> isValidEClassOption,
-			final Set<EClass> availableEClasses) {
-		EClass selectedEClass = null;
-
-		for (final EClass eClass : allEClasses) {
+	// Returns initial value for type options and populates type options
+	public static EClass getTypeOptionsInformation(final Set<NamedElement> selectedElements,
+			final Collection<EClass> allTypes, final BiFunction<NamedElement, EClass, Boolean> isValidTypeOption,
+			final Consumer<EClass> addTypeOption) {
+		EClass selectedType = null;
+		for (final EClass type : allTypes) {
 			final Iterator<NamedElement> it = selectedElements.iterator();
 			NamedElement ne = it.next();
-			// Only add eligible eclass types to the combo
-			boolean addEClass = isValidEClassOption.apply(ne, eClass);
-			if (addEClass) {
-				// Set comboviewer selection
-				selectedEClass = ne.eClass();
+			// Initial combo selected value
+			selectedType = ne.eClass();
 
+			// Only add eligible types to the combo
+			boolean addEClass = isValidTypeOption.apply(ne, type);
+			if (addEClass) {
 				// Check the rest of selected elements if necessary
 				while (addEClass && it.hasNext()) {
 					ne = it.next();
-					// If selected elements are different types, comboviewer selection will be empty
-					if (selectedEClass != ne.eClass()) {
-						selectedEClass = null;
+					// Check if all selected elements are the same EClass
+					if (selectedType != ne.eClass()) {
+						selectedType = null;
 					}
-
-					addEClass = isValidEClassOption.apply(ne, eClass);
+					addEClass = isValidTypeOption.apply(ne, type);
 				}
 
 				if (addEClass) {
-					availableEClasses.add(eClass);
+					addTypeOption.accept(type);
 				}
 			}
 		}
 
-		return selectedEClass;
+		return selectedType;
 	}
 
 	public static class DragAndDropSupport {
@@ -341,6 +339,6 @@ public class PropertySectionUtil {
 	}
 
 	public interface ExecuteOrderChange<T, V, U> {
-		public void apply(Integer newIndex, Integer curIndex, DragAndDropElement element);
+		public void apply(final Integer newIndex, final Integer curIndex, final DragAndDropElement element);
 	}
 }

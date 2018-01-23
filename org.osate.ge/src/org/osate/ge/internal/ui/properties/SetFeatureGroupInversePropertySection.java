@@ -1,5 +1,6 @@
 package org.osate.ge.internal.ui.properties;
 
+import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -10,8 +11,11 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.layout.FormAttachment;
+import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
@@ -42,34 +46,30 @@ public class SetFeatureGroupInversePropertySection extends AbstractPropertySecti
 	}
 
 	private BusinessObjectSelection selectedBos;
-	private Button trueBtn;
-	private Button falseBtn;
+	private Button inverseBtn;
 
 	private final SelectionListener inverseSelectionListener = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(final SelectionEvent e) {
 			final Button btn = (Button) e.widget;
-			if (btn.getSelection()) {
-				final boolean isInverse = (boolean) e.widget.getData();
-				selectedBos.modify(FeatureGroup.class, fg -> fg.setInverse(isInverse));
-			}
+			final boolean isInverse = btn.getSelection();
+			selectedBos.modify(FeatureGroup.class, fg -> fg.setInverse(isInverse));
 		}
 	};
 
 	@Override
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
-		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
+		final Composite container = getWidgetFactory().createFlatFormComposite(parent);
+		final Label sectionLabel = PropertySectionUtil.createSectionLabel(container, getWidgetFactory(), "Inverse:");
 
-		final Composite inverseContainer = PropertySectionUtil.createRowLayoutComposite(getWidgetFactory(), composite,
-				STANDARD_LABEL_WIDTH);
+		inverseBtn = PropertySectionUtil.createButton(getWidgetFactory(), container, SWT.NONE, inverseSelectionListener,
+				"", SWT.CHECK);
 
-		trueBtn = PropertySectionUtil.createButton(getWidgetFactory(), inverseContainer, true,
-				inverseSelectionListener, "True", SWT.RADIO);
-		falseBtn = PropertySectionUtil.createButton(getWidgetFactory(), inverseContainer, false,
-				inverseSelectionListener, "False", SWT.RADIO);
-
-		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Inverse:");
+		final FormData fd = new FormData();
+		fd.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
+		fd.top = new FormAttachment(sectionLabel, 0, SWT.CENTER);
+		inverseBtn.setLayoutData(fd);
 	}
 
 	@Override
@@ -80,10 +80,27 @@ public class SetFeatureGroupInversePropertySection extends AbstractPropertySecti
 
 	@Override
 	public void refresh() {
-		final Set<Boolean> selectedDirections = selectedBos.boStream(FeatureGroup.class).map(fg -> fg.isInverse())
+		final Set<FeatureGroup> selectedFeatureGroups = selectedBos.boStream(FeatureGroup.class)
 				.collect(Collectors.toSet());
+		// Get refined state of selected elements
+		final Boolean isInverse = isInverse(selectedFeatureGroups);
+		// Grayed state set if elements are mixed inverse and not inverse
+		inverseBtn.setGrayed(isInverse == null);
+		// Set initial selection
+		inverseBtn.setSelection(isInverse == Boolean.TRUE);
+	}
 
-		trueBtn.setSelection(selectedDirections.contains(true));
-		falseBtn.setSelection(selectedDirections.contains(false));
+	private static Boolean isInverse(final Set<FeatureGroup> selectedFeatureGroups) {
+		final Iterator<FeatureGroup> it = selectedFeatureGroups.iterator();
+		// Initial value of buttons
+		final Boolean isInverse = it.next().isInverse();
+		while (it.hasNext()) {
+			// Check if all elements are inverse or not inverse
+			if (isInverse != it.next().isInverse()) {
+				return null;
+			}
+		}
+
+		return isInverse;
 	}
 }

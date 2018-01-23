@@ -80,10 +80,7 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 		fd.height = 140;
 		fd.width = 250;
 		tableComposite.setLayoutData(fd);
-		tableViewer = new TableViewer(tableComposite, SWT.V_SCROLL | SWT.NO_SCROLL | SWT.BORDER | SWT.FULL_SELECTION);
-		tableViewer.setContentProvider(new ArrayContentProvider());
-		tableViewer.getTable().setLinesVisible(true);
-		tableViewer.getTable().setHeaderVisible(true);
+		tableViewer = createTableViewer(tableComposite);
 
 		// Drag and drop support for changing call sequence
 		final DragAndDropSupport dNDSupport = new DragAndDropSupport(tableViewer.getTable(), executeChangeOrder);
@@ -154,6 +151,17 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Dimensions:");
 	}
 
+	private static TableViewer createTableViewer(final Composite tableComposite) {
+		final TableViewer tableViewer = new TableViewer(tableComposite,
+				SWT.NO_SCROLL | SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER | SWT.FULL_SELECTION);
+		tableViewer.setContentProvider(new ArrayContentProvider());
+		tableViewer.getTable().setLinesVisible(true);
+		tableViewer.getTable().setHeaderVisible(true);
+
+		return tableViewer;
+	}
+
+// Move call element
 	private final ExecuteOrderChange<Integer, Integer, DragAndDropElement> executeChangeOrder = (newIndex, curIndex,
 			dNDElement) -> {
 				if (newIndex != curIndex) {
@@ -237,7 +245,7 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 				return tcl;
 			}
 
-			// Prompt user
+// Prompt user
 			private static boolean modifiedArrayDimension(final ArrayDimension dim, final IProject project) {
 				// Show the editor dimension dialog. If the user selects OK, it will modify the passed in object.
 				final EditDimensionDialog dlg = new EditDimensionDialog(Display.getCurrent().getActiveShell(), project, dim);
@@ -306,7 +314,6 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 
 			private String getLabel(final ArrayDimension ad) {
 				final ArraySize dimSize = ad.getSize();
-
 				final String txt;
 				if (dimSize == null) {
 					txt = emptyString;

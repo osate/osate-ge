@@ -67,8 +67,8 @@ public class SetModeTransitionTriggerPropertySection extends AbstractPropertySec
 		final Composite tableComposite = getWidgetFactory().createComposite(composite);
 		fd = new FormData();
 		fd.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
-		fd.height = 100;
-		fd.width = 200;
+		fd.height = 150;
+		fd.width = 325;
 		tableComposite.setLayoutData(fd);
 
 		tableViewer = new TableViewer(tableComposite, SWT.BORDER | SWT.HIDE_SELECTION);

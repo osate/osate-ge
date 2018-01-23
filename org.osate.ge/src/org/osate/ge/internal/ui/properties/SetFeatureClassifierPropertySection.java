@@ -35,6 +35,7 @@ import org.eclipse.xtext.resource.IEObjectDescription;
 import org.osate.aadl2.Aadl2Factory;
 import org.osate.aadl2.Aadl2Package;
 import org.osate.aadl2.AadlPackage;
+import org.osate.aadl2.BusFeatureClassifier;
 import org.osate.aadl2.BusSubcomponentType;
 import org.osate.aadl2.Classifier;
 import org.osate.aadl2.ComponentClassifier;
@@ -75,6 +76,8 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 		final Aadl2Package p = Aadl2Factory.eINSTANCE.getAadl2Package();
 		featureTypeToClassifierSetterMap.put(p.getBusAccess(), new FeatureClassifierSetterInfo(
 				p.getBusSubcomponentType(), BusSubcomponentType.class, "setBusFeatureClassifier"));
+		featureTypeToClassifierSetterMap.put(p.getBusAccess(), new FeatureClassifierSetterInfo(
+				p.getBusSubcomponentType(), BusFeatureClassifier.class, "setBusFeatureClassifier"));
 		featureTypeToClassifierSetterMap.put(p.getDataAccess(), new FeatureClassifierSetterInfo(
 				p.getDataSubcomponentType(), DataSubcomponentType.class, "setDataFeatureClassifier"));
 		featureTypeToClassifierSetterMap.put(p.getSubprogramAccess(), new FeatureClassifierSetterInfo(
@@ -155,6 +158,7 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 			final Iterator<Feature> it = features.iterator();
 			final Feature feature = it.next();
 			final List<Object> potentialFeatureClassifiers = new ArrayList<>(getPotentialFeatureClassifiers(feature));
+			// List will contain classifiers that are available to all selected elements
 			while (it.hasNext()) {
 				potentialFeatureClassifiers.retainAll(getPotentialFeatureClassifiers(it.next()));
 			}
@@ -226,6 +230,7 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 		final Iterator<Feature> it = features.iterator();
 		final FeatureClassifier fc = it.next().getFeatureClassifier();
 		while (it.hasNext()) {
+			// If feature classifiers are not the same, set to multiple
 			if (fc != it.next().getFeatureClassifier()) {
 				return "<Multiple>";
 			}

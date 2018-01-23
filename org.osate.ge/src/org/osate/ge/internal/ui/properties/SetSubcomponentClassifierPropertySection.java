@@ -18,7 +18,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
-import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -87,20 +86,13 @@ public class SetSubcomponentClassifierPropertySection extends AbstractPropertySe
 		super.createControls(parent, aTabbedPropertySheetPage);
 		FormData fd;
 
-		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
-		final Composite container = getWidgetFactory().createComposite(composite);
-		final Label sectionLabel = PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(),
+		final Composite container = getWidgetFactory().createFlatFormComposite(parent);
+		PropertySectionUtil.createSectionLabel(container, getWidgetFactory(),
 				"Classifier:");
 
-		container.setLayout(new FormLayout());
+		curScClassifier = getWidgetFactory().createLabel(container, new String());
 		fd = new FormData();
 		fd.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
-		fd.top = new FormAttachment(sectionLabel, 0, SWT.CENTER);
-		container.setLayoutData(fd);
-
-		curScClassifier = getWidgetFactory().createLabel(container, "");
-		fd = new FormData();
-		fd.left = new FormAttachment(0, 0);
 		fd.top = new FormAttachment(0, ITabbedPropertyConstants.VSPACE);
 		curScClassifier.setLayoutData(fd);
 

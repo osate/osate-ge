@@ -33,7 +33,7 @@ public class AccessPropertySection extends AbstractPropertySection {
 	private Button providesBtn;
 	private Button requiresBtn;
 
-	private final SelectionListener directionSelectionListener = new SelectionAdapter() {
+	private final SelectionListener accessSelectionListener = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(final SelectionEvent e) {
 			final Button btn = (Button) e.widget;
@@ -52,9 +52,9 @@ public class AccessPropertySection extends AbstractPropertySection {
 				STANDARD_LABEL_WIDTH);
 
 		providesBtn = PropertySectionUtil.createButton(getWidgetFactory(), directionContainer, AccessType.PROVIDES,
-				directionSelectionListener, "Provides", SWT.RADIO);
+				accessSelectionListener, "Provides", SWT.RADIO);
 		requiresBtn = PropertySectionUtil.createButton(getWidgetFactory(), directionContainer, AccessType.REQUIRES,
-				directionSelectionListener, "Requires", SWT.RADIO);
+				accessSelectionListener, "Requires", SWT.RADIO);
 
 		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Access Type:");
 	}
@@ -69,24 +69,27 @@ public class AccessPropertySection extends AbstractPropertySection {
 	@Override
 	public void refresh() {
 		final Set<Access> selectedAccesses = selectedBos.boStream(Access.class).collect(Collectors.toSet());
+
+		// Get initial value for buttons
+		final AccessType accessType = getAccessType(selectedAccesses);
+
+		// Set selection
+		providesBtn.setSelection(accessType == AccessType.PROVIDES);
+		requiresBtn.setSelection(accessType == AccessType.REQUIRES);
+	}
+
+	private static AccessType getAccessType(final Set<Access> selectedAccesses) {
 		final Iterator<Access> it = selectedAccesses.iterator();
 		// Initial value of buttons
-		Boolean isProvides = it.next().getKind() == AccessType.PROVIDES;
+		final AccessType accessType = AccessType.PROVIDES;
 
 		while (it.hasNext()) {
 			// Check if all elements are of same access type
-			if (isProvides != (it.next().getKind() == AccessType.PROVIDES)) {
-				isProvides = null;
-				break;
+			if (accessType != it.next().getKind()) {
+				return null;
 			}
 		}
 
-		if (isProvides != null) {
-			providesBtn.setSelection(isProvides);
-			requiresBtn.setSelection(!isProvides);
-		} else {
-			providesBtn.setSelection(false);
-			requiresBtn.setSelection(false);
-		}
+		return accessType;
 	}
 }

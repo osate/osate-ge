@@ -17,7 +17,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
-import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -59,19 +58,12 @@ public class SetExtendedClassifierPropertySection extends AbstractPropertySectio
 		super.createControls(parent, aTabbedPropertySheetPage);
 		FormData fd;
 
-		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
-		final Composite container = getWidgetFactory().createComposite(composite);
-		final Label sectionLabel = PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Extends:");
-
-		container.setLayout(new FormLayout());
-		fd = new FormData();
-		fd.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
-		fd.top = new FormAttachment(sectionLabel, 0, SWT.CENTER);
-		container.setLayoutData(fd);
+		final Composite container = getWidgetFactory().createFlatFormComposite(parent);
+		PropertySectionUtil.createSectionLabel(container, getWidgetFactory(), "Extends:");
 
 		extendedClassifier = getWidgetFactory().createLabel(container, new String());
 		fd = new FormData();
-		fd.left = new FormAttachment(0, 0);
+		fd.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
 		fd.top = new FormAttachment(0, ITabbedPropertyConstants.VSPACE);
 		extendedClassifier.setLayoutData(fd);
 

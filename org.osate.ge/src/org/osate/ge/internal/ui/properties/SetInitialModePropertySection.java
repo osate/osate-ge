@@ -93,17 +93,24 @@ public class SetInitialModePropertySection extends AbstractPropertySection {
 	@Override
 	public void refresh() {
 		final Set<Mode> modes = selectedBos.boStream(Mode.class).collect(Collectors.toSet());
+		// Get initial state of selected elements
+		final Boolean isInitial = isInitial(modes);
+		// Grayed state set if elements are mixed initial and not initial
+		setInitialModeBtn.setGrayed(isInitial == null);
+		// Set initial selection
+		setInitialModeBtn.setSelection(isInitial == Boolean.TRUE);
+	}
+
+	private static Boolean isInitial(final Set<Mode> modes) {
 		final Iterator<Mode> it = modes.iterator();
-		Boolean isInitial = it.next().isInitial();
+		final Boolean isInitial = it.next().isInitial();
+		// Check if all modes are initial
 		while (it.hasNext()) {
 			if (isInitial != it.next().isInitial()) {
-				isInitial = null;
-				break;
+				return null;
 			}
 		}
 
-		// No selection set if elements are mixed initial and not initial
-		// Set initial selection
-		setInitialModeBtn.setSelection(isInitial != null && isInitial);
+		return isInitial;
 	}
 }

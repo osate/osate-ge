@@ -1644,9 +1644,6 @@
              class="org.osate.ge.internal.commands.OpenAssociatedDiagramCommand"></command>
        <command
              class="org.osate.ge.internal.commands.CreateNewDiagramCommand"></command>
-       <commandContributor
-             class="org.osate.ge.internal.commands.SetInitialModeCommandContributor">
-       </commandContributor>
        <command
              class="org.osate.ge.internal.commands.ComponentImplementationToTypeCommand">
        </command>
@@ -1660,58 +1657,7 @@
              class="org.osate.ge.internal.commands.GraphicalToTextualCommand">
        </command>
        <command
-             class="org.osate.ge.internal.commands.SetFeatureClassifierCommand">
-       </command>
-       <command
              class="org.osate.ge.internal.commands.InstantiateComponentImplementationCommand">
-       </command>
-       <command
-             class="org.osate.ge.internal.commands.SwitchDirectionOfConnectionCommand">
-       </command>
-       <command
-             class="org.osate.ge.internal.commands.SetDimensionsCommand">
-       </command>
-       <commandContributor
-             class="org.osate.ge.internal.commands.SetDerivedModesCommandContributor">
-       </commandContributor>
-       <command
-             class="org.osate.ge.internal.commands.SetModeTransitionTriggersCommand">
-       </command>
-       <command
-             class="org.osate.ge.internal.commands.SetSubcomponentClassifierCommand">
-       </command>
-       <command
-             class="org.osate.ge.internal.commands.RefineSubcomponentCommand">
-       </command>
-       <commandContributor
-             class="org.osate.ge.internal.commands.SetConnectionBidirectionalityCommandContributor">
-       </commandContributor>
-       <command
-             class="org.osate.ge.internal.commands.MoveSubprogramCallUpCommand">
-       </command>
-       <command
-             class="org.osate.ge.internal.commands.MoveSubprogramCallDownCommand">
-       </command>
-       <command
-             class="org.osate.ge.internal.commands.PackageSetExtendedClassifierCommand">
-       </command>
-       <commandContributor
-             class="org.osate.ge.internal.commands.ChangeFeatureTypeCommandContributor">
-       </commandContributor>
-       <commandContributor
-             class="org.osate.ge.internal.commands.SetFeatureGroupInverseCommandContributor">
-       </commandContributor>
-       <commandContributor
-             class="org.osate.ge.internal.commands.ChangeSubcomponentTypeCommandContributor">
-       </commandContributor>
-       <command
-             class="org.osate.ge.internal.commands.RefineFeatureCommand">
-       </command>
-       <command
-             class="org.osate.ge.internal.commands.RefineFlowSpecificationCommand">
-       </command>
-       <command
-             class="org.osate.ge.internal.commands.RefineConnectionCommand">
        </command>
     </extension>
     <extension
