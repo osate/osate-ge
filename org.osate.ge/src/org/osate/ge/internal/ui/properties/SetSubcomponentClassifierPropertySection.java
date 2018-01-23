@@ -300,7 +300,6 @@ public class SetSubcomponentClassifierPropertySection extends AbstractPropertySe
 		return getSubcomponentClassifierName(cc);
 	}
 
-	// TODO change to pass in named element, can be shared multiple places?? setfeatureclassifer for instance
 	private static String getSubcomponentClassifierName(final ComponentClassifier cc) {
 		if (cc != null && cc.eResource() != null) {
 			return cc.eResource().getURI().trimFileExtension().lastSegment() + "::" + cc.getName();
