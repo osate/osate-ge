@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.eclipse.core.resources.IProject;
@@ -87,13 +88,14 @@ public class DefaultAadlModificationService implements AadlModificationService {
 			objectsToModifierMap.put(obj, modifier);
 		}
 
-		return modify(objectsToModifierMap, objToBoToModifyMapper);
+		return modify(objectsToModifierMap, objToBoToModifyMapper, results -> {
+		});
 	}
 
 	@Override
 	public <I, E extends EObject, R> List<R> modify(
 			LinkedListMultimap<I, MappedObjectModifier<E, R>> objectsToModifierMap,
-			Function<I, E> objToBoToModifyMapper) {
+			Function<I, E> objToBoToModifyMapper, final Consumer<List<R>> resultConsumer) {
 		Objects.requireNonNull(objectsToModifierMap, "objectsToModifierMap must not be null");
 		Objects.requireNonNull(objToBoToModifyMapper, "objToBoToModifyMapper must not be null");
 
@@ -104,6 +106,7 @@ public class DefaultAadlModificationService implements AadlModificationService {
 			public void run() {
 				try (Lock lock = modelChangeNotifier.lock()) {
 					result = doModification(objectsToModifierMap, objToBoToModifyMapper);
+					resultConsumer.accept(result);
 				}
 			}
 		}

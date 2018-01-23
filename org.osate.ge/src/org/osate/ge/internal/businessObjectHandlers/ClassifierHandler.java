@@ -39,8 +39,6 @@ import org.osate.ge.PaletteEntryBuilder;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.CanDelete;
 import org.osate.ge.di.CanRename;
-import org.osate.ge.di.Create;
-import org.osate.ge.di.GetCreateOwner;
 import org.osate.ge.di.GetGraphicalConfiguration;
 import org.osate.ge.di.GetName;
 import org.osate.ge.di.GetNameForEditing;
@@ -48,6 +46,8 @@ import org.osate.ge.di.GetPaletteEntries;
 import org.osate.ge.di.IsApplicable;
 import org.osate.ge.di.Names;
 import org.osate.ge.di.ValidateName;
+import org.osate.ge.internal.CreateOperation;
+import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.graphics.AadlGraphics;
 import org.osate.ge.internal.services.NamingService;
@@ -183,21 +183,6 @@ public class ClassifierHandler {
 		return containerIsValidBaseClassifier;
 	}
 
-	@GetCreateOwner
-	public BusinessObjectContext getCreateOwner(final @Named(Names.TARGET_BO) EObject targetBo,
-			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
-			final QueryService queryService) {
-		if(targetBo instanceof AadlPackage) {
-			return targetBoc;
-		} else if(targetBo instanceof Classifier) {
-			// Get the AadlPackage based on the query. This ensures that the package is the one represented by the diagram rather than the one in which the
-			// target business object is contained.
-			return queryService.getFirstResult(packageQuery, targetBoc);
-		}
-
-		return null;
-	}
-
 	/**
 	 * Return a list of EObjectDescriptions for classifiers that would be valid "base" classifiers for the current classifierType.
 	 * A "base" classifier is one that will be implemented or extended.
@@ -221,21 +206,44 @@ public class ClassifierHandler {
 		return objectDescriptions;
 	}
 
-	@Create
-	public Classifier createBusinessObject(@Named(Names.MODIFY_BO) final AadlPackage pkg, @Named(Names.TARGET_BO) final EObject targetBo,
+	@BuildCreateOperation
+	public void buildCreateOperation(@Named(InternalNames.OPERATION) final CreateOperation createOp,
+			@Named(Names.TARGET_BO) final EObject targetBo,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) PaletteEntryContext paletteEntryContext,
 			final @Named(InternalNames.PROJECT) IProject project,
+			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
+			final QueryService queryService,
 			final NamingService namingService) {
 
+		final BusinessObjectContext pkgBoc = getPackageBoc(targetBoc, queryService);
+		if (pkgBoc == null) {
+			return;
+		}
+
+		final AadlPackage pkg = (AadlPackage) pkgBoc.getBusinessObject();
 		final ResourceSet rs = targetBo.eResource().getResourceSet();
 		final ClassifierOperation args = buildCreateOperations(pkg, targetBo, paletteEntryContext, project,
 				namingService, rs);
 		if (args == null) {
-			return null;
+			return;
 		}
 
-		final ClassifierOperationExecutor opExec = new ClassifierOperationExecutor(namingService, rs);
-		return opExec.execute(args);
+		final ClassifierOperationExecutor opExec = new ClassifierOperationExecutor(namingService, rs, project);
+		opExec.execute(createOp, args, pkgBoc);
+	}
+
+	private BusinessObjectContext getPackageBoc(final BusinessObjectContext targetBoc,
+			final QueryService queryService) {
+		final Object targetBo = targetBoc.getBusinessObject();
+		if(targetBo instanceof AadlPackage) {
+			return targetBoc;
+		} else if(targetBo instanceof Classifier) {
+			// Get the AadlPackage based on the query. This ensures that the package is the one represented by the diagram rather than the one in which the
+			// target business object is contained.
+			return queryService.getFirstResult(packageQuery, targetBoc);
+		}
+
+		return null;
 	}
 
 	/**

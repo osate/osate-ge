@@ -45,10 +45,11 @@ public class BoHandlerCreateFeature extends AbstractCreateFeature implements Cat
 		private final LinkedListMultimap<EObject, AadlModificationService.MappedObjectModifier<EObject, CreateStepResult>> stepMap = LinkedListMultimap
 				.create();
 
+		@SuppressWarnings("unchecked")
 		@Override
-		public void addStep(final EObject objToModify,
-				AadlModificationService.Modifier<EObject, CreateStepResult> modifier) {
-			stepMap.put(objToModify, (resource, bo, obj) -> modifier.modify(resource, bo));
+		public <E extends EObject> void addStep(final E objToModify, CreateStepHandler<E> stepHandler) {
+			stepMap.put(objToModify,
+					(resource, bo, obj) -> stepHandler.modify(resource, (E) bo));
 		}
 
 		public final boolean isEmpty() {
@@ -164,20 +165,7 @@ public class BoHandlerCreateFeature extends AbstractCreateFeature implements Cat
 					eclipseCtx.set(Names.DOCKING_POSITION, targetDockingPosition); // Specify even if the shape will not be docked.
 					eclipseCtx.set(Names.TARGET_BUSINESS_OBJECT_CONTEXT, targetNode);
 					final Object newBo1 = ContextInjectionFactory.invoke(handler, Create.class, eclipseCtx);
-					if (newBo1 == null) {
-						return null;
-					} else {
-						final RelativeBusinessObjectReference newRef = refBuilder.getRelativeReference(newBo1);
-						if (newRef != null) {
-							if (ownerNode == targetNode) {
-								diagramUpdater.addToNextUpdate(ownerNode, newRef,
-										new Point(context.getX(), context.getY()));
-							} else {
-								diagramUpdater.addToNextUpdate(ownerNode, newRef, null);
-							}
-						}
-						return new CreateStepResult(ownerNode, newBo1);
-					}
+					return new CreateStepResult(ownerNode, newBo1);
 				} finally {
 					eclipseCtx.dispose();
 				}
@@ -186,21 +174,25 @@ public class BoHandlerCreateFeature extends AbstractCreateFeature implements Cat
 
 		// Perform modification
 		final List<Object> newBos = new ArrayList<>(createOp.stepMap.size());
-		for (final CreateStepResult stepResult : aadlModService.modify(createOp.stepMap, obj -> obj)) {
-			if (stepResult != null && stepResult.newBo != null) {
-				final RelativeBusinessObjectReference newRef = refBuilder.getRelativeReference(stepResult.newBo);
-				if (newRef != null) {
-					if (stepResult.container == targetNode) {
-						diagramUpdater.addToNextUpdate(stepResult.container, newRef,
-								new Point(context.getX(), context.getY()));
-					} else {
-						diagramUpdater.addToNextUpdate(stepResult.container, newRef, null);
+		aadlModService.modify(createOp.stepMap, obj -> obj, results -> {
+			// Process results. Add created elements to the diagram
+			for (final CreateStepResult stepResult : results) {
+				if (stepResult != null && stepResult.newBo != null) {
+					final RelativeBusinessObjectReference newRef = refBuilder.getRelativeReference(stepResult.newBo);
+					if (newRef != null && stepResult.container instanceof DiagramNode) {
+						final DiagramNode containerNode = (DiagramNode) stepResult.container;
+						if (containerNode == targetNode) {
+							diagramUpdater.addToNextUpdate(containerNode, newRef,
+									new Point(context.getX(), context.getY()));
+						} else {
+							diagramUpdater.addToNextUpdate(containerNode, newRef, null);
+						}
 					}
-				}
 
-				newBos.add(stepResult.newBo);
+					newBos.add(stepResult.newBo);
+				}
 			}
-		}
+		});
 
 		// Return new business objects
 		return newBos.isEmpty() ? EMPTY : newBos.toArray();

@@ -3,20 +3,24 @@ package org.osate.ge.internal;
 import java.util.Objects;
 
 import org.eclipse.emf.ecore.EObject;
-import org.osate.ge.internal.diagram.runtime.DiagramNode;
-import org.osate.ge.internal.services.AadlModificationService;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.osate.ge.BusinessObjectContext;
 
 // Internal API used for multi-step create operations.
 public interface CreateOperation {
+	public static interface CreateStepHandler<E extends EObject> {
+		CreateStepResult modify(final Resource resource, final E bo);
+	}
+
 	public static class CreateStepResult {
-		public final DiagramNode container;
+		public final BusinessObjectContext container;
 		public final Object newBo;
 
-		public CreateStepResult(final DiagramNode container, final Object newBo) {
-			this.container = Objects.requireNonNull(container, "container must not be null");
+		public CreateStepResult(final BusinessObjectContext container, final Object newBo) {
+			this.container = container;
 			this.newBo = Objects.requireNonNull(newBo, "newBo must not be null");
 		}
 	}
 
-	void addStep(final EObject objToModify, AadlModificationService.Modifier<EObject, CreateStepResult> modifier);
+	<E extends EObject> void addStep(final E objToModify, CreateStepHandler<E> stepHandler);
 }
