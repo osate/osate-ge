@@ -3,6 +3,7 @@ package org.osate.ge.internal.businessObjectHandlers;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Named;
 
@@ -10,7 +11,6 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Display;
 import org.osate.aadl2.AbstractFeature;
 import org.osate.aadl2.Access;
@@ -18,7 +18,6 @@ import org.osate.aadl2.AccessSpecification;
 import org.osate.aadl2.AccessType;
 import org.osate.aadl2.ArrayableElement;
 import org.osate.aadl2.Classifier;
-import org.osate.aadl2.ComponentClassifier;
 import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.ComponentType;
 import org.osate.aadl2.DirectedFeature;
@@ -65,7 +64,6 @@ import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.graphics.AadlGraphics;
 import org.osate.ge.internal.services.NamingService;
-import org.osate.ge.internal.ui.dialogs.ElementSelectionDialog;
 import org.osate.ge.internal.util.AadlArrayUtil;
 import org.osate.ge.internal.util.AadlFeatureUtil;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
@@ -128,25 +126,12 @@ public class FeatureHandler {
 							targetDescription
 							+ " does not have a classifier. Please set a classifier before creating a feature.");
 		} else {
-			final List<Classifier> potentialOwners = getPotentialOwners(targetBo, featureType);
-			if (potentialOwners.size() == 0) {
-				throw new RuntimeException("Unable to find potential owners");
-			}
-
 			// Determine which classifier should own the new element
-			final Classifier selectedClassifier;
-			if (potentialOwners.size() > 1) {
-				// Prompt the user for the classifier
-				final ElementSelectionDialog dlg = new ElementSelectionDialog(Display.getCurrent().getActiveShell(),
-						"Select a Classifier to Modify", "Select a classifier to modify.", potentialOwners);
-				dlg.setInitialSelections(new Object[] { potentialOwners.get(0) });
-				if (dlg.open() == Window.CANCEL) {
-					return;
-				}
+			final Classifier selectedClassifier = ClassifierEditingUtil
+					.getClassifierToModify(getPotentialOwners(targetBo, featureType));
 
-				selectedClassifier = (Classifier) dlg.getFirstSelectedElement();
-			} else {
-				selectedClassifier = potentialOwners.get(0);
+			if (selectedClassifier == null) {
+				return;
 			}
 
 			// Create the feature
@@ -192,36 +177,8 @@ public class FeatureHandler {
 			return Collections.singletonList((Classifier) targetBo);
 		}
 
-		final List<Classifier> results = new ArrayList<>();
-
-		// Look for other options if the target cannot own the feature.
-		if (targetBo instanceof ComponentImplementation) {
-			final ComponentType ct = ((ComponentImplementation) targetBo).getType();
-			addPotentialOwnersForClassifierAndExtended(ct, featureType, results);
-		} else if (targetBo instanceof Subcomponent) {
-			final ComponentClassifier subcomponentClassifier = ((Subcomponent) targetBo).getClassifier();
-			addPotentialOwnersForClassifierAndExtended(subcomponentClassifier, featureType, results);
-			if (subcomponentClassifier instanceof ComponentImplementation) {
-				addPotentialOwnersForClassifierAndExtended(((ComponentImplementation) subcomponentClassifier).getType(),
-						featureType, results);
-			}
-		} else if (targetBo instanceof FeatureGroup) {
-			final FeatureGroupType fgType = ((FeatureGroup) targetBo).getFeatureGroupType();
-			addPotentialOwnersForClassifierAndExtended(fgType, featureType, results);
-		}
-
-		return results;
-	}
-
-	private static void addPotentialOwnersForClassifierAndExtended(final Classifier c, final EClass featureType,
-			final List<Classifier> results) {
-		if (c != null) {
-			for (final Classifier tmpClassifier : c.getSelfPlusAllExtended()) {
-				if (AadlFeatureUtil.canOwnFeatureType(tmpClassifier, featureType)) {
-					results.add(tmpClassifier);
-				}
-			}
-		}
+		return ClassifierEditingUtil.getPotentialClassifierTypesForEditing(targetBo).stream()
+				.filter(c -> AadlFeatureUtil.canOwnFeatureType(c, featureType)).collect(Collectors.toList());
 	}
 
 	private static boolean isSubcomponentOrFeatureGroupWithoutClassifier(final Object bo) {

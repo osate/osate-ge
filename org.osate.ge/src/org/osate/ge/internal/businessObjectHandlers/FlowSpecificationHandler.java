@@ -1,12 +1,15 @@
 package org.osate.ge.internal.businessObjectHandlers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Named;
 
 import org.osate.aadl2.AbstractFeature;
 import org.osate.aadl2.AbstractType;
+import org.osate.aadl2.ComponentClassifier;
 import org.osate.aadl2.ComponentType;
 import org.osate.aadl2.Context;
 import org.osate.aadl2.DataAccess;
@@ -14,6 +17,7 @@ import org.osate.aadl2.DataType;
 import org.osate.aadl2.DeviceType;
 import org.osate.aadl2.DirectedFeature;
 import org.osate.aadl2.DirectionType;
+import org.osate.aadl2.Element;
 import org.osate.aadl2.Feature;
 import org.osate.aadl2.FeatureGroup;
 import org.osate.aadl2.FlowEnd;
@@ -22,6 +26,7 @@ import org.osate.aadl2.Parameter;
 import org.osate.aadl2.Port;
 import org.osate.aadl2.ProcessType;
 import org.osate.aadl2.ProcessorType;
+import org.osate.aadl2.Subcomponent;
 import org.osate.aadl2.SubprogramGroupType;
 import org.osate.aadl2.SubprogramType;
 import org.osate.aadl2.SystemType;
@@ -40,8 +45,12 @@ import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
 
 class FlowSpecificationHandler {
-	private static final StandaloneQuery componentTypeQuery = StandaloneQuery.create((root) -> root.ancestors().first(2).filter((fa) -> fa.getBusinessObject() instanceof ComponentType).first());
-	private static final StandaloneQuery contextQuery = StandaloneQuery.create((root) -> root.ancestors().filter((fa) -> fa.getBusinessObject() instanceof Context).first());
+	private static final StandaloneQuery componentClassifierOrSubcomponentQuery = StandaloneQuery.create((root) -> root
+			.ancestors().first(2).filter((fa) -> fa.getBusinessObject() instanceof ComponentClassifier
+					|| fa.getBusinessObject() instanceof Subcomponent)
+			.first());
+	private static final StandaloneQuery contextQuery = StandaloneQuery
+			.create((root) -> root.ancestors().filter((fa) -> fa.getBusinessObject() instanceof FeatureGroup).first());
 
 	// Basics
 	@GetName
@@ -83,14 +92,39 @@ class FlowSpecificationHandler {
 		return (Context)queryService.getFirstBusinessObject(contextQuery, featureBoc);
 	}
 
-	protected static ComponentType getComponentTypeByFeature(BusinessObjectContext featureBoc,
+	protected static List<ComponentType> getPotentialOwnersByFeature(BusinessObjectContext featureBoc,
 			final QueryService queryService) {
-		return (ComponentType)queryService.getFirstBusinessObject(componentTypeQuery, featureBoc);
+		final Feature feature = (Feature) featureBoc.getBusinessObject();
+		final String featureName = feature.getName();
+		if (featureName == null) {
+			return Collections.emptyList();
+		}
+
+		final BusinessObjectContext containerBoc = getFlowSpecificationOwnerBoc(featureBoc, queryService);
+		if (containerBoc == null) {
+			return Collections.emptyList();
+		}
+
+		final Element bo = (Element) containerBoc.getBusinessObject();
+		return ClassifierEditingUtil.getPotentialClassifierTypesForEditing(bo).stream()
+				.filter(tmpBo -> canOwnFlowSpecification(tmpBo)).map(ComponentType.class::cast)
+				.filter(ct -> hasFeatureWithName(ct, featureName))
+				.collect(Collectors.toList());
 	}
 
-	protected static BusinessObjectContext getComponentTypeBocByFeature(BusinessObjectContext featureBoc,
+	private static boolean hasFeatureWithName(final ComponentType ct, final String nameToCheck) {
+		return ct.getAllFeatures().stream().map(f -> f.getName()).anyMatch(n -> nameToCheck.equalsIgnoreCase(n));
+	}
+
+	/**
+	 * Get the business object context for the container/owner of a flow specification involving the specified feature
+	 * @param featureBoc
+	 * @param queryService
+	 * @return
+	 */
+	protected static BusinessObjectContext getFlowSpecificationOwnerBoc(BusinessObjectContext featureBoc,
 			final QueryService queryService) {
-		return queryService.getFirstResult(componentTypeQuery, featureBoc);
+		return queryService.getFirstResult(componentClassifierOrSubcomponentQuery, featureBoc);
 	}
 
 	/**
@@ -102,7 +136,7 @@ class FlowSpecificationHandler {
 			final DirectionType requiredDirection,
 			final QueryService queryService) {
 		// Ensure that the feature is contained in a component type
-		if(getComponentTypeByFeature(featureBoc, queryService) == null) {
+		if (getPotentialOwnersByFeature(featureBoc, queryService).size() == 0) {
 			return false;
 		}
 
