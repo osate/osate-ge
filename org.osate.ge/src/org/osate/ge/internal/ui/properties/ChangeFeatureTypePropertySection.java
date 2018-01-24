@@ -86,10 +86,16 @@ public class ChangeFeatureTypePropertySection extends AbstractPropertySection {
 
 // Handle copying the data feature classifier
 					if (replacementFeature instanceof DirectedFeature) {
-						((DirectedFeature) replacementFeature).setIn(true);
+						if (!(feature instanceof DirectedFeature)) {
+							// Initialize to in if changing from non-directed to directed feature
+							final DirectedFeature replacementDirectedFeature = (DirectedFeature) replacementFeature;
+							replacementDirectedFeature.setIn(true);
+							replacementDirectedFeature.setOut(false);
+						}
+
 						if (replacementFeature instanceof EventDataPort) {
 							((EventDataPort) replacementFeature)
-									.setDataFeatureClassifier(getDataFeatureClassifier(feature));
+							.setDataFeatureClassifier(getDataFeatureClassifier(feature));
 						} else if (replacementFeature instanceof DataPort) {
 							((DataPort) replacementFeature).setDataFeatureClassifier(getDataFeatureClassifier(feature));
 						}

@@ -1711,28 +1711,35 @@
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
          <propertySection
-               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               afterSection="org.osate.ge.ui.properties.changeFeatureTypePropertySection"
                class="org.osate.ge.internal.ui.properties.DirectionalFeaturePropertySection"
                filter="org.osate.ge.internal.ui.properties.DirectionalFeaturePropertySection$Filter"
-               id="org.osate.ge.ui.properties.elementOwnerWarningSection"
+               id="org.osate.ge.ui.properties.directionalFeatureSection"
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
          <propertySection
-               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               afterSection="org.osate.ge.ui.properties.accessSection"
+               class="org.osate.ge.internal.ui.properties.SetFeatureClassifierPropertySection"
+               filter="org.osate.ge.internal.ui.properties.SetFeatureClassifierPropertySection$Filter"
+               id="org.osate.ge.ui.properties.setFeatureClassifierPropertySection"
+               tab="org.osate.ge.ui.properties.aadlTab">
+         </propertySection>
+         <propertySection
+               afterSection="org.osate.ge.ui.properties.changeFeatureTypePropertySection"
                class="org.osate.ge.internal.ui.properties.AccessPropertySection"
                filter="org.osate.ge.internal.ui.properties.AccessPropertySection$Filter"
                id="org.osate.ge.ui.properties.accessSection"
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
          <propertySection
-               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               afterSection="org.osate.ge.ui.properties.setDerivedModesPropertySection"
                class="org.osate.ge.internal.ui.properties.ConfigureInModesSection"
                filter="org.osate.ge.internal.ui.properties.ConfigureInModesSection$Filter"
                id="org.osate.ge.ui.properties.configureInModesSection"
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
          <propertySection
-               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               afterSection="org.osate.ge.ui.properties.setExtendedClassifierPropertySection"
                class="org.osate.ge.internal.ui.properties.ChangeFeatureTypePropertySection"
                filter="org.osate.ge.internal.ui.properties.ChangeFeatureTypePropertySection$Filter"
                id="org.osate.ge.ui.properties.changeFeatureTypePropertySection"
@@ -1774,31 +1781,24 @@
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
          <propertySection
-               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               afterSection="org.osate.ge.ui.properties.switchDirectionOfConnectionPropertySection"
                class="org.osate.ge.internal.ui.properties.RefineElementPropertySection"
                filter="org.osate.ge.internal.ui.properties.RefineElementPropertySection$Filter"
                id="org.osate.ge.ui.properties.refineElementPropertySection"
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
          <propertySection
-               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               afterSection="org.osate.ge.ui.properties.setDimensionsPropertySection"
                class="org.osate.ge.internal.ui.properties.SetDerivedModesPropertySection"
                filter="org.osate.ge.internal.ui.properties.SetDerivedModesPropertySection$Filter"
                id="org.osate.ge.ui.properties.setDerivedModesPropertySection"
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
          <propertySection
-               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               afterSection="org.osate.ge.ui.properties.setSubcomponentClassifierPropertySection"
                class="org.osate.ge.internal.ui.properties.SetDimensionsPropertySection"
                filter="org.osate.ge.internal.ui.properties.SetDimensionsPropertySection$Filter"
                id="org.osate.ge.ui.properties.setDimensionsPropertySection"
-               tab="org.osate.ge.ui.properties.aadlTab">
-         </propertySection>
-         <propertySection
-               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
-               class="org.osate.ge.internal.ui.properties.SetFeatureClassifierPropertySection"
-               filter="org.osate.ge.internal.ui.properties.SetFeatureClassifierPropertySection$Filter"
-               id="org.osate.ge.ui.properties.setFeatureClassifierPropertySection"
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
          <propertySection
@@ -1823,13 +1823,12 @@
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
          <propertySection
-               afterSection="org.osate.ge.ui.properties.inheritedElementOwnerNoticeSection"
+               afterSection="org.osate.ge.ui.properties.changeSubcomponentTypePropertySection"
                class="org.osate.ge.internal.ui.properties.SetSubcomponentClassifierPropertySection"
                filter="org.osate.ge.internal.ui.properties.SetSubcomponentClassifierPropertySection$Filter"
                id="org.osate.ge.ui.properties.setSubcomponentClassifierPropertySection"
                tab="org.osate.ge.ui.properties.aadlTab">
          </propertySection>
-         
       </propertySections>
    </extension>
    <extension

@@ -124,16 +124,16 @@ public class SwitchDirectionOfConnectionPropertySection extends AbstractProperty
 
 		boolean isEnabledSwitchDirection = false;
 		final Iterator<Connection> it = selectedConnections.iterator();
-		final Connection connection = it.next();
+		Connection connection = it.next();
 		if (!(connection instanceof ParameterConnection)) {
 			isEnabledSwitchDirection = true;
 		}
 
 		Boolean isBidirectional = connection.isAllBidirectional();
 		while (it.hasNext()) {
-			final Connection nextConnection = it.next();
+			connection = it.next();
 			// Check if connections selected are mixed bidirectional and unidirectional
-			if (nextConnection.isAllBidirectional() != isBidirectional) {
+			if (connection.isAllBidirectional() != isBidirectional) {
 				// No selection on buttons
 				isBidirectional = null;
 				// Exit loop if obtained both initial control values
@@ -142,7 +142,7 @@ public class SwitchDirectionOfConnectionPropertySection extends AbstractProperty
 				}
 			}
 
-			if (!isEnabledSwitchDirection && !(nextConnection instanceof ParameterConnection)) {
+			if (!isEnabledSwitchDirection && !(connection instanceof ParameterConnection)) {
 				isEnabledSwitchDirection = true;
 			}
 		}

@@ -1,10 +1,10 @@
 package org.osate.ge.internal.ui.properties;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.Adapters;
-import org.eclipse.emf.common.util.EList;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.CellLabelProvider;
@@ -24,6 +24,7 @@ import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
@@ -67,6 +68,13 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 		tableComposite.setLayoutData(fd);
 
 		tableViewer = createTableViewer(tableComposite);
+		tableViewer.addSelectionChangedListener(event -> {
+			final Table table = tableViewer.getTable();
+			if (table.getSelectionIndex() >= 0) {
+				selectedIndex = table.getSelectionIndex();
+			}
+			updateMoveButtons(table.getItemCount() - 1);
+		});
 
 		// Drag and drop support for changing call sequence
 		final DragAndDropSupport dNDSupport = new DragAndDropSupport(tableViewer.getTable(), executeChangeOrder);
@@ -117,7 +125,7 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 				"Down", SWT.PUSH);
 		fd = new FormData();
 		fd.width = btnWidth;
-		fd.top = new FormAttachment(upBtn, ITabbedPropertyConstants.VSPACE);
+		fd.top = new FormAttachment(upBtn, -ITabbedPropertyConstants.VMARGIN);
 		downBtn.setLayoutData(fd);
 
 		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Call Order:");
@@ -160,7 +168,7 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 				@Override
 				public Object[] getElements(final Object inputElement) {
 					@SuppressWarnings("unchecked")
-					final EList<SubprogramCall> subprogramCalls = (EList<SubprogramCall>) inputElement;
+					final List<SubprogramCall> subprogramCalls = (List<SubprogramCall>) inputElement;
 					final int[] mutableIndex = { 0 };
 					return subprogramCalls.stream().map(sc -> {
 						mutableIndex[0] = ++mutableIndex[0];
@@ -228,17 +236,21 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 			public void refresh() {
 				final List<SubprogramCallSequence> subprogramCallSeqs = selectedBos.boStream(SubprogramCallSequence.class)
 						.collect(Collectors.toList());
-				// Do not allow editing when multiple call sequences are selected
-				setControlsEnabled(subprogramCallSeqs.size() == 1);
-				final EList<SubprogramCall> subprogramCalls = subprogramCallSeqs.get(0).getOwnedSubprogramCalls();
-				tableViewer.setInput(subprogramCalls);
-// Default table selection and keep selection after modification
-				tableViewer.getTable().setSelection(selectedIndex);
+
+				// Single selection only
+				final boolean isEnabled = subprogramCallSeqs.size() == 1;
+				final List<SubprogramCall> input = isEnabled ? subprogramCallSeqs.get(0).getOwnedSubprogramCalls()
+						: Collections.emptyList();
+
+				tableViewer.setInput(input);
+				final Table table = tableViewer.getTable();
+				table.setEnabled(isEnabled);
+				table.setSelection(selectedIndex);
+				updateMoveButtons(input.size() - 1);
 			}
 
-			private void setControlsEnabled(final boolean isEnabled) {
-				tableViewer.getTable().setEnabled(isEnabled);
-				upBtn.setEnabled(isEnabled);
-				downBtn.setEnabled(isEnabled);
+			private void updateMoveButtons(final int size) {
+				upBtn.setEnabled(selectedIndex - 1 >= 0);
+				downBtn.setEnabled(selectedIndex + 1 <= size);
 			}
 }

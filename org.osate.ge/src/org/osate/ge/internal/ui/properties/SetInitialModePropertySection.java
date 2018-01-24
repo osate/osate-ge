@@ -1,6 +1,5 @@
 package org.osate.ge.internal.ui.properties;
 
-import java.util.Iterator;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,27 +45,18 @@ public class SetInitialModePropertySection extends AbstractPropertySection {
 		@Override
 		public void widgetSelected(final SelectionEvent e) {
 			final Button btn = (Button) e.widget;
-			if (btn.getSelection()) {
-				selectedBos.modify(Mode.class, mode -> {
-					final ComponentClassifier cc = (ComponentClassifier) mode.getContainingClassifier();
-					for (final Mode m : cc.getOwnedModes()) {
-						if (m.isInitial()) {
-							m.setInitial(false);
-						}
+			selectedBos.modify(Mode.class, mode -> {
+				final ComponentClassifier cc = (ComponentClassifier) mode.getContainingClassifier();
+				// Clear initial state of all modes
+				for (final Mode m : cc.getOwnedModes()) {
+					if (m.isInitial()) {
+						m.setInitial(false);
 					}
+				}
 
-					mode.setInitial(true);
-				});
-			} else {
-				selectedBos.modify(Mode.class, mode -> {
-					final ComponentClassifier cc = (ComponentClassifier) mode.getContainingClassifier();
-					for (final Mode m : cc.getOwnedModes()) {
-						if (m.isInitial()) {
-							m.setInitial(false);
-						}
-					}
-				});
-			}
+				// Set selected mode initial state
+				mode.setInitial(btn.getSelection());
+			});
 		}
 	};
 
@@ -93,24 +83,10 @@ public class SetInitialModePropertySection extends AbstractPropertySection {
 	@Override
 	public void refresh() {
 		final Set<Mode> modes = selectedBos.boStream(Mode.class).collect(Collectors.toSet());
-		// Get initial state of selected elements
-		final Boolean isInitial = isInitial(modes);
-		// Grayed state set if elements are mixed initial and not initial
-		setInitialModeBtn.setGrayed(isInitial == null);
+		// Only allow editing 1 element
+		final boolean isEnabled = modes.size() == 1;
+		setInitialModeBtn.setEnabled(isEnabled);
 		// Set initial selection
-		setInitialModeBtn.setSelection(isInitial == Boolean.TRUE);
-	}
-
-	private static Boolean isInitial(final Set<Mode> modes) {
-		final Iterator<Mode> it = modes.iterator();
-		final Boolean isInitial = it.next().isInitial();
-		// Check if all modes are initial
-		while (it.hasNext()) {
-			if (isInitial != it.next().isInitial()) {
-				return null;
-			}
-		}
-
-		return isInitial;
+		setInitialModeBtn.setSelection(isEnabled && modes.iterator().next().isInitial());
 	}
 }

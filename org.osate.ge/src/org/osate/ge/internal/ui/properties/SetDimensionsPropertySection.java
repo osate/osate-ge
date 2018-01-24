@@ -28,6 +28,7 @@ import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
@@ -81,6 +82,13 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 		fd.width = 250;
 		tableComposite.setLayoutData(fd);
 		tableViewer = createTableViewer(tableComposite);
+		tableViewer.addSelectionChangedListener(event -> {
+			final Table table = tableViewer.getTable();
+			if (table.getSelectionIndex() >= 0) {
+				selectedIndex = table.getSelectionIndex();
+			}
+			updateMoveButtons(table.getItemCount() - 1);
+		});
 
 		// Drag and drop support for changing call sequence
 		final DragAndDropSupport dNDSupport = new DragAndDropSupport(tableViewer.getTable(), executeChangeOrder);
@@ -190,7 +198,7 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 				if (!selection.isEmpty()) {
 					final Optional<ArrayableElement> optAe = selectedBos.boStream(ArrayableElement.class).findFirst();
 					if (optAe.isPresent()) {
-						return optAe.get().getArrayDimensions().get(tableViewer.getTable().getSelectionIndex());
+						return optAe.get().getArrayDimensions().get(selectedIndex);
 					}
 				}
 
@@ -200,6 +208,7 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 			private final SelectionAdapter modifyDimensionSelectionListener = new SelectionAdapter() {
 				@Override
 				public void widgetSelected(final SelectionEvent e) {
+					selectedIndex = tableViewer.getTable().getSelectionIndex();
 					final ArrayDimension dim = getSelectedDimension();
 					if (dim != null && modifiedArrayDimension(dim, SelectionUtil.getProject(dim.eResource()))) {
 						final Aadl2Package pkg = Aadl2Factory.eINSTANCE.getAadl2Package();
@@ -308,8 +317,12 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 				modifyBtn.setEnabled(!isEmpty);
 				deleteBtn.setEnabled(!isEmpty);
 				addBtn.setEnabled(tableEnabled && (isEmpty || allowMultipleDimensions));
-				downBtn.setEnabled(selectedIndex + 1 <= (size - 1));
+				updateMoveButtons(size - 1);
+			}
+
+			private void updateMoveButtons(final int size) {
 				upBtn.setEnabled(selectedIndex - 1 >= 0);
+				downBtn.setEnabled(selectedIndex + 1 <= size);
 			}
 
 			private String getLabel(final ArrayDimension ad) {

@@ -81,7 +81,7 @@ public class AccessPropertySection extends AbstractPropertySection {
 	private static AccessType getAccessType(final Set<Access> selectedAccesses) {
 		final Iterator<Access> it = selectedAccesses.iterator();
 		// Initial value of buttons
-		final AccessType accessType = AccessType.PROVIDES;
+		final AccessType accessType = it.next().getKind();
 
 		while (it.hasNext()) {
 			// Check if all elements are of same access type
