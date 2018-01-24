@@ -8,6 +8,7 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Display;
 import org.osate.aadl2.Classifier;
+import org.osate.aadl2.ComponentClassifier;
 import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.ComponentType;
 import org.osate.aadl2.FeatureGroup;
@@ -36,11 +37,6 @@ public class ClassifierEditingUtil {
 		} else if (bo instanceof Subcomponent) {
 			final ComponentType subcomponentClassifier = ((Subcomponent) bo).getComponentType();
 			addPotentialClassifierTypesForClassifierAndExtended(subcomponentClassifier, results);
-			if (subcomponentClassifier instanceof ComponentImplementation) {
-				addPotentialClassifierTypesForClassifierAndExtended(
-						((ComponentImplementation) subcomponentClassifier).getType(),
-						results);
-			}
 		} else if (bo instanceof FeatureGroup) {
 			final FeatureGroupType fgType = ((FeatureGroup) bo).getFeatureGroupType();
 			addPotentialClassifierTypesForClassifierAndExtended(fgType, results);
@@ -55,6 +51,42 @@ public class ClassifierEditingUtil {
 			for (final Classifier tmpClassifier : c.getSelfPlusAllExtended()) {
 				if (tmpClassifier instanceof ComponentType) {
 					results.add((ComponentType) tmpClassifier);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Returns a list of component classifiers for editing based on a specified business object.
+	 * If the specified object is a component classifier, only it is returned.
+	 * @param bo
+	 * @return
+	 */
+	public static List<ComponentClassifier> getPotentialComponentClassifiersForEditing(final EObject bo) {
+		final List<ComponentClassifier> results = new ArrayList<>();
+
+		// Retrieve relevant component types
+		if (bo instanceof ComponentType || bo instanceof ComponentImplementation) {
+			// If the bo is a classifier type or implementation, just return it.
+			results.add((ComponentClassifier) bo);
+		} else if (bo instanceof Subcomponent) {
+			final ComponentClassifier subcomponentClassifier = ((Subcomponent) bo).getClassifier();
+			addComponentClassifierAndExtended(subcomponentClassifier, results);
+			if (subcomponentClassifier instanceof ComponentImplementation) {
+				addComponentClassifierAndExtended(
+						((ComponentImplementation) subcomponentClassifier).getType(), results);
+			}
+		}
+
+		return results;
+	}
+
+	private static void addComponentClassifierAndExtended(final ComponentClassifier c,
+			final List<ComponentClassifier> results) {
+		if (c != null) {
+			for (final Classifier tmpClassifier : c.getSelfPlusAllExtended()) {
+				if (tmpClassifier instanceof ComponentClassifier) {
+					results.add((ComponentClassifier) tmpClassifier);
 				}
 			}
 		}
@@ -118,7 +150,7 @@ public class ClassifierEditingUtil {
 					? ("The element '" + ((NamedElement) bo).getQualifiedName() + "'")
 							: "The target element";
 					MessageDialog.openError(Display.getDefault().getActiveShell(), "Classifier Not Set", targetDescription
-					+ " does not have a classifier. " + secondaryMsg);
+							+ " does not have a classifier. " + secondaryMsg);
 		}
 
 		return showMsg;
