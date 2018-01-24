@@ -98,7 +98,7 @@ public class ModeHandler {
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
 			final QueryService queryService, final NamingService namingService) {
 		if (ClassifierEditingUtil.showMessageIfSubcomponentOrFeatureGroupWithoutClassifier(target,
-				"Please set a classifier before creating a mode.")) {
+				"Set a classifier before creating a mode.")) {
 			return;
 		}
 

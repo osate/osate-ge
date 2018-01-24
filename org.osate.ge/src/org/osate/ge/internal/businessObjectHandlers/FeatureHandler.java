@@ -108,7 +108,7 @@ public class FeatureHandler {
 
 	@BuildCreateOperation
 	public void buildCreateOperation(@Named(InternalNames.OPERATION) final CreateOperation createOp,
-			@Named(Names.TARGET_BO) final EObject targetBo,
+			final @Named(Names.TARGET_BO) EObject targetBo,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass featureType,
 			final @Named(Names.DOCKING_POSITION) DockingPosition dockingPosition,
@@ -116,7 +116,7 @@ public class FeatureHandler {
 			final QueryService queryService, final NamingService namingService) {
 
 		if (!ClassifierEditingUtil.showMessageIfSubcomponentOrFeatureGroupWithoutClassifier(targetBo,
-				"Please set a classifier before creating a feature.")) {
+				"Set a classifier before creating a feature.")) {
 			// Determine which classifier should own the new element
 			final Classifier selectedClassifier = ClassifierEditingUtil
 					.getClassifierToModify(getPotentialOwners(targetBo, featureType));
