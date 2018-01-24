@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.widgets.Display;
 import org.osate.aadl2.Classifier;
@@ -11,6 +12,7 @@ import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.ComponentType;
 import org.osate.aadl2.FeatureGroup;
 import org.osate.aadl2.FeatureGroupType;
+import org.osate.aadl2.NamedElement;
 import org.osate.aadl2.Subcomponent;
 import org.osate.ge.internal.ui.dialogs.ElementSelectionDialog;
 
@@ -58,20 +60,25 @@ public class ClassifierEditingUtil {
 		}
 	}
 
+	public static Classifier getClassifierToModify(final List<? extends Classifier> potentialClassifiers) {
+		return getClassifierToModify(potentialClassifiers, false);
+	}
+
 	/**
 	 * Returns the classifier from the specified list which should be modified. If there are multiple classifiers in the specified list,
 	 * the user will be prompted to select one. The first element will be the default. Must be called from the UI thread.
 	 * @param potentialClassifiers must have at least one element. If empty, an exception will be thrown.
 	 * @return the classifier to modify. Will return null if the user cancels the selection prompt.
 	 */
-	public static Classifier getClassifierToModify(final List<? extends Classifier> potentialClassifiers) {
+	public static Classifier getClassifierToModify(final List<? extends Classifier> potentialClassifiers,
+			final boolean forcePrompt) {
 		if (potentialClassifiers.isEmpty()) {
 			throw new RuntimeException("potentialClassifiers is empty");
 		}
 
 		// Determine which classifier should own the new element
 		final Classifier selectedClassifier;
-		if (potentialClassifiers.size() > 1) {
+		if (forcePrompt || potentialClassifiers.size() > 1) {
 			// Prompt the user for the classifier
 			final ElementSelectionDialog dlg = new ElementSelectionDialog(Display.getCurrent().getActiveShell(),
 					"Select a Classifier to Modify", "Select a classifier to modify.", potentialClassifiers);
@@ -86,5 +93,34 @@ public class ClassifierEditingUtil {
 		}
 
 		return selectedClassifier;
+	}
+
+	public static boolean isSubcomponentOrFeatureGroupWithoutClassifier(final Object bo) {
+		if (bo instanceof Subcomponent) {
+			return ((Subcomponent) bo).getClassifier() == null;
+		} else if (bo instanceof FeatureGroup) {
+			return ((FeatureGroup) bo).getFeatureGroupType() == null;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Returns true if the element was a subcomponent or feature group without classifier and the error was showing.
+	 * @param bo
+	 * @return
+	 */
+	public static boolean showMessageIfSubcomponentOrFeatureGroupWithoutClassifier(final Object bo,
+			final String secondaryMsg) {
+		final boolean showMsg = isSubcomponentOrFeatureGroupWithoutClassifier(bo);
+		if (ClassifierEditingUtil.isSubcomponentOrFeatureGroupWithoutClassifier(bo)) {
+			final String targetDescription = bo instanceof NamedElement
+					? ("The element '" + ((NamedElement) bo).getQualifiedName() + "'")
+							: "The target element";
+					MessageDialog.openError(Display.getDefault().getActiveShell(), "Classifier Not Set", targetDescription
+					+ " does not have a classifier. " + secondaryMsg);
+		}
+
+		return showMsg;
 	}
 }

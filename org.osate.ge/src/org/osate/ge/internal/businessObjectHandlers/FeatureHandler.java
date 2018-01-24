@@ -10,8 +10,6 @@ import javax.inject.Named;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.swt.widgets.Display;
 import org.osate.aadl2.AbstractFeature;
 import org.osate.aadl2.Access;
 import org.osate.aadl2.AccessSpecification;
@@ -35,7 +33,6 @@ import org.osate.aadl2.NamedElement;
 import org.osate.aadl2.PortSpecification;
 import org.osate.aadl2.ProcessorFeature;
 import org.osate.aadl2.PrototypeBinding;
-import org.osate.aadl2.Subcomponent;
 import org.osate.aadl2.SubprogramProxy;
 import org.osate.aadl2.modelsupport.util.ResolvePrototypeUtil;
 import org.osate.ge.BusinessObjectContext;
@@ -106,7 +103,7 @@ public class FeatureHandler {
 		// Return true if there is a potential owner or if the target is a feature group or subcomponent without a classifier.
 		// The latter case is needed to allow displaying an error message.
 		return getPotentialOwners(targetBo, featureType).size() > 0
-				|| isSubcomponentOrFeatureGroupWithoutClassifier(targetBo);
+				|| ClassifierEditingUtil.isSubcomponentOrFeatureGroupWithoutClassifier(targetBo);
 	}
 
 	@BuildCreateOperation
@@ -118,14 +115,8 @@ public class FeatureHandler {
 			final @Named(InternalNames.PROJECT) IProject project,
 			final QueryService queryService, final NamingService namingService) {
 
-		if (isSubcomponentOrFeatureGroupWithoutClassifier(targetBo)) {
-			final String targetDescription = targetBo instanceof NamedElement
-					? ("The element '" + ((NamedElement) targetBo).getQualifiedName() + "'")
-							: "The target element";
-					MessageDialog.openError(Display.getDefault().getActiveShell(), "Classifier Not Set",
-							targetDescription
-							+ " does not have a classifier. Please set a classifier before creating a feature.");
-		} else {
+		if (!ClassifierEditingUtil.showMessageIfSubcomponentOrFeatureGroupWithoutClassifier(targetBo,
+				"Please set a classifier before creating a feature.")) {
 			// Determine which classifier should own the new element
 			final Classifier selectedClassifier = ClassifierEditingUtil
 					.getClassifierToModify(getPotentialOwners(targetBo, featureType));
@@ -179,16 +170,6 @@ public class FeatureHandler {
 
 		return ClassifierEditingUtil.getPotentialClassifierTypesForEditing(targetBo).stream()
 				.filter(c -> AadlFeatureUtil.canOwnFeatureType(c, featureType)).collect(Collectors.toList());
-	}
-
-	private static boolean isSubcomponentOrFeatureGroupWithoutClassifier(final Object bo) {
-		if (bo instanceof Subcomponent) {
-			return ((Subcomponent) bo).getClassifier() == null;
-		} else if (bo instanceof FeatureGroup) {
-			return ((FeatureGroup) bo).getFeatureGroupType() == null;
-		}
-
-		return false;
 	}
 
 	@GetGraphicalConfiguration
