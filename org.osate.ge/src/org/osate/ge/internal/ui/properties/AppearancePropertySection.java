@@ -7,6 +7,10 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.Adapters;
+import org.eclipse.graphiti.mm.algorithms.Image;
+import org.eclipse.graphiti.mm.pictograms.PictogramElement;
+import org.eclipse.graphiti.services.Graphiti;
+import org.eclipse.graphiti.services.IGaService;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.resource.DeviceResourceManager;
@@ -41,6 +45,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
+import org.osate.aadl2.NamedElement;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.AgeConnection;
@@ -48,7 +53,9 @@ import org.osate.ge.graphics.internal.Label;
 import org.osate.ge.internal.Activator;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
+import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 import org.osate.ge.internal.ui.util.UiUtil;
+import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.internal.util.StringUtil;
 
 public class AppearancePropertySection extends AbstractPropertySection {
@@ -152,11 +159,44 @@ public class AppearancePropertySection extends AbstractPropertySection {
 						sb.backgroundColor(background);
 					}
 				}));
+
+		final Button imageBackground = createButton(parent, backgroundIcon);
+		fd = new FormData();
+		fd.top = new FormAttachment(backgroundButton, 0, SWT.TOP);
+		fd.left = new FormAttachment(backgroundButton, 0);
+		imageBackground.setLayoutData(fd);
+		imageBackground.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(final SelectionEvent e) {
+				final PictogramElement pe = editor.getDiagramTypeProvider().getFeatureProvider()
+						.getAllPictogramElementsForBusinessObject(
+								selectedDiagramElements.get(0).getBusinessObject())[0];
+				final IGaService gaService = Graphiti.getGaService();
+				NamedElement ne = (NamedElement) selectedDiagramElements.get(0).getBusinessObject();
+				final Image image = gaService.createImage(pe.getGraphicsAlgorithm().getParentGraphicsAlgorithm(),
+						ImageHelper.getImage(ne.eClass()));
+				int IMAGE_SIZE = 250;
+				image.setWidth(500);
+				image.setHeight(500);
+				gaService.setLocationAndSize(image, (500 - IMAGE_SIZE) / 2, (500 - IMAGE_SIZE) / 2, IMAGE_SIZE,
+						IMAGE_SIZE);
+
+				ageDiagram.modify("Image", m -> {
+					pe.setGraphicsAlgorithm(image);
+				});
+
+				// Adapters.adapt(sourceObject, adapter)
+				// ageDiagram.
+				// selectedDiagramElements.get(0);
+			}
+		});
 	}
 
 	@Override
 	public void setInput(final IWorkbenchPart part, final ISelection selection) {
 		super.setInput(part, selection);
+		editor = Adapters.adapt(part, AgeDiagramEditor.class);
+
 		selectedDiagramElements.clear();
 
 		final IStructuredSelection ss = (IStructuredSelection) selection;
@@ -621,6 +661,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 	private final static ImageDescriptor backgroundIcon = Activator.getImageDescriptor("icons/Background.gif");
 	private final static ImageDescriptor fontColorIcon = Activator.getImageDescriptor("icons/FontColor.gif");
 	private AgeDiagram ageDiagram;
+	private AgeDiagramEditor editor;
 	private ResourceManager resourceMgr;
 	private List<DiagramElement> selectedDiagramElements = new ArrayList<>();
 	private org.eclipse.swt.widgets.Label fontSizeLabel;
