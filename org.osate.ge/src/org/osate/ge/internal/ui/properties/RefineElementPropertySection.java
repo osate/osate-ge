@@ -26,6 +26,7 @@ import org.osate.aadl2.ComponentType;
 import org.osate.aadl2.Connection;
 import org.osate.aadl2.DirectedFeature;
 import org.osate.aadl2.Feature;
+import org.osate.aadl2.FeatureGroup;
 import org.osate.aadl2.FeatureGroupType;
 import org.osate.aadl2.FlowSpecification;
 import org.osate.aadl2.NamedElement;
@@ -47,21 +48,33 @@ public class RefineElementPropertySection extends AbstractPropertySection {
 				if (bo instanceof RefinableElement) {
 					final RefinableElement re = (RefinableElement) bo;
 					final Object parent = boc.getParent().getBusinessObject();
+
+					// Find the owning classifier
+					final Classifier owningClassifier = getOwningClassifier(parent);
+					if (owningClassifier == null) {
+						return false;
+					}
+
 					// Return true if element is refined
 					if (re.getRefinedElement() != null) {
 						return true;
 					}
 
 					if (re instanceof Feature) {
-						return parent instanceof Classifier && re.getContainingClassifier() != parent
-								&& (parent instanceof FeatureGroupType || parent instanceof ComponentType);
+						return re.getContainingClassifier() != owningClassifier
+								&& (owningClassifier instanceof FeatureGroupType
+										|| owningClassifier instanceof ComponentType);
 					} else if (re instanceof Connection) {
-						return parent instanceof ComponentImplementation && re.getContainingClassifier() != parent;
+						return owningClassifier instanceof ComponentImplementation
+								&& re.getContainingClassifier() != owningClassifier;
 					} else if (re instanceof FlowSpecification) {
-						return parent instanceof ComponentType && re.getContainingClassifier() != parent;
+						return owningClassifier instanceof ComponentType
+								&& re.getContainingClassifier() != owningClassifier;
 					} else if (re instanceof Subcomponent) {
-						return parent instanceof ComponentImplementation && re.getContainingClassifier() != parent
-								&& SubcomponentUtil.canContainSubcomponentType((ComponentImplementation) parent,
+						return owningClassifier instanceof ComponentImplementation
+								&& re.getContainingClassifier() != owningClassifier
+								&& SubcomponentUtil.canContainSubcomponentType(
+										(ComponentImplementation) owningClassifier,
 										re.eClass());
 					}
 				}
@@ -104,7 +117,8 @@ public class RefineElementPropertySection extends AbstractPropertySection {
 				});
 			} else {
 				// Refine selected elements
-				selectedBos.modify(boc -> boc.getParent().getBusinessObject(), (container, boc) -> {
+				selectedBos.modify(boc -> getOwningClassifier(boc.getParent().getBusinessObject()),
+						(container, boc) -> {
 					final RefinableElement re = (RefinableElement) boc.getBusinessObject();
 					if (re.getRefinedElement() == null) {
 						if (re instanceof Feature) {
@@ -175,5 +189,26 @@ public class RefineElementPropertySection extends AbstractPropertySection {
 		}
 
 		return isRefined;
+	}
+
+	/**
+	 * Returns the classifier that owns the specified object or the object itself if it is a classifier.
+	 * @param bo
+	 * @return
+	 */
+	private static Classifier getOwningClassifier(final Object bo) {
+		// Find the owning classifier
+		final Classifier owningClassifier;
+		if (bo instanceof Classifier) {
+			owningClassifier = (Classifier) bo;
+		} else if (bo instanceof Subcomponent) {
+			owningClassifier = ((Subcomponent) bo).getClassifier();
+		} else if (bo instanceof FeatureGroup) {
+			owningClassifier = ((FeatureGroup) bo).getFeatureGroupType();
+		} else {
+			owningClassifier = null;
+		}
+
+		return owningClassifier;
 	}
 }
