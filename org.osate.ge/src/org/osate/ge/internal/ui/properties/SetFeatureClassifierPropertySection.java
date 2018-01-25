@@ -52,6 +52,7 @@ import org.osate.aadl2.SubprogramGroupSubcomponentType;
 import org.osate.aadl2.SubprogramSubcomponentType;
 import org.osate.ge.BusinessObjectSelection;
 import org.osate.ge.internal.ui.dialogs.ElementSelectionDialog;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
 import org.osate.ge.internal.util.ScopedEMFIndexRetrieval;
 import org.osate.ge.ui.properties.PropertySectionUtil;
 
@@ -127,7 +128,7 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
 		final Composite container = getWidgetFactory().createComposite(composite);
-		final Label sectionLabel = PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(),
+		final Label sectionLabel = InternalPropertySectionUtil.createSectionLabel(composite, getWidgetFactory(),
 				"Classifier:");
 
 		container.setLayout(new FormLayout());
@@ -142,7 +143,7 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 		fd.top = new FormAttachment(0, ITabbedPropertyConstants.VSPACE);
 		curFeatureClassifier.setLayoutData(fd);
 
-		chooseBtn = PropertySectionUtil.createButton(getWidgetFactory(), container, null, setClassifierListener,
+		chooseBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), container, null, setClassifierListener,
 				"Choose...", SWT.PUSH);
 
 		fd = new FormData();

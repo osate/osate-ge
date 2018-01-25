@@ -24,6 +24,7 @@ import org.osate.aadl2.ConnectedElement;
 import org.osate.aadl2.Connection;
 import org.osate.aadl2.ParameterConnection;
 import org.osate.ge.BusinessObjectSelection;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
 import org.osate.ge.ui.properties.PropertySectionUtil;
 
 public class SwitchDirectionOfConnectionPropertySection extends AbstractPropertySection {
@@ -91,23 +92,24 @@ public class SwitchDirectionOfConnectionPropertySection extends AbstractProperty
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
 
 		// Container for direction
-		final Composite directionContainer = PropertySectionUtil.createRowLayoutComposite(getWidgetFactory(), composite,
+		final Composite directionContainer = InternalPropertySectionUtil.createRowLayoutComposite(getWidgetFactory(),
+				composite,
 				STANDARD_LABEL_WIDTH);
-		bidirectionalBtn = PropertySectionUtil.createButton(getWidgetFactory(), directionContainer, true,
+		bidirectionalBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), directionContainer, true,
 				directionSelectionListener,
 				"Bidirectional", SWT.RADIO);
-		unidirectionalBtn = PropertySectionUtil.createButton(getWidgetFactory(), directionContainer, false,
+		unidirectionalBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), directionContainer, false,
 				directionSelectionListener,
 				"Unidirectional", SWT.RADIO);
 
-		switchDirectionBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, null,
+		switchDirectionBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), composite, null,
 				switchDirectionListener, "Switch Direction", SWT.PUSH);
 		final FormData ld = new FormData();
 		ld.left = new FormAttachment(directionContainer, ITabbedPropertyConstants.HSPACE);
 		ld.top = new FormAttachment(directionContainer, 0, SWT.CENTER);
 		switchDirectionBtn.setLayoutData(ld);
 
-		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(),
+		InternalPropertySectionUtil.createSectionLabel(composite, getWidgetFactory(),
 				"Direction:");
 	}
 

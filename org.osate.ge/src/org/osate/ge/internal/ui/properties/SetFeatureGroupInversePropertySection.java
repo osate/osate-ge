@@ -24,6 +24,7 @@ import org.osate.aadl2.ComponentType;
 import org.osate.aadl2.FeatureGroup;
 import org.osate.aadl2.FeatureGroupType;
 import org.osate.ge.BusinessObjectSelection;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
 import org.osate.ge.internal.util.AadlFeatureUtil;
 import org.osate.ge.ui.properties.PropertySectionUtil;
 
@@ -61,9 +62,11 @@ public class SetFeatureGroupInversePropertySection extends AbstractPropertySecti
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite container = getWidgetFactory().createFlatFormComposite(parent);
-		final Label sectionLabel = PropertySectionUtil.createSectionLabel(container, getWidgetFactory(), "Inverse:");
+		final Label sectionLabel = InternalPropertySectionUtil.createSectionLabel(container, getWidgetFactory(),
+				"Inverse:");
 
-		inverseBtn = PropertySectionUtil.createButton(getWidgetFactory(), container, SWT.NONE, inverseSelectionListener,
+		inverseBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), container, SWT.NONE,
+				inverseSelectionListener,
 				"", SWT.CHECK);
 
 		final FormData fd = new FormData();

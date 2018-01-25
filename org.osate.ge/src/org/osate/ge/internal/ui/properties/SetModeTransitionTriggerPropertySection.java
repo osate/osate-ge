@@ -35,6 +35,7 @@ import org.osate.aadl2.TriggerPort;
 import org.osate.ge.BusinessObjectSelection;
 import org.osate.ge.internal.ui.dialogs.ModeTransitionTriggerSelectionDialog;
 import org.osate.ge.internal.ui.dialogs.ModeTransitionTriggerSelectionDialog.ModeTransitionTriggerInfo;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
 import org.osate.ge.ui.properties.PropertySectionUtil;
 
 import com.google.common.collect.Streams;
@@ -77,7 +78,8 @@ public class SetModeTransitionTriggerPropertySection extends AbstractPropertySec
 		tableViewer.setContentProvider(ArrayContentProvider.getInstance());
 
 		tableViewer.getTable().setHeaderVisible(true);
-		final TableViewerColumn portCol = PropertySectionUtil.createTableColumnViewer(tableViewer, "Trigger Port",
+		final TableViewerColumn portCol = InternalPropertySectionUtil.createTableColumnViewer(tableViewer,
+				"Trigger Port",
 				SWT.NONE,
 				new CellLabelProvider() {
 			@Override
@@ -89,7 +91,7 @@ public class SetModeTransitionTriggerPropertySection extends AbstractPropertySec
 		portCol.getColumn().setResizable(false);
 		tableComposite.setLayout(createTableColumnLayout(portCol.getColumn()));
 
-		chooseBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, null,
+		chooseBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), composite, null,
 				setModeTransitionTriggerSelectionListener, "Choose...", SWT.PUSH);
 
 		fd = new FormData();
@@ -97,7 +99,7 @@ public class SetModeTransitionTriggerPropertySection extends AbstractPropertySec
 		fd.top = new FormAttachment(tableComposite, 0, SWT.CENTER);
 		chooseBtn.setLayoutData(fd);
 
-		PropertySectionUtil.createSectionLabel(composite,
+		InternalPropertySectionUtil.createSectionLabel(composite,
 				getWidgetFactory(), "Triggers:");
 	}
 

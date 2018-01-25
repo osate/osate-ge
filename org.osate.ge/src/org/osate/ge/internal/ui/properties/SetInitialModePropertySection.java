@@ -21,6 +21,7 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.osate.aadl2.ComponentClassifier;
 import org.osate.aadl2.Mode;
 import org.osate.ge.BusinessObjectSelection;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
 import org.osate.ge.ui.properties.PropertySectionUtil;
 
 public class SetInitialModePropertySection extends AbstractPropertySection {
@@ -64,8 +65,9 @@ public class SetInitialModePropertySection extends AbstractPropertySection {
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
-		final Label sectionLabel = PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Initial:");
-		setInitialModeBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, SWT.NONE,
+		final Label sectionLabel = InternalPropertySectionUtil.createSectionLabel(composite, getWidgetFactory(),
+				"Initial:");
+		setInitialModeBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), composite, SWT.NONE,
 				initialModeListener, "", SWT.CHECK);
 
 		final FormData fd = new FormData();

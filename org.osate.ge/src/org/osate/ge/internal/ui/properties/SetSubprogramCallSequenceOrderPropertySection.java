@@ -33,11 +33,12 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.osate.aadl2.SubprogramCall;
 import org.osate.aadl2.SubprogramCallSequence;
 import org.osate.ge.BusinessObjectSelection;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil.DragAndDropElement;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil.DragAndDropSupport;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil.ExecuteOrderChange;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil.UpDownButtonSelectionAdapter;
 import org.osate.ge.ui.properties.PropertySectionUtil;
-import org.osate.ge.ui.properties.PropertySectionUtil.DragAndDropElement;
-import org.osate.ge.ui.properties.PropertySectionUtil.DragAndDropSupport;
-import org.osate.ge.ui.properties.PropertySectionUtil.ExecuteOrderChange;
-import org.osate.ge.ui.properties.PropertySectionUtil.UpDownButtonSelectionAdapter;
 
 public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPropertySection {
 	public static class Filter implements IFilter {
@@ -115,20 +116,22 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 		final UpDownButtonSelectionAdapter moveBtnSelectionListener = new UpDownButtonSelectionAdapter(tableViewer,
 				executeChangeOrder);
 
-		upBtn = PropertySectionUtil.createButton(getWidgetFactory(), btnComposite, true, moveBtnSelectionListener, "Up",
+		upBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), btnComposite, true,
+				moveBtnSelectionListener, "Up",
 				SWT.PUSH);
 		fd = new FormData();
 		fd.width = btnWidth;
 		upBtn.setLayoutData(fd);
 
-		downBtn = PropertySectionUtil.createButton(getWidgetFactory(), btnComposite, false, moveBtnSelectionListener,
+		downBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), btnComposite, false,
+				moveBtnSelectionListener,
 				"Down", SWT.PUSH);
 		fd = new FormData();
 		fd.width = btnWidth;
 		fd.top = new FormAttachment(upBtn, -ITabbedPropertyConstants.VMARGIN);
 		downBtn.setLayoutData(fd);
 
-		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Call Order:");
+		InternalPropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Call Order:");
 	}
 
 	private static TableViewer createTableViewer(final Composite tableComposite) {
@@ -142,7 +145,7 @@ public class SetSubprogramCallSequenceOrderPropertySection extends AbstractPrope
 	}
 
 	private TableViewerColumn createTableViewerColumn(final String header, final CellLabelProvider cellLabelProvider) {
-		return PropertySectionUtil.createTableColumnViewer(tableViewer, header, SWT.RESIZE, cellLabelProvider);
+		return InternalPropertySectionUtil.createTableColumnViewer(tableViewer, header, SWT.RESIZE, cellLabelProvider);
 	}
 
 	private ExecuteOrderChange<Integer, Integer, DragAndDropElement> executeChangeOrder = (newIndex, curIndex,

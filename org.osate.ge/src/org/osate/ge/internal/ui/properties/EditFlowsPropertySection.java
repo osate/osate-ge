@@ -23,6 +23,7 @@ import org.osate.aadl2.FlowImplementation;
 import org.osate.ge.BusinessObjectSelection;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.ui.dialogs.EditFlowsDialog;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
 import org.osate.ge.ui.properties.PropertySectionUtil;
 
 public class EditFlowsPropertySection extends AbstractPropertySection {
@@ -68,12 +69,13 @@ public class EditFlowsPropertySection extends AbstractPropertySection {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
 
-		editFlowsBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, null, editFlowsSelectionListener,
+		editFlowsBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), composite, null,
+				editFlowsSelectionListener,
 				"Edit...", SWT.PUSH);
 		final FormData fd = new FormData();
 		fd.left = new FormAttachment(0, STANDARD_LABEL_WIDTH);
 		editFlowsBtn.setLayoutData(fd);
-		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Flows:");
+		InternalPropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Flows:");
 	}
 
 	@Override

@@ -21,6 +21,7 @@ import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.osate.aadl2.ComponentType;
 import org.osate.ge.BusinessObjectSelection;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
 import org.osate.ge.ui.properties.PropertySectionUtil;
 
 public class SetDerivedModesPropertySection extends AbstractPropertySection {
@@ -57,10 +58,11 @@ public class SetDerivedModesPropertySection extends AbstractPropertySection {
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
-		final Label sectionLabel = PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(),
+		final Label sectionLabel = InternalPropertySectionUtil.createSectionLabel(composite, getWidgetFactory(),
 				"Derived\nModes:");
 
-		derivedModesBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, SWT.NONE, derivedListener, "",
+		derivedModesBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), composite, SWT.NONE,
+				derivedListener, "",
 				SWT.CHECK);
 
 		final FormData fd = new FormData();

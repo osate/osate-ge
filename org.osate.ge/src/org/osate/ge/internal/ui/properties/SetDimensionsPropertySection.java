@@ -44,12 +44,13 @@ import org.osate.aadl2.Property;
 import org.osate.aadl2.PropertyConstant;
 import org.osate.ge.BusinessObjectSelection;
 import org.osate.ge.internal.ui.dialogs.EditDimensionsDialog.EditDimensionDialog;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil.DragAndDropElement;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil.DragAndDropSupport;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil.ExecuteOrderChange;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil.UpDownButtonSelectionAdapter;
 import org.osate.ge.internal.ui.util.SelectionUtil;
 import org.osate.ge.ui.properties.PropertySectionUtil;
-import org.osate.ge.ui.properties.PropertySectionUtil.DragAndDropElement;
-import org.osate.ge.ui.properties.PropertySectionUtil.DragAndDropSupport;
-import org.osate.ge.ui.properties.PropertySectionUtil.ExecuteOrderChange;
-import org.osate.ge.ui.properties.PropertySectionUtil.UpDownButtonSelectionAdapter;
 
 public class SetDimensionsPropertySection extends AbstractPropertySection {
 	public static class Filter implements IFilter {
@@ -97,7 +98,8 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 		tableViewer.addDropSupport(operations, types, dNDSupport.dropTargetListener);
 		tableViewer.addDragSupport(operations, types, dNDSupport.dragSourceListener);
 
-		final TableViewerColumn portCol = PropertySectionUtil.createTableColumnViewer(tableViewer, "Array Dimensions",
+		final TableViewerColumn portCol = InternalPropertySectionUtil.createTableColumnViewer(tableViewer,
+				"Array Dimensions",
 				SWT.RESIZE, new CellLabelProvider() {
 			@Override
 			public void update(final ViewerCell cell) {
@@ -108,7 +110,7 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 
 		portCol.getColumn().setResizable(true);
 		tableComposite.setLayout(createTableColumnLayout(portCol.getColumn()));
-		modifyBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, null,
+		modifyBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), composite, null,
 				modifyDimensionSelectionListener, "Modify...", SWT.PUSH);
 		final int btnWidth = 60;
 		fd = new FormData();
@@ -118,7 +120,7 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 		modifyBtn.setLayoutData(fd);
 
 // Add
-		addBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, SWT.NONE,
+		addBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), composite, SWT.NONE,
 				addDimensionSelectionListener, "Add", SWT.PUSH);
 		fd = new FormData();
 		fd.left = new FormAttachment(tableComposite, ITabbedPropertyConstants.HSPACE);
@@ -127,7 +129,7 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 		addBtn.setLayoutData(fd);
 
 // Delete
-		deleteBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, SWT.NONE,
+		deleteBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), composite, SWT.NONE,
 				deleteDimensionSelectionListener, "Delete", SWT.PUSH);
 		fd = new FormData();
 		fd.left = new FormAttachment(tableComposite, ITabbedPropertyConstants.HSPACE);
@@ -139,7 +141,8 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 				executeChangeOrder);
 
 // Up
-		upBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, true, moveBtnSelectionListener, "Up",
+		upBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), composite, true, moveBtnSelectionListener,
+				"Up",
 				SWT.PUSH);
 		fd = new FormData();
 		fd.left = new FormAttachment(tableComposite, ITabbedPropertyConstants.HSPACE);
@@ -148,7 +151,8 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 		upBtn.setLayoutData(fd);
 
 // Down
-		downBtn = PropertySectionUtil.createButton(getWidgetFactory(), composite, false, moveBtnSelectionListener,
+		downBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), composite, false,
+				moveBtnSelectionListener,
 				"Down", SWT.PUSH);
 		fd = new FormData();
 		fd.left = new FormAttachment(tableComposite, ITabbedPropertyConstants.HSPACE);
@@ -156,7 +160,7 @@ public class SetDimensionsPropertySection extends AbstractPropertySection {
 		fd.width = btnWidth;
 		downBtn.setLayoutData(fd);
 
-		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Dimensions:");
+		InternalPropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Dimensions:");
 	}
 
 	private static TableViewer createTableViewer(final Composite tableComposite) {

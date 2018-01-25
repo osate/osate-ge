@@ -25,6 +25,8 @@ import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.NamedElement;
 import org.osate.aadl2.Subcomponent;
 import org.osate.ge.BusinessObjectSelection;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
+import org.osate.ge.internal.util.AgeEmfUtil;
 import org.osate.ge.internal.util.StringUtil;
 import org.osate.ge.internal.util.SubcomponentUtil;
 import org.osate.ge.ui.properties.PropertySectionUtil;
@@ -48,9 +50,10 @@ public class ChangeSubcomponentTypePropertySection extends AbstractPropertySecti
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite container = getWidgetFactory().createFlatFormComposite(parent);
-		comboViewer = PropertySectionUtil.createComboViewer(container, STANDARD_LABEL_WIDTH, scTypeSelectionListener, subcompTypeLabelProvider);
+		comboViewer = InternalPropertySectionUtil.createComboViewer(container, STANDARD_LABEL_WIDTH,
+				scTypeSelectionListener, subcompTypeLabelProvider);
 		comboViewer.setComparator(new ViewerComparator());
-		PropertySectionUtil.createSectionLabel(container, getWidgetFactory(), "Type:");
+		InternalPropertySectionUtil.createSectionLabel(container, getWidgetFactory(), "Type:");
 	}
 
 	private final SelectionAdapter scTypeSelectionListener = new SelectionAdapter() {
@@ -64,7 +67,7 @@ public class ChangeSubcomponentTypePropertySection extends AbstractPropertySecti
 					final ComponentImplementation ci = sc.getContainingComponentImpl();
 
 					// Copy structural feature values to the replacement object.
-					PropertySectionUtil.transferStructuralFeatureValues(sc,
+					AgeEmfUtil.transferStructuralFeatureValues(sc,
 							SubcomponentUtil.createSubcomponent(ci, scTypeElement.getType()));
 
 // Remove the old object
@@ -98,7 +101,7 @@ public class ChangeSubcomponentTypePropertySection extends AbstractPropertySecti
 				.add(new SubcomponentTypeElement(type));
 
 // Get comboviewer selected value and populate available type options for comboviewer
-		selectedScType = PropertySectionUtil.getTypeOptionsInformation(selectedSubcomponenents,
+		selectedScType = InternalPropertySectionUtil.getTypeOptionsInformation(selectedSubcomponenents,
 				SubcomponentUtil.getSubcomponentTypes(), (sc, type) -> isCompatibleSupcomponentType(sc, type),
 				addSubcomponentTypeElement);
 

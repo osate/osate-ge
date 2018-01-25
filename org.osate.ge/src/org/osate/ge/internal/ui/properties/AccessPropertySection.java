@@ -19,6 +19,7 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.osate.aadl2.Access;
 import org.osate.aadl2.AccessType;
 import org.osate.ge.BusinessObjectSelection;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
 import org.osate.ge.ui.properties.PropertySectionUtil;
 
 public class AccessPropertySection extends AbstractPropertySection {
@@ -48,15 +49,18 @@ public class AccessPropertySection extends AbstractPropertySection {
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
-		final Composite directionContainer = PropertySectionUtil.createRowLayoutComposite(getWidgetFactory(), composite,
+		final Composite directionContainer = InternalPropertySectionUtil.createRowLayoutComposite(getWidgetFactory(),
+				composite,
 				STANDARD_LABEL_WIDTH);
 
-		providesBtn = PropertySectionUtil.createButton(getWidgetFactory(), directionContainer, AccessType.PROVIDES,
+		providesBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), directionContainer,
+				AccessType.PROVIDES,
 				accessSelectionListener, "Provides", SWT.RADIO);
-		requiresBtn = PropertySectionUtil.createButton(getWidgetFactory(), directionContainer, AccessType.REQUIRES,
+		requiresBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), directionContainer,
+				AccessType.REQUIRES,
 				accessSelectionListener, "Requires", SWT.RADIO);
 
-		PropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Access Type:");
+		InternalPropertySectionUtil.createSectionLabel(composite, getWidgetFactory(), "Access Type:");
 	}
 
 	@Override

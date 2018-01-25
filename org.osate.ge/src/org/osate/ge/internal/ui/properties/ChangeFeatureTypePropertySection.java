@@ -31,7 +31,9 @@ import org.osate.aadl2.InternalFeature;
 import org.osate.aadl2.NamedElement;
 import org.osate.aadl2.ProcessorFeature;
 import org.osate.ge.BusinessObjectSelection;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
 import org.osate.ge.internal.util.AadlFeatureUtil;
+import org.osate.ge.internal.util.AgeEmfUtil;
 import org.osate.ge.internal.util.StringUtil;
 import org.osate.ge.ui.properties.PropertySectionUtil;
 
@@ -67,10 +69,10 @@ public class ChangeFeatureTypePropertySection extends AbstractPropertySection {
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite container = getWidgetFactory().createFlatFormComposite(parent);
-		comboViewer = PropertySectionUtil.createComboViewer(container, STANDARD_LABEL_WIDTH,
+		comboViewer = InternalPropertySectionUtil.createComboViewer(container, STANDARD_LABEL_WIDTH,
 				featureTypeSelectionListener, featureTypeLabelProvider);
 		comboViewer.setComparator(new ViewerComparator());
-		PropertySectionUtil.createSectionLabel(container, getWidgetFactory(), "Type:");
+		InternalPropertySectionUtil.createSectionLabel(container, getWidgetFactory(), "Type:");
 	}
 
 	private final SelectionAdapter featureTypeSelectionListener = new SelectionAdapter() {
@@ -84,7 +86,7 @@ public class ChangeFeatureTypePropertySection extends AbstractPropertySection {
 							(EClass) comboViewer.getStructuredSelection().getFirstElement());
 
 					// Copy structural feature values to the replacement object.
-					PropertySectionUtil.transferStructuralFeatureValues(feature, replacementFeature);
+					AgeEmfUtil.transferStructuralFeatureValues(feature, replacementFeature);
 
 // Handle copying the data feature classifier
 					if (replacementFeature instanceof DirectedFeature) {
@@ -142,7 +144,7 @@ public class ChangeFeatureTypePropertySection extends AbstractPropertySection {
 		final Consumer<EClass> addFeatureTypeOption = (type) -> featureTypeOptions.add(type);
 
 // Get comboviewer selected value and populate available type options for comboviewer
-		selectedFeatureType = PropertySectionUtil.getTypeOptionsInformation(selectedFeatures,
+		selectedFeatureType = InternalPropertySectionUtil.getTypeOptionsInformation(selectedFeatures,
 				AadlFeatureUtil.getFeatureTypes(), (feature, type) -> isValidFeatureType(feature, type),
 				addFeatureTypeOption);
 

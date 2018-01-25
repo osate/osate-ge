@@ -32,6 +32,7 @@ import org.osate.aadl2.NamedElement;
 import org.osate.aadl2.RefinableElement;
 import org.osate.aadl2.Subcomponent;
 import org.osate.ge.BusinessObjectSelection;
+import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
 import org.osate.ge.internal.util.AadlConnectionUtil;
 import org.osate.ge.internal.util.AadlFeatureUtil;
 import org.osate.ge.internal.util.SubcomponentUtil;
@@ -76,10 +77,11 @@ public class RefineElementPropertySection extends AbstractPropertySection {
 	public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
 		super.createControls(parent, aTabbedPropertySheetPage);
 		final Composite container = getWidgetFactory().createFlatFormComposite(parent);
-		final Label sectionLabel = PropertySectionUtil.createSectionLabel(container, getWidgetFactory(),
+		final Label sectionLabel = InternalPropertySectionUtil.createSectionLabel(container, getWidgetFactory(),
 				"Refined:");
 
-		refineBtn = PropertySectionUtil.createButton(getWidgetFactory(), container, SWT.NONE, refineSelectionListener,
+		refineBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), container, SWT.NONE,
+				refineSelectionListener,
 				"", SWT.CHECK);
 
 		final FormData fd = new FormData();
