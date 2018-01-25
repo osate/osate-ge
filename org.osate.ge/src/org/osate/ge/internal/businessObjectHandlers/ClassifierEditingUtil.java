@@ -33,24 +33,24 @@ public class ClassifierEditingUtil {
 			results.add((Classifier) bo);
 		} else if (bo instanceof ComponentImplementation) {
 			final ComponentType ct = ((ComponentImplementation) bo).getType();
-			addPotentialClassifierTypesForClassifierAndExtended(ct, results);
+			addSelfAndExtendedClassifierTypes(ct, results);
 		} else if (bo instanceof Subcomponent) {
 			final ComponentType subcomponentClassifier = ((Subcomponent) bo).getComponentType();
-			addPotentialClassifierTypesForClassifierAndExtended(subcomponentClassifier, results);
+			addSelfAndExtendedClassifierTypes(subcomponentClassifier, results);
 		} else if (bo instanceof FeatureGroup) {
 			final FeatureGroupType fgType = ((FeatureGroup) bo).getFeatureGroupType();
-			addPotentialClassifierTypesForClassifierAndExtended(fgType, results);
+			addSelfAndExtendedClassifierTypes(fgType, results);
 		}
 
 		return results;
 	}
 
-	private static void addPotentialClassifierTypesForClassifierAndExtended(final Classifier c,
+	private static void addSelfAndExtendedClassifierTypes(final Classifier c,
 			final List<Classifier> results) {
 		if (c != null) {
 			for (final Classifier tmpClassifier : c.getSelfPlusAllExtended()) {
-				if (tmpClassifier instanceof ComponentType) {
-					results.add((ComponentType) tmpClassifier);
+				if (tmpClassifier instanceof ComponentType || tmpClassifier instanceof FeatureGroupType) {
+					results.add((Classifier) tmpClassifier);
 				}
 			}
 		}
