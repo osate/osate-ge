@@ -91,7 +91,7 @@ public class AadlFeatureUtil {
 			return null;
 		}
 	}
-
+	
 	private static boolean canOwnProcessorFeatures(final Object bo) {
 		return bo instanceof SystemImplementation || bo instanceof ProcessImplementation
 				|| bo instanceof ThreadGroupImplementation || bo instanceof ThreadImplementation
