@@ -179,7 +179,7 @@ public class CreateFlowImplementationTool {
 			String msg;
 			String error = null;
 			if(userSelections.size() == 0) {
-				msg = "Select a top-level flow specification to implement.";
+				msg = "Select a flow specification to implement.";
 			} else if(selectingFlowIn()) {
 				msg = "Select a starting feature.";
 			} else if(isFlowComplete()) {
