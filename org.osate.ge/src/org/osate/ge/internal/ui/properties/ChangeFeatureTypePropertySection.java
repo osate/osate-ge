@@ -13,6 +13,7 @@ import org.eclipse.jface.viewers.IFilter;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Composite;
@@ -68,6 +69,7 @@ public class ChangeFeatureTypePropertySection extends AbstractPropertySection {
 		final Composite container = getWidgetFactory().createFlatFormComposite(parent);
 		comboViewer = PropertySectionUtil.createComboViewer(container, STANDARD_LABEL_WIDTH,
 				featureTypeSelectionListener, featureTypeLabelProvider);
+		comboViewer.setComparator(new ViewerComparator());
 		PropertySectionUtil.createSectionLabel(container, getWidgetFactory(), "Type:");
 	}
 
