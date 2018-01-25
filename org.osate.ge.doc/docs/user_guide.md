@@ -152,7 +152,7 @@ Elements can only be renamed when viewing the element which contains it. For exa
 When renaming a model element from the AADL text editor, one should use the *Rename Element* menu option. Manually renaming model elements will result in broken linkages between AADL diagrams and the AADL model.
 
 ### Refining
-Appropriate elements can be refined by double-clicking on the element and select the *AADL* tab of the *Properties* view.  Use the *Refine* section to refine the element.
+Appropriate elements can be refined by double-clicking on the element and select the *AADL* tab of the *Properties* view.  Use the *Refined* section to refine the element.
 
 ### Instantiating
 When viewing a package diagram, component implementations can be instantiated by right-clicking on them and selecting *Instantiate* from the context menu. The instance model will be created in that projects *instances* folder in the AADL Navigator.
@@ -329,7 +329,7 @@ The editor allows editing AADL features. Features may be displayed on the left o
 Features can be created by using the palette.
 
 ### Setting the Feature Classifier
-The classifier can be set on features such as feature groups, data ports, and access features.  Set the classifier by double-clicking on the feature and select the *AADL* tab of the *Properties* view.  Select *Choose...* from the *Classifier* section.
+The classifier can be set on features such as feature groups, data ports, and access features.  Set the classifier by double-clicking on the feature, selecting the *AADL* tab of the *Properties* view, and selecting *Choose...* from the *Classifier* section.
 
 ### Setting the Feature Direction (Directional Features Only)
 To set the direction of a directional feature, double-click on the feature and select the *AADL* tab of the *Properties* view.  Select *In*, *Out*, or *Bidirectional* of the *Direction* section.
@@ -338,7 +338,7 @@ To set the direction of a directional feature, double-click on the feature and s
 To set the direction of an access feature, double-click on the feature and select the *AADL* tab of the *Properties* view.  Select desired access kind in the *Access Type* section.
 
 ### Setting a Feature Group as Inverse
-To set a feature group as either the inverse or of not the inverse of the selected feature group type, double-click on the feature group and select the *AADL* tab of the *Properties* view.  Select desired direction in the *Inverse* section.
+To set a feature group as the inverse of the selected feature group type, double-click on the feature group and select the *AADL* tab of the *Properties* view.  Check the box in the *Inverse* section.
 
 ## Subcomponents
 The graphical editor allows editing subcomponents when viewing a component implementation diagram.
@@ -347,7 +347,7 @@ The graphical editor allows editing subcomponents when viewing a component imple
 When viewing a component implementation diagram, a subcomponent can be creating by using the palette. Drag the appropriate subcomponent type from the palette to the desired location. A new subcomponent will appear.
 
 ### Setting the Classifier
-Select the subcomponent classifier by double-clicking the subcomponent and selecting the *AADL* tab of the *Properties* view.  Select *Choose...* from the *Extends* section.  After selecting the classifier, the subcomponent will be updated to show the appropriate features.
+Select the subcomponent classifier by double-clicking the subcomponent and selecting the *AADL* tab of the *Properties* view.  Select *Choose...* from the *Extends* section. 
 
 ### Opening the Type Diagram for a Subcomponent
 When viewing a component implementation diagram, the diagram for a subcomponent's type can be opened by right-clicking the appropriate subcomponent and selecting *Go to Type Diagram* from the context menu.
@@ -449,7 +449,7 @@ Select *Create End-To-End Flow Specification* from the toolbar, the dialog will 
 4. Specify a name for the End-To-End Flow Specification and select *OK* when done.
 
 ### Editing Flow Implementations and End-to-End Flows
-When editing a component implementation, flow implementations and end-to-end flow can be edited using the flow editor.  It can be accessed by double-clicking the component implementation and selecting the *AADL* tab in the *Properties* view and selecting *Edit...* from the *Flows* section.
+When editing a component implementation, flow implementations and end-to-end flow can be edited using the flow editor.  The flow editor can be accessed by double-clicking the component implementation, selecting the *AADL* tab in the *Properties* view, and selecting *Edit...* from the *Flows* section.
 
 ### Highlighting Flow Implementations and End-to-End Flow Specifications
 Selecting a flow implementation or end-to-end flow specification from the flow drop-down in the toolbar will highlight the flow.  Flow Implementations and End To End Flows that have segments that are not shown in the diagram will be marked with an asterisk(*) in the drop-down.
@@ -461,7 +461,7 @@ The graphical editor allows editing the modes and mode transitions defined in th
 When editing a component type, modes can be created by selecting *Mode* from the palette.
 
 ### Setting the Initial Mode
-A mode can be designated as the initial mode by double-clicking on the mode and selecting the *AADL* tab of the *Properties* view.  Use the *Initial* section option.
+A mode can be designated as the initial mode by double-clicking on the mode, selecting the *AADL* tab of the *Properties* view, and using the *Initial* section option.
 
 ### Creating Mode Transitions
 Mode transitions can be created using the palette.
@@ -481,7 +481,7 @@ A mode transition's trigger ports can be modified by double-clicking on the mode
 ### Switching Between Derived and Non-derived Modes
 The editor allows specifying whether modes declared inside the component type are derived from its containing component. The usage of derived modes corresponds to a component type with a *requires modes* declaration while non-derived modes correspond to a component type with a *modes* declaration. 
 
-The component type can be swapped between using derived and non-derived modes by double-clicking the component type and select the *AADL* tab of the *Properties* view.  Select desired option in the *Derived Modes* section.
+The component type can be swapped between using derived and non-derived modes by double-clicking the component type, selecting the *AADL* tab of the *Properties* view, and selecting the desired option in the *Derived Modes* section.
 
 ### Highlighting
 Selecting a mode from the mode drop-down in the toolbar will highlight elements applicable to the mode.
@@ -528,7 +528,7 @@ When viewing a component type diagram or component implementation diagram, a fea
 5. Select *OK*. The array dimensions will appear on the element.
 
 ### Editing Arrays
-To edit an array, double-click on a feature or subcomponent and select the *AADL* tab in the *Properties* view.  Use the *Dimensions* section options to edit the array.
+To edit an array, double-click on a feature or subcomponent, select the *AADL* tab in the *Properties* view, and use the *Dimensions* section options.
 
 #### Add Dimension
 1. From the *Modify Dimensions* dialog, select *Add*, then *Modify*.
@@ -566,7 +566,12 @@ When viewing a thread implementation diagram that contains a subprogram call seq
 ![](../images/SubprogramCallSequenceDiagram.png)
 
 ### Editing Subprogram Call Sequences
-To change a subprogram call's place in the order of a subprogram call sequence, double-click on the desired subprogram call sequence and select the *AADL* tab of the *Properties* view.  Select the desired subprogram call in the table of the *Call Order:* section and select *Up* or *Down*.
+The subprogram call's order in the subprogram call sequence can be changed from the *AADL* tab of the *Properties* view.
+
+1. Double-click on the desired subprogram call sequence.
+1. Select the *AADL* tab of the *Properties* view.
+1. Select the desired subprogram call in the table of the *Call Order* section.
+1. Select *Up* or *Down*.
 
 ## Annexes
 The graphical editor supports creating Annex Libraries and Annex Subclauses in appropriate AADL packages and classifiers, respectively.
