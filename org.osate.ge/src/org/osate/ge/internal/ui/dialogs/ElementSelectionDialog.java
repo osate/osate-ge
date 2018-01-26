@@ -182,7 +182,7 @@ public class ElementSelectionDialog {
 		protected Control createDialogArea(final Composite parent) {
 			final Composite contents = (Composite) super.createDialogArea(parent);
 
-			if(secondaryElementsDescription != null) {
+			if (secondaryElementsDescription != null && this.secondaryElements != null) {
 				final Button cb = new Button(contents, SWT.CHECK);
 				cb.setText(secondaryElementsDescription);
 				cb.addSelectionListener(new SelectionAdapter() {

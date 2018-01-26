@@ -154,6 +154,9 @@ public class DefaultCreateSelectClassifierDialogModel implements ClassifierOpera
 			}
 
 			final String newName = classifierCreationHelper.getName(op, baseOperation);
+			if (newName == null) {
+				return "Unable to build name. Check for model errors.";
+			}
 
 			// Check if the name is in use
 			if (namingService.isNameInUse(section, newName)) {

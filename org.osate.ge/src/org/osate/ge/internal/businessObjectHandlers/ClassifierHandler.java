@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.inject.Named;
 
@@ -189,13 +188,14 @@ public class ClassifierHandler {
 	 * Assumes classifier type is a type of component implementation.
 	 * @return
 	 */
-	private List<IEObjectDescription> getValidBaseClassifierDescriptions(final IProject project, final EClass classifierType) {
+	private List<IEObjectDescription> getValidBaseClassifierDescriptions(final IProject project,
+			final EClass classifierType, final boolean includeAbstractTypes) {
 		final List<IEObjectDescription> objectDescriptions = new ArrayList<IEObjectDescription>();
 		for(final IEObjectDescription desc : ScopedEMFIndexRetrieval.getAllEObjectsByType(project, Aadl2Factory.eINSTANCE.getAadl2Package().getComponentClassifier())) {
-			// Add objects that have care either types or implementations of the same category as the classifier type
-			for(final EClass superType : classifierType.getESuperTypes()) {
-				if(!Aadl2Factory.eINSTANCE.getAadl2Package().getComponentImplementation().isSuperTypeOf(superType)) {
-					if(superType.isSuperTypeOf(desc.getEClass())) {
+			// Add objects that have are either types or implementations of the same category as the classifier type
+			for (final EClass superType : classifierType.getESuperTypes()) {
+				if (!Aadl2Factory.eINSTANCE.getAadl2Package().getComponentImplementation().isSuperTypeOf(superType)) {
+					if (superType.isSuperTypeOf(desc.getEClass())) {
 						objectDescriptions.add(desc);
 						break;
 					}
@@ -326,15 +326,13 @@ public class ClassifierHandler {
 
 				@Override
 				public Collection<?> getBaseSelectOptions(final ClassifierOperationPartType primaryOperation) {
-					return getValidBaseClassifierDescriptions(project, classifierType);
+					return getValidBaseClassifierDescriptions(project, classifierType,
+							primaryOperation == ClassifierOperationPartType.NEW_COMPONENT_TYPE);
 				}
 
 				@Override
 				public Collection<?> getUnfilteredBaseSelectOptions(final ClassifierOperationPartType primaryOperation) {
-					return ScopedEMFIndexRetrieval
-							.getAllEObjectsByType(project,
-									Aadl2Factory.eINSTANCE.getAadl2Package().getComponentClassifier())
-							.stream().collect(Collectors.toList());
+					return null;
 				}
 			};
 

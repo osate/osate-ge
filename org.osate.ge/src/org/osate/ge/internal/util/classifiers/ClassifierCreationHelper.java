@@ -54,6 +54,7 @@ public class ClassifierCreationHelper {
 	}
 
 	// The returned name is the name of type and the complete "<type>.impl" for implementation.
+	// Will return null if it is unable to build a name.
 	public String getName(final ClassifierOperationPart primaryPart, final ClassifierOperationPart basePart) {
 		return buildName(primaryPart.getType(), () -> getResolvedPackage(primaryPart.getSelectedPackage()),
 				primaryPart.getIdentifier(), basePart);
@@ -86,6 +87,9 @@ public class ClassifierCreationHelper {
 			} else if (basePart.getType() == ClassifierOperationPartType.EXISTING) {
 				final Classifier classifier = getResolvedClassifier(basePart.getSelectedClassifier());
 				final ComponentType ct = getResolvedComponentType(classifier);
+				if (ct == null) {
+					return null;
+				}
 				typePackage = getPackage(ct);
 				baseTypeName = ct.getName();
 			} else {
@@ -124,6 +128,7 @@ public class ClassifierCreationHelper {
 			return (ComponentType) c;
 		} else if (c instanceof ComponentImplementation) {
 			final ComponentImplementation ci = (ComponentImplementation) c;
+			System.err.println("B: " + ci.getType());
 			return ProxyUtil.resolveOrNull(ci.getType(), ComponentType.class, resourceSet);
 		} else {
 			throw new RuntimeException("Unexpected case: " + c);
