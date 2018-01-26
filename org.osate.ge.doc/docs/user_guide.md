@@ -348,7 +348,7 @@ To set a feature group as the inverse of the selected feature group type, double
 The graphical editor allows editing subcomponents when viewing a component implementation diagram.
 
 ### Creating
-A subcomponent can be creating by using the palette. Subcomponents can be added to component implementations or to subcomponent which have a component implementation defined. In the later case, the subcomponent's component implementation will be modified.
+A subcomponent can be created by using the palette. Subcomponents can be added to component implementations or to subcomponents which have a component implementation defined. In the latter case, the subcomponent's component implementation will be modified.
 
 ### Setting the Classifier
 Select the subcomponent classifier by double-clicking the subcomponent and selecting the *AADL* tab of the *Properties* view.  Select *Choose...* from the *Extends* section. 
