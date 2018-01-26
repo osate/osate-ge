@@ -1,5 +1,7 @@
 package org.osate.ge.internal.ui.properties;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -7,10 +9,13 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.eclipse.core.runtime.Adapters;
+import org.eclipse.emf.common.CommonPlugin;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.graphiti.mm.algorithms.Image;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.services.IGaService;
+import org.eclipse.graphiti.ui.internal.platform.ExtensionManager;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.resource.DeviceResourceManager;
@@ -41,11 +46,11 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.ColorDialog;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
-import org.osate.aadl2.NamedElement;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.AgeConnection;
@@ -53,9 +58,9 @@ import org.osate.ge.graphics.internal.Label;
 import org.osate.ge.internal.Activator;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
+import org.osate.ge.internal.graphiti.AgeImageProvider;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 import org.osate.ge.internal.ui.util.UiUtil;
-import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.internal.util.StringUtil;
 
 public class AppearancePropertySection extends AbstractPropertySection {
@@ -171,23 +176,51 @@ public class AppearancePropertySection extends AbstractPropertySection {
 				final PictogramElement pe = editor.getDiagramTypeProvider().getFeatureProvider()
 						.getAllPictogramElementsForBusinessObject(
 								selectedDiagramElements.get(0).getBusinessObject())[0];
-				final IGaService gaService = Graphiti.getGaService();
-				NamedElement ne = (NamedElement) selectedDiagramElements.get(0).getBusinessObject();
-				final Image image = gaService.createImage(pe.getGraphicsAlgorithm().getParentGraphicsAlgorithm(),
-						ImageHelper.getImage(ne.eClass()));
-				int IMAGE_SIZE = 250;
-				image.setWidth(500);
-				image.setHeight(500);
-				gaService.setLocationAndSize(image, (500 - IMAGE_SIZE) / 2, (500 - IMAGE_SIZE) / 2, IMAGE_SIZE,
-						IMAGE_SIZE);
 
-				ageDiagram.modify("Image", m -> {
-					pe.setGraphicsAlgorithm(image);
-				});
+				FileDialog fd = new FileDialog(Display.getCurrent().getActiveShell(), SWT.OPEN);
+				fd.setText("Open");
+				fd.setFilterPath("C:/");
+				String[] filterExt = { "*.png", "*.gif", "*.*" };
+				fd.setFilterExtensions(filterExt);
+				String selected = fd.open();
+				System.out.println(selected);
+				if (selected != null) {
+					ExtensionManager.getSingleton()
+					.getImageProvidersForDiagramTypeProviderId(editor.getDiagramTypeProvider().getProviderId())
+					.forEach(imageProvider -> {
+						if(imageProvider instanceof AgeImageProvider) {
+							final AgeImageProvider ageImageProvider = (AgeImageProvider) imageProvider;
+							try {
+								final URL url = new URL(CommonPlugin.asLocalURI(URI.createFileURI(
+										selected))
+										.toString());
+								ageImageProvider.addImage("org.osate.ge.DistributeHorizontally", url.toString());
+							} catch (final MalformedURLException e1) {
+								e1.printStackTrace();
+							}
+						}
+					});
 
-				// Adapters.adapt(sourceObject, adapter)
-				// ageDiagram.
-				// selectedDiagramElements.get(0);
+					final IGaService gaService = Graphiti.getGaService();
+					final Image imageGa = gaService.createImage(pe.getGraphicsAlgorithm().getParentGraphicsAlgorithm(),
+							"org.osate.ge.DistributeHorizontally");
+
+					imageGa.setStretchH(true);
+					imageGa.setStretchV(true);
+					imageGa.setProportional(true);
+
+					int IMAGE_SIZE = 125;
+					imageGa.setWidth(150);
+					imageGa.setHeight(150);
+					gaService.setLocationAndSize(imageGa, (150 - IMAGE_SIZE) / 2, (150 - IMAGE_SIZE) / 2, IMAGE_SIZE,
+							IMAGE_SIZE);
+
+					ageDiagram.modify("Image", m -> {
+						System.err.println(pe.getGraphicsAlgorithm() + " oringal");
+						pe.setGraphicsAlgorithm(imageGa);
+						System.err.println(pe.getGraphicsAlgorithm() + " after");
+					});
+				}
 			}
 		});
 	}
