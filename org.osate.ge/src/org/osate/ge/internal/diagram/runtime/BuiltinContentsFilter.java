@@ -63,6 +63,7 @@ public enum BuiltinContentsFilter implements ContentsFilter {
 		return filter.test(t);
 	}
 
+	// TODO: Remove
 	public static BuiltinContentsFilter getDefault(final Object bo) {
 		if (bo instanceof Subcomponent || bo instanceof ModeTransition) {
 			return BuiltinContentsFilter.ALLOW_TYPE;

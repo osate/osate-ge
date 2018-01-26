@@ -6,16 +6,18 @@ import java.util.Objects;
 import java.util.Set;
 
 public class DiagramConfigurationBuilder {
+	private DiagramType diagramType;
 	private CanonicalBusinessObjectReference contextBoReference;
 	private final Set<String> lcEnabledAadlPropertyNames = new HashSet<>();
 	private Boolean connectionPrimaryLabelsVisible;
 
-	public DiagramConfigurationBuilder() {
+	public DiagramConfigurationBuilder(final DiagramType diagramType) {
 		this.contextBoReference = null;
 	}
 
 	public DiagramConfigurationBuilder(final DiagramConfiguration config) {
 		Objects.requireNonNull(config, "config must not be null");
+		this.diagramType = config.getDiagramType();
 		this.contextBoReference = config.getContextBoReference();
 		this.lcEnabledAadlPropertyNames.addAll(config.getEnabledAadlPropertyNames());
 		this.connectionPrimaryLabelsVisible = config.getConnectionPrimaryLabelsVisible();
@@ -54,6 +56,7 @@ public class DiagramConfigurationBuilder {
 	}
 
 	public DiagramConfiguration build() {
-		return new DiagramConfiguration(contextBoReference, lcEnabledAadlPropertyNames, connectionPrimaryLabelsVisible);
+		return new DiagramConfiguration(diagramType, contextBoReference, lcEnabledAadlPropertyNames,
+				connectionPrimaryLabelsVisible);
 	}
 }

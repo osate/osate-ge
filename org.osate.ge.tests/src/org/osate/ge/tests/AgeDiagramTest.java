@@ -103,7 +103,8 @@ public class AgeDiagramTest {
 		// Test an add event
 		diagram.modify("Set Diagram Configuration",
 				m -> m.setDiagramConfiguration(
-						new DiagramConfigurationBuilder().addAadlProperty("test::test2").build()));
+						new DiagramConfigurationBuilder(new LegacyDiagramType()).addAadlProperty("test::test2")
+								.build()));
 
 		assertThat(ml.wasDiagramConfigurationChanged(), is(equalTo(true)));
 	}

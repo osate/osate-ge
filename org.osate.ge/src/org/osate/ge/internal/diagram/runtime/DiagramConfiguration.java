@@ -11,6 +11,7 @@ import java.util.Set;
  * @see DiagramConfigurationBuilder
  */
 public class DiagramConfiguration {
+	private final DiagramType diagramType;
 	private final CanonicalBusinessObjectReference contextBoReference;
 	private final Set<String> lcEnabledAadlPropertyNames; // Lowercase AADL property names
 
@@ -18,11 +19,16 @@ public class DiagramConfiguration {
 	// overridden by the user selection.
 	private final Boolean connectionPrimaryLabelsVisible;
 
-	DiagramConfiguration(final CanonicalBusinessObjectReference contextBoReference,
+	DiagramConfiguration(final DiagramType diagramType, final CanonicalBusinessObjectReference contextBoReference,
 			final Set<String> displayedAadlPropertyNames, final Boolean connectionPrimaryLabelsVisible) {
+		this.diagramType = Objects.requireNonNull(diagramType, "diagramType must not be null");
 		this.contextBoReference = contextBoReference == null ? null : contextBoReference;
 		this.lcEnabledAadlPropertyNames = Collections.unmodifiableSet(new HashSet<String>(Objects.requireNonNull(displayedAadlPropertyNames, "displayedAadlPropertyNames must not be null")));
 		this.connectionPrimaryLabelsVisible = connectionPrimaryLabelsVisible;
+	}
+
+	public DiagramType getDiagramType() {
+		return diagramType;
 	}
 
 	public CanonicalBusinessObjectReference getContextBoReference() {
@@ -43,8 +49,9 @@ public class DiagramConfiguration {
 
 	@Override
 	public String toString() {
-		return "{ contextBoReference: " + contextBoReference + ", enabledAadlPropertyNames: "
-				+ lcEnabledAadlPropertyNames + ", connectionPrimaryLabelsVisible: " + connectionPrimaryLabelsVisible
+		return "{ diagramType: " + diagramType.getName() + ", contextBoReference: " + contextBoReference
+				+ ", enabledAadlPropertyNames: " + lcEnabledAadlPropertyNames + ", connectionPrimaryLabelsVisible: "
+				+ connectionPrimaryLabelsVisible
 				+ " } ";
 	}
 
@@ -55,6 +62,7 @@ public class DiagramConfiguration {
 		result = prime * result
 				+ ((connectionPrimaryLabelsVisible == null) ? 0 : connectionPrimaryLabelsVisible.hashCode());
 		result = prime * result + ((contextBoReference == null) ? 0 : contextBoReference.hashCode());
+		result = prime * result + ((diagramType == null) ? 0 : diagramType.hashCode());
 		result = prime * result + ((lcEnabledAadlPropertyNames == null) ? 0 : lcEnabledAadlPropertyNames.hashCode());
 		return result;
 	}
@@ -83,6 +91,13 @@ public class DiagramConfiguration {
 				return false;
 			}
 		} else if (!contextBoReference.equals(other.contextBoReference)) {
+			return false;
+		}
+		if (diagramType == null) {
+			if (other.diagramType != null) {
+				return false;
+			}
+		} else if (!diagramType.equals(other.diagramType)) {
 			return false;
 		}
 		if (lcEnabledAadlPropertyNames == null) {

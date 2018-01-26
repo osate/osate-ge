@@ -48,6 +48,7 @@ import org.osate.ge.internal.diagram.runtime.DiagramModification;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.DiagramSerialization;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
+import org.osate.ge.internal.diagram.types.LegacyDiagramType;
 import org.osate.ge.internal.indexing.SavedDiagramIndex;
 import org.osate.ge.internal.indexing.SavedDiagramIndexInvalidator;
 import org.osate.ge.internal.services.DiagramService;
@@ -258,7 +259,8 @@ public class DefaultDiagramService implements DiagramService {
 		final CanonicalBusinessObjectReference contextBoCanonicalRef = Objects.requireNonNull(referenceService.getCanonicalReference(contextBo), "Unable to build canonical reference for business object: " + contextBo);
 		diagram.modify("Configure Diagram", m -> {
 			m.setDiagramConfiguration(
-					new DiagramConfigurationBuilder().setContextBoReference(contextBoCanonicalRef).build());
+					new DiagramConfigurationBuilder(new LegacyDiagramType())
+							.setContextBoReference(contextBoCanonicalRef).build());
 		});
 
 		// Create a root diagram element for the context which will be set to manual.
