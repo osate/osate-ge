@@ -5,14 +5,30 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import org.osate.ge.internal.diagram.runtime.types.DiagramType;
+
 public class DiagramConfigurationBuilder {
 	private DiagramType diagramType;
 	private CanonicalBusinessObjectReference contextBoReference;
 	private final Set<String> lcEnabledAadlPropertyNames = new HashSet<>();
 	private Boolean connectionPrimaryLabelsVisible;
 
-	public DiagramConfigurationBuilder(final DiagramType diagramType) {
+	/**
+	 *
+	 * @param diagramType
+	 * @param populateDefaults if true then the value of fields will be populated based on the specified diagram type.
+	 */
+	public DiagramConfigurationBuilder(final DiagramType diagramType, final boolean populateDefaults) {
+		this.diagramType = Objects.requireNonNull(diagramType, "diagramType must not be null");
 		this.contextBoReference = null;
+
+		if (populateDefaults) {
+			for (final String propertyName : this.diagramType.getDefaultAadlPropertyNames()) {
+				addAadlProperty(propertyName);
+			}
+
+			connectionPrimaryLabelsVisible(diagramType.getDefaultConnectionPrimaryLabelsVisible());
+		}
 	}
 
 	public DiagramConfigurationBuilder(final DiagramConfiguration config) {

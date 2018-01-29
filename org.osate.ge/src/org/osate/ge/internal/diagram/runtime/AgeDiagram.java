@@ -15,6 +15,8 @@ import org.osate.ge.graphics.internal.AgeConnection;
 import org.osate.ge.graphics.internal.AgeGraphicalConfiguration;
 import org.osate.ge.internal.diagram.runtime.DiagramTransactionHandler.TransactionOperation;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
+import org.osate.ge.internal.diagram.runtime.types.ContentsFilter;
+import org.osate.ge.internal.diagram.runtime.types.LegacyDiagramType;
 import org.osate.ge.internal.query.Queryable;
 
 /**
@@ -35,7 +37,8 @@ public class AgeDiagram implements DiagramNode, ModifiableDiagramElementContaine
 	 * @param startingElementId is the id of the first diagram element which has an id automatically assigned to it.
 	 */
 	public AgeDiagram(final long startingElementId) {
-		this.diagramConfiguration = new DiagramConfiguration(null, Collections.emptySet(), true);
+		this.diagramConfiguration = new DiagramConfiguration(new LegacyDiagramType(), null, Collections.emptySet(),
+				true);
 		this.maxElementId = startingElementId-1; // The max element id is set to the specified value - 1 because the value is incremented before it is assigned as an id.
 	}
 

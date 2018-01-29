@@ -6,6 +6,7 @@ import org.osate.ge.graphics.Point;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.internal.AgeGraphicalConfiguration;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
+import org.osate.ge.internal.diagram.runtime.types.ContentsFilter;
 
 /**
  * Interface provided to Modifier objects to allow making changes to an AgeDiagram.

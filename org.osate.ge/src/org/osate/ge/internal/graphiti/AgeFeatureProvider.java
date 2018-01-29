@@ -76,7 +76,6 @@ import org.osate.ge.di.Names;
 import org.osate.ge.internal.SimplePaletteEntry;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.AgeDiagramUtil;
-import org.osate.ge.internal.diagram.runtime.BuiltinContentsFilter;
 import org.osate.ge.internal.diagram.runtime.CanonicalBusinessObjectReference;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
@@ -99,7 +98,6 @@ import org.osate.ge.internal.graphiti.features.BoHandlerDirectEditFeature;
 import org.osate.ge.internal.graphiti.features.CommandCustomFeature;
 import org.osate.ge.internal.graphiti.features.ConfigureDiagramFeature;
 import org.osate.ge.internal.graphiti.features.SelectAncestorFeature;
-import org.osate.ge.internal.graphiti.features.SetAutoContentFilterFeature;
 import org.osate.ge.internal.graphiti.features.UpdateDiagramCustomFeature;
 import org.osate.ge.internal.graphiti.features.UpdateDiagramFeature;
 import org.osate.ge.internal.graphiti.services.GraphitiService;
@@ -310,9 +308,6 @@ public class AgeFeatureProvider extends DefaultFeatureProvider {
 		features.add(configureDiagramFeature);
 		features.add(make(UpdateDiagramCustomFeature.class));
 		features.add(make(SelectAncestorFeature.class));
-		features.add(new SetAutoContentFilterFeature(this, graphitiService, BuiltinContentsFilter.ALLOW_FUNDAMENTAL));
-		features.add(new SetAutoContentFilterFeature(this, graphitiService, BuiltinContentsFilter.ALLOW_TYPE));
-		features.add(new SetAutoContentFilterFeature(this, graphitiService, BuiltinContentsFilter.ALLOW_ALL));
 
 		// Commands
 		for(final Object cmd : extService.getCommands()) {

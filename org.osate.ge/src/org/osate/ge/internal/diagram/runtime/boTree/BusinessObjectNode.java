@@ -9,8 +9,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.osate.ge.BusinessObjectContext;
-import org.osate.ge.internal.diagram.runtime.ContentsFilter;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
+import org.osate.ge.internal.diagram.runtime.types.ContentsFilter;
 
 public class BusinessObjectNode implements BusinessObjectContext {
 	private BusinessObjectNode parent;

@@ -52,21 +52,23 @@ import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.internal.diagram.runtime.CanonicalBusinessObjectReference;
-import org.osate.ge.internal.diagram.runtime.ContentsFilter;
 import org.osate.ge.internal.diagram.runtime.DiagramConfiguration;
 import org.osate.ge.internal.diagram.runtime.DiagramConfigurationBuilder;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
 import org.osate.ge.internal.diagram.runtime.boTree.BusinessObjectNode;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
+import org.osate.ge.internal.diagram.runtime.types.ContentsFilter;
+import org.osate.ge.internal.diagram.runtime.types.LegacyDiagramType;
 
 public class DiagramConfigurationDialog {
 	public interface Model {
 		Collection<Object> getChildBusinessObjects(final BusinessObjectContext boc);
 		RelativeBusinessObjectReference getRelativeBusinessObjectReference(final Object bo);
 		String getName(BusinessObjectContext boc);
-		Collection<ContentsFilter> getContentsFilters();
+
+		Collection<ContentsFilter> getContentsFilters(Object bo);
 		ContentsFilter getDefaultContentsFilter(Object bo);
-		boolean showBusinessObject(Object bo);
+		boolean shouldShowBusinessObject(Object bo);
 		Map<String, Collection<String>> getAadlProperties();
 		Object getBusinessObject(CanonicalBusinessObjectReference ref);
 		Image getImage(Object bo);
@@ -443,7 +445,6 @@ public class DiagramConfigurationDialog {
 			super(viewer);
 			this.cellEditor = new ComboBoxViewerCellEditor(viewer.getTree(), SWT.READ_ONLY);
 			cellEditor.setContentProvider(new ArrayContentProvider());
-			cellEditor.setInput(model.getContentsFilters());
 			cellEditor.setLabelProvider(new LabelProvider() {
 				@Override
 				public String getText(final Object o) {
@@ -455,6 +456,7 @@ public class DiagramConfigurationDialog {
 
 		@Override
 		protected CellEditor getCellEditor(final Object element) {
+			cellEditor.setInput(model.getContentsFilters(((BusinessObjectNode) element).getBusinessObject()));
 			return cellEditor;
 		}
 
@@ -501,7 +503,7 @@ public class DiagramConfigurationDialog {
 		@Override
 		public Object[] getChildren(final Object parentElement) {
 			final BusinessObjectNode node = (BusinessObjectNode)parentElement;
-			return node.getChildren().stream().filter(n -> model.showBusinessObject(n.getBusinessObject())).toArray();
+			return node.getChildren().stream().filter(n -> model.shouldShowBusinessObject(n.getBusinessObject())).toArray();
 		}
 
 		@Override
@@ -649,7 +651,7 @@ public class DiagramConfigurationDialog {
 			}
 
 			@Override
-			public Collection<ContentsFilter> getContentsFilters() {
+			public Collection<ContentsFilter> getContentsFilters(final Object bo) {
 				return Arrays.asList(TestContentsFilter.values());
 			}
 
@@ -678,7 +680,7 @@ public class DiagramConfigurationDialog {
 			}
 
 			@Override
-			public boolean showBusinessObject(final Object bo) {
+			public boolean shouldShowBusinessObject(final Object bo) {
 				return !bo.equals("C3");
 			}
 
@@ -693,7 +695,8 @@ public class DiagramConfigurationDialog {
 			}
 		};
 
-		final DiagramConfiguration diagramConfig = new DiagramConfigurationBuilder().
+		final DiagramConfiguration diagramConfig = new DiagramConfigurationBuilder(new LegacyDiagramType(), false)
+				.
 				setContextBoReference(new CanonicalBusinessObjectReference("test")).
 				addAadlProperty("test::prop1").
 				addAadlProperty("test_ps2::b").

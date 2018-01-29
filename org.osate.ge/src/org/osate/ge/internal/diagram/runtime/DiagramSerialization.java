@@ -19,6 +19,9 @@ import org.osate.ge.graphics.Color;
 import org.osate.ge.graphics.Point;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
+import org.osate.ge.internal.diagram.runtime.types.ContentsFilter;
+import org.osate.ge.internal.diagram.runtime.types.DiagramType;
+import org.osate.ge.internal.diagram.runtime.types.LegacyDiagramType;
 
 /**
  * Class to help read and write the native diagram format used by the editor.
@@ -55,8 +58,9 @@ public class DiagramSerialization {
 		final AgeDiagram ageDiagram = new AgeDiagram(getMaxIdForChildren(mmDiagram) + 1);
 
 		// Read the diagram configuration
-		final DiagramConfigurationBuilder configBuilder = new DiagramConfigurationBuilder(
-				ageDiagram.getConfiguration());
+		// TODO: Set the diagram type based on the file.
+		final DiagramConfigurationBuilder configBuilder = new DiagramConfigurationBuilder(new LegacyDiagramType(),
+				false);
 
 		if (mmDiagram.getConfig() != null) {
 			final org.osate.ge.diagram.DiagramConfiguration mmDiagramConfig = mmDiagram.getConfig();
@@ -83,7 +87,8 @@ public class DiagramSerialization {
 		}
 
 		//  Read elements
-		ageDiagram.modify("Read from File", m -> readElements(m, ageDiagram, mmDiagram, new HashSet<>()));
+		ageDiagram.modify("Read from File", m -> readElements(m, ageDiagram.getConfiguration().getDiagramType(),
+				ageDiagram, mmDiagram, new HashSet<>()));
 
 		return ageDiagram;
 	}
@@ -126,16 +131,17 @@ public class DiagramSerialization {
 		return max;
 	}
 
-	private static void readElements(final DiagramModification m, final DiagramNode container,
-			final org.osate.ge.diagram.DiagramNode mmContainer, final Set<Long> usedIdSet) {
+	private static void readElements(final DiagramModification m, final DiagramType diagramType,
+			final DiagramNode container, final org.osate.ge.diagram.DiagramNode mmContainer,
+			final Set<Long> usedIdSet) {
 		for (final org.osate.ge.diagram.DiagramElement mmElement : mmContainer.getElement()) {
-			createElement(m, container, mmContainer, mmElement, usedIdSet);
+			createElement(m, diagramType, container, mmContainer, mmElement, usedIdSet);
 		}
 	}
 
-	private static void createElement(final DiagramModification m, final DiagramNode container,
-			final org.osate.ge.diagram.DiagramNode mmContainer, final org.osate.ge.diagram.DiagramElement mmChild,
-			final Set<Long> usedIdSet) {
+	private static void createElement(final DiagramModification m, final DiagramType diagramType,
+			final DiagramNode container, final org.osate.ge.diagram.DiagramNode mmContainer,
+			final org.osate.ge.diagram.DiagramElement mmChild, final Set<Long> usedIdSet) {
 		final String[] refSegs = toReferenceSegments(mmChild.getBo());
 		if (refSegs == null) {
 			throw new RuntimeException("Invalid element. Business Object not specified");
@@ -154,7 +160,7 @@ public class DiagramSerialization {
 
 		final String autoContentsFilterId = mmChild.getAutoContentsFilter();
 		if (autoContentsFilterId != null) {
-			final BuiltinContentsFilter autoContentsFilter = BuiltinContentsFilter.getById(autoContentsFilterId);
+			final ContentsFilter autoContentsFilter = diagramType.getContentsFilter(autoContentsFilterId);
 			if (autoContentsFilter != null) {
 				newElement.setAutoContentsFilter(autoContentsFilter);
 			}
@@ -205,7 +211,7 @@ public class DiagramSerialization {
 		}
 
 		// Create children
-		readElements(m, newElement, mmChild, usedIdSet);
+		readElements(m, diagramType, newElement, mmChild, usedIdSet);
 	}
 
 	private static Point convertPoint(final org.osate.ge.diagram.Point mmPoint) {

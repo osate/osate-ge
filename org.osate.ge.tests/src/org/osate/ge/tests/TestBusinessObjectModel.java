@@ -6,12 +6,12 @@ import org.osate.ge.graphics.ConnectionBuilder;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.RectangleBuilder;
 import org.osate.ge.graphics.internal.AgeGraphicalConfiguration;
-import org.osate.ge.internal.diagram.runtime.BuiltinContentsFilter;
 import org.osate.ge.internal.diagram.runtime.DiagramConfiguration;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.boTree.BusinessObjectNode;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
 import org.osate.ge.internal.diagram.runtime.boTree.TreeUpdater;
+import org.osate.ge.internal.diagram.runtime.types.BuiltinContentsFilter;
 import org.osate.ge.internal.diagram.runtime.updating.DiagramElementInformationProvider;
 
 public class TestBusinessObjectModel implements DiagramElementInformationProvider, TreeUpdater {

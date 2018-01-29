@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime;
+package org.osate.ge.internal.diagram.runtime.types;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,7 +12,6 @@ import org.osate.aadl2.Generalization;
 import org.osate.aadl2.Mode;
 import org.osate.aadl2.ModeTransition;
 import org.osate.aadl2.ModeTransitionTrigger;
-import org.osate.aadl2.Subcomponent;
 import org.osate.ge.internal.model.SubprogramCallOrder;
 import org.osate.ge.internal.model.Tag;
 
@@ -21,9 +20,12 @@ import org.osate.ge.internal.model.Tag;
  *
  */
 public enum BuiltinContentsFilter implements ContentsFilter {
-	ALLOW_FUNDAMENTAL("allow_fundamental", "Minimal", bo -> isFundamental(bo)), // Only include business objects which are manually specified or which are an inherent/fundamental part of the parent.
-	ALLOW_TYPE("allow_type", "Type", bo -> isInType(bo)), // Include business objects which have been manually specified or which are related to a Classifier Type. For example, features.
-	ALLOW_ALL("allow_all", "All", bo -> true); // Include all business objects
+	ALLOW_NONE("none", "None", bo -> false),
+	ALLOW_FUNDAMENTAL(ContentsFilter.ALLOW_FUNDAMENTAL_ID, "Minimal", bo -> isFundamental(bo)), // Only include business objects which are manually specified or
+	// which are an inherent/fundamental part of the parent.
+	ALLOW_TYPE(ContentsFilter.ALLOW_TYPE_ID, "Type", bo -> isInType(bo)), // Include business objects which have been manually specified or which are related to
+	// a Classifier Type. For example, features.
+	ALLOW_ALL(ContentsFilter.ALLOW_ALL_ID, "All", bo -> true); // Include all business objects
 
 	private static final Map<String, BuiltinContentsFilter> idToContentsFilterMap;
 	static {
@@ -61,15 +63,6 @@ public enum BuiltinContentsFilter implements ContentsFilter {
 	@Override
 	public boolean test(final Object t) {
 		return filter.test(t);
-	}
-
-	// TODO: Remove
-	public static BuiltinContentsFilter getDefault(final Object bo) {
-		if (bo instanceof Subcomponent || bo instanceof ModeTransition) {
-			return BuiltinContentsFilter.ALLOW_TYPE;
-		}
-
-		return BuiltinContentsFilter.ALLOW_FUNDAMENTAL;
 	}
 
 	private static boolean isFundamental(final Object bo) {

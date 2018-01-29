@@ -31,10 +31,11 @@ import org.osate.ge.internal.aadlproperties.PropertyResult;
 import org.osate.ge.internal.aadlproperties.PropertyResult.NullReason;
 import org.osate.ge.internal.aadlproperties.PropertyValueUtil;
 import org.osate.ge.internal.aadlproperties.ReferenceValueWithContext;
-import org.osate.ge.internal.diagram.runtime.BuiltinContentsFilter;
-import org.osate.ge.internal.diagram.runtime.ContentsFilter;
 import org.osate.ge.internal.diagram.runtime.DiagramConfiguration;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
+import org.osate.ge.internal.diagram.runtime.types.BuiltinContentsFilter;
+import org.osate.ge.internal.diagram.runtime.types.ContentsFilter;
+import org.osate.ge.internal.diagram.runtime.types.DiagramType;
 import org.osate.ge.internal.model.AgePropertyValue;
 import org.osate.ge.internal.model.PropertyValueGroup;
 import org.osate.ge.internal.query.Queryable;
@@ -162,7 +163,7 @@ public class DefaultTreeUpdater implements TreeUpdater {
 			if(configuration.getContextBoReference() == null) {
 				// Get potential top level business objects from providers
 				potentialBusinessObjects = bopHelper.getChildBusinessObjects(projectBoc);
-				filter = BuiltinContentsFilter.ALLOW_FUNDAMENTAL; // Only business objects that already exist in the business object tree should be used
+				filter = BuiltinContentsFilter.ALLOW_NONE; // Only business objects that already exist in the business object tree should be used
 			} else{
 				// Get the context business object
 				Object contextBo = refService.resolve(configuration.getContextBoReference());
@@ -186,7 +187,8 @@ public class DefaultTreeUpdater implements TreeUpdater {
 			final Map<RelativeBusinessObjectReference, Object> boMap = getChildBusinessObjects(potentialBusinessObjects,
 					getRefsForManualBranches(oldNodes, manualBranchCache),
 					newRoot.getAutoContentsFilter());
-			createNodes(bopHelper, boMap, oldNodes, newRoot, idGenerator, manualBranchCache);
+			createNodes(configuration.getDiagramType(), bopHelper, boMap, oldNodes, newRoot, idGenerator,
+					manualBranchCache);
 			newRoot.setCompleteness(potentialBusinessObjects.size() == boMap.size() ? Completeness.COMPLETE : Completeness.INCOMPLETE);
 
 			// Build set of the names of all properties which are enabled
@@ -345,6 +347,7 @@ public class DefaultTreeUpdater implements TreeUpdater {
 	}
 
 	private void createNodes(
+			final DiagramType diagramType,
 			final BusinessObjectProviderHelper bopHelper,
 			final Map<RelativeBusinessObjectReference, Object> newBoMap,
 			final Map<RelativeBusinessObjectReference, BusinessObjectNode> oldNodeMap,
@@ -355,11 +358,13 @@ public class DefaultTreeUpdater implements TreeUpdater {
 			// Create node
 			final Object childBo = childEntry.getValue();
 			final RelativeBusinessObjectReference childRelReference = childEntry.getKey();
-			createNode(bopHelper, newBoMap, oldNodeMap, parentNode, childBo, childRelReference, idGenerator, manualBranchCache);
+			createNode(diagramType, bopHelper, newBoMap, oldNodeMap, parentNode, childBo, childRelReference,
+					idGenerator, manualBranchCache);
 		}
 	}
 
 	private void createNode(
+			final DiagramType diagramType,
 			final BusinessObjectProviderHelper bopHelper,
 			final Map<RelativeBusinessObjectReference, Object> newBoMap,
 			final Map<RelativeBusinessObjectReference, BusinessObjectNode> oldNodeMap,
@@ -372,7 +377,7 @@ public class DefaultTreeUpdater implements TreeUpdater {
 		final BusinessObjectNode oldNode = oldNodeMap.get(relReference);
 
 		// Create the node
-		final ContentsFilter autoContentsFilter = oldNode == null || oldNode.getAutoContentsFilter() == null ? BuiltinContentsFilter.getDefault(bo) : oldNode.getAutoContentsFilter();
+		final ContentsFilter autoContentsFilter = oldNode == null || oldNode.getAutoContentsFilter() == null ? diagramType.getDefaultAutoContentsFilter(bo) : oldNode.getAutoContentsFilter();
 		final long id = oldNode == null || oldNode.getId() == null ? idGenerator.getNext() : oldNode.getId();
 		final BusinessObjectNode newNode = nodeFactory.create(parentNode, id, bo, oldNode == null ? false : oldNode.isManual(), autoContentsFilter, Completeness.UNKNOWN);
 
@@ -387,7 +392,7 @@ public class DefaultTreeUpdater implements TreeUpdater {
 								autoContentsFilter);
 
 						newNode.setCompleteness(childBusinessObjectsFromProviders.size() == childBoMap.size() ? Completeness.COMPLETE : Completeness.INCOMPLETE);
-						createNodes(bopHelper, childBoMap, childOldNodes, newNode, idGenerator, manualBranchCache);
+						createNodes(diagramType, bopHelper, childBoMap, childOldNodes, newNode, idGenerator, manualBranchCache);
 	}
 
 	/**

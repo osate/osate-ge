@@ -127,6 +127,15 @@
             id="org.osate.ge.restoreMissingDiagramElements"
             name="Restore Missing Diagram Elements...">
       </command>
+      <command
+            id="org.osate.ge.setAutoContentFilter"
+            name="Set Auto Contents Filter">
+         <commandParameter
+               id="contentsFilterId"
+               name="Contents Filter ID"
+               optional="false">
+         </commandParameter>
+      </command>
    </extension>
  <extension
        point="org.eclipse.ui.handlers">
@@ -348,6 +357,10 @@
     <handler
           class="org.osate.ge.internal.ui.handlers.RestoreMissingDiagramElementsHandler"
           commandId="org.osate.ge.restoreMissingDiagramElements">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.SetAutoContentsFilterHandler"
+          commandId="org.osate.ge.setAutoContentFilter">
     </handler>
  </extension>
        
@@ -616,6 +629,18 @@
  <menuContribution
        allPopups="false"
        locationURI="popup:org.osate.ge.editor.AgeDiagramEditor">
+    <menu
+          id="org.osate.ge.goToMenu"
+          label="Go to">
+    </menu>
+    <menu
+          id="org.osate.ge.showMenu"
+          label="Show">
+       <dynamic
+             class="org.osate.ge.internal.ui.editor.ShowContributionItem"
+             id="org.osate.ge.dynamic1">
+       </dynamic>
+    </menu>
     <menu
           id="org.osate.ge.layoutMenu"
           label="Layout">
