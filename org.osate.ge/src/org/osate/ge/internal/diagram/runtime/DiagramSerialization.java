@@ -19,9 +19,8 @@ import org.osate.ge.graphics.Color;
 import org.osate.ge.graphics.Point;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
-import org.osate.ge.internal.diagram.runtime.filters.ContentFilter;
-import org.osate.ge.internal.diagram.runtime.types.DiagramType;
 import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
+import org.osate.ge.internal.diagram.runtime.types.DiagramType;
 
 /**
  * Class to help read and write the native diagram format used by the editor.
@@ -159,12 +158,13 @@ public class DiagramSerialization {
 		}
 
 		final String autoContentsFilterId = mmChild.getAutoContentsFilter();
-		if (autoContentsFilterId != null) {
-			final ContentFilter autoContentsFilter = diagramType.getContentsFilter(autoContentsFilterId);
-			if (autoContentsFilter != null) {
-				newElement.setAutoContentsFilter(autoContentsFilter);
-			}
-		}
+		// TODO
+//		if (autoContentsFilterId != null) {
+//			final ContentFilter autoContentsFilter = diagramType.getContentsFilter(autoContentsFilterId);
+//			if (autoContentsFilter != null) {
+//				newElement.setAutoContentsFilter(autoContentsFilter);
+//			}
+//		}
 		newElement.setManual(mmChild.isManual());
 
 		// Size and Position
@@ -292,9 +292,10 @@ public class DiagramSerialization {
 		}
 
 		newElement.setBo(e.getRelativeReference() == null ? null : e.getRelativeReference().toMetamodel());
-		if (e.getAutoContentsFilter() != null) {
-			newElement.setAutoContentsFilter(e.getAutoContentsFilter().id());
-		}
+		// TODO
+//		if (e.getAutoContentsFilter() != null) {
+//			newElement.setAutoContentsFilter(e.getAutoContentsFilter().id());
+//		}
 
 		if (e.isManual()) {
 			newElement.setManual(true);

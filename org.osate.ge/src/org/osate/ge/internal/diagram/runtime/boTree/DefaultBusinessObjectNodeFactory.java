@@ -3,7 +3,7 @@ package org.osate.ge.internal.diagram.runtime.boTree;
 import java.util.Objects;
 
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
-import org.osate.ge.internal.diagram.runtime.filters.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
 import org.osate.ge.internal.services.ProjectReferenceService;
 
 import com.google.common.collect.ImmutableSet;

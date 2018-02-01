@@ -6,7 +6,7 @@ import org.osate.ge.graphics.Point;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.internal.AgeGraphicalConfiguration;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
-import org.osate.ge.internal.diagram.runtime.filters.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
 
 import com.google.common.collect.ImmutableSet;
 

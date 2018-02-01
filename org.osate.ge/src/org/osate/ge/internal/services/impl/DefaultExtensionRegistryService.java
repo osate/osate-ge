@@ -1,24 +1,24 @@
-// Based on OSATE Graphical Editor. Modifications are: 
+// Based on OSATE Graphical Editor. Modifications are:
 /*
 Copyright (c) 2016, Rockwell Collins.
 Developed with the sponsorship of Defense Advanced Research Projects Agency (DARPA).
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this data, 
-including any software or models in source or binary form, as well as any drawings, specifications, 
+Permission is hereby granted, free of charge, to any person obtaining a copy of this data,
+including any software or models in source or binary form, as well as any drawings, specifications,
 and documentation (collectively "the Data"), to deal in the Data without restriction, including
-without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Data, and to permit persons to whom the Data is furnished to do so, 
+without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Data, and to permit persons to whom the Data is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all copies or 
+The above copyright notice and this permission notice shall be included in all copies or
 substantial portions of the Data.
 
-THE DATA IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
-LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE AUTHORS, SPONSORS, DEVELOPERS, CONTRIBUTORS, OR COPYRIGHT HOLDERS BE LIABLE 
-FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
+THE DATA IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS, SPONSORS, DEVELOPERS, CONTRIBUTORS, OR COPYRIGHT HOLDERS BE LIABLE
+FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE DATA OR THE USE OR OTHER DEALINGS IN THE DATA.
-*/
+ */
 /*******************************************************************************
  * Copyright (C) 2016 University of Alabama in Huntsville (UAH)
  * All rights reserved. This program and the accompanying materials
@@ -31,7 +31,6 @@ package org.osate.ge.internal.services.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -48,7 +47,11 @@ import org.osate.ge.Categories;
 import org.osate.ge.di.Activate;
 import org.osate.ge.di.IsApplicable;
 import org.osate.ge.di.Names;
+import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
 import org.osate.ge.internal.services.ExtensionRegistryService;
+
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
 
 /**
  * Instantiates extensions which are registered via extension points.
@@ -58,9 +61,9 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 		@Override
 		public ExtensionRegistryService createService(final IEclipseContext context) {
 			return new DefaultExtensionRegistryService();
-		}		
+		}
 	}
-	
+
 	private static class PrioritizedExtensionInfo {
 		final private int priority;
 		final private Object object;
@@ -68,42 +71,45 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 			this.priority = priority;
 			this.object = object;
 		}
-		
+
 		public int getPriority() {
 			return priority;
 		}
-		
+
 		public Object getObject() {
 			return object;
 		}
 	}
-	
+
 	private static final String BUSINESS_OBJECT_HANDLERS_EXTENSION_POINT_ID = "org.osate.ge.businessObjectHandlers";
 	private static final String TOOLTIP_EXTENSION_POINT_ID = "org.osate.ge.tooltips";
 	private static final String COMMAND_EXTENSION_POINT_ID = "org.osate.ge.commands";
 	private static final String CATEGORIES_EXTENSION_POINT_ID = "org.osate.ge.categories";
 	private static final String BUSINESS_OBJECT_PROVIDERS_EXTENSION_POINT_ID = "org.osate.ge.businessObjectProviders";
-	
+	private static final String CONTENT_FILTERS_EXTENSION_POINT_ID = "org.osate.ge.contentFilters";
+
 	private final Collection<Object> boHandlers;
-	private final Collection<Object> commands;	
+	private final Collection<Object> commands;
 	private final List<Category> categories;
 	private final Collection<Object> tooltipContributors;
 	private final Collection<Object> businessObjectProviders;
-	
+	private final ImmutableCollection<ContentFilter> contentFilters;
+
 	public DefaultExtensionRegistryService() {
-		final IExtensionRegistry registry = Platform.getExtensionRegistry();		
+		final IExtensionRegistry registry = Platform.getExtensionRegistry();
 		boHandlers = instantiateBusinessObjectHandlers(registry);
 		tooltipContributors = instantiateTooltipContributors(registry);
 		commands = instantiateCommands(registry);
 		categories = instantiateCategories(registry);
 		businessObjectProviders = instantiateBusinessObjectProviders(registry);
+		contentFilters = instantiateContentFilters(registry);
 	}
 
 	@Override
 	public Collection<Object> getBusinessObjectHandlers() {
-    	return boHandlers;
-    }
-	
+		return boHandlers;
+	}
+
 	@Override
 	public Object getApplicableBusinessObjectHandler(final Object bo) {
 		final IEclipseContext eclipseCtx =  EclipseContextFactory.create();
@@ -117,51 +123,63 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 				if(isApplicable) {
 					return handler;
 				}
-				
+
 			}
-			
+
 		} finally {
 			eclipseCtx.dispose();
 		}
-		
+
 		return null;
 	}
-	
+
 	@Override
 	public List<Category> getCategories() {
 		return categories;
 	}
-	
+
 	@Override
 	public Collection<Object> getTooltipContributors() {
 		return tooltipContributors;
 	}
-	
+
 	@Override
 	public Collection<Object> getCommands() {
 		return commands;
-	}	
+	}
 
 	@Override
 	public Collection<Object> getBusinessObjectProviders() {
 		return businessObjectProviders;
 	}
-	
-	private static Collection<Object> instantiateBusinessObjectHandlers(final IExtensionRegistry registry) {
-		return Collections.unmodifiableCollection(instantiatePrioritizedExtensions(registry, BUSINESS_OBJECT_HANDLERS_EXTENSION_POINT_ID, "handler"));
-	}
-	
-	private static Collection<Object> instantiateBusinessObjectProviders(final IExtensionRegistry registry) {
-		return Collections.unmodifiableCollection(instantiateSimpleExtensions(registry, BUSINESS_OBJECT_PROVIDERS_EXTENSION_POINT_ID, "provider"));
+
+	@Override
+	public ImmutableCollection<ContentFilter> getContentFilters() {
+		return contentFilters;
 	}
 
-	private static Collection<Object> instantiateTooltipContributors(final IExtensionRegistry registry) {
-		return Collections.unmodifiableCollection(instantiatePrioritizedExtensions(registry, TOOLTIP_EXTENSION_POINT_ID, "tooltipContributor"));
+	private static ImmutableCollection<Object> instantiateBusinessObjectHandlers(final IExtensionRegistry registry) {
+		return instantiatePrioritizedExtensions(registry, BUSINESS_OBJECT_HANDLERS_EXTENSION_POINT_ID, "handler");
 	}
-	
-	private static Collection<Object> instantiateCommands(final IExtensionRegistry registry) {
-		final Collection<Object> commands = instantiateSimpleExtensions(registry, COMMAND_EXTENSION_POINT_ID, "command");
-		
+
+	private static ImmutableCollection<Object> instantiateBusinessObjectProviders(final IExtensionRegistry registry) {
+		return instantiateSimpleExtensions(registry, BUSINESS_OBJECT_PROVIDERS_EXTENSION_POINT_ID, "provider");
+	}
+
+	private static ImmutableCollection<Object> instantiateTooltipContributors(final IExtensionRegistry registry) {
+		return instantiatePrioritizedExtensions(registry, TOOLTIP_EXTENSION_POINT_ID, "tooltipContributor");
+	}
+
+	private static ImmutableCollection<ContentFilter> instantiateContentFilters(final IExtensionRegistry registry) {
+		return instantiateSimpleExtensions(registry, CONTENT_FILTERS_EXTENSION_POINT_ID, "contentFilter",
+				ContentFilter.class);
+	}
+
+	private static ImmutableCollection<Object> instantiateCommands(final IExtensionRegistry registry) {
+		final ImmutableList.Builder<Object> extensionListBuilder = ImmutableList.builder();
+		instantiateSimpleExtensions(extensionListBuilder, registry, COMMAND_EXTENSION_POINT_ID, "command",
+				Object.class);
+
 		// Activate command contributors to create commands
 		final IEclipseContext ctx = EclipseContextFactory.create();
 		try {
@@ -169,48 +187,60 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 				@SuppressWarnings("unchecked")
 				final Collection<Object> contributedCommands = (Collection<Object>)ContextInjectionFactory.invoke(commandContributor, Activate.class, ctx);
 				if(contributedCommands != null) {
-					commands.addAll(contributedCommands);
+					extensionListBuilder.addAll(contributedCommands);
 				}
 			}
 		} finally {
 			ctx.dispose();
-		}		
-		
-		return Collections.unmodifiableCollection(commands);
+		}
+
+		return extensionListBuilder.build();
 	}
-	
-	// Returns an unmodifiable collection containing the objects created by instantiating class referenced by the "class" attribute of all configuration elements
+
+	// Returns an immutable collection containing the objects created by instantiating class referenced by the "class" attribute of all configuration elements
 	// with the specified name for a specified extension point.
-	private static Collection<Object> instantiateSimpleExtensions(final IExtensionRegistry registry, final String extensionPointId, final String elementName) {
-		final Collection<Object> extensions = new ArrayList<Object>();
-		
+	private static <T> ImmutableCollection<T> instantiateSimpleExtensions(final IExtensionRegistry registry,
+			final String extensionPointId, final String elementName, final Class<T> extClass) {
+		final ImmutableList.Builder<T> extensionListBuilder = ImmutableList.builder();
+		instantiateSimpleExtensions(extensionListBuilder, registry, extensionPointId, elementName, extClass);
+		return extensionListBuilder.build();
+	}
+
+	private static <T> void instantiateSimpleExtensions(final ImmutableList.Builder<T> extensionListBuilder,
+			final IExtensionRegistry registry,
+			final String extensionPointId, final String elementName, final Class<T> extClass) {
 		final IExtensionPoint point = registry.getExtensionPoint(extensionPointId);
-		if(point != null) {
+		if (point != null) {
 			// Iterate over all the extensions
-			for(final IExtension extension : point.getExtensions()) {
-				for(final IConfigurationElement ce : extension.getConfigurationElements()) {
-					if(ce.getName().equals(elementName)) {
-						try {								
+			for (final IExtension extension : point.getExtensions()) {
+				for (final IConfigurationElement ce : extension.getConfigurationElements()) {
+					if (ce.getName().equals(elementName)) {
+						try {
 							final Object ext = ce.createExecutableExtension("class");
-							extensions.add(ext);
-						} catch(final CoreException ex) {
+							if (extClass.isInstance(ext)) {
+								extensionListBuilder.add(extClass.cast(ext));
+							}
+						} catch (final CoreException ex) {
 							throw new RuntimeException(ex);
 						}
 					}
 				}
 			}
 		}
-		
-		return extensions;
 	}
-	
+
+	private static <T> ImmutableCollection<Object> instantiateSimpleExtensions(final IExtensionRegistry registry,
+			final String extensionPointId, final String elementName) {
+		return instantiateSimpleExtensions(registry, extensionPointId, elementName, Object.class);
+	}
+
 	// Extensions with a lower priority values are sorted so that they are earlier in the resulting collection
-	private static Collection<Object> instantiatePrioritizedExtensions(final IExtensionRegistry registry, 
-			final String extensionPointId, 
+	private static ImmutableCollection<Object> instantiatePrioritizedExtensions(final IExtensionRegistry registry,
+			final String extensionPointId,
 			final String elementName) {
+		final ImmutableList.Builder<Object> extensionListBuilder = ImmutableList.builder();
 		final Comparator<PrioritizedExtensionInfo> priorityComparator = (tooltipContributor1, tooltipContributor2) -> Integer.compare(tooltipContributor1.getPriority(), tooltipContributor2.getPriority());
-		
-		final Collection<Object> extensions = new ArrayList<Object>();
+
 		final IExtensionPoint extPoint = registry.getExtensionPoint(extensionPointId);
 		if(extPoint != null) {
 			final ArrayList<PrioritizedExtensionInfo> prioritizedExtensionInfos = new ArrayList<>();
@@ -229,20 +259,20 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 					}
 				}
 			}
-			
+
 			prioritizedExtensionInfos.sort(priorityComparator);
 			for (final PrioritizedExtensionInfo info : prioritizedExtensionInfos) {
-				extensions.add(info.getObject());
+				extensionListBuilder.add(info.getObject());
 			}
 		}
-		
-		return extensions;
+
+		return extensionListBuilder.build();
 	}
-	
-	// Returns an unmodifiable collection containing the objects created by the id and name attribute of all configuration elements
+
+	// Returns an immutable list containing the categories created using the id and name attribute of all configuration elements
 	// with the specified name for a specified extension point.
-	private static List<Category> instantiateCategories(IExtensionRegistry registry) {
-		final List<SimpleCategory> extensions = new ArrayList<SimpleCategory>();
+	private static ImmutableList<Category> instantiateCategories(IExtensionRegistry registry) {
+		final ImmutableList.Builder<Category> extensionListBuilder = ImmutableList.builder();
 		final IExtensionPoint point = registry.getExtensionPoint(CATEGORIES_EXTENSION_POINT_ID);
 		if(point != null) {
 			// Build a list of category config elements from all extensions so that they can be sorted.
@@ -255,32 +285,32 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 			}
 
 			categoryConfigElements.sort(orderComparator);
-			
+
 			// Create the category objects
 			for(final IConfigurationElement ce : categoryConfigElements) {
 				final String categoryId = ce.getAttribute("id");
 				final String categoryName = ce.getAttribute("name");
 				final SimpleCategory category = new SimpleCategory(categoryId, categoryName);
-				extensions.add(category);
+				extensionListBuilder.add(category);
 			}
 		}
-		
-		extensions.add(new SimpleCategory(Categories.MISC, "Miscellaneous"));
-		return Collections.unmodifiableList(extensions);
+
+		extensionListBuilder.add(new SimpleCategory(Categories.MISC, "Miscellaneous"));
+		return extensionListBuilder.build();
 	}
-	
-	private static final Comparator<IConfigurationElement> orderComparator 
+
+	private static final Comparator<IConfigurationElement> orderComparator
 	= (ce1, ce2) -> Integer.valueOf(ce1.getAttribute("order")).compareTo(Integer.valueOf(ce2.getAttribute("order")));
-	
+
 	private static class SimpleCategory implements Category {
 		private String id;
 		private String name;
-		
+
 		public SimpleCategory(final String id, final String name) {
 			this.id = id;
 			this.name = name;
 		}
-		
+
 		@Override
 		public String getId() {
 			return id;

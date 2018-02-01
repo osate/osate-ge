@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.filters;
+package org.osate.ge.internal.diagram.runtime.filtering;
 
 import org.osate.ge.internal.model.PropertyValueGroup;
 import org.osate.ge.internal.model.SubprogramCallOrder;

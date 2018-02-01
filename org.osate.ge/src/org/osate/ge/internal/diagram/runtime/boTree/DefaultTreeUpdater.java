@@ -23,7 +23,6 @@ import org.osate.aadl2.instance.InstanceObject;
 import org.osate.aadl2.instance.InstanceReferenceValue;
 import org.osate.aadl2.modelsupport.resources.OsateResourceUtil;
 import org.osate.aadl2.util.Aadl2Util;
-import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.internal.aadlproperties.AadlPropertyResolutionResults;
 import org.osate.ge.internal.aadlproperties.AadlPropertyResolver;
 import org.osate.ge.internal.aadlproperties.AadlPropertyUtil;
@@ -33,15 +32,16 @@ import org.osate.ge.internal.aadlproperties.PropertyValueUtil;
 import org.osate.ge.internal.aadlproperties.ReferenceValueWithContext;
 import org.osate.ge.internal.diagram.runtime.DiagramConfiguration;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
-import org.osate.ge.internal.diagram.runtime.filters.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.filtering.Filtering;
 import org.osate.ge.internal.diagram.runtime.types.DiagramType;
 import org.osate.ge.internal.model.AgePropertyValue;
 import org.osate.ge.internal.model.PropertyValueGroup;
-import org.osate.ge.internal.query.Queryable;
 import org.osate.ge.internal.services.ExtensionService;
 import org.osate.ge.internal.services.ProjectProvider;
 import org.osate.ge.internal.services.ProjectReferenceService;
 import org.osate.ge.internal.util.BusinessObjectProviderHelper;
+import org.osate.ge.internal.util.ManualBranchCache;
 import org.osate.ge.internal.util.ScopedEMFIndexRetrieval;
 import org.osate.ge.services.QueryService;
 
@@ -51,43 +51,11 @@ import com.google.common.collect.Multimap;
 
 /**
  * A TreeUpdater which create a tree which contains which contains contains nodes based all
- * provided by registered business object providers. Nodes are removed or created based on is manual fields and the auto content filter.
+ * provided by registered business object providers. Nodes are removed or created based on is manual fields and the content filters.
  *
  * Diagrams which have a context business object specified will only contain the specified business object as a root.
  */
 public class DefaultTreeUpdater implements TreeUpdater {
-	/**
-	 * Helper class for determining if a node is part of manual branch. A manual branch is one where the node or one of its descendant is set to manual.
-	 *
-	 */
-	private class ManualBranchCache {
-		final Map<BusinessObjectNode, Boolean> manualBranchMap = new HashMap<>();
-
-		public boolean isManualBranch(final BusinessObjectNode node) {
-			final Boolean cachedIsManual = manualBranchMap.get(node);
-			if (cachedIsManual != null) {
-				return cachedIsManual;
-			}
-
-			boolean isManual = false;
-			if (node.isManual()) {
-				isManual = true;
-			} else {
-				for (final BusinessObjectNode child : node.getChildren()) {
-					if (isManualBranch(child)) {
-						isManual = true;
-						break;
-					}
-				}
-			}
-
-			// Cache the value
-			manualBranchMap.put(node, isManual);
-
-			return isManual;
-		}
-	}
-
 	private class IdGenerator {
 		private long startId;
 
@@ -101,22 +69,23 @@ public class DefaultTreeUpdater implements TreeUpdater {
 	}
 
 	// A simple business object context which is to designed to represent the project level. It has no parent and it has no business object.
-	private final BusinessObjectContext projectBoc = new BusinessObjectContext() {
-		@Override
-		public Collection<? extends Queryable> getChildren() {
-			return Collections.emptyList();
-		}
-
-		@Override
-		public BusinessObjectContext getParent() {
-			return null;
-		}
-
-		@Override
-		public Object getBusinessObject() {
-			return null;
-		}
-	};
+	// Disabled until contextless diagrams are implemented
+//	private final BusinessObjectContext projectBoc = new BusinessObjectContext() {
+//		@Override
+//		public Collection<? extends Queryable> getChildren() {
+//			return Collections.emptyList();
+//		}
+//
+//		@Override
+//		public BusinessObjectContext getParent() {
+//			return null;
+//		}
+//
+//		@Override
+//		public Object getBusinessObject() {
+//			return null;
+//		}
+//	};
 
 	private final ProjectProvider projectProvider;
 	private final ExtensionService extService;
@@ -366,7 +335,7 @@ public class DefaultTreeUpdater implements TreeUpdater {
 		// TODO: Set the default content filters based on the diagram type
 		// TODO: Handle fundamental business objects
 		final ImmutableSet<ContentFilter> contentFilters = oldNode == null || oldNode.getContentFilters() == null
-				|| oldNode.isManual() ? ImmutableSet.of()
+				? ImmutableSet.of()
 						/* diagramType.getDefaultAutoContentsFilter(bo) */ : oldNode.getContentFilters();
 				final long id = oldNode == null || oldNode.getId() == null ? idGenerator.getNext() : oldNode.getId();
 				final BusinessObjectNode newNode = nodeFactory.create(parentNode, id, bo,
@@ -415,7 +384,7 @@ public class DefaultTreeUpdater implements TreeUpdater {
 			final RelativeBusinessObjectReference relativeReference = refService
 					.getRelativeReference(potentialBusinessObject);
 			if (relativeReference != null) {
-				if (forcedRefs.contains(relativeReference)
+				if (forcedRefs.contains(relativeReference) || Filtering.isFundamental(potentialBusinessObject)
 						|| passesAnyContentFilter(potentialBusinessObject, contentFilters)) {
 					results.put(relativeReference, potentialBusinessObject);
 				}

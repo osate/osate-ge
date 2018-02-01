@@ -8,6 +8,7 @@
    <extension-point id="org.osate.ge.references" name="Reference Handling" schema="schema/org.osate.ge.references.exsd"/>
    <extension-point id="org.osate.ge.businessObjectHandlers" name="Business Object Handlers" schema="schema/org.osate.ge.businessObjectHandlers.exsd"/>
    <extension-point id="org.osate.ge.businessObjectProviders" name="Business Object Providers" schema="schema/org.osate.ge.businessObjectProviders.exsd"/>
+   <extension-point id="org.osate.ge.contentFilters" name="Content Filters" schema="schema/org.osate.ge.contentFilters.exsd"/>
 	<extension point="org.eclipse.ui.commands">
     <category
           id="org.osate.ge.commands.categories.tool"
@@ -1934,5 +1935,62 @@
       <initializer
             class="org.osate.ge.internal.preferences.PreferenceInitializer">
       </initializer>
+   </extension>
+   <extension
+         point="org.osate.ge.contentFilters">
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.GeneralizationFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentTypeFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubprogramCallOrderFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.CalledSubprogramFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.FeatureFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.ModeTransitionTriggerNameFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.ModeTransitionFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.ModeFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.FlowSpecificationFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.ClassifierFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.ConnectionFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubprogramCallFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubprogramCallSequenceFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.ComponentInstanceFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.ConnectionReferenceFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.FeatureInstanceFilter">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.ImplementationFeatureFilter">
+      </contentFilter>
    </extension>
 </plugin>

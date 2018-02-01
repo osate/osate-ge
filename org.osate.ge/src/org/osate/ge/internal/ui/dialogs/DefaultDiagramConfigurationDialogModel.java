@@ -15,8 +15,8 @@ import org.osate.aadl2.NamedElement;
 import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.internal.diagram.runtime.CanonicalBusinessObjectReference;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
-import org.osate.ge.internal.diagram.runtime.filters.ContentFilter;
-import org.osate.ge.internal.diagram.runtime.filters.Filtering;
+import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.filtering.Filtering;
 import org.osate.ge.internal.diagram.runtime.types.DiagramType;
 import org.osate.ge.internal.query.Queryable;
 import org.osate.ge.internal.services.ExtensionService;
@@ -74,13 +74,14 @@ public class DefaultDiagramConfigurationDialogModel implements DiagramConfigurat
 
 	@Override
 	public String getName(final BusinessObjectContext boc) {
-		return UiUtil.getDescription(boc, extService, bocHelper);
+		// Pad with an extra space to avoid text from being clipped.
+		return UiUtil.getDescription(boc, extService, bocHelper) + " ";
 	}
 
 	@Override
-	public ImmutableSet<ContentFilter> getApplicableContentFilters(final Object bo) {
-		// TODO: Return content filters filters by applicability.
-		return ImmutableSet.of();
+	public ImmutableSet<ContentFilter> getApplicableContentFilters(final BusinessObjectContext boc) {
+		return extService.getContentFilters().stream().filter(cf -> cf.isApplicable(boc))
+				.collect(ImmutableSet.toImmutableSet());
 	}
 
 	@Override

@@ -10,7 +10,7 @@ import java.util.Objects;
 
 import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
-import org.osate.ge.internal.diagram.runtime.filters.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -36,7 +36,7 @@ public class BusinessObjectNode implements BusinessObjectContext {
 		this.relativeReference = relativeReference;
 		this.bo = bo;
 		this.manual = manual;
-		this.contentFilters = contentFilters;
+		this.contentFilters = Objects.requireNonNull(contentFilters, "contentFilters must not be null");
 		this.completeness = Objects.requireNonNull(completeness, "completeness must not be null");
 
 		if(parent != null) {
@@ -79,7 +79,7 @@ public class BusinessObjectNode implements BusinessObjectContext {
 	}
 
 	public final void setContentFilters(final ImmutableSet<ContentFilter> value) {
-		this.contentFilters = value;
+		this.contentFilters = Objects.requireNonNull(value, "value must not be null");
 	}
 
 	public final Completeness getCompleteness() {
@@ -173,21 +173,6 @@ public class BusinessObjectNode implements BusinessObjectContext {
 		}
 
 		return t;
-	}
-
-	/**
-	 * Returns true if any of the descendants of the node are manual.
-	 * @param n
-	 * @return
-	 */
-	public static boolean hasManualDescendant(final BusinessObjectNode n) {
-		for(final BusinessObjectNode child : n.getChildren()) {
-			if(child.isManual() || hasManualDescendant(child)) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	private static long getMaxIdForChildren(final BusinessObjectNode n) {

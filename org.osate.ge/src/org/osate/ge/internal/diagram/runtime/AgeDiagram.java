@@ -15,7 +15,7 @@ import org.osate.ge.graphics.internal.AgeConnection;
 import org.osate.ge.graphics.internal.AgeGraphicalConfiguration;
 import org.osate.ge.internal.diagram.runtime.DiagramTransactionHandler.TransactionOperation;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
-import org.osate.ge.internal.diagram.runtime.filters.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
 import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
 import org.osate.ge.internal.query.Queryable;
 
@@ -260,11 +260,7 @@ public class AgeDiagram implements DiagramNode, ModifiableDiagramElementContaine
 
 		@Override
 		public void setContentFilters(final DiagramElement e, final ImmutableSet<ContentFilter> value) {
-			if (value == null && e.getContentFilters() == null) {
-				return;
-			}
-
-			if (value == null || !value.equals(e.getContentFilters())) {
+			if (!value.equals(e.getContentFilters())) {
 				storeChange(e, DiagramElementField.CONTENT_FILTERS, e.getContentFilters(), value);
 				e.setContentFilters(value);
 				afterUpdate(e, DiagramElementField.CONTENT_FILTERS);
