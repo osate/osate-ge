@@ -22,7 +22,7 @@ import org.osate.ge.internal.diagram.runtime.ElementRemovedEvent;
 import org.osate.ge.internal.diagram.runtime.ElementUpdatedEvent;
 import org.osate.ge.internal.diagram.runtime.ModificationsCompletedEvent;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
-import org.osate.ge.internal.diagram.runtime.types.LegacyDiagramType;
+import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
 
 /**
  * Contains tests for the AgeDiagram class.
@@ -104,7 +104,7 @@ public class AgeDiagramTest {
 		// Test an add event
 		diagram.modify("Set Diagram Configuration",
 				m -> m.setDiagramConfiguration(
-						new DiagramConfigurationBuilder(new LegacyDiagramType(), false).addAadlProperty("test::test2")
+						new DiagramConfigurationBuilder(new CustomDiagramType(), false).addAadlProperty("test::test2")
 								.build()));
 
 		assertThat(ml.wasDiagramConfigurationChanged(), is(equalTo(true)));

@@ -194,7 +194,7 @@ public class DiagramUpdater {
 			}
 
 			// Set fields
-			m.setAutoContentsFilter(element, n.getAutoContentsFilter());
+			m.setContentFilters(element, n.getContentFilters());
 			m.setManual(element, n.isManual());
 			m.setCompleteness(element, n.getCompleteness());
 

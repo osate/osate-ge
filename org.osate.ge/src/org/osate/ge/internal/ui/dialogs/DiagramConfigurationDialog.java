@@ -33,6 +33,7 @@ import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.events.MenuAdapter;
 import org.eclipse.swt.events.MenuEvent;
 import org.eclipse.swt.events.MenuListener;
@@ -57,8 +58,10 @@ import org.osate.ge.internal.diagram.runtime.DiagramConfigurationBuilder;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
 import org.osate.ge.internal.diagram.runtime.boTree.BusinessObjectNode;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
-import org.osate.ge.internal.diagram.runtime.types.ContentsFilter;
-import org.osate.ge.internal.diagram.runtime.types.LegacyDiagramType;
+import org.osate.ge.internal.diagram.runtime.filters.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
+
+import com.google.common.collect.ImmutableSet;
 
 public class DiagramConfigurationDialog {
 	public interface Model {
@@ -66,8 +69,9 @@ public class DiagramConfigurationDialog {
 		RelativeBusinessObjectReference getRelativeBusinessObjectReference(final Object bo);
 		String getName(BusinessObjectContext boc);
 
-		Collection<ContentsFilter> getContentsFilters(Object bo);
-		ContentsFilter getDefaultContentsFilter(Object bo);
+		ImmutableSet<ContentFilter> getApplicableContentFilters(Object bo);
+
+		ImmutableSet<ContentFilter> getDefaultContentFilters(Object bo);
 		boolean shouldShowBusinessObject(Object bo);
 		Map<String, Collection<String>> getAadlProperties();
 		Object getBusinessObject(CanonicalBusinessObjectReference ref);
@@ -199,20 +203,24 @@ public class DiagramConfigurationDialog {
 					cell.setImage(model.getImage(node.getBusinessObject()));
 				}
 			});
+			CCombo c;
 
 			// Dropdown Column for Auto Contents Filter
-			final TreeViewerColumn autoContentsFilterColumn = new TreeViewerColumn(treeViewer, SWT.NONE);
-			autoContentsFilterColumn.getColumn().setWidth(100);
-			autoContentsFilterColumn.getColumn().setText("Auto Children");
-			autoContentsFilterColumn.setLabelProvider(new CellLabelProvider() {
+			final TreeViewerColumn contentsFilterColumn = new TreeViewerColumn(treeViewer, SWT.NONE);
+			contentsFilterColumn.getColumn().setWidth(100);
+			contentsFilterColumn.getColumn().setText("Auto Children");
+			contentsFilterColumn.setLabelProvider(new CellLabelProvider() {
 				@Override
 				public void update(final ViewerCell cell) {
 					final BusinessObjectNode node = (BusinessObjectNode)cell.getElement();
-					cell.setText(isAutoContentsFilterEditable(node) && node.getAutoContentsFilter() != null ? node.getAutoContentsFilter().description() : "");
+					// TODO
+//					cell.setText(isAutoContentsFilterEditable(node) && node.getAutoContentsFilter() != null
+//							? node.getAutoContentsFilter().getDescription()
+//									: "");
 				}
 			});
 
-			autoContentsFilterColumn.setEditingSupport(new AutoContentsFilterEditingSupport(treeViewer));
+			contentsFilterColumn.setEditingSupport(new AutoContentsFilterEditingSupport(treeViewer));
 
 			final Tree tree = treeViewer.getTree();
 			tree.setLayoutData(GridDataFactory.fillDefaults().grab(true, true).span(2, 1).minSize(SWT.DEFAULT, 100).hint(200, SWT.DEFAULT).create());
@@ -448,15 +456,15 @@ public class DiagramConfigurationDialog {
 			cellEditor.setLabelProvider(new LabelProvider() {
 				@Override
 				public String getText(final Object o) {
-					final ContentsFilter filter = (ContentsFilter)o;
-					return filter == null ? "" : filter.description();
+					final ContentFilter filter = (ContentFilter)o;
+					return filter == null ? "" : filter.getDescription();
 				}
 			});
 		}
 
 		@Override
 		protected CellEditor getCellEditor(final Object element) {
-			cellEditor.setInput(model.getContentsFilters(((BusinessObjectNode) element).getBusinessObject()));
+			cellEditor.setInput(model.getApplicableContentFilters(((BusinessObjectNode) element).getBusinessObject()));
 			return cellEditor;
 		}
 
@@ -467,14 +475,16 @@ public class DiagramConfigurationDialog {
 
 		@Override
 		protected Object getValue(final Object element) {
-			return ((BusinessObjectNode)element).getAutoContentsFilter();
+			// TODO
+			return "";// ((BusinessObjectNode)element).getAutoContentsFilter();
 		}
 
 		@Override
 		protected void setValue(final Object element, final Object value) {
 			// Set the value
 			final BusinessObjectNode node = (BusinessObjectNode)element;
-			node.setAutoContentsFilter((ContentsFilter)value);
+			// TODO
+			// node.setAutoContentsFilter((ContentFilter)value);
 			dlg.updateTree();
 		}
 	}
@@ -521,7 +531,8 @@ public class DiagramConfigurationDialog {
 					final RelativeBusinessObjectReference childRef = model.getRelativeBusinessObjectReference(childBo);
 					// Create a child node if it doesn't exist
 					if(node.getChild(childRef) == null) {
-						new BusinessObjectNode(node, model.getNewNodeId(), childRef, childBo, false, model.getDefaultContentsFilter(childBo), Completeness.UNKNOWN);
+						new BusinessObjectNode(node, model.getNewNodeId(), childRef, childBo, false,
+								model.getDefaultContentFilters(childBo), Completeness.UNKNOWN);
 					}
 				}
 				populatedNodes.add(node);
@@ -569,11 +580,14 @@ public class DiagramConfigurationDialog {
 				isEnabled(node.getParent())) {
 			final BusinessObjectNode parentNode = node.getParent();
 
-			ContentsFilter parentActualContentFilter = parentNode.getAutoContentsFilter() == null ? model.getDefaultContentsFilter(parentNode.getBusinessObject()) : parentNode.getAutoContentsFilter();
-			if(parentActualContentFilter.test(node.getBusinessObject()) ||
-					BusinessObjectNode.hasManualDescendant(node)) {
-				return EnabledState.IMPLICITLY_ENABLED;
-			}
+			// TODO
+//			ContentFilter parentActualContentFilter = parentNode.getAutoContentsFilter() == null
+//					? model.getDefaultContentFilters(parentNode.getBusinessObject())
+//					: parentNode.getContentFilters();
+//					if(parentActualContentFilter.test(node.getBusinessObject()) ||
+//							BusinessObjectNode.hasManualDescendant(node)) {
+//						return EnabledState.IMPLICITLY_ENABLED;
+//					}
 		}
 
 		// Implicitly enabled because it is a top level node in a diagram with a context. In such diagrams, the root nodes are automatically added.
@@ -603,18 +617,18 @@ public class DiagramConfigurationDialog {
 		return dlg.open();
 	}
 
-	enum TestContentsFilter implements ContentsFilter {
+	enum TestContentsFilter implements ContentFilter {
 		FILTER1,
 		FILTER2,
 		NO_C1;
 
 		@Override
-		public String id() {
+		public String getId() {
 			return this.toString();
 		}
 
 		@Override
-		public String description() {
+		public String getDescription() {
 			return this.toString() + " Desc";
 		}
 
@@ -624,6 +638,11 @@ public class DiagramConfigurationDialog {
 				return false;
 			}
 
+			return true;
+		}
+
+		@Override
+		public boolean isApplicable(final BusinessObjectContext boc) {
 			return true;
 		}
 
@@ -651,13 +670,13 @@ public class DiagramConfigurationDialog {
 			}
 
 			@Override
-			public Collection<ContentsFilter> getContentsFilters(final Object bo) {
-				return Arrays.asList(TestContentsFilter.values());
+			public ImmutableSet<ContentFilter> getApplicableContentFilters(final Object bo) {
+				return ImmutableSet.copyOf(TestContentsFilter.values());
 			}
 
 			@Override
-			public ContentsFilter getDefaultContentsFilter(final Object bo) {
-				return TestContentsFilter.FILTER1;
+			public ImmutableSet<ContentFilter> getDefaultContentFilters(final Object bo) {
+				return ImmutableSet.of(TestContentsFilter.FILTER1);
 			}
 
 			@Override
@@ -695,7 +714,7 @@ public class DiagramConfigurationDialog {
 			}
 		};
 
-		final DiagramConfiguration diagramConfig = new DiagramConfigurationBuilder(new LegacyDiagramType(), false)
+		final DiagramConfiguration diagramConfig = new DiagramConfigurationBuilder(new CustomDiagramType(), false)
 				.
 				setContextBoReference(new CanonicalBusinessObjectReference("test")).
 				addAadlProperty("test::prop1").

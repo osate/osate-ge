@@ -52,7 +52,7 @@ public class DiagramToBusinessObjectTreeConverter {
 		// Don't keep the business object when building the business object tree. This will ensure that tree expander or other user of the tree updates
 		// the business object based on the model.
 		final BusinessObjectNode childNode = new BusinessObjectNode(parent, e.getId(), e.getRelativeReference(), null,
-				e.isManual(), e.getAutoContentsFilter(), Completeness.UNKNOWN);
+				e.isManual(), e.getContentFilters(), Completeness.UNKNOWN);
 		createBusinessObjectNodesForElements(childNode, e.getDiagramElements(), futureElementPositionMap,
 				containerToRelativeReferenceToGhostMap);
 		createBusinessObjectNodesForGhostedElements(childNode, e, futureElementPositionMap,

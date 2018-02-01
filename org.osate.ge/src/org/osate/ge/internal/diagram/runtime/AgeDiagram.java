@@ -15,9 +15,11 @@ import org.osate.ge.graphics.internal.AgeConnection;
 import org.osate.ge.graphics.internal.AgeGraphicalConfiguration;
 import org.osate.ge.internal.diagram.runtime.DiagramTransactionHandler.TransactionOperation;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
-import org.osate.ge.internal.diagram.runtime.types.ContentsFilter;
-import org.osate.ge.internal.diagram.runtime.types.LegacyDiagramType;
+import org.osate.ge.internal.diagram.runtime.filters.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
 import org.osate.ge.internal.query.Queryable;
+
+import com.google.common.collect.ImmutableSet;
 
 /**
  * This class is the in-memory data structure for the diagram.
@@ -37,7 +39,7 @@ public class AgeDiagram implements DiagramNode, ModifiableDiagramElementContaine
 	 * @param startingElementId is the id of the first diagram element which has an id automatically assigned to it.
 	 */
 	public AgeDiagram(final long startingElementId) {
-		this.diagramConfiguration = new DiagramConfiguration(new LegacyDiagramType(), null, Collections.emptySet(),
+		this.diagramConfiguration = new DiagramConfiguration(new CustomDiagramType(), null, Collections.emptySet(),
 				true);
 		this.maxElementId = startingElementId-1; // The max element id is set to the specified value - 1 because the value is incremented before it is assigned as an id.
 	}
@@ -257,15 +259,15 @@ public class AgeDiagram implements DiagramNode, ModifiableDiagramElementContaine
 		}
 
 		@Override
-		public void setAutoContentsFilter(final DiagramElement e, final ContentsFilter value) {
-			if(value == null && e.getAutoContentsFilter() == null) {
+		public void setContentFilters(final DiagramElement e, final ImmutableSet<ContentFilter> value) {
+			if (value == null && e.getContentFilters() == null) {
 				return;
 			}
 
-			if(value == null || !value.equals(e.getAutoContentsFilter())) {
-				storeChange(e, DiagramElementField.AUTO_CONTENTS_FILTER, e.getAutoContentsFilter(), value);
-				e.setAutoContentsFilter(value);
-				afterUpdate(e, DiagramElementField.AUTO_CONTENTS_FILTER);
+			if (value == null || !value.equals(e.getContentFilters())) {
+				storeChange(e, DiagramElementField.CONTENT_FILTERS, e.getContentFilters(), value);
+				e.setContentFilters(value);
+				afterUpdate(e, DiagramElementField.CONTENT_FILTERS);
 			}
 		}
 
@@ -564,8 +566,8 @@ public class AgeDiagram implements DiagramNode, ModifiableDiagramElementContaine
 				setManual(element, (boolean) value);
 				break;
 
-			case AUTO_CONTENTS_FILTER:
-				setAutoContentsFilter(element, (ContentsFilter) value);
+			case CONTENT_FILTERS:
+				setContentFilters(element, (ImmutableSet<ContentFilter>) value);
 				break;
 
 			case COMPLETENESS:

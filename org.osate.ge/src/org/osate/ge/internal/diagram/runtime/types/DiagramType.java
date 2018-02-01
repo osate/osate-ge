@@ -21,20 +21,7 @@ public interface DiagramType {
 	 * @param bo
 	 * @return
 	 */
-	ContentsFilter getDefaultAutoContentsFilter(Object bo);
-
-	/**
-	 * Returns the contents filters which are applicable to the specified business object.
-	 * @param bo
-	 * @return
-	 */
-	ImmutableCollection<ContentsFilter> getApplicableAutoContentsFilters(Object bo);
-
-	/**
-	 * Returns the contents filter with the specified contents filter id. The id's are only guaranteed to be unique within the scope of this diagram type.
-	 * Returns null if the contents filter could not be returned.
-	 */
-	ContentsFilter getContentsFilter(final String contentsFilterId);
+	// ContentsFilter getDefaultAutoContentsFilter(Object bo);
 
 	/**
 	 * Returns the set of all AADL properties that are added to the diagram configuration by default. The user may choose to remove such properties.

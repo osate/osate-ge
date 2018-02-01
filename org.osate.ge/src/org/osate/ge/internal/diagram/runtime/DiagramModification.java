@@ -6,7 +6,9 @@ import org.osate.ge.graphics.Point;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.internal.AgeGraphicalConfiguration;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
-import org.osate.ge.internal.diagram.runtime.types.ContentsFilter;
+import org.osate.ge.internal.diagram.runtime.filters.ContentFilter;
+
+import com.google.common.collect.ImmutableSet;
 
 /**
  * Interface provided to Modifier objects to allow making changes to an AgeDiagram.
@@ -38,7 +40,8 @@ public interface DiagramModification {
 
 	void setId(final DiagramElement e, final Long value);
 	void setManual(final DiagramElement e, final boolean value);
-	void setAutoContentsFilter(final DiagramElement e, final ContentsFilter value);
+
+	void setContentFilters(final DiagramElement e, final ImmutableSet<ContentFilter> value);
 	void setCompleteness(final DiagramElement e, final Completeness value);
 	void setName(final DiagramElement e, final String value);
 	void setGraphicalConfiguration(final DiagramElement e, final AgeGraphicalConfiguration value);

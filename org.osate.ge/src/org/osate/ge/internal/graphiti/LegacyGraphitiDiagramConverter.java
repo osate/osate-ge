@@ -46,7 +46,7 @@ import org.osate.ge.diagram.AadlPropertiesSet;
 import org.osate.ge.diagram.DiagramConfiguration;
 import org.osate.ge.diagram.Dimension;
 import org.osate.ge.internal.diagram.runtime.DockArea;
-import org.osate.ge.internal.diagram.runtime.types.ContentsFilter;
+import org.osate.ge.internal.diagram.runtime.filters.ContentFilter;
 import org.osate.ge.internal.graphiti.diagram.PropertyUtil;
 import org.osate.ge.internal.model.SubprogramCallOrder;
 import org.osate.ge.internal.services.ProjectReferenceService;
@@ -125,7 +125,7 @@ public class LegacyGraphitiDiagramConverter {
 				final org.osate.ge.diagram.DiagramElement newElement = new org.osate.ge.diagram.DiagramElement();
 				diagram.getElement().add(newElement);
 				newElement.setBo(contextRelRef.toMetamodel());
-				newElement.setAutoContentsFilter(ContentsFilter.ALLOW_ALL_ID);
+				newElement.setAutoContentsFilter(ContentFilter.ALLOW_ALL_ID);
 				newElement.setManual(true);
 				diagramElementToBoMap.put(newElement, contextBo);
 				container = newElement;
@@ -388,13 +388,13 @@ public class LegacyGraphitiDiagramConverter {
 
 			// For top level classifiers, show all contents. Will be true for classifier diagrams
 			if(convertedContainer instanceof org.osate.ge.diagram.Diagram) {
-				newElement.setAutoContentsFilter(ContentsFilter.ALLOW_ALL_ID);
+				newElement.setAutoContentsFilter(ContentFilter.ALLOW_ALL_ID);
 			} else {
 				// Special handling of certain elements
 				if(bo instanceof Subcomponent) {
-					newElement.setAutoContentsFilter(ContentsFilter.ALLOW_TYPE_ID);
+					newElement.setAutoContentsFilter(ContentFilter.ALLOW_TYPE_ID);
 				} else if(bo instanceof SubprogramCallSequence || bo instanceof SubprogramCall || bo instanceof ComponentInstance) {
-					newElement.setAutoContentsFilter(ContentsFilter.ALLOW_ALL_ID);
+					newElement.setAutoContentsFilter(ContentFilter.ALLOW_ALL_ID);
 				}
 			}
 

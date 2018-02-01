@@ -19,9 +19,9 @@ import org.osate.ge.graphics.Color;
 import org.osate.ge.graphics.Point;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
-import org.osate.ge.internal.diagram.runtime.types.ContentsFilter;
+import org.osate.ge.internal.diagram.runtime.filters.ContentFilter;
 import org.osate.ge.internal.diagram.runtime.types.DiagramType;
-import org.osate.ge.internal.diagram.runtime.types.LegacyDiagramType;
+import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
 
 /**
  * Class to help read and write the native diagram format used by the editor.
@@ -59,7 +59,7 @@ public class DiagramSerialization {
 
 		// Read the diagram configuration
 		// TODO: Set the diagram type based on the file.
-		final DiagramConfigurationBuilder configBuilder = new DiagramConfigurationBuilder(new LegacyDiagramType(),
+		final DiagramConfigurationBuilder configBuilder = new DiagramConfigurationBuilder(new CustomDiagramType(),
 				false);
 
 		if (mmDiagram.getConfig() != null) {
@@ -160,7 +160,7 @@ public class DiagramSerialization {
 
 		final String autoContentsFilterId = mmChild.getAutoContentsFilter();
 		if (autoContentsFilterId != null) {
-			final ContentsFilter autoContentsFilter = diagramType.getContentsFilter(autoContentsFilterId);
+			final ContentFilter autoContentsFilter = diagramType.getContentsFilter(autoContentsFilterId);
 			if (autoContentsFilter != null) {
 				newElement.setAutoContentsFilter(autoContentsFilter);
 			}

@@ -15,9 +15,9 @@ import org.osate.aadl2.NamedElement;
 import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.internal.diagram.runtime.CanonicalBusinessObjectReference;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
-import org.osate.ge.internal.diagram.runtime.types.ContentsFilter;
+import org.osate.ge.internal.diagram.runtime.filters.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.filters.Filtering;
 import org.osate.ge.internal.diagram.runtime.types.DiagramType;
-import org.osate.ge.internal.model.PropertyValueGroup;
 import org.osate.ge.internal.query.Queryable;
 import org.osate.ge.internal.services.ExtensionService;
 import org.osate.ge.internal.services.ProjectProvider;
@@ -28,6 +28,8 @@ import org.osate.ge.internal.util.BusinessObjectContextHelper;
 import org.osate.ge.internal.util.BusinessObjectProviderHelper;
 import org.osate.ge.internal.util.ScopedEMFIndexRetrieval;
 import org.osate.ge.internal.util.StringUtil;
+
+import com.google.common.collect.ImmutableSet;
 
 public class DefaultDiagramConfigurationDialogModel implements DiagramConfigurationDialog.Model, AutoCloseable {
 	private final ProjectReferenceService referenceService;
@@ -76,13 +78,15 @@ public class DefaultDiagramConfigurationDialogModel implements DiagramConfigurat
 	}
 
 	@Override
-	public Collection<ContentsFilter> getContentsFilters(Object bo) {
-		return diagramType.getApplicableAutoContentsFilters(bo);
+	public ImmutableSet<ContentFilter> getApplicableContentFilters(final Object bo) {
+		// TODO: Return content filters filters by applicability.
+		return ImmutableSet.of();
 	}
 
 	@Override
-	public ContentsFilter getDefaultContentsFilter(final Object bo) {
-		return diagramType.getDefaultAutoContentsFilter(bo);
+	public ImmutableSet<ContentFilter> getDefaultContentFilters(final Object bo) {
+		// TODO: Call diagram type to determine default content filters;
+		return ImmutableSet.of();// diagramType.ggetDefaultAutoContentsFilter(bo);
 	}
 
 	@Override
@@ -139,11 +143,7 @@ public class DefaultDiagramConfigurationDialogModel implements DiagramConfigurat
 
 	@Override
 	public boolean shouldShowBusinessObject(final Object bo) {
-		final ContentsFilter fundamentalContentsFilter = diagramType
-				.getContentsFilter(
-						ContentsFilter.ALLOW_FUNDAMENTAL_ID);
-		return !((fundamentalContentsFilter != null && fundamentalContentsFilter.test(bo))
-				|| bo instanceof PropertyValueGroup);
+		return Filtering.isConfigurable(bo);
 	}
 
 	@Override
