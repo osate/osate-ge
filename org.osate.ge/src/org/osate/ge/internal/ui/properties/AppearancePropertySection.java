@@ -335,9 +335,9 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			this.styleCmd = styleCmd;
 		}
 
-		private Button createColorButton(final Composite parent, final ImageDescriptor imageDesc) {
+		private Button createColorButton(final Composite parent, final ImageDescriptor imgDescriptor) {
 			final Button btn = new Button(parent, SWT.PUSH);
-			btn.setImage(imageDesc.createImage());
+			btn.setImage(imgDescriptor.createImage());
 			btn.addDisposeListener(e -> {
 				btn.getImage().dispose();
 			});
@@ -558,7 +558,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 
 	private static final Point COLOR_ICON_SIZE = new Point(18, 18);
 
-	private class PresetColor {
+	private static class PresetColor {
 		private RGB rgb;
 		private ImageDescriptor imageDescriptor;
 
@@ -572,7 +572,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			this.imageDescriptor = ImageDescriptor.createFromImageDataProvider(zoom -> zoom == 100 ? data : null);
 		}
 
-		private ImageData getImageData(final RGB rgb) {
+		private static ImageData getImageData(final RGB rgb) {
 			final PaletteData paletteData = new PaletteData(
 					new RGB[] { rgb, new RGB(0, 0, 0) });
 
