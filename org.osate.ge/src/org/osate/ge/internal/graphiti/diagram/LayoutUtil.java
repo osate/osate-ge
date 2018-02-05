@@ -20,6 +20,7 @@ import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.services.IGaService;
+import org.eclipse.graphiti.ui.services.GraphitiUi;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.LabelPosition;
 import org.osate.ge.graphics.Style;
@@ -33,6 +34,7 @@ import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.Dimension;
 import org.osate.ge.internal.diagram.runtime.DockArea;
 import org.osate.ge.internal.graphiti.AnchorNames;
+import org.osate.ge.internal.graphiti.ImageGraphicsAlgorithmRendererFactory;
 import org.osate.ge.internal.graphiti.ShapeNames;
 import org.osate.ge.internal.graphiti.graphics.AgeGraphitiGraphicsUtil;
 
@@ -290,8 +292,17 @@ public class LayoutUtil {
 							innerGa = AgeGraphitiGraphicsUtil.createGraphicsAlgorithm(graphitiDiagram, shapeGa, gr, lm.innerHeight,
 									lm.innerWidth, true, element.getGraphicalConfiguration().style);
 						} else {
-							innerGa = AgeGraphitiGraphicsUtil.createGraphicsAlgorithm(graphitiDiagram, shapeGa, gr, lm.innerWidth,
-									lm.innerHeight, true, element.getGraphicalConfiguration().style);
+			if (shapeDockArea == null && Boolean.TRUE.equals(element.getStyle().isImageVisible())
+									&& !Strings.isNullOrEmpty(element.getStyle().getImage())) {
+								innerGa = GraphitiUi.getGaService().createPlatformGraphicsAlgorithm(shapeGa,
+										ImageGraphicsAlgorithmRendererFactory.IMAGE_FIGURE);
+								innerGa.setWidth(lm.innerWidth);
+								innerGa.setHeight(lm.innerHeight);
+								PropertyUtil.setImage(innerGa, element.getStyle().getImage());
+							} else {
+								innerGa = AgeGraphitiGraphicsUtil.createGraphicsAlgorithm(graphitiDiagram, shapeGa, gr, lm.innerWidth,
+										lm.innerHeight, true, element.getGraphicalConfiguration().style);
+							}
 						}
 
 						// Rotate shape

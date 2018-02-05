@@ -1,21 +1,21 @@
 package org.osate.ge.internal.ui.properties;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import javax.activation.MimetypesFileTypeMap;
+
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Adapters;
-import org.eclipse.emf.common.CommonPlugin;
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.graphiti.mm.algorithms.Image;
-import org.eclipse.graphiti.mm.pictograms.PictogramElement;
-import org.eclipse.graphiti.services.Graphiti;
-import org.eclipse.graphiti.services.IGaService;
-import org.eclipse.graphiti.ui.internal.platform.ExtensionManager;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.resource.DeviceResourceManager;
@@ -29,6 +29,9 @@ import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.ViewerFilter;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
@@ -46,9 +49,13 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.ColorDialog;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.dialogs.ElementTreeSelectionDialog;
+import org.eclipse.ui.model.BaseWorkbenchContentProvider;
+import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.osate.ge.graphics.Style;
@@ -58,10 +65,10 @@ import org.osate.ge.graphics.internal.Label;
 import org.osate.ge.internal.Activator;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
-import org.osate.ge.internal.graphiti.AgeImageProvider;
-import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 import org.osate.ge.internal.ui.util.UiUtil;
 import org.osate.ge.internal.util.StringUtil;
+
+import com.google.common.base.Strings;
 
 public class AppearancePropertySection extends AbstractPropertySection {
 	public static class SelectionFilter implements IFilter {
@@ -77,6 +84,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		resourceMgr = new DeviceResourceManager(Display.getCurrent());
 		final Composite containerComposite = getWidgetFactory().createFlatFormComposite(parent);
 		createComboViewerSection(containerComposite);
+		createImageSection(containerComposite);
 		createButtonSection(containerComposite);
 	}
 
@@ -128,7 +136,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 	private void createButtonSection(final Composite parent) {
 		final Button outlineButton = createButton(parent, outlineIcon);
 		FormData fd = new FormData();
-		fd.top = new FormAttachment(lineWidthLabel, 10);
+		fd.top = new FormAttachment(imageLabel, 10);
 		fd.left = new FormAttachment(0, 30);
 		outlineButton.setLayoutData(fd);
 		outlinePaintListener = new StylePaintListener(outlineButton,
@@ -164,72 +172,122 @@ public class AppearancePropertySection extends AbstractPropertySection {
 						sb.backgroundColor(background);
 					}
 				}));
+	}
 
-		final Button imageBackground = createButton(parent, backgroundIcon);
+	private void createImageSection(final Composite parent) {
+		// Create controls
+		imageLabel = createLabel(parent, "Image:");
+		toggleImageVisible = new Button(parent, SWT.CHECK);
+		imageButton = createButton(parent, imageIcon);
+
+		// Set layout
+		FormData fd = new FormData();
+		fd.top = new FormAttachment(lineWidthLabel, 10);
+		fd.left = new FormAttachment(0, 10);
+		imageLabel.setLayoutData(fd);
+
 		fd = new FormData();
-		fd.top = new FormAttachment(backgroundButton, 0, SWT.TOP);
-		fd.left = new FormAttachment(backgroundButton, 0);
-		imageBackground.setLayoutData(fd);
-		imageBackground.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				final PictogramElement pe = editor.getDiagramTypeProvider().getFeatureProvider()
-						.getAllPictogramElementsForBusinessObject(
-								selectedDiagramElements.get(0).getBusinessObject())[0];
+		fd.top = new FormAttachment(imageLabel, 0, SWT.TOP);
+		fd.left = new FormAttachment(toggleImageVisible, 10);
+		imageButton.setLayoutData(fd);
 
-				FileDialog fd = new FileDialog(Display.getCurrent().getActiveShell(), SWT.OPEN);
-				fd.setText("Open");
-				fd.setFilterPath("C:/");
-				String[] filterExt = { "*.png", "*.gif", "*.*" };
-				fd.setFilterExtensions(filterExt);
-				String selected = fd.open();
-				System.out.println(selected);
-				if (selected != null) {
-					ExtensionManager.getSingleton()
-					.getImageProvidersForDiagramTypeProviderId(editor.getDiagramTypeProvider().getProviderId())
-					.forEach(imageProvider -> {
-						if(imageProvider instanceof AgeImageProvider) {
-							final AgeImageProvider ageImageProvider = (AgeImageProvider) imageProvider;
-							try {
-								final URL url = new URL(CommonPlugin.asLocalURI(URI.createFileURI(
-										selected))
-										.toString());
-								ageImageProvider.addImage("org.osate.ge.DistributeHorizontally", url.toString());
-							} catch (final MalformedURLException e1) {
-								e1.printStackTrace();
-							}
-						}
-					});
+		fd = new FormData();
+		fd.top = new FormAttachment(imageButton, 0, SWT.CENTER);
+		fd.left = new FormAttachment(primaryLabelVisibleViewer.getControl(), 0, SWT.LEFT);
+		toggleImageVisible.setLayoutData(fd);
 
-					final IGaService gaService = Graphiti.getGaService();
-					final Image imageGa = gaService.createImage(pe.getGraphicsAlgorithm().getParentGraphicsAlgorithm(),
-							"org.osate.ge.DistributeHorizontally");
-
-					imageGa.setStretchH(true);
-					imageGa.setStretchV(true);
-					imageGa.setProportional(true);
-
-					int IMAGE_SIZE = 125;
-					imageGa.setWidth(150);
-					imageGa.setHeight(150);
-					gaService.setLocationAndSize(imageGa, (150 - IMAGE_SIZE) / 2, (150 - IMAGE_SIZE) / 2, IMAGE_SIZE,
-							IMAGE_SIZE);
-
-					ageDiagram.modify("Image", m -> {
-						System.err.println(pe.getGraphicsAlgorithm() + " oringal");
-						pe.setGraphicsAlgorithm(imageGa);
-						System.err.println(pe.getGraphicsAlgorithm() + " after");
-					});
-				}
+		final StyleCommand imageVisibleStyleCmd = new StyleCommand("Show Image", (diagramElement, sb, value) -> {
+			if (supportsImage(diagramElement)) {
+				sb.imageVisible((Boolean) value);
 			}
 		});
+
+		toggleImageVisible.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(final SelectionEvent e) {
+				final boolean isVisible = toggleImageVisible.getSelection();
+				runStyleCommand(isVisible, imageVisibleStyleCmd);
+			}
+		});
+
+		final StyleCommand sc = new StyleCommand("Set Image", (diagramElement, sb, value) -> {
+			if (supportsImage(diagramElement)) {
+				final String image = (String) value;
+				sb.image(image);
+				sb.imageVisible(!Strings.isNullOrEmpty(image));
+			}
+		});
+
+		// TODO create selectionAdapter field
+		imageButton.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(final SelectionEvent e) {
+				final Menu popupMenu = new Menu(imageButton);
+				final MenuItem chooseImgMenuItem = new MenuItem(popupMenu, SWT.NONE);
+				chooseImgMenuItem.setText("Choose...");
+				chooseImgMenuItem.addSelectionListener(new SelectionAdapter() {
+					@Override
+					public void widgetSelected(final SelectionEvent e) {
+						final ElementTreeSelectionDialog dialog = new ElementTreeSelectionDialog(
+								Display.getCurrent().getActiveShell(), new WorkbenchLabelProvider(),
+								new BaseWorkbenchContentProvider());
+						dialog.setTitle("Image Selection");
+						dialog.setMessage("Select an image from the tree:");
+						dialog.setAllowMultiple(false);
+						dialog.addFilter(selectionFilter);
+						final String emptyOrInvalidMsg = "Select an image";
+						dialog.setEmptyListMessage(emptyOrInvalidMsg);
+						dialog.setValidator(selection -> {
+							if (selection.length > 0 && selection[0] instanceof IFile) {
+								return new Status(IStatus.OK, Activator.PLUGIN_ID, "");
+							}
+							return new Status(IStatus.ERROR, Activator.PLUGIN_ID, emptyOrInvalidMsg);
+						});
+
+						dialog.setInput(ResourcesPlugin.getWorkspace().getRoot());
+						if (dialog.open() == Window.OK) {
+							final IFile iFile = (IFile) dialog.getResult()[0];
+							runStyleCommand(iFile.getFullPath().toString(), sc);
+						}
+					}
+				});
+
+				final MenuItem removeImgMenuItem = new MenuItem(popupMenu, SWT.NONE);
+				removeImgMenuItem.setText("Remove");
+				removeImgMenuItem.addSelectionListener(new SelectionAdapter() {
+					@Override
+					public void widgetSelected(final SelectionEvent e) {
+						runStyleCommand(new String(), sc);
+						runStyleCommand(false, imageVisibleStyleCmd);
+					}
+				});
+
+				final Point btnSize = imageButton.getSize();
+				popupMenu.setLocation(getShellPosition(btnSize, imageButton, 5));
+				popupMenu.setVisible(true);
+			}
+		});
+	}
+
+	// Only allow projects, folders, and image files to appear in dialog selection
+	private static ViewerFilter selectionFilter = new ViewerFilter() {
+		@Override
+		public boolean select(final Viewer viewer, final Object parentElement, final Object element) {
+			return element instanceof IProject || element instanceof IFolder
+					|| (element instanceof IFile && isImageFile((IFile) element));
+		}
+	};
+
+	// Determine if the file is an image
+	private static boolean isImageFile(final IFile iFile) {
+		final File file = iFile.getFullPath().toFile();
+		final String type = new MimetypesFileTypeMap().getContentType(file).split("/")[0];
+		return type.equals("image");
 	}
 
 	@Override
 	public void setInput(final IWorkbenchPart part, final ISelection selection) {
 		super.setInput(part, selection);
-		editor = Adapters.adapt(part, AgeDiagramEditor.class);
-
 		selectedDiagramElements.clear();
 
 		final IStructuredSelection ss = (IStructuredSelection) selection;
@@ -239,6 +297,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		boolean enableBackground = false;
 		boolean enableOutlineOption = false;
 		boolean enablePrimaryLabelVisibleOption = false;
+		boolean enableImage = false;
 		final Iterator<?> itr = ss.iterator();
 		while (itr.hasNext()) {
 			final Object o = itr.next();
@@ -266,6 +325,11 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			if (supportsPrimaryLabelVisible(diagramElement)) {
 				enablePrimaryLabelVisibleOption = true;
 			}
+
+			// Image options
+			if (supportsImage(diagramElement)) {
+				enableImage = true;
+			}
 		}
 
 		// Get the editor from the selected diagram elements
@@ -279,6 +343,8 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		final LineWidth lastLineWidthSelected = LineWidth.getByValue(currentStyle.getLineWidth());
 		final LabelVisibility lastLabelVisibilitySelected = LabelVisibility
 				.getByValue(currentStyle.getPrimaryLabelVisible());
+		final Boolean isImageVisible = currentStyle.getImage() == null || currentStyle.isImageVisible() == null ? false
+				: currentStyle.isImageVisible();
 
 		final Button backgroundButton = backgroundPaintListener.getButton();
 		backgroundButton.setEnabled(enableBackground);
@@ -289,11 +355,17 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		final Button outlineButton = outlinePaintListener.getButton();
 		outlineButton.setEnabled(enableOutlineOption);
 
+		imageLabel.setEnabled(enableImage);
+		imageButton.setEnabled(enableImage);
+		toggleImageVisible.setEnabled(!Strings.isNullOrEmpty(currentStyle.getImage()));
+
 		final Style defaultStyle = StyleBuilder
 				.create(diagramElement.getGraphicalConfiguration().style, Style.DEFAULT).build();
 		backgroundPaintListener.setDefaultColor(toRGB(defaultStyle.getBackgroundColor()));
 		fontColorPaintListener.setDefaultColor(toRGB(defaultStyle.getFontColor()));
 		outlinePaintListener.setDefaultColor(toRGB(defaultStyle.getOutlineColor()));
+
+		toggleImageVisible.setSelection(isImageVisible);
 
 		final RGB background;
 		if (enableBackground) {
@@ -322,23 +394,27 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		setPaintListenerColors(background, fontColor, outline);
 	}
 
-	private boolean supportsFontOptions(final DiagramElement de) {
+	private static boolean supportsImage(final DiagramElement de) {
+		return de.getDockArea() == null;
+	}
+
+	private static boolean supportsFontOptions(final DiagramElement de) {
 		return de.getName() != null || de.getGraphic() instanceof Label;
 	}
 
-	private boolean supportsLineWidth(final DiagramElement de) {
+	private static boolean supportsLineWidth(final DiagramElement de) {
 		return de.getGraphic() instanceof AgeConnection;
 	}
 
-	private boolean supportsBackground(final DiagramElement de) {
+	private static boolean supportsBackground(final DiagramElement de) {
 		return !(de.getGraphic() instanceof Label);
 	}
 
-	private boolean supportsOutline(final DiagramElement de) {
+	private static boolean supportsOutline(final DiagramElement de) {
 		return !(de.getGraphic() instanceof Label);
 	}
 
-	private boolean supportsPrimaryLabelVisible(final DiagramElement de) {
+	private static boolean supportsPrimaryLabelVisible(final DiagramElement de) {
 		return !(de.getGraphic() instanceof Label);
 	}
 
@@ -480,18 +556,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 
 			shell.pack();
 
-			// Position the shell
-			final int minSpacingFromDisplayRightAndBottom = 50;
-			final Button button = (Button) e.getSource(); // Original button selected
-			final Point unclampedShellPosition = Display.getCurrent().map(button.getParent(), null,
-					button.getLocation().x, button.getLocation().y + button.getSize().y);
-			final Rectangle clientArea = Display.getCurrent().getClientArea();
-			final Point shellPosition = new Point(
-					Math.min(unclampedShellPosition.x,
-							clientArea.width - shell.getSize().x - minSpacingFromDisplayRightAndBottom),
-					Math.min(unclampedShellPosition.y,
-							clientArea.height - shell.getSize().y - minSpacingFromDisplayRightAndBottom));
-			shell.setLocation(shellPosition);
+			shell.setLocation(getShellPosition(shell.getSize(), (Button) e.getSource(), 50));
 
 			shell.open();
 			shell.setFocus();
@@ -599,6 +664,21 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		return new org.osate.ge.graphics.Color(color.red, color.green, color.blue);
 	}
 
+	public Point getShellPosition(final Point widgetSize, final Button button,
+			final int minSpacingFromDisplayRightAndBottom) {
+		// Position the shell
+		final Point unclampedShellPosition = Display.getCurrent().map(button.getParent(), null, button.getLocation().x,
+				button.getLocation().y + button.getSize().y);
+		final Rectangle clientArea = Display.getCurrent().getClientArea();
+		final Point shellPosition = new Point(
+				Math.min(unclampedShellPosition.x,
+						clientArea.width - widgetSize.x - minSpacingFromDisplayRightAndBottom),
+				Math.min(unclampedShellPosition.y,
+						clientArea.height - widgetSize.y - minSpacingFromDisplayRightAndBottom));
+
+		return shellPosition;
+	}
+
 	private void runStyleCommand(final Object value, final StyleCommand styleCmd) {
 		ageDiagram.modify(styleCmd.getDescription(), m -> {
 			for (final DiagramElement diagramElement : selectedDiagramElements) {
@@ -693,12 +773,15 @@ public class AppearancePropertySection extends AbstractPropertySection {
 	private final static ImageDescriptor outlineIcon = Activator.getImageDescriptor("icons/Outline.gif");
 	private final static ImageDescriptor backgroundIcon = Activator.getImageDescriptor("icons/Background.gif");
 	private final static ImageDescriptor fontColorIcon = Activator.getImageDescriptor("icons/FontColor.gif");
+	private final static ImageDescriptor imageIcon = Activator.getImageDescriptor("icons/Image.gif");
 	private AgeDiagram ageDiagram;
-	private AgeDiagramEditor editor;
 	private ResourceManager resourceMgr;
 	private List<DiagramElement> selectedDiagramElements = new ArrayList<>();
+	private Button imageButton;
+	private Button toggleImageVisible;
 	private org.eclipse.swt.widgets.Label fontSizeLabel;
 	private org.eclipse.swt.widgets.Label lineWidthLabel;
+	private org.eclipse.swt.widgets.Label imageLabel;
 	private ComboViewer fontSizeComboViewer;
 	private ComboViewer lineWidthComboViewer;
 	private org.eclipse.swt.widgets.Label primaryLabelVisibleLabel;

@@ -34,6 +34,8 @@ import org.eclipse.emf.ecore.impl.ENotificationImpl;
  *   <li>{@link org.osate.ge.diagram.DiagramElement#getFontSize <em>Font Size</em>}</li>
  *   <li>{@link org.osate.ge.diagram.DiagramElement#getLineWidth <em>Line Width</em>}</li>
  *   <li>{@link org.osate.ge.diagram.DiagramElement#getPrimaryLabelVisible <em>Primary Label Visible</em>}</li>
+ *   <li>{@link org.osate.ge.diagram.DiagramElement#getImage <em>Image</em>}</li>
+ *   <li>{@link org.osate.ge.diagram.DiagramElement#getImageVisible <em>Image Visible</em>}</li>
  * </ul>
  *
  * @see org.osate.ge.diagram.DiagramPackage#getDiagramElement()
@@ -290,6 +292,46 @@ public class DiagramElement extends DiagramNode {
 	 * @ordered
 	 */
 	protected Boolean primaryLabelVisible = PRIMARY_LABEL_VISIBLE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getImage() <em>Image</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getImage()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String IMAGE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getImage() <em>Image</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getImage()
+	 * @generated
+	 * @ordered
+	 */
+	protected String image = IMAGE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getImageVisible() <em>Image Visible</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getImageVisible()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final Boolean IMAGE_VISIBLE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getImageVisible() <em>Image Visible</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getImageVisible()
+	 * @generated
+	 * @ordered
+	 */
+	protected Boolean imageVisible = IMAGE_VISIBLE_EDEFAULT;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -883,6 +925,72 @@ public class DiagramElement extends DiagramNode {
 	}
 
 	/**
+	 * Returns the value of the '<em><b>Image</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <p>
+	 * If the meaning of the '<em>Image</em>' attribute isn't clear,
+	 * there really should be more of a description here...
+	 * </p>
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Image</em>' attribute.
+	 * @see #setImage(String)
+	 * @see org.osate.ge.diagram.DiagramPackage#getDiagramElement_Image()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.String"
+	 * @generated
+	 */
+	public String getImage() {
+		return image;
+	}
+
+	/**
+	 * Sets the value of the '{@link org.osate.ge.diagram.DiagramElement#getImage <em>Image</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Image</em>' attribute.
+	 * @see #getImage()
+	 * @generated
+	 */
+	public void setImage(String newImage) {
+		String oldImage = image;
+		image = newImage;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__IMAGE, oldImage, image));
+	}
+
+	/**
+	 * Returns the value of the '<em><b>Image Visible</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <p>
+	 * If the meaning of the '<em>Image Visible</em>' attribute isn't clear,
+	 * there really should be more of a description here...
+	 * </p>
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Image Visible</em>' attribute.
+	 * @see #setImageVisible(Boolean)
+	 * @see org.osate.ge.diagram.DiagramPackage#getDiagramElement_ImageVisible()
+	 * @model
+	 * @generated
+	 */
+	public Boolean getImageVisible() {
+		return imageVisible;
+	}
+
+	/**
+	 * Sets the value of the '{@link org.osate.ge.diagram.DiagramElement#getImageVisible <em>Image Visible</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Image Visible</em>' attribute.
+	 * @see #getImageVisible()
+	 * @generated
+	 */
+	public void setImageVisible(Boolean newImageVisible) {
+		Boolean oldImageVisible = imageVisible;
+		imageVisible = newImageVisible;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__IMAGE_VISIBLE, oldImageVisible, imageVisible));
+	}
+
+	/**
 	 * Returns the value of the '<em><b>Id</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <p>
@@ -975,6 +1083,10 @@ public class DiagramElement extends DiagramNode {
 				return getLineWidth();
 			case DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE:
 				return getPrimaryLabelVisible();
+			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE:
+				return getImage();
+			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE_VISIBLE:
+				return getImageVisible();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1031,6 +1143,12 @@ public class DiagramElement extends DiagramNode {
 				return;
 			case DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE:
 				setPrimaryLabelVisible((Boolean)newValue);
+				return;
+			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE:
+				setImage((String)newValue);
+				return;
+			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE_VISIBLE:
+				setImageVisible((Boolean)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -1089,6 +1207,12 @@ public class DiagramElement extends DiagramNode {
 			case DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE:
 				setPrimaryLabelVisible(PRIMARY_LABEL_VISIBLE_EDEFAULT);
 				return;
+			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE:
+				setImage(IMAGE_EDEFAULT);
+				return;
+			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE_VISIBLE:
+				setImageVisible(IMAGE_VISIBLE_EDEFAULT);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1131,6 +1255,10 @@ public class DiagramElement extends DiagramNode {
 				return LINE_WIDTH_EDEFAULT == null ? lineWidth != null : !LINE_WIDTH_EDEFAULT.equals(lineWidth);
 			case DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE:
 				return PRIMARY_LABEL_VISIBLE_EDEFAULT == null ? primaryLabelVisible != null : !PRIMARY_LABEL_VISIBLE_EDEFAULT.equals(primaryLabelVisible);
+			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE:
+				return IMAGE_EDEFAULT == null ? image != null : !IMAGE_EDEFAULT.equals(image);
+			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE_VISIBLE:
+				return IMAGE_VISIBLE_EDEFAULT == null ? imageVisible != null : !IMAGE_VISIBLE_EDEFAULT.equals(imageVisible);
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1165,6 +1293,10 @@ public class DiagramElement extends DiagramNode {
 		result.append(lineWidth);
 		result.append(", primaryLabelVisible: ");
 		result.append(primaryLabelVisible);
+		result.append(", image: ");
+		result.append(image);
+		result.append(", imageVisible: ");
+		result.append(imageVisible);
 		result.append(')');
 		return result.toString();
 	}

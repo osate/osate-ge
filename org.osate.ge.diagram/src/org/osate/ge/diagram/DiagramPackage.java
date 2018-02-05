@@ -306,13 +306,31 @@ public class DiagramPackage extends EPackageImpl {
 	public static final int DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE = DIAGRAM_NODE_FEATURE_COUNT + 14;
 
 	/**
+	 * The feature id for the '<em><b>Image</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	public static final int DIAGRAM_ELEMENT__IMAGE = DIAGRAM_NODE_FEATURE_COUNT + 15;
+
+	/**
+	 * The feature id for the '<em><b>Image Visible</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	public static final int DIAGRAM_ELEMENT__IMAGE_VISIBLE = DIAGRAM_NODE_FEATURE_COUNT + 16;
+
+	/**
 	 * The number of structural features of the '<em>Element</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	public static final int DIAGRAM_ELEMENT_FEATURE_COUNT = DIAGRAM_NODE_FEATURE_COUNT + 15;
+	public static final int DIAGRAM_ELEMENT_FEATURE_COUNT = DIAGRAM_NODE_FEATURE_COUNT + 17;
 
 	/**
 	 * The number of operations of the '<em>Element</em>' class.
@@ -1079,6 +1097,34 @@ public class DiagramPackage extends EPackageImpl {
 
 
 	/**
+	 * Returns the meta object for the attribute '{@link org.osate.ge.diagram.DiagramElement#getImage <em>Image</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Image</em>'.
+	 * @see org.osate.ge.diagram.DiagramElement#getImage()
+	 * @see #getDiagramElement()
+	 * @generated
+	 */
+	public EAttribute getDiagramElement_Image() {
+		return (EAttribute)diagramElementEClass.getEStructuralFeatures().get(15);
+	}
+
+
+	/**
+	 * Returns the meta object for the attribute '{@link org.osate.ge.diagram.DiagramElement#getImageVisible <em>Image Visible</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Image Visible</em>'.
+	 * @see org.osate.ge.diagram.DiagramElement#getImageVisible()
+	 * @see #getDiagramElement()
+	 * @generated
+	 */
+	public EAttribute getDiagramElement_ImageVisible() {
+		return (EAttribute)diagramElementEClass.getEStructuralFeatures().get(16);
+	}
+
+
+	/**
 	 * Returns the meta object for the attribute '{@link org.osate.ge.diagram.DiagramElement#getId <em>Id</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1386,6 +1432,8 @@ public class DiagramPackage extends EPackageImpl {
 		createEAttribute(diagramElementEClass, DIAGRAM_ELEMENT__FONT_SIZE);
 		createEAttribute(diagramElementEClass, DIAGRAM_ELEMENT__LINE_WIDTH);
 		createEAttribute(diagramElementEClass, DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE);
+		createEAttribute(diagramElementEClass, DIAGRAM_ELEMENT__IMAGE);
+		createEAttribute(diagramElementEClass, DIAGRAM_ELEMENT__IMAGE_VISIBLE);
 
 		pointEClass = createEClass(POINT);
 		createEAttribute(pointEClass, POINT__X);
@@ -1477,6 +1525,8 @@ public class DiagramPackage extends EPackageImpl {
 		initEAttribute(getDiagramElement_FontSize(), theXMLTypePackage.getDoubleObject(), "fontSize", null, 0, 1, DiagramElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDiagramElement_LineWidth(), theXMLTypePackage.getDoubleObject(), "lineWidth", null, 0, 1, DiagramElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDiagramElement_PrimaryLabelVisible(), ecorePackage.getEBooleanObject(), "primaryLabelVisible", null, 0, 1, DiagramElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDiagramElement_Image(), theXMLTypePackage.getString(), "image", null, 0, 1, DiagramElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDiagramElement_ImageVisible(), ecorePackage.getEBooleanObject(), "imageVisible", null, 0, 1, DiagramElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(pointEClass, Point.class, "Point", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getPoint_X(), theXMLTypePackage.getDouble(), "x", null, 0, 1, Point.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1690,6 +1740,22 @@ public class DiagramPackage extends EPackageImpl {
 		 * @generated
 		 */
 		public static final EAttribute DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE = eINSTANCE.getDiagramElement_PrimaryLabelVisible();
+
+		/**
+		 * The meta object literal for the '<em><b>Image</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		public static final EAttribute DIAGRAM_ELEMENT__IMAGE = eINSTANCE.getDiagramElement_Image();
+
+		/**
+		 * The meta object literal for the '<em><b>Image Visible</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		public static final EAttribute DIAGRAM_ELEMENT__IMAGE_VISIBLE = eINSTANCE.getDiagramElement_ImageVisible();
 
 		/**
 		 * The meta object literal for the '<em><b>Id</b></em>' attribute feature.

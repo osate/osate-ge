@@ -20,6 +20,8 @@ import org.osate.ge.graphics.Point;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
 
+import com.google.common.base.Strings;
+
 /**
  * Class to help read and write the native diagram format used by the editor.
  *
@@ -175,14 +177,17 @@ public class DiagramSerialization {
 		}
 
 		// Style
+		final Boolean imageVisible = mmChild.getImageVisible();
 		final Color background = mmChild.getBackground() != null ? parseColor(mmChild.getBackground()) : null;
+		final String image = mmChild.getImage() != null ? mmChild.getImage() : null;
 		final Color fontColor = mmChild.getFontColor() != null ? parseColor(mmChild.getFontColor()) : null;
 		final Color outline = mmChild.getOutline() != null ? parseColor(mmChild.getOutline()) : null;
 		final Double lineWidth = mmChild.getLineWidth();
 		final Double fontSize = mmChild.getFontSize();
 		final Boolean primaryLabelVisible = mmChild.getPrimaryLabelVisible();
 
-		newElement.setStyle(StyleBuilder.create().backgroundColor(background).fontColor(fontColor).outlineColor(outline)
+		newElement.setStyle(StyleBuilder.create().backgroundColor(background).imageVisible(imageVisible).image(image)
+				.fontColor(fontColor).outlineColor(outline)
 				.fontSize(fontSize).lineWidth(lineWidth).primaryLabelVisible(primaryLabelVisible).build());
 
 		// Bendpoints
@@ -310,6 +315,12 @@ public class DiagramSerialization {
 		final org.osate.ge.graphics.Color backgroundColor = currentStyle.getBackgroundColor();
 		if (backgroundColor != null) {
 			newElement.setBackground(colorToHex(backgroundColor));
+		}
+
+		final String image = currentStyle.getImage();
+		if (!Strings.isNullOrEmpty(image)) {
+			newElement.setImageVisible(currentStyle.isImageVisible());
+			newElement.setImage(image);
 		}
 
 		final org.osate.ge.graphics.Color fontColor = currentStyle.getFontColor();
