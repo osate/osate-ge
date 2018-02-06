@@ -15,13 +15,13 @@ import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
 import org.osate.ge.internal.services.ExtensionRegistryService;
-import org.osate.ge.internal.ui.handlers.SetAutoContentsFilterHandler;
+import org.osate.ge.internal.ui.handlers.SetContentFilterHandler;
 import org.osate.ge.internal.ui.util.SelectionUtil;
 import org.osate.ge.internal.ui.util.UiUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 
-public class ShowContributionItem extends CompoundContributionItem {
+public class ShowFiltersContributionItem extends CompoundContributionItem {
 	private final IContributionItem[] EMPTY = new IContributionItem[0];
 
 	@Override
@@ -74,19 +74,20 @@ public class ShowContributionItem extends CompoundContributionItem {
 ////		https://wiki.eclipse.org/Menu_Contributions/Radio_Button_Command
 //// https://help.eclipse.org/mars/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fapi%2Forg%2Feclipse%2Fui%2Fcommands%2FIElementUpdater.html
 //
-//		// Create command contributions
 
-		// TODO: Sort
-		for (final ContentFilter filter : applicableFilters) {
+		// Create command contributions
+		applicableFilters.stream().sorted((cf1, cf2) -> cf1.getName().compareToIgnoreCase(cf2.getName()))
+		.forEachOrdered(filter -> {
 			// TODO: Rename command ID
 			final CommandContributionItem commandItem = new CommandContributionItem(
 					new CommandContributionItemParameter(window, null, "org.osate.ge.setAutoContentFilter",
-							Collections.singletonMap(SetAutoContentsFilterHandler.PARAM_CONTENTS_FILTER_ID,
+							Collections.singletonMap(SetContentFilterHandler.PARAM_CONTENTS_FILTER_ID,
 									filter.getId()),
 							null, null, null,
-							"Show " + filter.getName(), null, null, CommandContributionItem.STYLE_CHECK, null, true));
+							"Show " + filter.getName(), null, null, CommandContributionItem.STYLE_CHECK, null,
+							true));
 			contributions.add(commandItem);
-		}
+		});
 
 		return contributions.toArray(new IContributionItem[contributions.size()]);
 	}

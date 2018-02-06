@@ -96,7 +96,6 @@ import org.osate.ge.internal.graphiti.features.BoHandlerCreateFeature;
 import org.osate.ge.internal.graphiti.features.BoHandlerDeleteFeature;
 import org.osate.ge.internal.graphiti.features.BoHandlerDirectEditFeature;
 import org.osate.ge.internal.graphiti.features.CommandCustomFeature;
-import org.osate.ge.internal.graphiti.features.ConfigureDiagramFeature;
 import org.osate.ge.internal.graphiti.features.SelectAncestorFeature;
 import org.osate.ge.internal.graphiti.features.UpdateDiagramCustomFeature;
 import org.osate.ge.internal.graphiti.features.UpdateDiagramFeature;
@@ -125,8 +124,8 @@ public class AgeFeatureProvider extends DefaultFeatureProvider {
 	private IRemoveBendpointFeature removeBendpointFeature;
 	private UpdateDiagramFeature updateDiagramFeature;
 	private DiagramUpdater diagramUpdater;
-	private ConfigureDiagramFeature configureDiagramFeature;
 	private DefaultDiagramElementGraphicalConfigurationProvider deInfoProvider;
+	private TreeUpdater boTreeExpander;
 
 	public AgeFeatureProvider(final IDiagramTypeProvider dtp) {
 		super(dtp);
@@ -155,7 +154,7 @@ public class AgeFeatureProvider extends DefaultFeatureProvider {
 		// Create the refresh diagram feature
 		final DefaultBusinessObjectNodeFactory nodeFactory = new DefaultBusinessObjectNodeFactory(referenceResolver);
 		final QueryService queryService = Objects.requireNonNull(eclipseContext.get(QueryService.class), "unable to retrieve query service");
-		final TreeUpdater boTreeExpander = new DefaultTreeUpdater(graphitiService, extService, referenceResolver,
+		boTreeExpander = new DefaultTreeUpdater(graphitiService, extService, referenceResolver,
 				queryService, nodeFactory);
 		deInfoProvider = new DefaultDiagramElementGraphicalConfigurationProvider(referenceResolver, extService);
 		diagramUpdater = new DiagramUpdater(boTreeExpander, deInfoProvider);
@@ -164,10 +163,6 @@ public class AgeFeatureProvider extends DefaultFeatureProvider {
 				"unable to retrieve system instance loading service");
 		this.updateDiagramFeature = new UpdateDiagramFeature(this, graphitiService, diagramUpdater, graphitiService,
 				referenceResolver, systemInstanceLoader);
-
-		// Create the configure diagram feature
-		this.configureDiagramFeature = new ConfigureDiagramFeature(this, boTreeExpander, diagramUpdater,
-				graphitiService, referenceResolver, extService, graphitiService, graphitiService);
 	}
 
 	@Override
@@ -187,8 +182,8 @@ public class AgeFeatureProvider extends DefaultFeatureProvider {
 		return diagramUpdater;
 	}
 
-	public ICustomFeature getConfigureDiagramFeature() {
-		return configureDiagramFeature;
+	public TreeUpdater getBoTreeUpdater() {
+		return boTreeExpander;
 	}
 
 	/**
@@ -305,7 +300,6 @@ public class AgeFeatureProvider extends DefaultFeatureProvider {
 	 * @param features
 	 */
 	protected void addCustomFeatures(final List<ICustomFeature> features) {
-		features.add(configureDiagramFeature);
 		features.add(make(UpdateDiagramCustomFeature.class));
 		features.add(make(SelectAncestorFeature.class));
 

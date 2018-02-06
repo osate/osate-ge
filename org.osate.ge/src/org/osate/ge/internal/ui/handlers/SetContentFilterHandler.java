@@ -31,8 +31,8 @@ import org.osgi.framework.FrameworkUtil;
 
 import com.google.common.collect.ImmutableSet;
 
-// TODO: Cleanup
-public class SetAutoContentsFilterHandler extends AbstractHandler implements IElementUpdater {
+// TODO: Cleanup. Rename
+public class SetContentFilterHandler extends AbstractHandler implements IElementUpdater {
 	public static final String PARAM_CONTENTS_FILTER_ID = "contentsFilterId";
 
 	@Override

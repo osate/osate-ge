@@ -137,6 +137,46 @@
                optional="false">
          </commandParameter>
       </command>
+      <command
+            id="org.osate.ge.enableAllFilters"
+            name="Enable All Filters">
+      </command>
+      <command
+            id="org.osate.ge.disableAllFilters"
+            name="Disable All Filters">
+      </command>
+      <command
+            id="org.osate.ge.hideAllContents"
+            name="Hide All Contents">
+      </command>
+      <command
+            id="org.osate.ge.configureDiagram"
+            name="Configure Diagram...">
+      </command>
+      <command
+            id="org.osate.ge.goToAadlSource"
+            name="Go to AADL Source">
+      </command>
+      <command
+            id="org.osate.ge.openAssociatedDiagram"
+            name="Open Associated Diagram">
+      </command>
+      <command
+            id="org.osate.ge.createNewDiagram"
+            name="Create New Diagram">
+      </command>
+      <command
+            id="org.osate.ge.goToTypeDiagram"
+            name="Go to Type Diagram">
+      </command>
+      <command
+            id="org.osate.ge.goToPackageDiagram"
+            name="Go to Package Diagram">
+      </command>
+      <command
+            id="org.osate.ge.instantiate"
+            name="Instantiate">
+      </command>
    </extension>
  <extension
        point="org.eclipse.ui.handlers">
@@ -360,8 +400,48 @@
           commandId="org.osate.ge.restoreMissingDiagramElements">
     </handler>
     <handler
-          class="org.osate.ge.internal.ui.handlers.SetAutoContentsFilterHandler"
+          class="org.osate.ge.internal.ui.handlers.SetContentFilterHandler"
           commandId="org.osate.ge.setAutoContentFilter">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.EnableAllFiltersHandler"
+          commandId="org.osate.ge.enableAllFilters">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.DisableAllFiltersHandler"
+          commandId="org.osate.ge.disableAllFilters">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.HideAllContentsHandler"
+          commandId="org.osate.ge.hideAllContents">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.ConfigureDiagramHandler"
+          commandId="org.osate.ge.configureDiagram">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.GoToAadlSourceHandler"
+          commandId="org.osate.ge.goToAadlSource">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.OpenAssociatedDiagramHandler"
+          commandId="org.osate.ge.openAssociatedDiagram">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.CreateNewDiagramHandler"
+          commandId="org.osate.ge.createNewDiagram">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.GoToTypeDiagramHandler"
+          commandId="org.osate.ge.goToTypeDiagram">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.GoToPackageDiagramHandler"
+          commandId="org.osate.ge.goToPackageDiagram">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.InstantiateHandler"
+          commandId="org.osate.ge.instantiate">
     </handler>
  </extension>
        
@@ -630,16 +710,62 @@
  <menuContribution
        allPopups="false"
        locationURI="popup:org.osate.ge.editor.AgeDiagramEditor">
+    <command
+          commandId="org.osate.ge.configureDiagram"
+          label="Configure Diagram..."
+          style="push">
+    </command>
     <menu
           id="org.osate.ge.goToMenu"
           label="Go to">
+       <command
+             commandId="org.osate.ge.goToAadlSource"
+             style="push">
+       </command>
+       <command
+             commandId="org.osate.ge.openAssociatedDiagram"
+             style="push">
+       </command>
+       <command
+             commandId="org.osate.ge.createNewDiagram"
+             style="push">
+       </command>
+       <command
+             commandId="org.osate.ge.goToTypeDiagram"
+             style="push">
+       </command>
+       <command
+             commandId="org.osate.ge.goToPackageDiagram"
+             style="push">
+       </command>
     </menu>
     <menu
           id="org.osate.ge.showMenu"
           label="Show">
+       <command
+             commandId="org.osate.ge.enableAllFilters"
+             style="push">
+       </command>
+       <command
+             commandId="org.osate.ge.disableAllFilters"
+             style="push">
+       </command>
+       <command
+             commandId="org.osate.ge.hideAllContents"
+             style="push">
+       </command>
+       <command
+             commandId="org.osate.ge.configureDiagram"
+             label="Configure Contents..."
+             style="push">
+       </command>
+       <separator
+             name="org.osate.ge.separator1"
+             visible="true">
+       </separator>
        <dynamic
-             class="org.osate.ge.internal.ui.editor.ShowContributionItem"
-             id="org.osate.ge.dynamic1">
+             class="org.osate.ge.internal.ui.editor.ShowFiltersContributionItem"
+             id="org.osate.ge.showFilters">
        </dynamic>
     </menu>
     <menu
@@ -751,6 +877,14 @@
     </menu>
     <command
           commandId="org.osate.ge.commands.properties"
+          style="push">
+    </command>
+    <separator
+          name="org.osate.ge.separator3"
+          visible="true">
+    </separator>
+    <command
+          commandId="org.osate.ge.instantiate"
           style="push">
     </command>
  </menuContribution>
@@ -1036,14 +1170,10 @@
  <extension
        point="org.eclipse.ui.bindings">
     <key
-    	  commandId="org.eclipse.graphiti.ui.featureExecutionCommand"
-          contextId="org.eclipse.ui.contexts.dialogAndWindow"
+          commandId="org.osate.ge.goToAadlSource"
+          contextId="org.eclipse.ui.contexts.window"
           schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
           sequence="M1+M2+V">
-        <parameter
-        	id="org.eclipse.graphiti.ui.featureHint"
-        	value="graphicalToTextualFeature">
-        </parameter>
     </key>
     <key
           commandId="org.osate.ge.commands.opendiagram"
@@ -1663,28 +1793,6 @@
              class="org.osate.ge.internal.businessObjectHandlers.TimingPropertyValueHandler"
              priority="1">
        </handler>
-    </extension>
-    <extension
-          point="org.osate.ge.commands">
-       <command
-             class="org.osate.ge.internal.commands.OpenAssociatedDiagramCommand"></command>
-       <command
-             class="org.osate.ge.internal.commands.CreateNewDiagramCommand"></command>
-       <command
-             class="org.osate.ge.internal.commands.ComponentImplementationToTypeCommand">
-       </command>
-       <command
-       		 class="org.osate.ge.internal.commands.SubcomponentToTypeCommand">
-       </command>
-       <command
-             class="org.osate.ge.internal.commands.GoToPackageDiagramCommand">
-       </command>
-       <command
-             class="org.osate.ge.internal.commands.GraphicalToTextualCommand">
-       </command>
-       <command
-             class="org.osate.ge.internal.commands.InstantiateComponentImplementationCommand">
-       </command>
     </extension>
     <extension
           point="org.osate.ge.businessObjectProviders">
