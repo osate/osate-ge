@@ -52,17 +52,6 @@ public interface ExtensionRegistryService extends BusinessObjectHandlerProvider,
 	Collection<Object> getTooltipContributors();
 
 	/**
-	 * @return a collection of commands.
-	 * The following annotations are used with commands contributors:
-	 * GetLabel - Required
-	 * IsAvailable
-	 * CanActivate
-	 * Activate - Required
-	 * HasDoneChanges
-	 */
-	Collection<Object> getCommands();
-
-	/**
 	 * Returns a list of registered categories for the palette.
 	 */
 	List<Category> getCategories();

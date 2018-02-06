@@ -653,19 +653,10 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 
 	@Override
 	protected ContextMenuProvider createContextMenuProvider() {
-
-//		return new DiagramEditorContextMenuProvider(getDiagramContainer().getGraphicalViewer(),
-//				getDiagramContainer().getActionRegistry(),
-//				getConfigurationProvider()) {
 		return new ContextMenuProvider(getDiagramContainer().getGraphicalViewer()) {
+
 			@Override
-			public void buildContextMenu(final IMenuManager manager) {
-
-				// TODO: Need a way to remove contributed menu items when tool is active?
-				// Don't populate context menu when a tool is active
-//				if(toolHandler == null  || !toolHandler.isToolActive()) {
-
-//				}
+			public void buildContextMenu(final IMenuManager menu) {
 			}
 		};
 	}

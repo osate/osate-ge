@@ -2,7 +2,6 @@
 <?eclipse version="3.4"?>
 <plugin>
    <extension-point id="org.osate.ge.tooltips" name="Tooltips" schema="schema/org.osate.ge.tooltips.exsd"/>
-   <extension-point id="org.osate.ge.commands" name="Tools" schema="schema/org.osate.ge.commands.exsd"/>
    <extension-point id="org.osate.ge.categories" name="Categories" schema="schema/org.osate.ge.categories.exsd"/>
    <extension-point id="org.osate.ge.images" name="Images" schema="schema/org.osate.ge.images.exsd"/>
    <extension-point id="org.osate.ge.references" name="Reference Handling" schema="schema/org.osate.ge.references.exsd"/>
@@ -129,7 +128,7 @@
             name="Restore Missing Diagram Elements...">
       </command>
       <command
-            id="org.osate.ge.setAutoContentFilter"
+            id="org.osate.ge.toggleContentFilter"
             name="Set Auto Contents Filter">
          <commandParameter
                id="contentsFilterId"
@@ -188,6 +187,10 @@
       <command
             id="org.osate.ge.rename"
             name="Rename...">
+      </command>
+      <command
+            id="org.osate.ge.saveImage"
+            name="Export Diagram...">
       </command>
    </extension>
  <extension
@@ -412,8 +415,8 @@
           commandId="org.osate.ge.restoreMissingDiagramElements">
     </handler>
     <handler
-          class="org.osate.ge.internal.ui.handlers.SetContentFilterHandler"
-          commandId="org.osate.ge.setAutoContentFilter">
+          class="org.osate.ge.internal.ui.handlers.ToggleContentFilterHandler"
+          commandId="org.osate.ge.toggleContentFilter">
     </handler>
     <handler
           class="org.osate.ge.internal.ui.handlers.EnableAllFiltersHandler"
@@ -466,6 +469,10 @@
     <handler
           class="org.osate.ge.internal.ui.handlers.RenameHandler"
           commandId="org.osate.ge.rename">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.SaveImageHandler"
+          commandId="org.osate.ge.saveImage">
     </handler>
  </extension>
        
@@ -960,6 +967,15 @@
     </command>
     <separator
           name="org.osate.ge.separator7"
+          visible="true">
+    </separator>
+    <command
+          commandId="org.osate.ge.saveImage"
+          label="Export Diagram..."
+          style="push">
+    </command>
+    <separator
+          name="third_party"
           visible="true">
     </separator>
  </menuContribution>

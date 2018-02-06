@@ -54,7 +54,6 @@ import org.eclipse.graphiti.features.IResizeShapeFeature;
 import org.eclipse.graphiti.features.IUpdateFeature;
 import org.eclipse.graphiti.features.context.IAddBendpointContext;
 import org.eclipse.graphiti.features.context.IAddContext;
-import org.eclipse.graphiti.features.context.ICustomContext;
 import org.eclipse.graphiti.features.context.IDeleteContext;
 import org.eclipse.graphiti.features.context.IDirectEditingContext;
 import org.eclipse.graphiti.features.context.ILayoutContext;
@@ -66,7 +65,6 @@ import org.eclipse.graphiti.features.context.IRemoveBendpointContext;
 import org.eclipse.graphiti.features.context.IRemoveContext;
 import org.eclipse.graphiti.features.context.IResizeShapeContext;
 import org.eclipse.graphiti.features.context.IUpdateContext;
-import org.eclipse.graphiti.features.custom.ICustomFeature;
 import org.eclipse.graphiti.mm.pictograms.Diagram;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.ui.features.DefaultFeatureProvider;
@@ -95,9 +93,6 @@ import org.osate.ge.internal.graphiti.features.BoHandlerCreateConnectionFeature;
 import org.osate.ge.internal.graphiti.features.BoHandlerCreateFeature;
 import org.osate.ge.internal.graphiti.features.BoHandlerDeleteFeature;
 import org.osate.ge.internal.graphiti.features.BoHandlerDirectEditFeature;
-import org.osate.ge.internal.graphiti.features.CommandCustomFeature;
-import org.osate.ge.internal.graphiti.features.SelectAncestorFeature;
-import org.osate.ge.internal.graphiti.features.UpdateDiagramCustomFeature;
 import org.osate.ge.internal.graphiti.features.UpdateDiagramFeature;
 import org.osate.ge.internal.graphiti.services.GraphitiService;
 import org.osate.ge.internal.services.AadlModificationService;
@@ -282,31 +277,10 @@ public class AgeFeatureProvider extends DefaultFeatureProvider {
 		return defaultDeleteFeature;
 	}
 
-	@Override
-	public ICustomFeature[] getCustomFeatures(final ICustomContext context) {
-		final ArrayList<ICustomFeature> features = new ArrayList<ICustomFeature>();
-		addCustomFeatures(features);
-		return features.toArray(new ICustomFeature[] {});
-	}
-
 	// Don't allow reconnection
 	@Override
 	public IReconnectionFeature getReconnectionFeature(IReconnectionContext context) {
 		return null;
-	}
-
-	/**
-	 * Method used to additively build a list of custom features. Subclasses can override to add additional custom features while including those supported by parent classes.
-	 * @param features
-	 */
-	protected void addCustomFeatures(final List<ICustomFeature> features) {
-		features.add(make(UpdateDiagramCustomFeature.class));
-		features.add(make(SelectAncestorFeature.class));
-
-		// Commands
-		for(final Object cmd : extService.getCommands()) {
-			features.add(new CommandCustomFeature(cmd, extService, aadlModService, graphitiService, this));
-		}
 	}
 
 	@Override

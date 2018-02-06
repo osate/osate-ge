@@ -3,7 +3,6 @@ package org.osate.ge.internal.diagram.runtime.filtering;
 import com.google.common.collect.ImmutableSet;
 
 public enum LegacyContentFilterMapping {
-	// TODO: Configure mapping to new content filters
 	ALLOW_FUNDAMENTAL("allow_fundamental",
 			getFundamentalFilters()), ALLOW_TYPE("allow_type",
 					getTypeFilters()), ALLOW_ALL("allow_all", getAllFilters());

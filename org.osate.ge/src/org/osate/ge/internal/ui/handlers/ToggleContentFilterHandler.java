@@ -31,8 +31,7 @@ import org.osgi.framework.FrameworkUtil;
 
 import com.google.common.collect.ImmutableSet;
 
-// TODO: Cleanup. Rename
-public class SetContentFilterHandler extends AbstractHandler implements IElementUpdater {
+public class ToggleContentFilterHandler extends AbstractHandler implements IElementUpdater {
 	public static final String PARAM_CONTENTS_FILTER_ID = "contentsFilterId";
 
 	@Override
@@ -60,8 +59,6 @@ public class SetContentFilterHandler extends AbstractHandler implements IElement
 			throw new RuntimeException("Unable to get diagram");
 		}
 
-		// TODO: Need to know if already checked?
-
 		final String contentFilterId = (String) event.getParameters().get(PARAM_CONTENTS_FILTER_ID);
 		if (contentFilterId == null) {
 			throw new RuntimeException("Unable to get content filter");
@@ -72,7 +69,6 @@ public class SetContentFilterHandler extends AbstractHandler implements IElement
 		final ContentFilter filter = extService.getContentFilterById(contentFilterId)
 				.orElseThrow(() -> new RuntimeException("Unable to get content filter"));
 
-		// TODO: Consider labeling
 		final String modLabel = (addFilter ? "Enable " : "Disable ") + "Show " + filter.getName();
 		diagram.modify(modLabel, m -> {
 			// Update the content filters of each element for which the content filter is applicable

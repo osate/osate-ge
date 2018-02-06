@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.eclipse.e4.core.contexts.EclipseContextFactory;
 import org.eclipse.jface.action.IContributionItem;
+import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.CompoundContributionItem;
@@ -15,7 +16,7 @@ import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
 import org.osate.ge.internal.services.ExtensionRegistryService;
-import org.osate.ge.internal.ui.handlers.SetContentFilterHandler;
+import org.osate.ge.internal.ui.handlers.ToggleContentFilterHandler;
 import org.osate.ge.internal.ui.util.SelectionUtil;
 import org.osate.ge.internal.ui.util.UiUtil;
 import org.osgi.framework.Bundle;
@@ -33,19 +34,27 @@ public class ShowFiltersContributionItem extends CompoundContributionItem {
 			return EMPTY;
 		}
 
+		if (window.getActivePage() == null) {
+			return EMPTY;
+		}
+
+		final IEditorPart activeEditor = window.getActivePage().getActiveEditor();
+		if(!(activeEditor instanceof AgeDiagramEditor)) {
+			return EMPTY;
+		}
+
+		// Don't contribute commands if editor is not editable
+		final AgeDiagramEditor editor = (AgeDiagramEditor)activeEditor;
+		if(activeEditor == null || !editor.isEditable()) {
+			return EMPTY;
+		}
+
 		final Bundle bundle = FrameworkUtil.getBundle(getClass());
 		final ExtensionRegistryService extService = EclipseContextFactory.getServiceContext(bundle.getBundleContext())
 				.get(ExtensionRegistryService.class);
 		if(extService == null) {
 			throw new RuntimeException("Unable to retrieve extension registry");
 		}
-
-		// Don't allow execution if editor is not editable
-		// TODO
-//		final AgeDiagramEditor editor = graphitiService.getEditor();
-//		if (editor != null && !editor.isEditable()) {
-//			return false;
-//		}
 
 		final List<DiagramElement> diagramElements = SelectionUtil
 				.getSelectedDiagramElements(window.getActivePage().getSelection());
@@ -63,25 +72,13 @@ public class ShowFiltersContributionItem extends CompoundContributionItem {
 				}
 			}
 		}
-//
-//		// TODO: What about the "Hide Contents" menu option.... WOuld not be available with this config..
-//
-//		// TODO: What about hide contents... Special behavior... Need special lable.
-//
-//		// TODO: Select radio contribution
-//
-////		org.eclipse.ui.commands.radioStateParameter
-////		https://wiki.eclipse.org/Menu_Contributions/Radio_Button_Command
-//// https://help.eclipse.org/mars/index.jsp?topic=%2Forg.eclipse.platform.doc.isv%2Freference%2Fapi%2Forg%2Feclipse%2Fui%2Fcommands%2FIElementUpdater.html
-//
 
 		// Create command contributions
 		applicableFilters.stream().sorted((cf1, cf2) -> cf1.getName().compareToIgnoreCase(cf2.getName()))
 		.forEachOrdered(filter -> {
-			// TODO: Rename command ID
 			final CommandContributionItem commandItem = new CommandContributionItem(
-					new CommandContributionItemParameter(window, null, "org.osate.ge.setAutoContentFilter",
-							Collections.singletonMap(SetContentFilterHandler.PARAM_CONTENTS_FILTER_ID,
+							new CommandContributionItemParameter(window, null, "org.osate.ge.toggleContentFilter",
+							Collections.singletonMap(ToggleContentFilterHandler.PARAM_CONTENTS_FILTER_ID,
 									filter.getId()),
 							null, null, null,
 							"Show " + filter.getName(), null, null, CommandContributionItem.STYLE_CHECK, null,

@@ -64,11 +64,6 @@ public class DefaultExtensionService implements ExtensionService {
 	}
 
 	@Override
-	public Collection<Object> getCommands() {
-		return globalExtService.getCommands();
-	}
-
-	@Override
 	public IEclipseContext createChildContext() {
 		final IEclipseContext ctx = baseCtx.createChild();
 		return ctx;

@@ -44,7 +44,6 @@ import org.eclipse.e4.core.contexts.ContextInjectionFactory;
 import org.eclipse.e4.core.contexts.EclipseContextFactory;
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.osate.ge.Categories;
-import org.osate.ge.di.Activate;
 import org.osate.ge.di.IsApplicable;
 import org.osate.ge.di.Names;
 import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
@@ -83,13 +82,11 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 
 	private static final String BUSINESS_OBJECT_HANDLERS_EXTENSION_POINT_ID = "org.osate.ge.businessObjectHandlers";
 	private static final String TOOLTIP_EXTENSION_POINT_ID = "org.osate.ge.tooltips";
-	private static final String COMMAND_EXTENSION_POINT_ID = "org.osate.ge.commands";
 	private static final String CATEGORIES_EXTENSION_POINT_ID = "org.osate.ge.categories";
 	private static final String BUSINESS_OBJECT_PROVIDERS_EXTENSION_POINT_ID = "org.osate.ge.businessObjectProviders";
 	private static final String CONTENT_FILTERS_EXTENSION_POINT_ID = "org.osate.ge.contentFilters";
 
 	private final Collection<Object> boHandlers;
-	private final Collection<Object> commands;
 	private final List<Category> categories;
 	private final Collection<Object> tooltipContributors;
 	private final Collection<Object> businessObjectProviders;
@@ -99,7 +96,6 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 		final IExtensionRegistry registry = Platform.getExtensionRegistry();
 		boHandlers = instantiateBusinessObjectHandlers(registry);
 		tooltipContributors = instantiateTooltipContributors(registry);
-		commands = instantiateCommands(registry);
 		categories = instantiateCategories(registry);
 		businessObjectProviders = instantiateBusinessObjectProviders(registry);
 		contentFilters = instantiateContentFilters(registry);
@@ -144,11 +140,6 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 	}
 
 	@Override
-	public Collection<Object> getCommands() {
-		return commands;
-	}
-
-	@Override
 	public Collection<Object> getBusinessObjectProviders() {
 		return businessObjectProviders;
 	}
@@ -173,28 +164,6 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 	private static ImmutableCollection<ContentFilter> instantiateContentFilters(final IExtensionRegistry registry) {
 		return instantiateSimpleExtensions(registry, CONTENT_FILTERS_EXTENSION_POINT_ID, "contentFilter",
 				ContentFilter.class);
-	}
-
-	private static ImmutableCollection<Object> instantiateCommands(final IExtensionRegistry registry) {
-		final ImmutableList.Builder<Object> extensionListBuilder = ImmutableList.builder();
-		instantiateSimpleExtensions(extensionListBuilder, registry, COMMAND_EXTENSION_POINT_ID, "command",
-				Object.class);
-
-		// Activate command contributors to create commands
-		final IEclipseContext ctx = EclipseContextFactory.create();
-		try {
-			for(final Object commandContributor : instantiateSimpleExtensions(registry, COMMAND_EXTENSION_POINT_ID, "commandContributor")) {
-				@SuppressWarnings("unchecked")
-				final Collection<Object> contributedCommands = (Collection<Object>)ContextInjectionFactory.invoke(commandContributor, Activate.class, ctx);
-				if(contributedCommands != null) {
-					extensionListBuilder.addAll(contributedCommands);
-				}
-			}
-		} finally {
-			ctx.dispose();
-		}
-
-		return extensionListBuilder.build();
 	}
 
 	// Returns an immutable collection containing the objects created by instantiating class referenced by the "class" attribute of all configuration elements
