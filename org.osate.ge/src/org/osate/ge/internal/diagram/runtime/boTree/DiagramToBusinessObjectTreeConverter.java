@@ -87,7 +87,7 @@ public class DiagramToBusinessObjectTreeConverter {
 			for(final RelativeBusinessObjectReference ref : futureElements.keySet()) {
 				// An incomplete node is created. The tree expander will fill in missing fields.
 				if(parent.getChild(ref) == null) {
-					new BusinessObjectNode(parent, null, ref, null, true, null, Completeness.UNKNOWN);
+					new BusinessObjectNode(parent, null, ref, null, true, ImmutableSet.of(), Completeness.UNKNOWN);
 				}
 			}
 		}

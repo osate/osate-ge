@@ -177,6 +177,18 @@
             id="org.osate.ge.instantiate"
             name="Instantiate">
       </command>
+      <command
+            id="org.osate.ge.selectContainer"
+            name="Select Container">
+      </command>
+      <command
+            id="org.osate.ge.delete"
+            name="Delete">
+      </command>
+      <command
+            id="org.osate.ge.rename"
+            name="Rename...">
+      </command>
    </extension>
  <extension
        point="org.eclipse.ui.handlers">
@@ -442,6 +454,18 @@
     <handler
           class="org.osate.ge.internal.ui.handlers.InstantiateHandler"
           commandId="org.osate.ge.instantiate">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.SelectContainerHandler"
+          commandId="org.osate.ge.selectContainer">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.DeleteHandler"
+          commandId="org.osate.ge.delete">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.RenameHandler"
+          commandId="org.osate.ge.rename">
     </handler>
  </extension>
        
@@ -719,24 +743,52 @@
           id="org.osate.ge.goToMenu"
           label="Go to">
        <command
-             commandId="org.osate.ge.goToAadlSource"
+             commandId="org.osate.ge.createNewDiagram"
+             label="New Diagram"
              style="push">
+          <visibleWhen
+                checkEnabled="true">
+          </visibleWhen>
        </command>
+       <separator
+             name="org.osate.ge.separator6"
+             visible="true">
+       </separator>
        <command
              commandId="org.osate.ge.openAssociatedDiagram"
+             label="Associated Diagram"
              style="push">
-       </command>
-       <command
-             commandId="org.osate.ge.createNewDiagram"
-             style="push">
-       </command>
-       <command
-             commandId="org.osate.ge.goToTypeDiagram"
-             style="push">
+          <visibleWhen
+                checkEnabled="true">
+          </visibleWhen>
        </command>
        <command
              commandId="org.osate.ge.goToPackageDiagram"
+             label="Package Diagram"
              style="push">
+          <visibleWhen
+                checkEnabled="true">
+          </visibleWhen>
+       </command>
+       <command
+             commandId="org.osate.ge.goToTypeDiagram"
+             label="Type Diagram"
+             style="push">
+          <visibleWhen
+                checkEnabled="true">
+          </visibleWhen>
+       </command>
+       <separator
+             name="org.osate.ge.separator5"
+             visible="true">
+       </separator>
+       <command
+             commandId="org.osate.ge.goToAadlSource"
+             label="AADL Source"
+             style="push">
+          <visibleWhen
+                checkEnabled="true">
+          </visibleWhen>
        </command>
     </menu>
     <menu
@@ -876,6 +928,10 @@
      </command>
     </menu>
     <command
+          commandId="org.osate.ge.selectContainer"
+          style="push">
+    </command>
+    <command
           commandId="org.osate.ge.commands.properties"
           style="push">
     </command>
@@ -886,7 +942,26 @@
     <command
           commandId="org.osate.ge.instantiate"
           style="push">
+       <visibleWhen
+             checkEnabled="true">
+       </visibleWhen>
     </command>
+    <separator
+          name="org.osate.ge.separator4"
+          visible="true">
+    </separator>
+    <command
+          commandId="org.osate.ge.delete"
+          style="push">
+    </command>
+    <command
+          commandId="org.osate.ge.rename"
+          style="push">
+    </command>
+    <separator
+          name="org.osate.ge.separator7"
+          visible="true">
+    </separator>
  </menuContribution>
  <menuContribution
        allPopups="false"

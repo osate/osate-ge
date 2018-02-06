@@ -6,30 +6,21 @@ import java.util.Objects;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
-import org.eclipse.core.runtime.Adapters;
+import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.handlers.HandlerUtil;
-import org.osate.aadl2.Classifier;
-import org.osate.aadl2.ComponentClassifier;
-import org.osate.aadl2.Subcomponent;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
-import org.osate.ge.internal.services.DiagramService;
+import org.osate.ge.internal.diagram.runtime.DiagramNode;
+import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
-import org.osate.ge.internal.util.AadlSubcomponentUtil;
 
-public class OpenAssociatedDiagramHandler extends AbstractHandler {
+public class SelectContainerHandler extends AbstractHandler {
 	@Override
 	public void setEnabled(final Object evaluationContext) {
-		boolean enabled = false;
 		final List<DiagramElement> selectedDiagramElements = AgeHandlerUtil
 				.getSelectedDiagramElementsFromContext(evaluationContext);
-		if (selectedDiagramElements.size() == 1) {
-			final DiagramElement selectedElement = selectedDiagramElements.get(0);
-			final Object bo = selectedElement.getBusinessObject();
-			enabled = bo instanceof Classifier || (bo instanceof Subcomponent
-					&& AadlSubcomponentUtil.getComponentClassifier(selectedElement, (Subcomponent) bo) != null);
-		}
-
+		final boolean enabled = selectedDiagramElements.size() == 1
+				&& selectedDiagramElements.get(0).getParent() != null;
 		setBaseEnabled(enabled);
 	}
 
@@ -40,6 +31,8 @@ public class OpenAssociatedDiagramHandler extends AbstractHandler {
 			throw new RuntimeException("Unexpected editor: " + activeEditor);
 		}
 
+		final AgeDiagramEditor ageEditor = (AgeDiagramEditor) activeEditor;
+
 		// Get diagram and selected elements
 		final List<DiagramElement> selectedDiagramElements = AgeHandlerUtil.getSelectedDiagramElements(event);
 		if (selectedDiagramElements.size() == 0) {
@@ -47,20 +40,13 @@ public class OpenAssociatedDiagramHandler extends AbstractHandler {
 		}
 
 		final DiagramElement selectedElement = selectedDiagramElements.get(0);
-		final Object bo = selectedElement.getBusinessObject();
+		final DiagramNode parent = Objects.requireNonNull(selectedElement.getParent(), "parent is null");
 
-		final DiagramService diagramService = Objects.requireNonNull(Adapters.adapt(activeEditor, DiagramService.class),
-				"Unable to retrieve diagram service");
-
-		if (bo instanceof Classifier) {
-			diagramService.openOrCreateDiagramForBusinessObject(bo);
-		} else if (bo instanceof Subcomponent) {
-			final ComponentClassifier cc = AadlSubcomponentUtil.getComponentClassifier(selectedElement,
-					(Subcomponent) bo);
-			if (cc != null) {
-				diagramService.openOrCreateDiagramForBusinessObject(cc);
-			}
-		}
+		final GraphitiAgeDiagram gad = ageEditor.getGraphitiAgeDiagram();
+		final PictogramElement parentPe = Objects.requireNonNull(gad.getPictogramElement(parent),
+				"Unable to retrieve parent pictogram element");
+		ageEditor.getDiagramBehavior().getDiagramContainer()
+		.selectPictogramElements(new PictogramElement[] { parentPe });
 
 		return null;
 	}

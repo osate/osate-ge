@@ -35,6 +35,7 @@ import org.eclipse.emf.transaction.TransactionalEditingDomain;
 import org.eclipse.gef.ContextMenuProvider;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.GraphicalEditPart;
+import org.eclipse.gef.GraphicalViewer;
 import org.eclipse.gef.palette.PaletteDrawer;
 import org.eclipse.gef.palette.PaletteRoot;
 import org.eclipse.graphiti.dt.IDiagramTypeProvider;
@@ -49,10 +50,8 @@ import org.eclipse.graphiti.ui.editor.DefaultPaletteBehavior;
 import org.eclipse.graphiti.ui.editor.DefaultPersistencyBehavior;
 import org.eclipse.graphiti.ui.editor.DefaultRefreshBehavior;
 import org.eclipse.graphiti.ui.editor.DiagramBehavior;
-import org.eclipse.graphiti.ui.editor.DiagramEditorContextMenuProvider;
 import org.eclipse.graphiti.ui.editor.IDiagramContainerUI;
 import org.eclipse.graphiti.ui.editor.IDiagramEditorInput;
-import org.eclipse.graphiti.ui.internal.action.UpdateAction;
 import org.eclipse.graphiti.ui.platform.IConfigurationProvider;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.dialogs.ErrorDialog;
@@ -71,6 +70,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IPartListener;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.internal.EditorSite;
 import org.eclipse.ui.part.EditorPart;
 import org.eclipse.ui.views.contentoutline.ContentOutline;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
@@ -121,6 +121,7 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 	private volatile boolean dirtyModel = false;
 	private volatile boolean forceUpdateOnNextModelChange = false;
 	private ToolHandler toolHandler;
+	private ContextMenuProvider contextMenuProvider = null;
 	private IResourceChangeListener resourceChangeListener;
 	private AgeDiagram ageDiagram;
 	private AgeTabbedPropertySheetPage propertySheetPage;
@@ -652,21 +653,42 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 
 	@Override
 	protected ContextMenuProvider createContextMenuProvider() {
-		return new DiagramEditorContextMenuProvider(getDiagramContainer().getGraphicalViewer(),
-				getDiagramContainer().getActionRegistry(),
-				getConfigurationProvider()) {
 
+//		return new DiagramEditorContextMenuProvider(getDiagramContainer().getGraphicalViewer(),
+//				getDiagramContainer().getActionRegistry(),
+//				getConfigurationProvider()) {
+		return new ContextMenuProvider(getDiagramContainer().getGraphicalViewer()) {
 			@Override
 			public void buildContextMenu(final IMenuManager manager) {
-				// Don't populate context menu when a tool is active
-				if(toolHandler == null  || !toolHandler.isToolActive()) {
-					super.buildContextMenu(manager);
 
-					// Remove update action. Instead, there is an Update Diagram custom feature.
-					manager.remove(UpdateAction.ACTION_ID);
-				}
+				// TODO: Need a way to remove contributed menu items when tool is active?
+				// Don't populate context menu when a tool is active
+//				if(toolHandler == null  || !toolHandler.isToolActive()) {
+
+//				}
 			}
 		};
+	}
+
+	// Disable registering of the context menu to allow disabling includeEditorInput in our overridden intiializeGraphicalViewer
+	@Override
+	protected boolean shouldRegisterContextMenu() {
+		return false;
+	}
+
+	@Override
+	protected void initializeGraphicalViewer() {
+		super.initializeGraphicalViewer();
+
+		// Register the context menu and disable includeEditorInput
+		final IWorkbenchPart parentPart = getParentPart();
+		final GraphicalViewer graphicalViewer = getDiagramContainer().getGraphicalViewer();
+		if (graphicalViewer != null && parentPart != null && parentPart.getSite() instanceof EditorSite) {
+			contextMenuProvider = createContextMenuProvider();
+			graphicalViewer.setContextMenu(contextMenuProvider);
+			((EditorSite) parentPart.getSite()).registerContextMenu(contextMenuProvider, graphicalViewer, false);
+		}
+
 	}
 
 	public void setDiagramContextIsValid(final boolean value) {
@@ -725,7 +747,7 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 		project = (IProject)projectResource;
 	}
 
-	// Prompts the user to convert the file if the input is a legacy(Graphiti) file.
+// Prompts the user to convert the file if the input is a legacy(Graphiti) file.
 	private void handleLegacyDiagramConversion(final IDiagramEditorInput input) {
 		if(input != null) {
 			final IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(getPath(input.getUri()));
@@ -831,6 +853,12 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 		if(resourceChangeListener != null) {
 			final IWorkspace workspace = ResourcesPlugin.getWorkspace();
 			workspace.removeResourceChangeListener(resourceChangeListener);
+		}
+
+		// Dispose of the context menu provider
+		if (contextMenuProvider != null) {
+			contextMenuProvider.dispose();
+			contextMenuProvider = null;
 		}
 
 		super.disposeBeforeGefDispose();
@@ -1039,8 +1067,8 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 		}
 	}
 
-	// Update the property sheet selection if it has changed and the part the property sheet is interested in is the editor.
-	// This check is needed to avoid problems with outline selection.
+// Update the property sheet selection if it has changed and the part the property sheet is interested in is the editor.
+// This check is needed to avoid problems with outline selection.
 	@Override
 	public void selectPictogramElements(final PictogramElement[] pes) {
 		super.selectPictogramElements(pes);
@@ -1059,7 +1087,7 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 		}
 	}
 
-	// Special exception for handling errors during the initialization process.
+// Special exception for handling errors during the initialization process.
 	private static class InitializationException extends RuntimeException {
 		private static final long serialVersionUID = 2650849956029822898L;
 

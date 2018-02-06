@@ -1,76 +1,55 @@
 package org.osate.ge.internal.ui.handlers;
 
+import java.util.List;
+
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.handlers.HandlerUtil;
+import org.osate.aadl2.ComponentImplementation;
+import org.osate.aadl2.instantiation.InstantiateModel;
+import org.osate.ge.internal.diagram.runtime.DiagramElement;
+import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 
 public class InstantiateHandler extends AbstractHandler {
-//	@IsAvailable
-//	public boolean isAvailable(@Named(Names.BUSINESS_OBJECT) final ComponentImplementation compImpl) {
-//		return true;
-//	}
-//
-//	@Activate
-//	public boolean activate(@Named(Names.BUSINESS_OBJECT) final ComponentImplementation compImpl) {
-//		try {
-//			InstantiateModel.buildInstanceModelFile(compImpl);
-//		} catch (Exception e) {
-//			throw new RuntimeException(e);
-//		}
-//		return true;
-//	}
-
 	@Override
 	public void setEnabled(final Object evaluationContext) {
-//		boolean enabled = false;
-//		final List<DiagramElement> selectedDiagramElements = AgeHandlerUtil
-//				.getSelectedDiagramElementsFromContext(evaluationContext);
-//		if (selectedDiagramElements.size() == 1) {
-//			final Object selectedBo = selectedDiagramElements.get(0).getBusinessObject();
-//			final EObject boEObj = getEObject(selectedBo);
-//			if (boEObj != null) {
-//				final URI uri = EcoreUtil.getURI(boEObj);
-//				if (uri != null && boEObj.eResource() instanceof XtextResource) {
-//					final XtextResource res = (XtextResource) boEObj.eResource();
-//					if (res.getResourceServiceProvider().get(GlobalURIEditorOpener.class) != null) {
-//						enabled = true;
-//					}
-//				}
-//			}
-//		}
-//
-//		setBaseEnabled(enabled);
+		boolean enabled = false;
+		final List<DiagramElement> selectedDiagramElements = AgeHandlerUtil
+				.getSelectedDiagramElementsFromContext(evaluationContext);
+		if (selectedDiagramElements.size() == 1) {
+			final Object selectedBo = selectedDiagramElements.get(0).getBusinessObject();
+			enabled = selectedBo instanceof ComponentImplementation;
+		}
+
+		setBaseEnabled(enabled);
 	}
 
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
-//		final IEditorPart activeEditor = HandlerUtil.getActiveEditor(event);
-//		if (!(activeEditor instanceof AgeDiagramEditor)) {
-//			throw new RuntimeException("Unexpected editor: " + activeEditor);
-//		}
-//
-//		// Get diagram and selected elements
-//		final List<DiagramElement> selectedDiagramElements = AgeHandlerUtil.getSelectedDiagramElements(event);
-//		if(selectedDiagramElements.size() == 0) {
-//			throw new RuntimeException("No element selected");
-//		}
-//
-//		final Object selectedBo = selectedDiagramElements.get(0).getBusinessObject();
-//		final EObject boEObj = getEObject(selectedBo);
-//		if (boEObj == null) {
-//			throw new RuntimeException("Unsupported type: " + selectedBo);
-//		}
-//
-//		final URI uri = Objects.requireNonNull(EcoreUtil.getURI(boEObj), "Unable to get URI for business object");
-//		if (!(boEObj.eResource() instanceof XtextResource)) {
-//			throw new RuntimeException("The resource of the loaded business object resource is not an XtextResource");
-//		}
-//
-//		final XtextResource res = (XtextResource) boEObj.eResource();
-//		final GlobalURIEditorOpener opener = Objects.requireNonNull(
-//				(GlobalURIEditorOpener) res.getResourceServiceProvider().get(GlobalURIEditorOpener.class),
-//				"unable to get global URI Editor opener");
-//		opener.open(uri, true);
+		final IEditorPart activeEditor = HandlerUtil.getActiveEditor(event);
+		if (!(activeEditor instanceof AgeDiagramEditor)) {
+			throw new RuntimeException("Unexpected editor: " + activeEditor);
+		}
+
+		// Get diagram and selected elements
+		final List<DiagramElement> selectedDiagramElements = AgeHandlerUtil.getSelectedDiagramElements(event);
+		if (selectedDiagramElements.size() == 0) {
+			throw new RuntimeException("No element selected");
+		}
+
+		final DiagramElement selectedElement = selectedDiagramElements.get(0);
+		final Object bo = selectedElement.getBusinessObject();
+		if(!(bo instanceof ComponentImplementation)) {
+			throw new RuntimeException("BO is not a component implementation");
+		}
+
+		try {
+			InstantiateModel.buildInstanceModelFile((ComponentImplementation) bo);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 
 		return null;
 	}

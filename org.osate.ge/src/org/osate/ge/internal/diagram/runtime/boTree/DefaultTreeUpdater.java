@@ -251,7 +251,8 @@ public class DefaultTreeUpdater implements TreeUpdater {
 						.requireNonNull(refService.getRelativeReference(pvg), "unable to get relative reference");
 				final BusinessObjectNode oldPropNode = oldNode == null ? null : oldNode.getChild(propRelRef);
 				final long propNodeId = oldPropNode == null ? idGenerator.getNext() : oldPropNode.getId(); // Determine the ID for the node. Reuse if possible.
-				new BusinessObjectNode(node, propNodeId, propRelRef, pvg, false, null, Completeness.COMPLETE);
+				new BusinessObjectNode(node, propNodeId, propRelRef, pvg, false, ImmutableSet.of(),
+						Completeness.COMPLETE);
 			}
 
 			dstToValues.clear(); // Clear map for the next use.

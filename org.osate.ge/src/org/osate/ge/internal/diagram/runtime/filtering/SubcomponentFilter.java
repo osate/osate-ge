@@ -1,6 +1,6 @@
 package org.osate.ge.internal.diagram.runtime.filtering;
 
-import org.osate.aadl2.ComponentClassifier;
+import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.Subcomponent;
 import org.osate.ge.BusinessObjectContext;
 
@@ -19,7 +19,7 @@ public class SubcomponentFilter implements ContentFilter {
 
 	@Override
 	public boolean isApplicable(final BusinessObjectContext boc) {
-		return boc.getBusinessObject() instanceof ComponentClassifier
+		return boc.getBusinessObject() instanceof ComponentImplementation
 				|| boc.getBusinessObject() instanceof Subcomponent;
 	}
 
