@@ -1,11 +1,12 @@
 package org.osate.ge.internal.graphiti;
 
-import org.eclipse.core.resources.ResourcesPlugin;
+import java.net.URL;
+
 import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRenderer;
 import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRendererFactory;
 import org.eclipse.graphiti.platform.ga.IRendererContext;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.widgets.Display;
 import org.osate.ge.internal.graphiti.diagram.PropertyUtil;
 
 public class ImageGraphicsAlgorithmRendererFactory implements IGraphicsAlgorithmRendererFactory {
@@ -14,16 +15,19 @@ public class ImageGraphicsAlgorithmRendererFactory implements IGraphicsAlgorithm
 	@Override
 	public IGraphicsAlgorithmRenderer createGraphicsAlgorithmRenderer(final IRendererContext context) {
 		if (IMAGE_FIGURE.equals(context.getPlatformGraphicsAlgorithm().getId())) {
-			return createImageFigure(
-					PropertyUtil.getImage(context.getGraphicsAlgorithm()));
+			return createImageFigure(PropertyUtil.getImage(context.getGraphicsAlgorithm()));
 		}
 
-		return null;
+		throw new RuntimeException("Cannot create platform graphics algorithm");
 	}
 
-	private ImageFigure createImageFigure(final String imageKey) {
-		final Image image = new Image(Display.getCurrent(),
-				ResourcesPlugin.getWorkspace().getRoot().getLocation() + imageKey);
-		return new ImageFigure(image);
+	private ImageFigure createImageFigure(final String imagePath) {
+		try {
+			final Image image = AgeDiagramTypeProvider.getResources()
+					.createImage(ImageDescriptor.createFromURL(new URL(imagePath)));
+			return new ImageFigure(image);
+		} catch (final Exception e) {
+			throw new RuntimeException("Cannot find image");
+		}
 	}
 }

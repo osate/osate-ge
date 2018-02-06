@@ -74,13 +74,13 @@ import org.osate.ge.internal.graphiti.graphics.AgeGraphitiGraphicsUtil;
  * Class that integrates AgeDiagram with Graphiti.
  * Handles updating the Graphiti diagram to reflect changes in the AgeDiagram.
  * The Graphiti diagram must not be modified directly.
- * Not all styl fields are supported as both the graphical configuration or diagram element style.
+ * Not all style fields are supported as both the graphical configuration or diagram element style.
  *
  */
 public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 	public final static String AADL_DIAGRAM_TYPE_ID = "AADL Diagram";
 	public final static String incompleteIndicator = "*";
-	public final static LocalResourceManager localResourceManager = new LocalResourceManager(
+	private LocalResourceManager localResourceManager = new LocalResourceManager(
 			AgeDiagramTypeProvider.getResources());
 
 	private final UpdaterListener updateListener;
@@ -223,12 +223,13 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 	private void createUpdateElementsFromAgeDiagram(final DiagramModification mod) {
 		ensureCreatedChildren(ageDiagram, graphitiDiagram);
 		updateChildren(mod, ageDiagram, true);
-		LayoutUtil.layoutDepthFirst(graphitiDiagram, mod, ageDiagram, GraphitiAgeDiagram.this); // Layout
+		LayoutUtil.layoutDepthFirst(graphitiDiagram, mod, ageDiagram, GraphitiAgeDiagram.this, localResourceManager); // Layout
 		finishUpdating(ageDiagram);
 	}
 
 	@Override
 	public void close() {
+		localResourceManager.dispose();
 		ageDiagram.removeModificationListener(modificationListener);
 	};
 
@@ -912,6 +913,8 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 				Display.getDefault().syncExec(() -> {
 					try {
 						inBeforeModificationsCompleted = true;
+						final LocalResourceManager tmpLocalResourceManager = new LocalResourceManager(
+								AgeDiagramTypeProvider.getResources());
 
 						// Remove elements
 						for (final DiagramElement element : elementsToRemove) {
@@ -961,10 +964,10 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 							for (final DiagramNode n : nodesToLayout) {
 								if (n instanceof AgeDiagram) {
 									LayoutUtil.layoutDepthFirst(graphitiDiagram, event.mod, (AgeDiagram) n,
-											GraphitiAgeDiagram.this);
+											GraphitiAgeDiagram.this, tmpLocalResourceManager);
 								} else if (n instanceof DiagramElement) {
 									LayoutUtil.layoutDepthFirst(graphitiDiagram, event.mod, (DiagramElement) n,
-											GraphitiAgeDiagram.this);
+											GraphitiAgeDiagram.this, tmpLocalResourceManager);
 									elementsToCheckParentsForLayout.add((DiagramElement) n);
 								}
 							}
@@ -985,7 +988,8 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 									final PictogramElement parentPe = getPictogramElement(parentToLayout);
 									if (parentPe instanceof ContainerShape) {
 										LayoutUtil.layout(graphitiDiagram, event.mod, parentToLayout,
-												(ContainerShape) parentPe, GraphitiAgeDiagram.this);
+												(ContainerShape) parentPe, GraphitiAgeDiagram.this,
+												tmpLocalResourceManager);
 									}
 								}
 
@@ -1001,6 +1005,8 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 						// Refresh the entire diagram's color. A model change could affect any number of diagram elements.
 						refreshDiagramStyles();
+						localResourceManager.dispose();
+						localResourceManager = tmpLocalResourceManager;
 					} finally {
 						inBeforeModificationsCompleted = false;
 					}

@@ -1,5 +1,6 @@
 package org.osate.ge.internal.graphiti.diagram;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -21,9 +22,12 @@ import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.services.IGaService;
 import org.eclipse.graphiti.ui.services.GraphitiUi;
+import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.LocalResourceManager;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.LabelPosition;
 import org.osate.ge.graphics.Style;
+import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.Label;
 import org.osate.ge.graphics.internal.Poly;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
@@ -37,6 +41,7 @@ import org.osate.ge.internal.graphiti.AnchorNames;
 import org.osate.ge.internal.graphiti.ImageGraphicsAlgorithmRendererFactory;
 import org.osate.ge.internal.graphiti.ShapeNames;
 import org.osate.ge.internal.graphiti.graphics.AgeGraphitiGraphicsUtil;
+import org.osate.ge.internal.util.PathUtil;
 
 import com.google.common.base.Strings;
 
@@ -56,44 +61,45 @@ public class LayoutUtil {
 		int bottomOuterPadding = 0;
 
 		// The minimum inner width and height are the minimum size for the graphics algorithm for the inner area.
-		// In the case of fixed size graphics algorithms such as features, the actual size of the inner graphics algorithm's symbol will be less than
-		// the minimum after creation. In that case, these values are used to adjust the bounds of the inner graphics algorithm after creation.
+// In the case of fixed size graphics algorithms such as features, the actual size of the inner graphics algorithm's symbol will be less than
+// the minimum after creation. In that case, these values are used to adjust the bounds of the inner graphics algorithm after creation.
 		int minInnerWidth = 0;
 		int minInnerHeight = 0;
 
-		// Returns the X coordinate for the right side of the inner region.
+// Returns the X coordinate for the right side of the inner region.
 		int getInnerRight() {
 			return leftOuterPadding + innerWidth;
 		}
 
-		// Returns the Y coordinate for the bottom side of the inner region.
+// Returns the Y coordinate for the bottom side of the inner region.
 		int getInnerBottom() {
 			return topOuterPadding + innerHeight;
 		}
 	}
 
 	public static void layoutDepthFirst(final Diagram graphitiDiagram, final DiagramModification mod,
-			final AgeDiagram ageDiagram, final NodePictogramBiMap mapping) {
+			final AgeDiagram ageDiagram, final NodePictogramBiMap mapping, final LocalResourceManager resourceManager) {
 		for (final DiagramElement child : ageDiagram.getDiagramElements()) {
-			layoutDepthFirst(graphitiDiagram, mod, child, mapping);
+			layoutDepthFirst(graphitiDiagram, mod, child, mapping, resourceManager);
 		}
 	}
 
 	public static void layoutDepthFirst(final Diagram graphitiDiagram, final DiagramModification mod,
-			final DiagramElement element, final NodePictogramBiMap mapping) {
+			final DiagramElement element, final NodePictogramBiMap mapping,
+			final LocalResourceManager resourceManager) {
 		for (final DiagramElement child : element.getDiagramElements()) {
-			layoutDepthFirst(graphitiDiagram, mod, child, mapping);
+			layoutDepthFirst(graphitiDiagram, mod, child, mapping, resourceManager);
 		}
 
 		// Get the pictogram element and lay it out if it is a shape
 		final PictogramElement pe = mapping.getPictogramElement(element);
 		if (pe instanceof ContainerShape) {
-			layout(graphitiDiagram, mod, element, (ContainerShape) pe, mapping);
+			layout(graphitiDiagram, mod, element, (ContainerShape) pe, mapping, resourceManager);
 		} else if (pe instanceof Connection) {
 			final Connection connection = (Connection) pe;
 
 			// Center non-label decorators
-			// Calculate the total non-label width
+// Calculate the total non-label width
 			final int nonLabelDecorationSpacing = 4;
 			int totalNonLabelWidth = 0;
 			for (final ConnectionDecorator cd : connection.getConnectionDecorators()) {
@@ -165,7 +171,8 @@ public class LayoutUtil {
 	 * @param diagramNodeProvider
 	 */
 	public static void layout(final Diagram graphitiDiagram, final DiagramModification mod,
-			final DiagramElement element, final ContainerShape shape, final NodePictogramBiMap diagramNodeProvider) {
+			final DiagramElement element, final ContainerShape shape, final NodePictogramBiMap diagramNodeProvider,
+			final LocalResourceManager localResourceManager) {
 		final LabelPosition horizontalLabelPositionFromStyle = element.getGraphicalConfiguration().style
 				.getHorizontalLabelPosition() == null ? Style.DEFAULT.getHorizontalLabelPosition()
 						: element.getGraphicalConfiguration().style.getHorizontalLabelPosition();
@@ -178,23 +185,23 @@ public class LayoutUtil {
 
 						final Graphic gr = element.getGraphic();
 
-						// Determine the space needed for each area
+// Determine the space needed for each area
 						final int dockedShapeOffset = AgeGraphitiGraphicsUtil.featureGroupDefaultSymbolWidth; // For now, only graphics which represent feature groups may have
-						// shape docked at the GROUP dock area.
+// shape docked at the GROUP dock area.
 
 						final LayoutMetrics lm = new LayoutMetrics();
 
 						final Shape nameShape = getChildShapeByName(shape, ShapeNames.primaryLabelShapeName);
 						final DockArea shapeDockArea = getNonGroupDockArea(element);
 
-						// Build a list of all the labels. These labels will be positioned based on the name label configuration
+// Build a list of all the labels. These labels will be positioned based on the name label configuration
 						final List<Shape> decorationShapes = new ArrayList<Shape>();
 						if (nameShape != null) {
 							decorationShapes.add(nameShape);
 						}
 						decorationShapes.addAll(getChildShapesByName(shape, ShapeNames.annotationShapeName));
 
-						// Add decoration shapes to the list. Sort them by name so that labels will be ordered consistently.
+// Add decoration shapes to the list. Sort them by name so that labels will be ordered consistently.
 						element.getDiagramElements().stream().filter(childElement -> childElement.isDecoration()).sorted((ce1,
 								ce2) -> Strings.nullToEmpty(ce1.getName()).compareToIgnoreCase(Strings.nullToEmpty(ce2.getName())))
 						.forEachOrdered(childElement -> {
@@ -205,7 +212,7 @@ public class LayoutUtil {
 							}
 						});
 
-						// Determine the size needs for the labels
+// Determine the size needs for the labels
 						int totalLabelsWidth = 0;
 						int totalLabelsHeight = 0;
 						for (final Shape labelShape : decorationShapes) {
@@ -213,24 +220,24 @@ public class LayoutUtil {
 							totalLabelsHeight += Math.max(0, labelShape.getGraphicsAlgorithm().getHeight());
 						}
 
-						// Adjust label position if the shape is docked
+// Adjust label position if the shape is docked
 						LabelPosition nameHorizontalPosition = getHorizontalLabelPosition(horizontalLabelPositionFromStyle,
 								verticalLabelPositionFromStyle, shapeDockArea);
 						LabelPosition nameVerticalPosition = getVerticalLabelPosition(horizontalLabelPositionFromStyle,
 								verticalLabelPositionFromStyle, shapeDockArea);
 
-						// Update the layout metrics to ensure there is room for all the labels
+// Update the layout metrics to ensure there is room for all the labels
 						final int actualLabelPaddingY = element.getGraphic() instanceof Label ? 0 : labelPadding; // Don't pad vertically if the shape consists of only a label
 						updateLayoutMetricsForLabelPositions(lm, nameHorizontalPosition, nameVerticalPosition,
 								totalLabelsWidth + labelPadding, totalLabelsHeight + actualLabelPaddingY);
 
-						// Adjust inner width and height based on padding and current size
+// Adjust inner width and height based on padding and current size
 						if (!(element.getGraphic() instanceof Label)) { // Ignore labels because labels should shrink to their minimum size.
 							lm.innerWidth = Math.max(lm.innerWidth, shapeGa.getWidth() - lm.leftOuterPadding - lm.rightOuterPadding);
 							lm.innerHeight = Math.max(lm.innerHeight, shapeGa.getHeight() - lm.topOuterPadding - lm.bottomOuterPadding);
 						}
 
-						// Prevent children from being positioned outside of the inner area
+// Prevent children from being positioned outside of the inner area
 						for (final Shape childShape : shape.getChildren()) {
 							if (!PropertyUtil.isManuallyPositioned(childShape)) {
 								final GraphicsAlgorithm childGa = childShape.getGraphicsAlgorithm();
@@ -246,13 +253,13 @@ public class LayoutUtil {
 							}
 						}
 
-						// Group feature shapes based on docking area
+// Group feature shapes based on docking area
 						final Map<DockArea, List<Shape>> dockAreaToShapesMap = buildDockAreaToChildrenMap(shape);
 
-						// Adjust shapes so they do not overlap
+// Adjust shapes so they do not overlap
 						cleanupOverlappingDockedShapes(shapeDockArea, dockAreaToShapesMap, diagramNodeProvider);
 
-						// Handle positioning of group docked shapes
+// Handle positioning of group docked shapes
 						for (final Entry<DockArea, List<Shape>> dockAreaToShapesEntry : dockAreaToShapesMap.entrySet()) {
 							if (dockAreaToShapesEntry.getKey() == DockArea.GROUP) {
 								for (final Shape childShape : dockAreaToShapesEntry.getValue()) {
@@ -278,31 +285,21 @@ public class LayoutUtil {
 						lm.innerWidth = Math.max(lm.innerWidth, lm.minInnerWidth);
 						lm.innerHeight = Math.max(lm.innerHeight, lm.minInnerHeight);
 
-						// Consider children when determining size
+// Consider children when determining size
 						final int[] minSizeForChildren = getMinimumSizeForChildren(shape, lm.leftOuterPadding, lm.topOuterPadding);
 						lm.innerWidth = Math.max(lm.innerWidth, minSizeForChildren[0]);
 						lm.innerHeight = Math.max(lm.innerHeight, minSizeForChildren[1]);
 
-						// Create the graphics algorithm
+// Create the graphics algorithm
 						shapeGa.getGraphicsAlgorithmChildren().clear();
 
 						final GraphicsAlgorithm innerGa;
-						// Adjust the size of the graphics algorithm based on the rotation implied by the dock area
+// Adjust the size of the graphics algorithm based on the rotation implied by the dock area
 						if (shapeDockArea == DockArea.TOP || shapeDockArea == DockArea.BOTTOM) {
 							innerGa = AgeGraphitiGraphicsUtil.createGraphicsAlgorithm(graphitiDiagram, shapeGa, gr, lm.innerHeight,
 									lm.innerWidth, true, element.getGraphicalConfiguration().style);
 						} else {
-			if (shapeDockArea == null && Boolean.TRUE.equals(element.getStyle().isImageVisible())
-									&& !Strings.isNullOrEmpty(element.getStyle().getImage())) {
-								innerGa = GraphitiUi.getGaService().createPlatformGraphicsAlgorithm(shapeGa,
-										ImageGraphicsAlgorithmRendererFactory.IMAGE_FIGURE);
-								innerGa.setWidth(lm.innerWidth);
-								innerGa.setHeight(lm.innerHeight);
-								PropertyUtil.setImage(innerGa, element.getStyle().getImage());
-							} else {
-								innerGa = AgeGraphitiGraphicsUtil.createGraphicsAlgorithm(graphitiDiagram, shapeGa, gr, lm.innerWidth,
-										lm.innerHeight, true, element.getGraphicalConfiguration().style);
-							}
+							innerGa = createInnerGraphicsAlgorithm(shapeDockArea, element, localResourceManager, graphitiDiagram, shapeGa, lm, gr);
 						}
 
 						// Rotate shape
@@ -310,22 +307,22 @@ public class LayoutUtil {
 							AgeGraphitiGraphicsUtil.rotate(innerGa, shapeDockArea);
 						}
 
-						// Update variables using actual size of inner graphics algorithm
+// Update variables using actual size of inner graphics algorithm
 						lm.innerWidth = Math.max(innerGa.getWidth(), lm.minInnerWidth);
 						lm.innerHeight = Math.max(innerGa.getHeight(), lm.minInnerHeight);
 
-						// Update the shape's graphics algorithm based on required size
+// Update the shape's graphics algorithm based on required size
 						final int innerRight = lm.getInnerRight();
 						final int innerBottom = lm.getInnerBottom();
 						shapeGa.setWidth(innerRight + lm.rightOuterPadding);
 						shapeGa.setHeight(innerBottom + lm.bottomOuterPadding);
 
-						// Only adjust the size of an element if it doesn't have a size. If it doens't already have a size, the incremental layout will handle it.
+// Only adjust the size of an element if it doesn't have a size. If it doens't already have a size, the incremental layout will handle it.
 						if (!DiagramElementPredicates.isResizeable(element) || element.hasSize()) {
 							mod.setSize(element,
 									new org.osate.ge.internal.diagram.runtime.Dimension(shapeGa.getWidth(), shapeGa.getHeight()));
 						}
-						// Position docked shapes
+// Position docked shapes
 						for (final Entry<DockArea, List<Shape>> dockAreaToShapesEntry : dockAreaToShapesMap.entrySet()) {
 							for (final Shape childShape : dockAreaToShapesEntry.getValue()) {
 								if (dockAreaToShapesEntry.getKey() == DockArea.LEFT) {
@@ -360,7 +357,7 @@ public class LayoutUtil {
 							}
 						}
 
-						// Position the inner graphics algorithm
+// Position the inner graphics algorithm
 						if (shapeDockArea == DockArea.RIGHT) {
 							innerGa.setX(innerRight - innerGa.getWidth());
 							innerGa.setY(lm.topOuterPadding);
@@ -372,7 +369,7 @@ public class LayoutUtil {
 							innerGa.setY(lm.topOuterPadding);
 						}
 
-						// Create an anchor which is used for flow specifications
+// Create an anchor which is used for flow specifications
 						if (shapeDockArea != null) {
 							org.osate.ge.graphics.Point interiorAnchorPosition;
 							org.osate.ge.graphics.Point exteriorAnchorPosition;
@@ -437,7 +434,7 @@ public class LayoutUtil {
 									(int) exteriorAnchorPosition.y, true);
 						}
 
-						// Determine the Y position for the labels
+// Determine the Y position for the labels
 						int labelsY;
 						switch (nameVerticalPosition) {
 						case BEFORE_GRAPHIC:
@@ -451,7 +448,7 @@ public class LayoutUtil {
 
 						case GRAPHIC_CENTER:
 							final int centeringOffsetY = AgeGraphitiGraphicsUtil.getCenteringOffsetY(gr); // Adjustment for cases such as initial modes to make labels centered
-							// around the inner shape.
+// around the inner shape.
 							labelsY = lm.topOuterPadding + centeringOffsetY
 									+ ((lm.innerHeight - centeringOffsetY) - totalLabelsHeight) / 2;
 							break;
@@ -465,9 +462,9 @@ public class LayoutUtil {
 							break;
 						}
 
-						// Position Labels
-						// All labels are positioned together on separate lines.
-						// Labels are positioned horizontally based on the name label configuration.
+// Position Labels
+// All labels are positioned together on separate lines.
+// Labels are positioned horizontally based on the name label configuration.
 						for (final Shape labelShape : decorationShapes) {
 							final GraphicsAlgorithm labelGa = labelShape.getGraphicsAlgorithm();
 							labelGa.setX(calculateLabelX(lm, nameHorizontalPosition, labelGa.getWidth()));
@@ -475,7 +472,7 @@ public class LayoutUtil {
 							labelsY += labelGa.getHeight();
 						}
 
-						// Update the position of child diagram elements.
+// Update the position of child diagram elements.
 						for (final DiagramElement child : element.getDiagramElements()) {
 							final PictogramElement childPe = diagramNodeProvider.getPictogramElement(child);
 							// Only update the child's position if it already has a position. Otherwise, it may not have been layed out yet.
@@ -488,6 +485,30 @@ public class LayoutUtil {
 						}
 
 	}
+
+	private static GraphicsAlgorithm createInnerGraphicsAlgorithm(final DockArea shapeDockArea, final DiagramElement element,
+			final LocalResourceManager localResourceManager, final Diagram graphitiDiagram,
+			final GraphicsAlgorithm shapeGa, final LayoutMetrics lm, final Graphic gr) {
+		if (shapeDockArea == null && Boolean.TRUE.equals(element.getStyle().isImageVisible())
+				&& !Strings.isNullOrEmpty(element.getStyle().getImage())) {
+			try {
+				final URL imageURL = PathUtil.determinePath(element.getStyle().getImage());
+				localResourceManager.createImage(ImageDescriptor.createFromURL(imageURL));
+				final GraphicsAlgorithm ga = GraphitiUi.getGaService().createPlatformGraphicsAlgorithm(shapeGa,
+						ImageGraphicsAlgorithmRendererFactory.IMAGE_FIGURE);
+				ga.setWidth(lm.innerWidth);
+				ga.setHeight(lm.innerHeight);
+				PropertyUtil.setImage(ga, imageURL.toString());
+				return ga;
+			} catch (final Exception e) {
+				element.setStyle(StyleBuilder.create(element.getStyle()).imageVisible(false).build());
+			}
+		}
+
+		return AgeGraphitiGraphicsUtil.createGraphicsAlgorithm(graphitiDiagram, shapeGa, gr, lm.innerWidth,
+				lm.innerHeight, true, element.getGraphicalConfiguration().style);
+	}
+
 
 	/**
 	 * Determine the x coordinate for a label
@@ -538,7 +559,7 @@ public class LayoutUtil {
 			break;
 		}
 
-		// Set Y value based on the label configuration
+// Set Y value based on the label configuration
 		switch (nameVerticalPosition) {
 		case BEFORE_GRAPHIC:
 			lm.topOuterPadding = Math.max(lm.topOuterPadding, totalLabelsHeight);
@@ -557,7 +578,7 @@ public class LayoutUtil {
 		}
 	}
 
-	// Determines the horizontal label position. Transforms the positions specified by the business object handler based on the dock area.
+// Determines the horizontal label position. Transforms the positions specified by the business object handler based on the dock area.
 	private static LabelPosition getHorizontalLabelPosition(final LabelPosition horizontalPosition,
 			final LabelPosition verticalPosition, final DockArea shapeDockArea) {
 		if (shapeDockArea == null) {
@@ -582,7 +603,7 @@ public class LayoutUtil {
 		}
 	}
 
-	// Determines the vertical label position. Transforms the positions specified by the business object handler based on the dock area.
+// Determines the vertical label position. Transforms the positions specified by the business object handler based on the dock area.
 	private static LabelPosition getVerticalLabelPosition(final LabelPosition horizontalPosition,
 			final LabelPosition verticalPosition, final DockArea shapeDockArea) {
 		if (shapeDockArea == null) {
@@ -702,7 +723,7 @@ public class LayoutUtil {
 					vertical = true;
 				}
 
-				// Sort shapes by order. Ignore shapes that haven't been layed out
+// Sort shapes by order. Ignore shapes that haven't been layed out
 				final List<Shape> sortedShapes = dockAreaToShapesEntry.getValue().stream().filter(s -> {
 					final DiagramNode dn = diagramNodeProvider.getDiagramNode(s);
 					if (!(dn instanceof DiagramElement)) {
@@ -735,8 +756,8 @@ public class LayoutUtil {
 					}
 				}
 
-				// Nested docked feature need to be marked as layed out since the layout algorithm does not handle them.
-				// This ensures they are taken into account when determining minimum size
+// Nested docked feature need to be marked as layed out since the layout algorithm does not handle them.
+// This ensures they are taken into account when determining minimum size
 				if (dockAreaToShapesEntry.getKey() == DockArea.GROUP) {
 					for (Shape shape : sortedShapes) {
 						PropertyUtil.setIsLayedOut(shape, true);
