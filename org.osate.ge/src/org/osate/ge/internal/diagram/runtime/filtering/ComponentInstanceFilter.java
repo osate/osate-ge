@@ -1,7 +1,6 @@
 package org.osate.ge.internal.diagram.runtime.filtering;
 
 import org.osate.aadl2.instance.ComponentInstance;
-import org.osate.ge.BusinessObjectContext;
 
 public class ComponentInstanceFilter implements ContentFilter {
 	public final static String ID = "componentInstances";
@@ -17,8 +16,8 @@ public class ComponentInstanceFilter implements ContentFilter {
 	}
 
 	@Override
-	public boolean isApplicable(final BusinessObjectContext boc) {
-		return boc.getBusinessObject() instanceof ComponentInstance;
+	public boolean isApplicable(final Object bo) {
+		return bo instanceof ComponentInstance;
 	}
 
 	@Override

@@ -79,15 +79,14 @@ public class DefaultDiagramConfigurationDialogModel implements DiagramConfigurat
 	}
 
 	@Override
-	public ImmutableSet<ContentFilter> getApplicableContentFilters(final BusinessObjectContext boc) {
-		return extService.getContentFilters().stream().filter(cf -> cf.isApplicable(boc))
+	public ImmutableSet<ContentFilter> getApplicableContentFilters(final Object bo) {
+		return extService.getContentFilters().stream().filter(cf -> cf.isApplicable(bo))
 				.collect(ImmutableSet.toImmutableSet());
 	}
 
 	@Override
 	public ImmutableSet<ContentFilter> getDefaultContentFilters(final Object bo) {
-		// TODO: Call diagram type to determine default content filters;
-		return ImmutableSet.of();// diagramType.ggetDefaultAutoContentsFilter(bo);
+		return diagramType.getApplicableDefaultContentFilters(bo, extService);
 	}
 
 	@Override

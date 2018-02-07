@@ -1,6 +1,10 @@
 package org.osate.ge.internal.diagram.runtime.types;
 
+import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.filtering.ContentFilterProvider;
+
 import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableSet;
 
 public interface DiagramType {
 	/**
@@ -17,11 +21,11 @@ public interface DiagramType {
 	boolean isCompatibleWithContext(final Object contextBo);
 
 	/**
-	 * Returns the default auto contents filter for a business object. Must never return null.
+	 * Returns the IDs of the default content filters for a business object. Must never return null.
 	 * @param bo
 	 * @return
 	 */
-	// ContentsFilter getDefaultAutoContentsFilter(Object bo);
+	ImmutableSet<String> getDefaultContentFilters(Object bo);
 
 	/**
 	 * Returns the set of all AADL properties that are added to the diagram configuration by default. The user may choose to remove such properties.
@@ -44,5 +48,13 @@ public interface DiagramType {
 	 */
 	default boolean isUserCreatable() {
 		return true;
+	}
+
+	public default ImmutableSet<ContentFilter> getApplicableDefaultContentFilters(final Object bo,
+			final ContentFilterProvider contentFilterProvider) {
+		return getDefaultContentFilters(bo).stream()
+				.map(id -> contentFilterProvider.getContentFilterById(id).orElse(null))
+				.filter(cf -> cf != null && cf.isApplicable(bo))
+				.collect(ImmutableSet.toImmutableSet());
 	}
 }

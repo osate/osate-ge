@@ -1,5 +1,7 @@
 package org.osate.ge.internal.diagram.runtime.filtering;
 
+import java.util.Optional;
+
 import com.google.common.collect.ImmutableSet;
 
 public enum LegacyContentFilterMapping {
@@ -21,6 +23,16 @@ public enum LegacyContentFilterMapping {
 
 	public ImmutableSet<String> getContentFilterIds() {
 		return contentFilterIds;
+	}
+
+	public static Optional<LegacyContentFilterMapping> getById(final String id) {
+		for (final LegacyContentFilterMapping m : values()) {
+			if (m.id.equals(id)) {
+				return Optional.of(m);
+			}
+		}
+
+		return Optional.empty();
 	}
 
 	private static ImmutableSet<String> getFundamentalFilters() {

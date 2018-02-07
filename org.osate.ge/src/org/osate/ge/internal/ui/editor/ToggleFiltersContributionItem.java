@@ -3,6 +3,7 @@ package org.osate.ge.internal.ui.editor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.e4.core.contexts.EclipseContextFactory;
 import org.eclipse.jface.action.IContributionItem;
@@ -22,7 +23,7 @@ import org.osate.ge.internal.ui.util.UiUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 
-public class ShowFiltersContributionItem extends CompoundContributionItem {
+public class ToggleFiltersContributionItem extends CompoundContributionItem {
 	private final IContributionItem[] EMPTY = new IContributionItem[0];
 
 	@Override
@@ -50,11 +51,9 @@ public class ShowFiltersContributionItem extends CompoundContributionItem {
 		}
 
 		final Bundle bundle = FrameworkUtil.getBundle(getClass());
-		final ExtensionRegistryService extService = EclipseContextFactory.getServiceContext(bundle.getBundleContext())
-				.get(ExtensionRegistryService.class);
-		if(extService == null) {
-			throw new RuntimeException("Unable to retrieve extension registry");
-		}
+		final ExtensionRegistryService extRegistry = Objects.requireNonNull(
+				EclipseContextFactory.getServiceContext(bundle.getBundleContext()).get(ExtensionRegistryService.class),
+				"Unable to retrieve extension registry");
 
 		final List<DiagramElement> diagramElements = SelectionUtil
 				.getSelectedDiagramElements(window.getActivePage().getSelection());
@@ -64,9 +63,9 @@ public class ShowFiltersContributionItem extends CompoundContributionItem {
 		}
 
 		final List<ContentFilter> applicableFilters = new ArrayList<>();
-		for (final ContentFilter contentFilter : extService.getContentFilters()) {
+		for (final ContentFilter contentFilter : extRegistry.getContentFilters()) {
 			for (final DiagramElement diagramElement : diagramElements) {
-				if (contentFilter.isApplicable(diagramElement)) {
+				if (contentFilter.isApplicable(diagramElement.getBusinessObject())) {
 					applicableFilters.add(contentFilter);
 					break;
 				}
@@ -77,7 +76,7 @@ public class ShowFiltersContributionItem extends CompoundContributionItem {
 		applicableFilters.stream().sorted((cf1, cf2) -> cf1.getName().compareToIgnoreCase(cf2.getName()))
 		.forEachOrdered(filter -> {
 			final CommandContributionItem commandItem = new CommandContributionItem(
-							new CommandContributionItemParameter(window, null, "org.osate.ge.toggleContentFilter",
+					new CommandContributionItemParameter(window, null, "org.osate.ge.toggleContentFilter",
 							Collections.singletonMap(ToggleContentFilterHandler.PARAM_CONTENTS_FILTER_ID,
 									filter.getId()),
 							null, null, null,

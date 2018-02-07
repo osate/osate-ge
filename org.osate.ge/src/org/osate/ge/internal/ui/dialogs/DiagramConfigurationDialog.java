@@ -68,7 +68,7 @@ public class DiagramConfigurationDialog {
 
 		String getName(BusinessObjectContext boc);
 
-		ImmutableSet<ContentFilter> getApplicableContentFilters(BusinessObjectContext boc);
+		ImmutableSet<ContentFilter> getApplicableContentFilters(Object bo);
 
 		ImmutableSet<ContentFilter> getDefaultContentFilters(Object bo);
 
@@ -239,7 +239,8 @@ public class DiagramConfigurationDialog {
 				final BusinessObjectNode selectedBoNode = getSelectedBusinessObjectNode();
 
 				contentFiltersViewer.setInput(
-						selectedBoNode == null ? null : model.getApplicableContentFilters(selectedBoNode).toArray());
+						selectedBoNode == null ? null
+								: model.getApplicableContentFilters(selectedBoNode.getBusinessObject()).toArray());
 
 				contentFiltersViewer.getTable().setEnabled(selectedBoNode != null);
 			});
@@ -660,7 +661,7 @@ public class DiagramConfigurationDialog {
 		}
 
 		@Override
-		public boolean isApplicable(final BusinessObjectContext boc) {
+		public boolean isApplicable(final Object bo) {
 			return true;
 		}
 
@@ -688,7 +689,7 @@ public class DiagramConfigurationDialog {
 			}
 
 			@Override
-			public ImmutableSet<ContentFilter> getApplicableContentFilters(final BusinessObjectContext boc) {
+			public ImmutableSet<ContentFilter> getApplicableContentFilters(final Object bo) {
 				return ImmutableSet.copyOf(TestContentsFilter.values());
 			}
 

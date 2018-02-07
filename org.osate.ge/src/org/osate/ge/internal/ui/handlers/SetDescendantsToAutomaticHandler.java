@@ -1,7 +1,10 @@
 package org.osate.ge.internal.ui.handlers;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.core.commands.AbstractHandler;
@@ -11,20 +14,27 @@ import org.eclipse.e4.core.contexts.EclipseContextFactory;
 import org.eclipse.graphiti.features.context.IUpdateContext;
 import org.eclipse.graphiti.features.context.impl.UpdateContext;
 import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.commands.IElementUpdater;
 import org.eclipse.ui.handlers.HandlerUtil;
+import org.eclipse.ui.menus.UIElement;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
-import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
 import org.osate.ge.internal.graphiti.AgeFeatureProvider;
 import org.osate.ge.internal.services.ExtensionRegistryService;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
+import org.osate.ge.internal.ui.util.SelectionUtil;
 import org.osate.ge.internal.ui.util.UiUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 
-import com.google.common.collect.ImmutableSet;
+public class SetDescendantsToAutomaticHandler extends AbstractHandler implements IElementUpdater {
+	@Override
+	public void setEnabled(final Object evaluationContext) {
+		setBaseEnabled(getManualDescendants().size() > 0);
+	}
 
-public class EnableAllFiltersHandler extends AbstractHandler {
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
 		final IEditorPart activeEditor = HandlerUtil.getActiveEditor(event);
@@ -40,7 +50,7 @@ public class EnableAllFiltersHandler extends AbstractHandler {
 			throw new RuntimeException("Unable to retrieve extension registry");
 		}
 
-		// Get diagram and selected elements
+		// Get editor and various services
 		final AgeDiagramEditor diagramEditor = (AgeDiagramEditor) activeEditor;
 		final AgeFeatureProvider featureProvider = (AgeFeatureProvider) diagramEditor.getDiagramTypeProvider()
 				.getFeatureProvider();
@@ -50,16 +60,13 @@ public class EnableAllFiltersHandler extends AbstractHandler {
 			throw new RuntimeException("Unable to get diagram");
 		}
 
-		diagram.modify("Enable All Filters", m -> {
-			// Update the content filters of each element
-			for (final DiagramElement e : selectedDiagramElements) {
-				final Set<ContentFilter> newContentFilters = new HashSet<>(e.getContentFilters());
-				for (final ContentFilter filter : extService.getContentFilters()) {
-					if (filter.isApplicable(e.getBusinessObject())) {
-						newContentFilters.add(filter);
-					}
+
+		// TODO: Adjust label
+		diagram.modify("Set Descendants to Automatic", m -> {
+			for (final DiagramElement e : getManualDescendants()) {
+				if (e.isManual()) {
+					m.setManual(e, false);
 				}
-				m.setContentFilters(e, ImmutableSet.copyOf(newContentFilters));
 			}
 		});
 
@@ -68,5 +75,44 @@ public class EnableAllFiltersHandler extends AbstractHandler {
 		diagramEditor.getDiagramBehavior().executeFeature(featureProvider.getUpdateFeature(updateCtx), updateCtx);
 
 		return null;
+	}
+
+	@Override
+	public void updateElement(final UIElement element, @SuppressWarnings("rawtypes") final Map parameters) {
+		// TODO
+		element.setText("Set AAA (" + getManualDescendants().size() + " Elements)");
+	}
+
+	// Returns the manual descendants of the selected diagram elements
+	private static final Set<DiagramElement> getManualDescendants() {
+		final IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+		if (window == null) {
+			return Collections.emptySet();
+		}
+
+		final List<DiagramElement> diagramElements = SelectionUtil
+				.getSelectedDiagramElements(window.getActivePage().getSelection());
+
+		return getManualDescendants(diagramElements);
+	}
+
+	private static Set<DiagramElement> getManualDescendants(final Collection<DiagramElement> elementsToCheck) {
+		final Set<DiagramElement> manualElements = new HashSet<>();
+		for (final DiagramElement e : elementsToCheck) {
+			addManualDescendants(manualElements, e);
+		}
+
+		return manualElements;
+	}
+
+	private static void addManualDescendants(final Set<DiagramElement> manualElements, final DiagramElement e) {
+		// Set all descendants of the specified element as automatic/not manual
+		for (final DiagramElement child : e.getDiagramElements()) {
+			if (child.isManual()) {
+				manualElements.add(child);
+			}
+
+			addManualDescendants(manualElements, child);
+		}
 	}
 }

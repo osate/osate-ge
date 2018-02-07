@@ -19,15 +19,21 @@ import org.osate.ge.graphics.Color;
 import org.osate.ge.graphics.Point;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
+import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.filtering.ContentFilterProvider;
+import org.osate.ge.internal.diagram.runtime.filtering.LegacyContentFilterMapping;
 import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
-import org.osate.ge.internal.diagram.runtime.types.DiagramType;
+import org.osate.ge.internal.services.ExtensionRegistryService;
+import org.osate.ge.internal.services.impl.DeclarativeReferenceType;
+
+import com.google.common.collect.ImmutableSet;
 
 /**
  * Class to help read and write the native diagram format used by the editor.
  *
  */
 public class DiagramSerialization {
-	public final static int FORMAT_VERSION = 3;
+	public final static int FORMAT_VERSION = 4;
 
 	private static Comparator<DiagramElement> elementComparator = (e1, e2) -> e1.getRelativeReference()
 			.compareTo(e2.getRelativeReference());
@@ -52,7 +58,10 @@ public class DiagramSerialization {
 		}
 	}
 
-	public static AgeDiagram createAgeDiagram(final org.osate.ge.diagram.Diagram mmDiagram) {
+	public static AgeDiagram createAgeDiagram(final org.osate.ge.diagram.Diagram mmDiagram,
+			final ExtensionRegistryService extRegistry) {
+		Objects.requireNonNull(extRegistry, "extRegistry is null");
+
 		// Set the id which should be used for new diagram elements.
 		final AgeDiagram ageDiagram = new AgeDiagram(getMaxIdForChildren(mmDiagram) + 1);
 
@@ -86,8 +95,8 @@ public class DiagramSerialization {
 		}
 
 		//  Read elements
-		ageDiagram.modify("Read from File", m -> readElements(m, ageDiagram.getConfiguration().getDiagramType(),
-				ageDiagram, mmDiagram, new HashSet<>()));
+		ageDiagram.modify("Read from File", m -> readElements(m, extRegistry,
+				ageDiagram, mmDiagram, new HashSet<>(), false));
 
 		return ageDiagram;
 	}
@@ -130,17 +139,19 @@ public class DiagramSerialization {
 		return max;
 	}
 
-	private static void readElements(final DiagramModification m, final DiagramType diagramType,
+	private static void readElements(final DiagramModification m, final ContentFilterProvider contentFilterProvider,
 			final DiagramNode container, final org.osate.ge.diagram.DiagramNode mmContainer,
-			final Set<Long> usedIdSet) {
+			final Set<Long> usedIdSet, final boolean usingLegacyContentFilters) {
 		for (final org.osate.ge.diagram.DiagramElement mmElement : mmContainer.getElement()) {
-			createElement(m, diagramType, container, mmContainer, mmElement, usedIdSet);
+			createElement(m, contentFilterProvider, container, mmContainer, mmElement, usedIdSet,
+					usingLegacyContentFilters);
 		}
 	}
 
-	private static void createElement(final DiagramModification m, final DiagramType diagramType,
+	private static void createElement(final DiagramModification m, final ContentFilterProvider contentFilterProvider,
 			final DiagramNode container, final org.osate.ge.diagram.DiagramNode mmContainer,
-			final org.osate.ge.diagram.DiagramElement mmChild, final Set<Long> usedIdSet) {
+			final org.osate.ge.diagram.DiagramElement mmChild, final Set<Long> usedIdSet,
+			boolean usingLegacyContentFilters) {
 		final String[] refSegs = toReferenceSegments(mmChild.getBo());
 		if (refSegs == null) {
 			throw new RuntimeException("Invalid element. Business Object not specified");
@@ -157,15 +168,44 @@ public class DiagramSerialization {
 			}
 		}
 
-		final String autoContentsFilterId = mmChild.getAutoContentsFilter();
-		// TODO
-//		if (autoContentsFilterId != null) {
-//			final ContentFilter autoContentsFilter = diagramType.getContentsFilter(autoContentsFilterId);
-//			if (autoContentsFilter != null) {
-//				newElement.setAutoContentsFilter(autoContentsFilter);
-//			}
-//		}
+		ImmutableSet.Builder<ContentFilter> contentFilterSetBuilder = ImmutableSet.builder();
+		for (final String contentFilterId : mmChild.getContentFilters()) {
+			contentFilterProvider.getContentFilterById(contentFilterId).ifPresent(contentFilter -> {
+				contentFilterSetBuilder.add(contentFilter);
+			});
+		}
+
+		final String legacyFilterId = mmChild.getAutoContentsFilter();
+		if (legacyFilterId != null) {
+			usingLegacyContentFilters = true;
+
+			// Get legacy content filters
+			LegacyContentFilterMapping.getById(legacyFilterId).ifPresent(legacyMapping -> {
+				// Add the equivalent content filters to the content filter set.
+				for (final String contentFilterId : legacyMapping.getContentFilterIds()) {
+					contentFilterProvider.getContentFilterById(contentFilterId).ifPresent(contentFilter -> {
+						contentFilterSetBuilder.add(contentFilter);
+					});
+				}
+			});
+		}
+		newElement.setContentFilters(contentFilterSetBuilder.build());
 		newElement.setManual(mmChild.isManual());
+
+		// Need to set default mode transition trigger connections, default annex library, and default annex subclauses as manual if loading diagrams which use the legacy content filter.
+		// Current filters do not include those objects because of issues with layout(mode transition trigger connections) or questionable usefulness(annex elements)
+		if(usingLegacyContentFilters) {
+			final String firstSegment = newElement.getRelativeReference().getSegments().get(0);
+			if (DeclarativeReferenceType.ANNEX_LIBRARY.getId().equals(firstSegment)
+					|| DeclarativeReferenceType.ANNEX_SUBCLAUSE.getId().equals(firstSegment)
+					|| DeclarativeReferenceType.MODE_TRANSITION_TRIGGER.getId().equals(firstSegment)) {
+				// Set the element and its parents as manual
+				for (DiagramElement tmp = newElement; tmp
+						.getParent() instanceof DiagramElement; tmp = (DiagramElement) tmp.getParent()) {
+					tmp.setManual(true);
+				}
+			}
+		}
 
 		// Size and Position
 		newElement.setPosition(convertPoint(mmChild.getPosition()));
@@ -211,7 +251,7 @@ public class DiagramSerialization {
 		}
 
 		// Create children
-		readElements(m, diagramType, newElement, mmChild, usedIdSet);
+		readElements(m, contentFilterProvider, newElement, mmChild, usedIdSet, usingLegacyContentFilters);
 	}
 
 	private static Point convertPoint(final org.osate.ge.diagram.Point mmPoint) {
@@ -292,10 +332,9 @@ public class DiagramSerialization {
 		}
 
 		newElement.setBo(e.getRelativeReference() == null ? null : e.getRelativeReference().toMetamodel());
-		// TODO
-//		if (e.getAutoContentsFilter() != null) {
-//			newElement.setAutoContentsFilter(e.getAutoContentsFilter().id());
-//		}
+		for (final ContentFilter contentFilter : e.getContentFilters()) {
+			newElement.getContentFilters().add(contentFilter.getId());
+		}
 
 		if (e.isManual()) {
 			newElement.setManual(true);

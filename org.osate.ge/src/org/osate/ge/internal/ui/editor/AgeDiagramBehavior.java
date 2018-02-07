@@ -23,6 +23,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.e4.core.contexts.ContextInjectionFactory;
+import org.eclipse.e4.core.contexts.EclipseContextFactory;
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.common.util.URI;
@@ -104,10 +105,13 @@ import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram;
 import org.osate.ge.internal.graphiti.features.EmfCommandCustomFeature;
 import org.osate.ge.internal.services.ColoringService;
 import org.osate.ge.internal.services.DiagramService;
+import org.osate.ge.internal.services.ExtensionRegistryService;
 import org.osate.ge.internal.services.ExtensionService;
 import org.osate.ge.internal.services.ModelChangeNotifier;
 import org.osate.ge.internal.services.ModelChangeNotifier.ChangeListener;
 import org.osate.ge.internal.ui.util.SelectionUtil;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 
 @SuppressWarnings("restriction")
 public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDiagramProvider {
@@ -862,12 +866,19 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 			public Diagram loadDiagram(final URI uri) {
 				updateProjectByUri(uri);
 				final org.osate.ge.diagram.Diagram mmDiagram = DiagramSerialization.readMetaModelDiagram(uri);
-				ageDiagram = DiagramSerialization.createAgeDiagram(mmDiagram);
+				final Bundle bundle = FrameworkUtil.getBundle(getClass());
+				final ExtensionRegistryService extRegistry = Objects.requireNonNull(EclipseContextFactory
+						.getServiceContext(bundle.getBundleContext()).get(ExtensionRegistryService.class),
+						"Unable to retrieve extension registry");
+
+				ageDiagram = DiagramSerialization.createAgeDiagram(mmDiagram, extRegistry);
 				ageDiagram.addModificationListener(ageDiagramModificationListener);
 
 				// Display warning if the diagram is stored with a newer version of the diagram file format.
 				if(mmDiagram.getFormatVersion() > DiagramSerialization.FORMAT_VERSION) {
-					MessageDialog.openWarning(Display.getCurrent().getActiveShell(), "Diagram Created with Newer Version of OSATE", "The diagram '" + uri.lastSegment() + "' was created with a newer version of the OSATE. Saving the diagram with the running version of OSATE may result in the loss of diagram information.");
+					MessageDialog.openWarning(Display.getCurrent().getActiveShell(),
+							"Diagram Created with Newer Version of OSATE", "The diagram '" + uri.lastSegment()
+									+ "' was created with a newer version of the OSATE. The diagram may not be correctly displayed. Saving the diagram with the running version of OSATE may result in the loss of diagram information.");
 				}
 
 				// Create an empty Graphiti diagram. It will be updated after in initDiagramTypeProvider() after the diagram type provider is initialized and

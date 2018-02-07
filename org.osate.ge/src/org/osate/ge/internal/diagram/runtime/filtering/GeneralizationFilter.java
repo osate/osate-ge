@@ -2,7 +2,6 @@ package org.osate.ge.internal.diagram.runtime.filtering;
 
 import org.osate.aadl2.Classifier;
 import org.osate.aadl2.Generalization;
-import org.osate.ge.BusinessObjectContext;
 
 public class GeneralizationFilter implements ContentFilter {
 	public static final String ID = "generalizations";
@@ -18,8 +17,8 @@ public class GeneralizationFilter implements ContentFilter {
 	}
 
 	@Override
-	public boolean isApplicable(final BusinessObjectContext boc) {
-		return boc.getBusinessObject() instanceof Classifier;
+	public boolean isApplicable(final Object bo) {
+		return bo instanceof Classifier;
 	}
 
 	@Override

@@ -4,7 +4,6 @@ import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.InternalFeature;
 import org.osate.aadl2.ProcessorFeature;
 import org.osate.aadl2.Subcomponent;
-import org.osate.ge.BusinessObjectContext;
 
 public class ImplementationFeatureFilter implements ContentFilter {
 	public static final String ID = "implementationFeatures";
@@ -20,9 +19,8 @@ public class ImplementationFeatureFilter implements ContentFilter {
 	}
 
 	@Override
-	public boolean isApplicable(final BusinessObjectContext boc) {
-		return boc.getBusinessObject() instanceof ComponentImplementation
-				|| boc.getBusinessObject() instanceof Subcomponent;
+	public boolean isApplicable(final Object bo) {
+		return bo instanceof ComponentImplementation || bo instanceof Subcomponent;
 	}
 
 	@Override

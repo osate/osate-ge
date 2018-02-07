@@ -2,6 +2,8 @@ package org.osate.ge.internal.diagram.runtime.types;
 
 import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.Classifier;
+import org.osate.aadl2.ModeTransition;
+import org.osate.ge.internal.diagram.runtime.filtering.ModeTransitionTriggerNameFilter;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;
@@ -11,6 +13,9 @@ import com.google.common.collect.ImmutableSet;
  *
  */
 public class CustomDiagramType implements DiagramType {
+	private final ImmutableSet<String> modeTransitionDefaultFilters = ImmutableSet
+			.of(ModeTransitionTriggerNameFilter.ID);
+
 	@Override
 	public String getName() {
 		return "Custom";
@@ -21,16 +26,14 @@ public class CustomDiagramType implements DiagramType {
 		return contextBo instanceof AadlPackage || contextBo instanceof Classifier;
 	}
 
-	/*
-	 * @Override
-	 * public ContentsFilter getDefaultAutoContentsFilter(Object bo) {
-	 * if (bo instanceof Subcomponent || bo instanceof ModeTransition) {
-	 * return BuiltinContentsFilter.ALLOW_TYPE;
-	 * }
-	 *
-	 * return BuiltinContentsFilter.ALLOW_FUNDAMENTAL;
-	 * }
-	 */
+	@Override
+	public ImmutableSet<String> getDefaultContentFilters(final Object bo) {
+		if (bo instanceof ModeTransition) {
+			return modeTransitionDefaultFilters;
+		}
+
+		return ImmutableSet.of();
+	}
 
 	@Override
 	public ImmutableCollection<String> getDefaultAadlPropertyNames() {

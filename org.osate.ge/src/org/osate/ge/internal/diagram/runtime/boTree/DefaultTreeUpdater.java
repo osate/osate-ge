@@ -333,11 +333,9 @@ public class DefaultTreeUpdater implements TreeUpdater {
 		final BusinessObjectNode oldNode = oldNodeMap.get(relReference);
 
 		// Create the node
-		// TODO: Set the default content filters based on the diagram type
-		// TODO: Handle fundamental business objects
 		final ImmutableSet<ContentFilter> contentFilters = oldNode == null || oldNode.getContentFilters() == null
-				? ImmutableSet.of()
-						/* diagramType.getDefaultAutoContentsFilter(bo) */ : oldNode.getContentFilters();
+				? getDefaultContentFilters(diagramType, bo)
+						: oldNode.getContentFilters();
 				final long id = oldNode == null || oldNode.getId() == null ? idGenerator.getNext() : oldNode.getId();
 				final BusinessObjectNode newNode = nodeFactory.create(parentNode, id, bo,
 						oldNode == null ? false : oldNode.isManual(), contentFilters, Completeness.UNKNOWN);
@@ -356,6 +354,9 @@ public class DefaultTreeUpdater implements TreeUpdater {
 						createNodes(diagramType, bopHelper, childBoMap, childOldNodes, newNode, idGenerator, manualBranchCache);
 	}
 
+	private ImmutableSet<ContentFilter> getDefaultContentFilters(final DiagramType diagramType, final Object bo) {
+		return diagramType.getApplicableDefaultContentFilters(bo, extService);
+	}
 	/**
 	 * Returns a set of relative references for all nodes in the specified nodes map which belong to a manual branch.
 	 * @param nodes

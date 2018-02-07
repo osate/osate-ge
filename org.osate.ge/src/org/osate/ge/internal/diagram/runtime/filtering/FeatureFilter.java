@@ -4,7 +4,6 @@ import org.osate.aadl2.Classifier;
 import org.osate.aadl2.Feature;
 import org.osate.aadl2.FeatureGroup;
 import org.osate.aadl2.Subcomponent;
-import org.osate.ge.BusinessObjectContext;
 
 public class FeatureFilter implements ContentFilter {
 	public static final String ID = "typeFeatures";
@@ -20,9 +19,9 @@ public class FeatureFilter implements ContentFilter {
 	}
 
 	@Override
-	public boolean isApplicable(final BusinessObjectContext boc) {
-		return boc.getBusinessObject() instanceof Classifier || boc.getBusinessObject() instanceof Subcomponent
-				|| boc.getBusinessObject() instanceof FeatureGroup;
+	public boolean isApplicable(final Object bo) {
+		return bo instanceof Classifier || bo instanceof Subcomponent
+				|| bo instanceof FeatureGroup;
 	}
 
 	@Override

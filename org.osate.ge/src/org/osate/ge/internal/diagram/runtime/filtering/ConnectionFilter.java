@@ -3,7 +3,6 @@ package org.osate.ge.internal.diagram.runtime.filtering;
 import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.Connection;
 import org.osate.aadl2.Subcomponent;
-import org.osate.ge.BusinessObjectContext;
 
 public class ConnectionFilter implements ContentFilter {
 	public static final String ID = "connections";
@@ -19,9 +18,8 @@ public class ConnectionFilter implements ContentFilter {
 	}
 
 	@Override
-	public boolean isApplicable(final BusinessObjectContext boc) {
-		return boc.getBusinessObject() instanceof ComponentImplementation
-				|| boc.getBusinessObject() instanceof Subcomponent;
+	public boolean isApplicable(final Object bo) {
+		return bo instanceof ComponentImplementation || bo instanceof Subcomponent;
 	}
 
 	@Override

@@ -36,7 +36,7 @@ public class BusinessObjectNode implements BusinessObjectContext {
 		this.relativeReference = relativeReference;
 		this.bo = bo;
 		this.manual = manual;
-		this.contentFilters = Objects.requireNonNull(contentFilters, "contentFilters must not be null");
+		this.contentFilters = contentFilters;
 		this.completeness = Objects.requireNonNull(completeness, "completeness must not be null");
 
 		if(parent != null) {

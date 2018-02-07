@@ -73,7 +73,7 @@ public class ToggleContentFilterHandler extends AbstractHandler implements IElem
 		diagram.modify(modLabel, m -> {
 			// Update the content filters of each element for which the content filter is applicable
 			for (final DiagramElement e : selectedDiagramElements) {
-				if (filter.isApplicable(e)) {
+				if (filter.isApplicable(e.getBusinessObject())) {
 					final Set<ContentFilter> newContentFilters = new HashSet<>(e.getContentFilters());
 					if (addFilter) {
 						newContentFilters.add(filter);

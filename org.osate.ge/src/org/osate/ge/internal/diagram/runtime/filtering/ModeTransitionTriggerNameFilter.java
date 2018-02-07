@@ -1,7 +1,6 @@
 package org.osate.ge.internal.diagram.runtime.filtering;
 
 import org.osate.aadl2.ModeTransition;
-import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.internal.model.Tag;
 
 public class ModeTransitionTriggerNameFilter implements ContentFilter {
@@ -18,8 +17,8 @@ public class ModeTransitionTriggerNameFilter implements ContentFilter {
 	}
 
 	@Override
-	public boolean isApplicable(final BusinessObjectContext boc) {
-		return boc.getBusinessObject() instanceof ModeTransition;
+	public boolean isApplicable(final Object bo) {
+		return bo instanceof ModeTransition;
 	}
 
 	@Override

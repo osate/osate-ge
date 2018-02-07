@@ -260,7 +260,8 @@ public class DefaultDiagramService implements DiagramService {
 		diagram.modify("Configure Diagram", m -> {
 			m.setDiagramConfiguration(
 					new DiagramConfigurationBuilder(new CustomDiagramType(), true)
-					.setContextBoReference(contextBoCanonicalRef).build());
+							.setContextBoReference(contextBoCanonicalRef).connectionPrimaryLabelsVisible(false)
+							.build());
 		});
 
 		// Create a root diagram element for the context which will be set to manual.
