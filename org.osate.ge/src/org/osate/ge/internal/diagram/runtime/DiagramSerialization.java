@@ -23,6 +23,8 @@ import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
 import org.osate.ge.internal.diagram.runtime.filtering.ContentFilterProvider;
 import org.osate.ge.internal.diagram.runtime.filtering.LegacyContentFilterMapping;
 import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
+import org.osate.ge.internal.diagram.runtime.types.DiagramType;
+import org.osate.ge.internal.diagram.runtime.types.UnrecognizedDiagramType;
 import org.osate.ge.internal.services.ExtensionRegistryService;
 import org.osate.ge.internal.services.impl.DeclarativeReferenceType;
 
@@ -66,8 +68,16 @@ public class DiagramSerialization {
 		final AgeDiagram ageDiagram = new AgeDiagram(getMaxIdForChildren(mmDiagram) + 1);
 
 		// Read the diagram configuration
-		// TODO: Set the diagram type based on the file.
-		final DiagramConfigurationBuilder configBuilder = new DiagramConfigurationBuilder(new CustomDiagramType(),
+
+		// Set the diagram type
+		final DiagramType diagramType;
+		final String diagramTypeId = mmDiagram.getConfig() == null || mmDiagram.getConfig().getType() == null
+				? CustomDiagramType.ID
+						: mmDiagram.getConfig().getType();
+		diagramType = extRegistry.getDiagramTypeById(diagramTypeId)
+				.orElseGet(() -> new UnrecognizedDiagramType(diagramTypeId));
+
+		final DiagramConfigurationBuilder configBuilder = new DiagramConfigurationBuilder(diagramType,
 				false);
 
 		if (mmDiagram.getConfig() != null) {
@@ -279,6 +289,7 @@ public class DiagramSerialization {
 
 		// Populate the diagram configuration
 		final DiagramConfiguration config = diagram.getConfiguration();
+		mmConfig.setType(config.getDiagramType().getId());
 		mmConfig.setContext(
 				config.getContextBoReference() == null ? null : config.getContextBoReference().toMetamodel());
 

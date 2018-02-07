@@ -47,6 +47,7 @@ import org.osate.ge.Categories;
 import org.osate.ge.di.IsApplicable;
 import org.osate.ge.di.Names;
 import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.types.DiagramType;
 import org.osate.ge.internal.services.ExtensionRegistryService;
 
 import com.google.common.collect.ImmutableCollection;
@@ -85,20 +86,27 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 	private static final String CATEGORIES_EXTENSION_POINT_ID = "org.osate.ge.categories";
 	private static final String BUSINESS_OBJECT_PROVIDERS_EXTENSION_POINT_ID = "org.osate.ge.businessObjectProviders";
 	private static final String CONTENT_FILTERS_EXTENSION_POINT_ID = "org.osate.ge.contentFilters";
+	private static final String DIAGRAM_TYPES_EXTENSION_POINT_ID = "org.osate.ge.diagramTypes";
 
-	private final Collection<Object> boHandlers;
-	private final List<Category> categories;
-	private final Collection<Object> tooltipContributors;
-	private final Collection<Object> businessObjectProviders;
+	private final ImmutableCollection<Object> boHandlers;
+	private final ImmutableList<Category> categories;
+	private final ImmutableCollection<Object> tooltipContributors;
+	private final ImmutableCollection<Object> businessObjectProviders;
 	private final ImmutableCollection<ContentFilter> contentFilters;
+	private final ImmutableCollection<DiagramType> diagramTypes;
 
 	public DefaultExtensionRegistryService() {
 		final IExtensionRegistry registry = Platform.getExtensionRegistry();
-		boHandlers = instantiateBusinessObjectHandlers(registry);
-		tooltipContributors = instantiateTooltipContributors(registry);
+		boHandlers = instantiatePrioritizedExtensions(registry, BUSINESS_OBJECT_HANDLERS_EXTENSION_POINT_ID, "handler");
+		tooltipContributors = instantiatePrioritizedExtensions(registry, TOOLTIP_EXTENSION_POINT_ID,
+				"tooltipContributor");
 		categories = instantiateCategories(registry);
-		businessObjectProviders = instantiateBusinessObjectProviders(registry);
-		contentFilters = instantiateContentFilters(registry);
+		businessObjectProviders = instantiateSimpleExtensions(registry, BUSINESS_OBJECT_PROVIDERS_EXTENSION_POINT_ID,
+				"provider");
+		contentFilters = instantiateSimpleExtensions(registry, CONTENT_FILTERS_EXTENSION_POINT_ID, "contentFilter",
+				ContentFilter.class);
+		diagramTypes = instantiateSimpleExtensions(registry, DIAGRAM_TYPES_EXTENSION_POINT_ID, "diagramType",
+				DiagramType.class);
 	}
 
 	@Override
@@ -149,21 +157,9 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 		return contentFilters;
 	}
 
-	private static ImmutableCollection<Object> instantiateBusinessObjectHandlers(final IExtensionRegistry registry) {
-		return instantiatePrioritizedExtensions(registry, BUSINESS_OBJECT_HANDLERS_EXTENSION_POINT_ID, "handler");
-	}
-
-	private static ImmutableCollection<Object> instantiateBusinessObjectProviders(final IExtensionRegistry registry) {
-		return instantiateSimpleExtensions(registry, BUSINESS_OBJECT_PROVIDERS_EXTENSION_POINT_ID, "provider");
-	}
-
-	private static ImmutableCollection<Object> instantiateTooltipContributors(final IExtensionRegistry registry) {
-		return instantiatePrioritizedExtensions(registry, TOOLTIP_EXTENSION_POINT_ID, "tooltipContributor");
-	}
-
-	private static ImmutableCollection<ContentFilter> instantiateContentFilters(final IExtensionRegistry registry) {
-		return instantiateSimpleExtensions(registry, CONTENT_FILTERS_EXTENSION_POINT_ID, "contentFilter",
-				ContentFilter.class);
+	@Override
+	public ImmutableCollection<DiagramType> getDiagramTypes() {
+		return diagramTypes;
 	}
 
 	// Returns an immutable collection containing the objects created by instantiating class referenced by the "class" attribute of all configuration elements

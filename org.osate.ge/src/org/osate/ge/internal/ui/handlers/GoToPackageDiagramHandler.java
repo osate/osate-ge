@@ -24,7 +24,7 @@ public class GoToPackageDiagramHandler extends AbstractHandler {
 				.getSelectedDiagramElementsFromContext(evaluationContext);
 		if (selectedDiagramElements.size() == 1) {
 			final Object selectedBo = selectedDiagramElements.get(0).getBusinessObject();
-			enabled = getPackage(selectedBo) != null;
+			enabled = !(selectedBo instanceof AadlPackage) && getPackage(selectedBo) != null;
 		}
 
 		setBaseEnabled(enabled);

@@ -64,6 +64,7 @@
   <eClassifiers xsi:type="ecore:EClass" name="CanonicalBusinessObjectReference" eSuperTypes="#//Reference"/>
   <eClassifiers xsi:type="ecore:EClass" name="RelativeBusinessObjectReference" eSuperTypes="#//Reference"/>
   <eClassifiers xsi:type="ecore:EClass" name="DiagramConfiguration">
+    <eStructuralFeatures xsi:type="ecore:EAttribute" name="type" eType="ecore:EDataType http://www.eclipse.org/emf/2003/XMLType#//String"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="enabledAadlProperties"
         eType="#//AadlPropertiesSet" containment="true"/>
     <eStructuralFeatures xsi:type="ecore:EReference" name="context" eType="#//CanonicalBusinessObjectReference"

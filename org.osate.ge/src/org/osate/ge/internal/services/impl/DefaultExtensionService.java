@@ -34,6 +34,7 @@ import java.util.List;
 
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
+import org.osate.ge.internal.diagram.runtime.types.DiagramType;
 import org.osate.ge.internal.services.ExtensionRegistryService;
 import org.osate.ge.internal.services.ExtensionService;
 
@@ -82,5 +83,10 @@ public class DefaultExtensionService implements ExtensionService {
 	@Override
 	public ImmutableCollection<ContentFilter> getContentFilters() {
 		return globalExtService.getContentFilters();
+	}
+
+	@Override
+	public ImmutableCollection<DiagramType> getDiagramTypes() {
+		return globalExtService.getDiagramTypes();
 	}
 }

@@ -39,6 +39,10 @@ public class DiagramConfigurationBuilder {
 		this.connectionPrimaryLabelsVisible = config.getConnectionPrimaryLabelsVisible();
 	}
 
+	public DiagramType getDiagramType() {
+		return this.diagramType;
+	}
+
 	public CanonicalBusinessObjectReference getContextBoReference() {
 		return this.contextBoReference;
 	}

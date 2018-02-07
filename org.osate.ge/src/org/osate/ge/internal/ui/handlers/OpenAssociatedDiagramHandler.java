@@ -9,6 +9,7 @@ import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.runtime.Adapters;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.handlers.HandlerUtil;
+import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.Classifier;
 import org.osate.aadl2.ComponentClassifier;
 import org.osate.aadl2.Subcomponent;
@@ -26,7 +27,7 @@ public class OpenAssociatedDiagramHandler extends AbstractHandler {
 		if (selectedDiagramElements.size() == 1) {
 			final DiagramElement selectedElement = selectedDiagramElements.get(0);
 			final Object bo = selectedElement.getBusinessObject();
-			enabled = bo instanceof Classifier || (bo instanceof Subcomponent
+			enabled = bo instanceof AadlPackage || bo instanceof Classifier || (bo instanceof Subcomponent
 					&& AadlSubcomponentUtil.getComponentClassifier(selectedElement, (Subcomponent) bo) != null);
 		}
 
@@ -52,7 +53,7 @@ public class OpenAssociatedDiagramHandler extends AbstractHandler {
 		final DiagramService diagramService = Objects.requireNonNull(Adapters.adapt(activeEditor, DiagramService.class),
 				"Unable to retrieve diagram service");
 
-		if (bo instanceof Classifier) {
+		if (bo instanceof AadlPackage || bo instanceof Classifier) {
 			diagramService.openOrCreateDiagramForBusinessObject(bo);
 		} else if (bo instanceof Subcomponent) {
 			final ComponentClassifier cc = AadlSubcomponentUtil.getComponentClassifier(selectedElement,

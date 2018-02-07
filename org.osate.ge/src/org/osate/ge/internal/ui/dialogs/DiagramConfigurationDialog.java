@@ -133,6 +133,11 @@ public class DiagramConfigurationDialog {
 			container.setLayoutData(GridDataFactory.fillDefaults().grab(true, true).create());
 			container.setLayout(GridLayoutFactory.swtDefaults().numColumns(2).create());
 
+			// Diagram Type
+			final Label diagramTypeLabel = new Label(container, SWT.NONE);
+			diagramTypeLabel.setText("Diagram Type: " + diagramConfigBuilder.getDiagramType().getName());
+			diagramTypeLabel.setLayoutData(GridDataFactory.swtDefaults().span(2, 1).create());
+
 			// Context Business Object
 			final Label contextBoLabel = new Label(container, SWT.NONE);
 			final String contextBoDesc;

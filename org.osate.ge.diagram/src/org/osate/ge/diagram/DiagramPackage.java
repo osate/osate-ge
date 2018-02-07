@@ -630,13 +630,22 @@ public class DiagramPackage extends EPackageImpl {
 	public static final int RELATIVE_BUSINESS_OBJECT_REFERENCE_OPERATION_COUNT = REFERENCE_OPERATION_COUNT + 0;
 
 	/**
+	 * The feature id for the '<em><b>Type</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	public static final int DIAGRAM_CONFIGURATION__TYPE = 0;
+
+	/**
 	 * The feature id for the '<em><b>Enabled Aadl Properties</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	public static final int DIAGRAM_CONFIGURATION__ENABLED_AADL_PROPERTIES = 0;
+	public static final int DIAGRAM_CONFIGURATION__ENABLED_AADL_PROPERTIES = 1;
 
 	/**
 	 * The feature id for the '<em><b>Context</b></em>' containment reference.
@@ -645,7 +654,7 @@ public class DiagramPackage extends EPackageImpl {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int DIAGRAM_CONFIGURATION__CONTEXT = 1;
+	public static final int DIAGRAM_CONFIGURATION__CONTEXT = 2;
 
 	/**
 	 * The feature id for the '<em><b>Connection Primary Labels Visible</b></em>' attribute.
@@ -654,7 +663,7 @@ public class DiagramPackage extends EPackageImpl {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int DIAGRAM_CONFIGURATION__CONNECTION_PRIMARY_LABELS_VISIBLE = 2;
+	public static final int DIAGRAM_CONFIGURATION__CONNECTION_PRIMARY_LABELS_VISIBLE = 3;
 
 	/**
 	 * The number of structural features of the '<em>Configuration</em>' class.
@@ -663,7 +672,7 @@ public class DiagramPackage extends EPackageImpl {
 	 * @generated
 	 * @ordered
 	 */
-	public static final int DIAGRAM_CONFIGURATION_FEATURE_COUNT = 3;
+	public static final int DIAGRAM_CONFIGURATION_FEATURE_COUNT = 4;
 
 	/**
 	 * The number of operations of the '<em>Configuration</em>' class.
@@ -1287,7 +1296,7 @@ public class DiagramPackage extends EPackageImpl {
 	 * @generated
 	 */
 	public EReference getDiagramConfiguration_EnabledAadlProperties() {
-		return (EReference)diagramConfigurationEClass.getEStructuralFeatures().get(0);
+		return (EReference)diagramConfigurationEClass.getEStructuralFeatures().get(1);
 	}
 
 	/**
@@ -1300,7 +1309,7 @@ public class DiagramPackage extends EPackageImpl {
 	 * @generated
 	 */
 	public EReference getDiagramConfiguration_Context() {
-		return (EReference)diagramConfigurationEClass.getEStructuralFeatures().get(1);
+		return (EReference)diagramConfigurationEClass.getEStructuralFeatures().get(2);
 	}
 
 	/**
@@ -1313,7 +1322,21 @@ public class DiagramPackage extends EPackageImpl {
 	 * @generated
 	 */
 	public EAttribute getDiagramConfiguration_ConnectionPrimaryLabelsVisible() {
-		return (EAttribute)diagramConfigurationEClass.getEStructuralFeatures().get(2);
+		return (EAttribute)diagramConfigurationEClass.getEStructuralFeatures().get(3);
+	}
+
+
+	/**
+	 * Returns the meta object for the attribute '{@link org.osate.ge.diagram.DiagramConfiguration#getType <em>Type</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Type</em>'.
+	 * @see org.osate.ge.diagram.DiagramConfiguration#getType()
+	 * @see #getDiagramConfiguration()
+	 * @generated
+	 */
+	public EAttribute getDiagramConfiguration_Type() {
+		return (EAttribute)diagramConfigurationEClass.getEStructuralFeatures().get(0);
 	}
 
 
@@ -1430,6 +1453,7 @@ public class DiagramPackage extends EPackageImpl {
 		relativeBusinessObjectReferenceEClass = createEClass(RELATIVE_BUSINESS_OBJECT_REFERENCE);
 
 		diagramConfigurationEClass = createEClass(DIAGRAM_CONFIGURATION);
+		createEAttribute(diagramConfigurationEClass, DIAGRAM_CONFIGURATION__TYPE);
 		createEReference(diagramConfigurationEClass, DIAGRAM_CONFIGURATION__ENABLED_AADL_PROPERTIES);
 		createEReference(diagramConfigurationEClass, DIAGRAM_CONFIGURATION__CONTEXT);
 		createEAttribute(diagramConfigurationEClass, DIAGRAM_CONFIGURATION__CONNECTION_PRIMARY_LABELS_VISIBLE);
@@ -1522,6 +1546,7 @@ public class DiagramPackage extends EPackageImpl {
 		initEClass(relativeBusinessObjectReferenceEClass, RelativeBusinessObjectReference.class, "RelativeBusinessObjectReference", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 
 		initEClass(diagramConfigurationEClass, DiagramConfiguration.class, "DiagramConfiguration", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getDiagramConfiguration_Type(), theXMLTypePackage.getString(), "type", null, 0, 1, DiagramConfiguration.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDiagramConfiguration_EnabledAadlProperties(), this.getAadlPropertiesSet(), null, "enabledAadlProperties", null, 0, 1, DiagramConfiguration.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDiagramConfiguration_Context(), this.getCanonicalBusinessObjectReference(), null, "context", null, 0, 1, DiagramConfiguration.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDiagramConfiguration_ConnectionPrimaryLabelsVisible(), ecorePackage.getEBooleanObject(), "connectionPrimaryLabelsVisible", null, 0, 1, DiagramConfiguration.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1873,6 +1898,14 @@ public class DiagramPackage extends EPackageImpl {
 		 * @generated
 		 */
 		public static final EAttribute DIAGRAM_CONFIGURATION__CONNECTION_PRIMARY_LABELS_VISIBLE = eINSTANCE.getDiagramConfiguration_ConnectionPrimaryLabelsVisible();
+
+		/**
+		 * The meta object literal for the '<em><b>Type</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		public static final EAttribute DIAGRAM_CONFIGURATION__TYPE = eINSTANCE.getDiagramConfiguration_Type();
 
 		/**
 		 * The meta object literal for the '{@link org.osate.ge.diagram.Reference <em>Reference</em>}' class.

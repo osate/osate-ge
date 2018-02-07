@@ -13,12 +13,25 @@ import com.google.common.collect.ImmutableSet;
  *
  */
 public class CustomDiagramType implements DiagramType {
+	public static final String ID = "custom";
+
 	private final ImmutableSet<String> modeTransitionDefaultFilters = ImmutableSet
 			.of(ModeTransitionTriggerNameFilter.ID);
 
 	@Override
+	public String getId() {
+		return ID;
+	}
+
+	@Override
 	public String getName() {
-		return "Custom";
+		return "Custom Diagram";
+	}
+
+	@Override
+	public String getDescription() {
+		// TODO
+		return "Custom diagram";
 	}
 
 	@Override

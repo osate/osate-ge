@@ -34,8 +34,10 @@ import java.util.List;
 
 import org.osate.ge.internal.businessObjectHandlers.BusinessObjectHandlerProvider;
 import org.osate.ge.internal.diagram.runtime.filtering.ContentFilterProvider;
+import org.osate.ge.internal.diagram.runtime.types.DiagramTypeProvider;
 
-public interface ExtensionRegistryService extends BusinessObjectHandlerProvider, ContentFilterProvider {
+public interface ExtensionRegistryService
+		extends BusinessObjectHandlerProvider, ContentFilterProvider, DiagramTypeProvider {
 	/**
 	 * Business object handlers are extension which provide
 	 */

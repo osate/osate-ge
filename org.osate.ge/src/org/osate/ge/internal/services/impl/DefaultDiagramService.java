@@ -49,6 +49,7 @@ import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.DiagramSerialization;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
 import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
+import org.osate.ge.internal.diagram.runtime.types.UnrecognizedDiagramType;
 import org.osate.ge.internal.indexing.SavedDiagramIndex;
 import org.osate.ge.internal.indexing.SavedDiagramIndexInvalidator;
 import org.osate.ge.internal.services.DiagramService;
@@ -92,11 +93,14 @@ public class DefaultDiagramService implements DiagramService {
 	private static class InternalDiagramReference implements DiagramReference {
 		private final IFile fileResource;
 		private final AgeDiagramEditor editor;
+		private final String diagramTypeId;
 
 		private InternalDiagramReference(final IFile file,
-				final AgeDiagramEditor editor) {
+				final AgeDiagramEditor editor,
+				final String diagramTypeId) {
 			this.fileResource = Objects.requireNonNull(file, "file must not be null");
 			this.editor = editor;
+			this.diagramTypeId = Objects.requireNonNull(diagramTypeId, "diagramTypeId must not be null");
 		}
 
 		public IFile getFile() {
@@ -164,7 +168,8 @@ public class DefaultDiagramService implements DiagramService {
 
 		// Add saved diagram files if they are not open
 		return savedDiagramIndex.getDiagramsByContext(relevantProjects.stream(), boReference).stream()
-				.map(e -> new InternalDiagramReference(e.diagramFile, fileToEditorMap.get(e.diagramFile)))
+				.map(e -> new InternalDiagramReference(e.diagramFile, fileToEditorMap.get(e.diagramFile),
+						e.diagramTypeId))
 				.
 				collect(Collectors.toList());
 	}
@@ -215,7 +220,9 @@ public class DefaultDiagramService implements DiagramService {
 			public String getText(final Object element) {
 				if(element instanceof InternalDiagramReference) {
 					final InternalDiagramReference diagramRef = (InternalDiagramReference)element;
-					return getName(diagramRef.getFile());
+					final String diagramTypeName = extRegistry.getDiagramTypeById(diagramRef.diagramTypeId)
+							.orElseGet(() -> new UnrecognizedDiagramType(diagramRef.diagramTypeId)).getName();
+					return getName(diagramRef.getFile()) + " (" + diagramTypeName + ")";
 				}
 
 				return super.getText(element);
@@ -260,8 +267,8 @@ public class DefaultDiagramService implements DiagramService {
 		diagram.modify("Configure Diagram", m -> {
 			m.setDiagramConfiguration(
 					new DiagramConfigurationBuilder(new CustomDiagramType(), true)
-							.setContextBoReference(contextBoCanonicalRef).connectionPrimaryLabelsVisible(false)
-							.build());
+					.setContextBoReference(contextBoCanonicalRef).connectionPrimaryLabelsVisible(false)
+					.build());
 		});
 
 		// Create a root diagram element for the context which will be set to manual.
@@ -301,7 +308,8 @@ public class DefaultDiagramService implements DiagramService {
 
 		// Add saved diagram files if they are not open
 		return savedDiagramIndex.getDiagramsByProject(projects.stream()).
-				stream().map(e -> new InternalDiagramReference(e.diagramFile, fileToEditorMap.get(e.diagramFile)))
+				stream().map(e -> new InternalDiagramReference(e.diagramFile, fileToEditorMap.get(e.diagramFile),
+						e.diagramTypeId))
 				.
 				collect(Collectors.toList());
 	}

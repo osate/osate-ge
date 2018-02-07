@@ -8,10 +8,22 @@ import com.google.common.collect.ImmutableSet;
 
 public interface DiagramType {
 	/**
+	 * Returns a unique identifier for the diagram type.
+	 * @return
+	 */
+	String getId();
+
+	/**
 	 * Returns the UI friendly name for the diagram type.
 	 * @return
 	 */
 	String getName();
+
+	/**
+	 * Returns a string that provides a text description of the diagram type for display to the user.
+	 * @return
+	 */
+	String getDescription();
 
 	/**
 	 * Returns whether the specified business object is a valid context for the diagram type.

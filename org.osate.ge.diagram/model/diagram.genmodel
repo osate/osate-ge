@@ -56,6 +56,7 @@
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference diagram.ecore#//DiagramConfiguration/enabledAadlProperties"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference diagram.ecore#//DiagramConfiguration/context"/>
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute diagram.ecore#//DiagramConfiguration/connectionPrimaryLabelsVisible"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute diagram.ecore#//DiagramConfiguration/type"/>
     </genClasses>
     <genClasses ecoreClass="diagram.ecore#//Reference">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute diagram.ecore#//Reference/seg"/>

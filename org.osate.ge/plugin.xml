@@ -8,6 +8,7 @@
    <extension-point id="org.osate.ge.businessObjectHandlers" name="Business Object Handlers" schema="schema/org.osate.ge.businessObjectHandlers.exsd"/>
    <extension-point id="org.osate.ge.businessObjectProviders" name="Business Object Providers" schema="schema/org.osate.ge.businessObjectProviders.exsd"/>
    <extension-point id="org.osate.ge.contentFilters" name="Content Filters" schema="schema/org.osate.ge.contentFilters.exsd"/>
+   <extension-point id="org.osate.ge.diagramTypes" name="Diagram Types" schema="schema/org.osate.ge.diagramTypes.exsd"/>
 	<extension point="org.eclipse.ui.commands">
     <category
           id="org.osate.ge.commands.categories.tool"
@@ -2208,5 +2209,11 @@
       <contentFilter
             class="org.osate.ge.internal.diagram.runtime.filtering.ImplementationFeatureFilter">
       </contentFilter>
+   </extension>
+   <extension
+         point="org.osate.ge.diagramTypes">
+      <diagramType
+            class="org.osate.ge.internal.diagram.runtime.types.CustomDiagramType">
+      </diagramType>
    </extension>
 </plugin>
