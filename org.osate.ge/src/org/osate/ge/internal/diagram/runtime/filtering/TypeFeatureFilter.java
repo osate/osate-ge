@@ -5,7 +5,7 @@ import org.osate.aadl2.Feature;
 import org.osate.aadl2.FeatureGroup;
 import org.osate.aadl2.Subcomponent;
 
-public class FeatureFilter implements ContentFilter {
+public class TypeFeatureFilter implements ContentFilter {
 	public static final String ID = "typeFeatures";
 
 	@Override

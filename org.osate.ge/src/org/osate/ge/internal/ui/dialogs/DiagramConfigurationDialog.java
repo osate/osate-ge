@@ -122,7 +122,7 @@ public class DiagramConfigurationDialog {
 			super.configureShell(newShell);
 			newShell.setText("Configure Diagram");
 			newShell.setMinimumSize(250, 400);
-			newShell.setSize(800, 550);
+			newShell.setSize(900, 550);
 		}
 
 		@Override
@@ -236,7 +236,7 @@ public class DiagramConfigurationDialog {
 			final CheckboxTableViewer contentFiltersViewer = CheckboxTableViewer
 					.newCheckList(modelElementSelectionGroup, SWT.BORDER);
 			contentFiltersViewer.getTable().setLayoutData(GridDataFactory.fillDefaults().grab(false, true).span(1, 1)
-					.minSize(SWT.DEFAULT, 100).hint(200, SWT.DEFAULT).create());
+					.minSize(SWT.DEFAULT, 100).hint(300, SWT.DEFAULT).create());
 			contentFiltersViewer.setComparator(new ViewerComparator());
 			contentFiltersViewer.setContentProvider(new ArrayContentProvider());
 

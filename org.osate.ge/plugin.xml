@@ -2168,7 +2168,7 @@
             class="org.osate.ge.internal.diagram.runtime.filtering.CalledSubprogramFilter">
       </contentFilter>
       <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.FeatureFilter">
+            class="org.osate.ge.internal.diagram.runtime.filtering.TypeFeatureFilter">
       </contentFilter>
       <contentFilter
             class="org.osate.ge.internal.diagram.runtime.filtering.ModeTransitionTriggerNameFilter">
@@ -2209,11 +2209,65 @@
       <contentFilter
             class="org.osate.ge.internal.diagram.runtime.filtering.ImplementationFeatureFilter">
       </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:abstract">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:bus">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:data">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:device">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:memory">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:process">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:processor">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:subprogram">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:subprogram group">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:system">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:thread">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:thread group">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:virtual bus">
+      </contentFilter>
+      <contentFilter
+            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:virtual processor">
+      </contentFilter>
    </extension>
    <extension
          point="org.osate.ge.diagramTypes">
       <diagramType
             class="org.osate.ge.internal.diagram.runtime.types.CustomDiagramType">
+      </diagramType>
+      <diagramType
+            class="org.osate.ge.internal.diagram.runtime.types.PackageDiagramType">
+      </diagramType>
+      <diagramType
+            class="org.osate.ge.internal.diagram.runtime.types.StructureDiagramType">
+      </diagramType>
+      <diagramType
+            class="org.osate.ge.internal.diagram.runtime.types.ModeDiagramType">
+      </diagramType>
+      <diagramType
+            class="org.osate.ge.internal.diagram.runtime.types.ProcessorBindingDiagramType">
       </diagramType>
    </extension>
 </plugin>
