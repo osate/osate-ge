@@ -11,7 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.eclipse.core.resources.IResourceDelta;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.emf.common.command.AbstractCommand;
 import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.common.util.URI;
@@ -64,11 +68,14 @@ import org.osate.ge.internal.diagram.runtime.ElementRemovedEvent;
 import org.osate.ge.internal.diagram.runtime.ElementUpdatedEvent;
 import org.osate.ge.internal.diagram.runtime.ModificationsCompletedEvent;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
+import org.osate.ge.internal.diagram.runtime.layout.LayoutInfoProvider;
 import org.osate.ge.internal.diagram.runtime.styling.StyleCalculator;
 import org.osate.ge.internal.graphiti.AgeDiagramTypeProvider;
 import org.osate.ge.internal.graphiti.AnchorNames;
 import org.osate.ge.internal.graphiti.ShapeNames;
 import org.osate.ge.internal.graphiti.graphics.AgeGraphitiGraphicsUtil;
+
+import com.google.common.base.Strings;
 
 /**
  * Class that integrates AgeDiagram with Graphiti.
@@ -110,7 +117,8 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 	 * @param editingDomain is the editing domain to use to make modifications to the diagram. It must not contain any other diagrams.
 	 */
 	public GraphitiAgeDiagram(final AgeDiagram ageDiagram, final Diagram graphitiDiagram,
-			final EditingDomain editingDomain, final CommandExecutor cmdExecutor,
+			final EditingDomain editingDomain, final LayoutInfoProvider layoutInfoProvider,
+			final CommandExecutor cmdExecutor,
 			final ColoringProvider coloringProvider, final UpdaterListener updateListener) {
 		this.ageDiagram = Objects.requireNonNull(ageDiagram, "ageDiagram must not be null");
 		Objects.requireNonNull(editingDomain, "editingDomain must not be null");
@@ -132,7 +140,6 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		// A handler is not needed the resource's save() should not be called. The URI just serves as a unique identifier in the resource set.
 		final URI ignoredUri = URI.createHierarchicalURI("osate_ge_ignore", null, null,
 				new String[] { "internal.aadl_diagram" }, null, null);
-
 
 		// Create the diagram resource and add the diagram to it.
 		final Resource diagramResource = editingDomain.getResourceSet().createResource(ignoredUri);
@@ -156,6 +163,25 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 			@Override
 			public void redo() {
+			}
+		});
+
+		// Listen for resource change
+		final IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		workspace.addResourceChangeListener(event -> {
+			// Only update diagram if an image that is referenced by the diagram is modified/added/removed
+			for (final String image : ageDiagram.getAllDiagramNodes()
+					.filter(dn -> dn instanceof DiagramElement)
+					.map(dn -> ((DiagramElement) dn).getStyle().getImage())
+					.filter(image -> !Strings.isNullOrEmpty(image))
+					.collect(Collectors.toSet())) {
+				if (isResourceDeltaReferencedImage(event.getDelta(), image)) {
+					Display.getDefault().asyncExec(() -> {
+						ageDiagram.modify("Update on Resource Change", m -> createUpdateElementsFromAgeDiagram(m));
+					});
+
+					break;
+				}
 			}
 		});
 
@@ -211,6 +237,20 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 				});
 			}
 		});
+	}
+
+	private static boolean isResourceDeltaReferencedImage(IResourceDelta delta, final String image) {
+		if (delta.getFullPath().toOSString().equalsIgnoreCase(image)) {
+			return true;
+		}
+
+		for (final IResourceDelta childDelta : delta.getAffectedChildren()) {
+			if (isResourceDeltaReferencedImage(childDelta, image)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private void refreshOverrideForegroundColorMap() {

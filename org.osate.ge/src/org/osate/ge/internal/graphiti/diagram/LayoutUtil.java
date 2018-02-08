@@ -1,6 +1,6 @@
 package org.osate.ge.internal.graphiti.diagram;
 
-import java.net.URL;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.Text;
 import org.eclipse.graphiti.mm.algorithms.styles.Point;
@@ -27,7 +29,6 @@ import org.eclipse.jface.resource.LocalResourceManager;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.LabelPosition;
 import org.osate.ge.graphics.Style;
-import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.Label;
 import org.osate.ge.graphics.internal.Poly;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
@@ -41,7 +42,6 @@ import org.osate.ge.internal.graphiti.AnchorNames;
 import org.osate.ge.internal.graphiti.ImageGraphicsAlgorithmRendererFactory;
 import org.osate.ge.internal.graphiti.ShapeNames;
 import org.osate.ge.internal.graphiti.graphics.AgeGraphitiGraphicsUtil;
-import org.osate.ge.internal.util.PathUtil;
 
 import com.google.common.base.Strings;
 
@@ -176,339 +176,344 @@ public class LayoutUtil {
 		final LabelPosition horizontalLabelPositionFromStyle = element.getGraphicalConfiguration().style
 				.getHorizontalLabelPosition() == null ? Style.DEFAULT.getHorizontalLabelPosition()
 						: element.getGraphicalConfiguration().style.getHorizontalLabelPosition();
-				final LabelPosition verticalLabelPositionFromStyle = element.getGraphicalConfiguration().style
-						.getVerticalLabelPosition() == null ? Style.DEFAULT.getVerticalLabelPosition()
-								: element.getGraphicalConfiguration().style.getVerticalLabelPosition();
+		final LabelPosition verticalLabelPositionFromStyle = element.getGraphicalConfiguration().style
+				.getVerticalLabelPosition() == null ? Style.DEFAULT.getVerticalLabelPosition()
+						: element.getGraphicalConfiguration().style.getVerticalLabelPosition();
 
-						final GraphicsAlgorithm shapeGa = shape.getGraphicsAlgorithm();
-						shapeGa.setStyle(null); // Remove reference to Graphiti style.
+		final GraphicsAlgorithm shapeGa = shape.getGraphicsAlgorithm();
+		shapeGa.setStyle(null); // Remove reference to Graphiti style.
 
-						final Graphic gr = element.getGraphic();
+		final Graphic gr = element.getGraphic();
 
 // Determine the space needed for each area
-						final int dockedShapeOffset = AgeGraphitiGraphicsUtil.featureGroupDefaultSymbolWidth; // For now, only graphics which represent feature groups may have
+		final int dockedShapeOffset = AgeGraphitiGraphicsUtil.featureGroupDefaultSymbolWidth; // For now, only graphics which represent feature groups may have
 // shape docked at the GROUP dock area.
 
-						final LayoutMetrics lm = new LayoutMetrics();
+		final LayoutMetrics lm = new LayoutMetrics();
 
-						final Shape nameShape = getChildShapeByName(shape, ShapeNames.primaryLabelShapeName);
-						final DockArea shapeDockArea = getNonGroupDockArea(element);
+		final Shape nameShape = getChildShapeByName(shape, ShapeNames.primaryLabelShapeName);
+		final DockArea shapeDockArea = getNonGroupDockArea(element);
 
 // Build a list of all the labels. These labels will be positioned based on the name label configuration
-						final List<Shape> decorationShapes = new ArrayList<Shape>();
-						if (nameShape != null) {
-							decorationShapes.add(nameShape);
-						}
-						decorationShapes.addAll(getChildShapesByName(shape, ShapeNames.annotationShapeName));
+		final List<Shape> decorationShapes = new ArrayList<Shape>();
+		if (nameShape != null) {
+			decorationShapes.add(nameShape);
+		}
+		decorationShapes.addAll(getChildShapesByName(shape, ShapeNames.annotationShapeName));
 
 // Add decoration shapes to the list. Sort them by name so that labels will be ordered consistently.
-						element.getDiagramElements().stream().filter(childElement -> childElement.isDecoration()).sorted((ce1,
-								ce2) -> Strings.nullToEmpty(ce1.getName()).compareToIgnoreCase(Strings.nullToEmpty(ce2.getName())))
-						.forEachOrdered(childElement -> {
-							final PictogramElement decorationPictogramElement = diagramNodeProvider
-									.getPictogramElement(childElement);
-							if (decorationPictogramElement instanceof Shape) {
-								decorationShapes.add((Shape) decorationPictogramElement);
-							}
-						});
+		element.getDiagramElements().stream().filter(childElement -> childElement.isDecoration()).sorted((ce1,
+				ce2) -> Strings.nullToEmpty(ce1.getName()).compareToIgnoreCase(Strings.nullToEmpty(ce2.getName())))
+				.forEachOrdered(childElement -> {
+					final PictogramElement decorationPictogramElement = diagramNodeProvider
+							.getPictogramElement(childElement);
+					if (decorationPictogramElement instanceof Shape) {
+						decorationShapes.add((Shape) decorationPictogramElement);
+					}
+				});
 
 // Determine the size needs for the labels
-						int totalLabelsWidth = 0;
-						int totalLabelsHeight = 0;
-						for (final Shape labelShape : decorationShapes) {
-							totalLabelsWidth = Math.max(totalLabelsWidth, labelShape.getGraphicsAlgorithm().getWidth());
-							totalLabelsHeight += Math.max(0, labelShape.getGraphicsAlgorithm().getHeight());
-						}
+		int totalLabelsWidth = 0;
+		int totalLabelsHeight = 0;
+		for (final Shape labelShape : decorationShapes) {
+			totalLabelsWidth = Math.max(totalLabelsWidth, labelShape.getGraphicsAlgorithm().getWidth());
+			totalLabelsHeight += Math.max(0, labelShape.getGraphicsAlgorithm().getHeight());
+		}
 
 // Adjust label position if the shape is docked
-						LabelPosition nameHorizontalPosition = getHorizontalLabelPosition(horizontalLabelPositionFromStyle,
-								verticalLabelPositionFromStyle, shapeDockArea);
-						LabelPosition nameVerticalPosition = getVerticalLabelPosition(horizontalLabelPositionFromStyle,
-								verticalLabelPositionFromStyle, shapeDockArea);
+		LabelPosition nameHorizontalPosition = getHorizontalLabelPosition(horizontalLabelPositionFromStyle,
+				verticalLabelPositionFromStyle, shapeDockArea);
+		LabelPosition nameVerticalPosition = getVerticalLabelPosition(horizontalLabelPositionFromStyle,
+				verticalLabelPositionFromStyle, shapeDockArea);
 
 // Update the layout metrics to ensure there is room for all the labels
-						final int actualLabelPaddingY = element.getGraphic() instanceof Label ? 0 : labelPadding; // Don't pad vertically if the shape consists of only a label
-						updateLayoutMetricsForLabelPositions(lm, nameHorizontalPosition, nameVerticalPosition,
-								totalLabelsWidth + labelPadding, totalLabelsHeight + actualLabelPaddingY);
+		final int actualLabelPaddingY = element.getGraphic() instanceof Label ? 0 : labelPadding; // Don't pad vertically if the shape consists of only a label
+		updateLayoutMetricsForLabelPositions(lm, nameHorizontalPosition, nameVerticalPosition,
+				totalLabelsWidth + labelPadding, totalLabelsHeight + actualLabelPaddingY);
 
 // Adjust inner width and height based on padding and current size
-						if (!(element.getGraphic() instanceof Label)) { // Ignore labels because labels should shrink to their minimum size.
-							lm.innerWidth = Math.max(lm.innerWidth, shapeGa.getWidth() - lm.leftOuterPadding - lm.rightOuterPadding);
-							lm.innerHeight = Math.max(lm.innerHeight, shapeGa.getHeight() - lm.topOuterPadding - lm.bottomOuterPadding);
-						}
+		if (!(element.getGraphic() instanceof Label)) { // Ignore labels because labels should shrink to their minimum size.
+			lm.innerWidth = Math.max(lm.innerWidth, shapeGa.getWidth() - lm.leftOuterPadding - lm.rightOuterPadding);
+			lm.innerHeight = Math.max(lm.innerHeight, shapeGa.getHeight() - lm.topOuterPadding - lm.bottomOuterPadding);
+		}
 
 // Prevent children from being positioned outside of the inner area
-						for (final Shape childShape : shape.getChildren()) {
-							if (!PropertyUtil.isManuallyPositioned(childShape)) {
-								final GraphicsAlgorithm childGa = childShape.getGraphicsAlgorithm();
-								if (childGa != null) {
-									if (childGa.getX() < lm.leftOuterPadding) {
-										childGa.setX(lm.leftOuterPadding);
-									}
+		for (final Shape childShape : shape.getChildren()) {
+			if (!PropertyUtil.isManuallyPositioned(childShape)) {
+				final GraphicsAlgorithm childGa = childShape.getGraphicsAlgorithm();
+				if (childGa != null) {
+					if (childGa.getX() < lm.leftOuterPadding) {
+						childGa.setX(lm.leftOuterPadding);
+					}
 
-									if (childGa.getY() < lm.topOuterPadding) {
-										childGa.setY(lm.topOuterPadding);
-									}
-								}
-							}
-						}
+					if (childGa.getY() < lm.topOuterPadding) {
+						childGa.setY(lm.topOuterPadding);
+					}
+				}
+			}
+		}
 
 // Group feature shapes based on docking area
-						final Map<DockArea, List<Shape>> dockAreaToShapesMap = buildDockAreaToChildrenMap(shape);
+		final Map<DockArea, List<Shape>> dockAreaToShapesMap = buildDockAreaToChildrenMap(shape);
 
 // Adjust shapes so they do not overlap
-						cleanupOverlappingDockedShapes(shapeDockArea, dockAreaToShapesMap, diagramNodeProvider);
+		cleanupOverlappingDockedShapes(shapeDockArea, dockAreaToShapesMap, diagramNodeProvider);
 
 // Handle positioning of group docked shapes
-						for (final Entry<DockArea, List<Shape>> dockAreaToShapesEntry : dockAreaToShapesMap.entrySet()) {
-							if (dockAreaToShapesEntry.getKey() == DockArea.GROUP) {
-								for (final Shape childShape : dockAreaToShapesEntry.getValue()) {
-									switch (shapeDockArea) {
-									case LEFT:
-									case RIGHT:
-										lm.minInnerWidth = Math.max(lm.minInnerWidth,
-												childShape.getGraphicsAlgorithm().getWidth() + dockedShapeOffset);
-										break;
+		for (final Entry<DockArea, List<Shape>> dockAreaToShapesEntry : dockAreaToShapesMap.entrySet()) {
+			if (dockAreaToShapesEntry.getKey() == DockArea.GROUP) {
+				for (final Shape childShape : dockAreaToShapesEntry.getValue()) {
+					switch (shapeDockArea) {
+					case LEFT:
+					case RIGHT:
+						lm.minInnerWidth = Math.max(lm.minInnerWidth,
+								childShape.getGraphicsAlgorithm().getWidth() + dockedShapeOffset);
+						break;
 
-									case TOP:
-									case BOTTOM:
-										lm.minInnerHeight = Math.max(lm.minInnerHeight,
-												childShape.getGraphicsAlgorithm().getHeight() + dockedShapeOffset);
-										break;
+					case TOP:
+					case BOTTOM:
+						lm.minInnerHeight = Math.max(lm.minInnerHeight,
+								childShape.getGraphicsAlgorithm().getHeight() + dockedShapeOffset);
+						break;
 
-									default:
-										break;
-									}
-								}
-							}
-						}
-						lm.innerWidth = Math.max(lm.innerWidth, lm.minInnerWidth);
-						lm.innerHeight = Math.max(lm.innerHeight, lm.minInnerHeight);
+					default:
+						break;
+					}
+				}
+			}
+		}
+		lm.innerWidth = Math.max(lm.innerWidth, lm.minInnerWidth);
+		lm.innerHeight = Math.max(lm.innerHeight, lm.minInnerHeight);
 
 // Consider children when determining size
-						final int[] minSizeForChildren = getMinimumSizeForChildren(shape, lm.leftOuterPadding, lm.topOuterPadding);
-						lm.innerWidth = Math.max(lm.innerWidth, minSizeForChildren[0]);
-						lm.innerHeight = Math.max(lm.innerHeight, minSizeForChildren[1]);
+		final int[] minSizeForChildren = getMinimumSizeForChildren(shape, lm.leftOuterPadding, lm.topOuterPadding);
+		lm.innerWidth = Math.max(lm.innerWidth, minSizeForChildren[0]);
+		lm.innerHeight = Math.max(lm.innerHeight, minSizeForChildren[1]);
 
 // Create the graphics algorithm
-						shapeGa.getGraphicsAlgorithmChildren().clear();
+		shapeGa.getGraphicsAlgorithmChildren().clear();
 
-						final GraphicsAlgorithm innerGa;
+		final GraphicsAlgorithm innerGa;
 // Adjust the size of the graphics algorithm based on the rotation implied by the dock area
-						if (shapeDockArea == DockArea.TOP || shapeDockArea == DockArea.BOTTOM) {
-							innerGa = AgeGraphitiGraphicsUtil.createGraphicsAlgorithm(graphitiDiagram, shapeGa, gr, lm.innerHeight,
-									lm.innerWidth, true, element.getGraphicalConfiguration().style);
-						} else {
-							innerGa = createInnerGraphicsAlgorithm(shapeDockArea, element, localResourceManager, graphitiDiagram, shapeGa, lm, gr);
-						}
+		if (shapeDockArea == DockArea.TOP || shapeDockArea == DockArea.BOTTOM) {
+			innerGa = AgeGraphitiGraphicsUtil.createGraphicsAlgorithm(graphitiDiagram, shapeGa, gr, lm.innerHeight,
+					lm.innerWidth, true, element.getGraphicalConfiguration().style);
+		} else {
+			if (shapeDockArea == null && Boolean.TRUE.equals(element.getStyle().isImageVisible())) {
+				// Find image
+				final IResource imageResource = ResourcesPlugin.getWorkspace().getRoot()
+						.findMember(element.getStyle().getImage());
+// Image path used to create image
+				final String imagePath;
+				if (imageResource != null) {
+					final URI rawLocationURI = imageResource.getRawLocationURI();
+					try {
+						// Try to load image
+						localResourceManager.createImage(ImageDescriptor.createFromURL(rawLocationURI.toURL()));
+					} catch (final Exception e) {
+						e.printStackTrace();
+					}
 
-						// Rotate shape
-						if (shapeDockArea != null) {
-							AgeGraphitiGraphicsUtil.rotate(innerGa, shapeDockArea);
-						}
+					imagePath = rawLocationURI.toString();
+				} else {
+					// Image cannot be found
+					imagePath = "";
+				}
+
+				innerGa = GraphitiUi.getGaService().createPlatformGraphicsAlgorithm(shapeGa,
+						ImageGraphicsAlgorithmRendererFactory.IMAGE_FIGURE);
+				innerGa.setWidth(lm.innerWidth);
+				innerGa.setHeight(lm.innerHeight);
+				PropertyUtil.setImage(innerGa, imagePath);
+			} else {
+				innerGa = AgeGraphitiGraphicsUtil.createGraphicsAlgorithm(graphitiDiagram, shapeGa, gr, lm.innerWidth,
+						lm.innerHeight, true, element.getGraphicalConfiguration().style);
+			}
+		}
+
+// Rotate shape
+		if (shapeDockArea != null) {
+			AgeGraphitiGraphicsUtil.rotate(innerGa, shapeDockArea);
+		}
 
 // Update variables using actual size of inner graphics algorithm
-						lm.innerWidth = Math.max(innerGa.getWidth(), lm.minInnerWidth);
-						lm.innerHeight = Math.max(innerGa.getHeight(), lm.minInnerHeight);
+		lm.innerWidth = Math.max(innerGa.getWidth(), lm.minInnerWidth);
+		lm.innerHeight = Math.max(innerGa.getHeight(), lm.minInnerHeight);
 
 // Update the shape's graphics algorithm based on required size
-						final int innerRight = lm.getInnerRight();
-						final int innerBottom = lm.getInnerBottom();
-						shapeGa.setWidth(innerRight + lm.rightOuterPadding);
-						shapeGa.setHeight(innerBottom + lm.bottomOuterPadding);
+		final int innerRight = lm.getInnerRight();
+		final int innerBottom = lm.getInnerBottom();
+		shapeGa.setWidth(innerRight + lm.rightOuterPadding);
+		shapeGa.setHeight(innerBottom + lm.bottomOuterPadding);
 
 // Only adjust the size of an element if it doesn't have a size. If it doens't already have a size, the incremental layout will handle it.
-						if (!DiagramElementPredicates.isResizeable(element) || element.hasSize()) {
-							mod.setSize(element,
-									new org.osate.ge.internal.diagram.runtime.Dimension(shapeGa.getWidth(), shapeGa.getHeight()));
-						}
+		if (!DiagramElementPredicates.isResizeable(element) || element.hasSize()) {
+			mod.setSize(element,
+					new org.osate.ge.internal.diagram.runtime.Dimension(shapeGa.getWidth(), shapeGa.getHeight()));
+		}
 // Position docked shapes
-						for (final Entry<DockArea, List<Shape>> dockAreaToShapesEntry : dockAreaToShapesMap.entrySet()) {
-							for (final Shape childShape : dockAreaToShapesEntry.getValue()) {
-								if (dockAreaToShapesEntry.getKey() == DockArea.LEFT) {
-									childShape.getGraphicsAlgorithm().setX(lm.leftOuterPadding);
-								} else if (dockAreaToShapesEntry.getKey() == DockArea.RIGHT) {
-									childShape.getGraphicsAlgorithm().setX(innerRight - childShape.getGraphicsAlgorithm().getWidth());
-								} else if (dockAreaToShapesEntry.getKey() == DockArea.TOP) {
-									childShape.getGraphicsAlgorithm().setY(lm.topOuterPadding);
-								} else if (dockAreaToShapesEntry.getKey() == DockArea.BOTTOM) {
-									childShape.getGraphicsAlgorithm().setY(innerBottom - childShape.getGraphicsAlgorithm().getHeight());
-								} else if (dockAreaToShapesEntry.getKey() == DockArea.GROUP) {
-									final GraphicsAlgorithm childGa = childShape.getGraphicsAlgorithm();
-									switch (shapeDockArea) {
-									case LEFT:
-									default:
-										childGa.setX(dockedShapeOffset);
-										break;
+		for (final Entry<DockArea, List<Shape>> dockAreaToShapesEntry : dockAreaToShapesMap.entrySet()) {
+			for (final Shape childShape : dockAreaToShapesEntry.getValue()) {
+				if (dockAreaToShapesEntry.getKey() == DockArea.LEFT) {
+					childShape.getGraphicsAlgorithm().setX(lm.leftOuterPadding);
+				} else if (dockAreaToShapesEntry.getKey() == DockArea.RIGHT) {
+					childShape.getGraphicsAlgorithm().setX(innerRight - childShape.getGraphicsAlgorithm().getWidth());
+				} else if (dockAreaToShapesEntry.getKey() == DockArea.TOP) {
+					childShape.getGraphicsAlgorithm().setY(lm.topOuterPadding);
+				} else if (dockAreaToShapesEntry.getKey() == DockArea.BOTTOM) {
+					childShape.getGraphicsAlgorithm().setY(innerBottom - childShape.getGraphicsAlgorithm().getHeight());
+				} else if (dockAreaToShapesEntry.getKey() == DockArea.GROUP) {
+					final GraphicsAlgorithm childGa = childShape.getGraphicsAlgorithm();
+					switch (shapeDockArea) {
+					case LEFT:
+					default:
+						childGa.setX(dockedShapeOffset);
+						break;
 
-									case RIGHT:
-										childGa.setX(lm.innerWidth - dockedShapeOffset - childGa.getWidth());
-										break;
+					case RIGHT:
+						childGa.setX(lm.innerWidth - dockedShapeOffset - childGa.getWidth());
+						break;
 
-									case TOP:
-										childGa.setY(dockedShapeOffset);
-										break;
+					case TOP:
+						childGa.setY(dockedShapeOffset);
+						break;
 
-									case BOTTOM:
-										childGa.setY(innerBottom - dockedShapeOffset - childGa.getHeight());
-										break;
-									}
-								}
-							}
-						}
+					case BOTTOM:
+						childGa.setY(innerBottom - dockedShapeOffset - childGa.getHeight());
+						break;
+					}
+				}
+			}
+		}
 
 // Position the inner graphics algorithm
-						if (shapeDockArea == DockArea.RIGHT) {
-							innerGa.setX(innerRight - innerGa.getWidth());
-							innerGa.setY(lm.topOuterPadding);
-						} else if (shapeDockArea == DockArea.BOTTOM) {
-							innerGa.setX(lm.leftOuterPadding);
-							innerGa.setY(innerBottom - innerGa.getHeight());
-						} else {
-							innerGa.setX(lm.leftOuterPadding);
-							innerGa.setY(lm.topOuterPadding);
-						}
+		if (shapeDockArea == DockArea.RIGHT) {
+			innerGa.setX(innerRight - innerGa.getWidth());
+			innerGa.setY(lm.topOuterPadding);
+		} else if (shapeDockArea == DockArea.BOTTOM) {
+			innerGa.setX(lm.leftOuterPadding);
+			innerGa.setY(innerBottom - innerGa.getHeight());
+		} else {
+			innerGa.setX(lm.leftOuterPadding);
+			innerGa.setY(lm.topOuterPadding);
+		}
 
 // Create an anchor which is used for flow specifications
-						if (shapeDockArea != null) {
-							org.osate.ge.graphics.Point interiorAnchorPosition;
-							org.osate.ge.graphics.Point exteriorAnchorPosition;
-							final org.osate.ge.graphics.Point flowSpecAnchorPosition;
-							final int flowSpecOffsetLength = 50;
-							final int interiorExteriorOffset = 0; // Adjustment so that connections will reach all the way to the appropriate connection point.
-							switch (shapeDockArea) {
-							case LEFT:
-								interiorAnchorPosition = new org.osate.ge.graphics.Point(
-										innerGa.getX() + innerGa.getWidth() - interiorExteriorOffset,
-										innerGa.getY() + (innerGa.getHeight() / 2));
-								exteriorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + interiorExteriorOffset,
-										interiorAnchorPosition.y);
-								flowSpecAnchorPosition = new org.osate.ge.graphics.Point(
-										interiorAnchorPosition.x + flowSpecOffsetLength, interiorAnchorPosition.y);
-								break;
+		if (shapeDockArea != null) {
+			org.osate.ge.graphics.Point interiorAnchorPosition;
+			org.osate.ge.graphics.Point exteriorAnchorPosition;
+			final org.osate.ge.graphics.Point flowSpecAnchorPosition;
+			final int flowSpecOffsetLength = 50;
+			final int interiorExteriorOffset = 0; // Adjustment so that connections will reach all the way to the appropriate connection point.
+			switch (shapeDockArea) {
+			case LEFT:
+				interiorAnchorPosition = new org.osate.ge.graphics.Point(
+						innerGa.getX() + innerGa.getWidth() - interiorExteriorOffset,
+						innerGa.getY() + (innerGa.getHeight() / 2));
+				exteriorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + interiorExteriorOffset,
+						interiorAnchorPosition.y);
+				flowSpecAnchorPosition = new org.osate.ge.graphics.Point(
+						interiorAnchorPosition.x + flowSpecOffsetLength, interiorAnchorPosition.y);
+				break;
 
-							case RIGHT:
-								interiorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + interiorExteriorOffset,
-										innerGa.getY() + (innerGa.getHeight() / 2));
-								exteriorAnchorPosition = new org.osate.ge.graphics.Point(
-										innerGa.getX() + innerGa.getWidth() - interiorExteriorOffset, interiorAnchorPosition.y);
-								flowSpecAnchorPosition = new org.osate.ge.graphics.Point(
-										interiorAnchorPosition.x - flowSpecOffsetLength, interiorAnchorPosition.y);
-								break;
+			case RIGHT:
+				interiorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + interiorExteriorOffset,
+						innerGa.getY() + (innerGa.getHeight() / 2));
+				exteriorAnchorPosition = new org.osate.ge.graphics.Point(
+						innerGa.getX() + innerGa.getWidth() - interiorExteriorOffset, interiorAnchorPosition.y);
+				flowSpecAnchorPosition = new org.osate.ge.graphics.Point(
+						interiorAnchorPosition.x - flowSpecOffsetLength, interiorAnchorPosition.y);
+				break;
 
-							case TOP:
-								interiorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + (innerGa.getWidth() / 2),
-										innerGa.getY() + innerGa.getHeight() - interiorExteriorOffset);
-								exteriorAnchorPosition = new org.osate.ge.graphics.Point(interiorAnchorPosition.x,
-										innerGa.getY() + interiorExteriorOffset);
-								flowSpecAnchorPosition = new org.osate.ge.graphics.Point(interiorAnchorPosition.x,
-										interiorAnchorPosition.y + flowSpecOffsetLength);
-								break;
+			case TOP:
+				interiorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + (innerGa.getWidth() / 2),
+						innerGa.getY() + innerGa.getHeight() - interiorExteriorOffset);
+				exteriorAnchorPosition = new org.osate.ge.graphics.Point(interiorAnchorPosition.x,
+						innerGa.getY() + interiorExteriorOffset);
+				flowSpecAnchorPosition = new org.osate.ge.graphics.Point(interiorAnchorPosition.x,
+						interiorAnchorPosition.y + flowSpecOffsetLength);
+				break;
 
-							case BOTTOM:
-								interiorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + (innerGa.getWidth() / 2),
-										innerGa.getY() + interiorExteriorOffset);
-								exteriorAnchorPosition = new org.osate.ge.graphics.Point(interiorAnchorPosition.x,
-										innerGa.getY() + innerGa.getHeight() - interiorExteriorOffset);
-								flowSpecAnchorPosition = new org.osate.ge.graphics.Point(interiorAnchorPosition.x,
-										interiorAnchorPosition.y - flowSpecOffsetLength);
-								break;
+			case BOTTOM:
+				interiorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + (innerGa.getWidth() / 2),
+						innerGa.getY() + interiorExteriorOffset);
+				exteriorAnchorPosition = new org.osate.ge.graphics.Point(interiorAnchorPosition.x,
+						innerGa.getY() + innerGa.getHeight() - interiorExteriorOffset);
+				flowSpecAnchorPosition = new org.osate.ge.graphics.Point(interiorAnchorPosition.x,
+						interiorAnchorPosition.y - flowSpecOffsetLength);
+				break;
 
-							default:
-								interiorAnchorPosition = new org.osate.ge.graphics.Point(
-										innerGa.getX() + innerGa.getWidth() - interiorExteriorOffset,
-										innerGa.getY() + (innerGa.getHeight() / 2));
-								exteriorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + interiorExteriorOffset,
-										interiorAnchorPosition.y);
-								flowSpecAnchorPosition = new org.osate.ge.graphics.Point(0, 0);
-								break;
-							}
+			default:
+				interiorAnchorPosition = new org.osate.ge.graphics.Point(
+						innerGa.getX() + innerGa.getWidth() - interiorExteriorOffset,
+						innerGa.getY() + (innerGa.getHeight() / 2));
+				exteriorAnchorPosition = new org.osate.ge.graphics.Point(innerGa.getX() + interiorExteriorOffset,
+						interiorAnchorPosition.y);
+				flowSpecAnchorPosition = new org.osate.ge.graphics.Point(0, 0);
+				break;
+			}
 
-							AnchorUtil.createOrUpdateFixPointAnchor(shape, AnchorNames.FLOW_SPECIFICATION,
-									(int) flowSpecAnchorPosition.x, (int) flowSpecAnchorPosition.y, true);
+			AnchorUtil.createOrUpdateFixPointAnchor(shape, AnchorNames.FLOW_SPECIFICATION,
+					(int) flowSpecAnchorPosition.x, (int) flowSpecAnchorPosition.y, true);
 
-							AnchorUtil.createOrUpdateFixPointAnchor(shape, AnchorNames.INTERIOR_ANCHOR, (int) interiorAnchorPosition.x,
-									(int) interiorAnchorPosition.y, true);
+			AnchorUtil.createOrUpdateFixPointAnchor(shape, AnchorNames.INTERIOR_ANCHOR, (int) interiorAnchorPosition.x,
+					(int) interiorAnchorPosition.y, true);
 
-							AnchorUtil.createOrUpdateFixPointAnchor(shape, AnchorNames.EXTERIOR_ANCHOR, (int) exteriorAnchorPosition.x,
-									(int) exteriorAnchorPosition.y, true);
-						}
+			AnchorUtil.createOrUpdateFixPointAnchor(shape, AnchorNames.EXTERIOR_ANCHOR, (int) exteriorAnchorPosition.x,
+					(int) exteriorAnchorPosition.y, true);
+		}
 
 // Determine the Y position for the labels
-						int labelsY;
-						switch (nameVerticalPosition) {
-						case BEFORE_GRAPHIC:
-							labelsY = 0;
-							break;
+		int labelsY;
+		switch (nameVerticalPosition) {
+		case BEFORE_GRAPHIC:
+			labelsY = 0;
+			break;
 
-						case GRAPHIC_BEGINNING:
-						default:
-							labelsY = lm.topOuterPadding + actualLabelPaddingY;
-							break;
+		case GRAPHIC_BEGINNING:
+		default:
+			labelsY = lm.topOuterPadding + actualLabelPaddingY;
+			break;
 
-						case GRAPHIC_CENTER:
-							final int centeringOffsetY = AgeGraphitiGraphicsUtil.getCenteringOffsetY(gr); // Adjustment for cases such as initial modes to make labels centered
+		case GRAPHIC_CENTER:
+			final int centeringOffsetY = AgeGraphitiGraphicsUtil.getCenteringOffsetY(gr); // Adjustment for cases such as initial modes to make labels centered
 // around the inner shape.
-							labelsY = lm.topOuterPadding + centeringOffsetY
-									+ ((lm.innerHeight - centeringOffsetY) - totalLabelsHeight) / 2;
-							break;
+			labelsY = lm.topOuterPadding + centeringOffsetY
+					+ ((lm.innerHeight - centeringOffsetY) - totalLabelsHeight) / 2;
+			break;
 
-						case GRAPHIC_END:
-							labelsY = innerBottom - totalLabelsHeight - actualLabelPaddingY;
-							break;
+		case GRAPHIC_END:
+			labelsY = innerBottom - totalLabelsHeight - actualLabelPaddingY;
+			break;
 
-						case AFTER_GRAPHIC:
-							labelsY = innerBottom;
-							break;
-						}
+		case AFTER_GRAPHIC:
+			labelsY = innerBottom;
+			break;
+		}
 
 // Position Labels
 // All labels are positioned together on separate lines.
 // Labels are positioned horizontally based on the name label configuration.
-						for (final Shape labelShape : decorationShapes) {
-							final GraphicsAlgorithm labelGa = labelShape.getGraphicsAlgorithm();
-							labelGa.setX(calculateLabelX(lm, nameHorizontalPosition, labelGa.getWidth()));
-							labelGa.setY(labelsY);
-							labelsY += labelGa.getHeight();
-						}
-
-// Update the position of child diagram elements.
-						for (final DiagramElement child : element.getDiagramElements()) {
-							final PictogramElement childPe = diagramNodeProvider.getPictogramElement(child);
-							// Only update the child's position if it already has a position. Otherwise, it may not have been layed out yet.
-							if (child.hasPosition() && childPe instanceof Shape && childPe.getGraphicsAlgorithm() != null) {
-								final GraphicsAlgorithm childGa = childPe.getGraphicsAlgorithm();
-								final DockArea oldDockArea = child.getDockArea();
-								mod.setPosition(child, new org.osate.ge.graphics.Point(childGa.getX(), childGa.getY()));
-								mod.setDockArea(child, oldDockArea); // Prevent changing the dock area when positioning the shape.
-							}
-						}
-
-	}
-
-	private static GraphicsAlgorithm createInnerGraphicsAlgorithm(final DockArea shapeDockArea, final DiagramElement element,
-			final LocalResourceManager localResourceManager, final Diagram graphitiDiagram,
-			final GraphicsAlgorithm shapeGa, final LayoutMetrics lm, final Graphic gr) {
-		if (shapeDockArea == null && Boolean.TRUE.equals(element.getStyle().isImageVisible())
-				&& !Strings.isNullOrEmpty(element.getStyle().getImage())) {
-			try {
-				final URL imageURL = PathUtil.determinePath(element.getStyle().getImage());
-				localResourceManager.createImage(ImageDescriptor.createFromURL(imageURL));
-				final GraphicsAlgorithm ga = GraphitiUi.getGaService().createPlatformGraphicsAlgorithm(shapeGa,
-						ImageGraphicsAlgorithmRendererFactory.IMAGE_FIGURE);
-				ga.setWidth(lm.innerWidth);
-				ga.setHeight(lm.innerHeight);
-				PropertyUtil.setImage(ga, imageURL.toString());
-				return ga;
-			} catch (final Exception e) {
-				element.setStyle(StyleBuilder.create(element.getStyle()).imageVisible(false).build());
-			}
+		for (final Shape labelShape : decorationShapes) {
+			final GraphicsAlgorithm labelGa = labelShape.getGraphicsAlgorithm();
+			labelGa.setX(calculateLabelX(lm, nameHorizontalPosition, labelGa.getWidth()));
+			labelGa.setY(labelsY);
+			labelsY += labelGa.getHeight();
 		}
 
-		return AgeGraphitiGraphicsUtil.createGraphicsAlgorithm(graphitiDiagram, shapeGa, gr, lm.innerWidth,
-				lm.innerHeight, true, element.getGraphicalConfiguration().style);
-	}
+// Update the position of child diagram elements.
+		for (final DiagramElement child : element.getDiagramElements()) {
+			final PictogramElement childPe = diagramNodeProvider.getPictogramElement(child);
+			// Only update the child's position if it already has a position. Otherwise, it may not have been layed out yet.
+			if (child.hasPosition() && childPe instanceof Shape && childPe.getGraphicsAlgorithm() != null) {
+				final GraphicsAlgorithm childGa = childPe.getGraphicsAlgorithm();
+				final DockArea oldDockArea = child.getDockArea();
+				mod.setPosition(child, new org.osate.ge.graphics.Point(childGa.getX(), childGa.getY()));
+				mod.setDockArea(child, oldDockArea); // Prevent changing the dock area when positioning the shape.
+							}
+		}
 
+	}
 
 	/**
 	 * Determine the x coordinate for a label

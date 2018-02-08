@@ -6,7 +6,6 @@ import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRenderer;
 import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRendererFactory;
 import org.eclipse.graphiti.platform.ga.IRendererContext;
 import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.swt.graphics.Image;
 import org.osate.ge.internal.graphiti.diagram.PropertyUtil;
 
 public class ImageGraphicsAlgorithmRendererFactory implements IGraphicsAlgorithmRendererFactory {
@@ -23,11 +22,12 @@ public class ImageGraphicsAlgorithmRendererFactory implements IGraphicsAlgorithm
 
 	private ImageFigure createImageFigure(final String imagePath) {
 		try {
-			final Image image = AgeDiagramTypeProvider.getResources()
-					.createImage(ImageDescriptor.createFromURL(new URL(imagePath)));
-			return new ImageFigure(image);
+			return new ImageFigure(AgeDiagramTypeProvider.getResources()
+					.createImage(ImageDescriptor.createFromURL(new URL(imagePath))));
 		} catch (final Exception e) {
-			throw new RuntimeException("Cannot find image");
+			// Show default image if creating image fails
+			return new ImageFigure(AgeDiagramTypeProvider.getResources()
+					.createImage(ImageDescriptor.createFromFile(getClass(), "/icons/default_image.gif")));
 		}
 	}
 }
