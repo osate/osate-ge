@@ -957,7 +957,7 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 		};
 
 		// Create the Graphiti AGE diagram which will own a Graphiti diagram and keep it updated with any changes to the AGE diagram
-		graphitiAgeDiagram = new GraphitiAgeDiagram(ageDiagram, dtp.getDiagram(), getEditingDomain(),
+		graphitiAgeDiagram = new GraphitiAgeDiagram(ageDiagram, dtp.getDiagram(), getEditingDomain(), layoutInfoProvider,
 				c -> executeFeature(new EmfCommandCustomFeature(c, fp), new CustomContext()), coloringProvider,
 				() -> {
 					// Refresh the selection. This prevents the editor from losing the selection in some cases such as aligning shapes.
