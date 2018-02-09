@@ -38,13 +38,8 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.TreeSelection;
-import org.eclipse.ui.IWorkbench;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.IWorkbenchPart;
-import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.handlers.HandlerUtil;
 import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.Classifier;
 import org.osate.aadl2.Element;
@@ -55,7 +50,6 @@ import org.osate.aadl2.modelsupport.resources.OsateResourceUtil;
 import org.osate.ge.internal.Activator;
 import org.osate.ge.internal.services.DiagramService;
 import org.osate.ge.internal.ui.util.EditorUtil;
-import org.osate.ui.navigator.AadlNavigator;
 import org.osate.workspace.WorkspacePlugin;
 
 public class CreateDiagramFromNavigatorHandler extends AbstractHandler {
@@ -65,7 +59,7 @@ public class CreateDiagramFromNavigatorHandler extends AbstractHandler {
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
 		try {
 			// Determine the classifier
-			final Element element = getSelectedElement();
+			final Element element = getSelectedElement(event);
 			if (element != null) {
 				if (element instanceof Classifier || element instanceof AadlPackage || element instanceof ComponentInstance) {
 					final NamedElement ne = (NamedElement)element;
@@ -104,47 +98,37 @@ public class CreateDiagramFromNavigatorHandler extends AbstractHandler {
 		return null;
 	}
 
-	private Element getSelectedElement() {
-		final IWorkbench wb = PlatformUI.getWorkbench();
-		final IWorkbenchWindow win = wb.getActiveWorkbenchWindow();
-		final IWorkbenchPage page = win.getActivePage();
-		final IWorkbenchPart part = page.getActivePart();
-
-		if (part instanceof AadlNavigator) {
-			final ISelection selection = ((AadlNavigator) part).getCommonViewer().getSelection();
-			if (selection instanceof TreeSelection) {
-				final Object selectedObj = ((TreeSelection) selection).getFirstElement();
-				if (selectedObj instanceof IFolder) {
-					return null;
-				} else if (selectedObj instanceof IProject) {
-					return null;
-				} else if (selectedObj instanceof IFile) {
-					final String ext = ((IFile) selectedObj).getFileExtension();
-					if (AADL_EXT.equalsIgnoreCase(ext) || WorkspacePlugin.INSTANCE_FILE_EXT.equalsIgnoreCase(ext)) {
-						final EList<EObject> contents = OsateResourceUtil.getResource((IFile) selectedObj).getContents();
-						if (null != contents && !contents.isEmpty()) {
-							final EObject root = contents.get(0);
-							if (root instanceof AadlPackage) {
-								return (AadlPackage) root;
-							} else if(root instanceof ComponentInstance) {
-								return (ComponentInstance)root;
-							} else {
-								return null;
-							}
-						}
+	private Element getSelectedElement(ExecutionEvent event) {
+		final Object selectedObj = HandlerUtil.getCurrentStructuredSelection(event).getFirstElement();
+		if (selectedObj instanceof IFolder) {
+			return null;
+		} else if (selectedObj instanceof IProject) {
+			return null;
+		} else if (selectedObj instanceof IFile) {
+			final String ext = ((IFile) selectedObj).getFileExtension();
+			if (AADL_EXT.equalsIgnoreCase(ext) || WorkspacePlugin.INSTANCE_FILE_EXT.equalsIgnoreCase(ext)) {
+				final EList<EObject> contents = OsateResourceUtil.getResource((IFile) selectedObj).getContents();
+				if (null != contents && !contents.isEmpty()) {
+					final EObject root = contents.get(0);
+					if (root instanceof AadlPackage) {
+						return (AadlPackage) root;
+					} else if (root instanceof ComponentInstance) {
+						return (ComponentInstance) root;
 					} else {
 						return null;
 					}
-				} else if (selectedObj instanceof PackageSection) {
-					return getSelectedPackage((PackageSection) selectedObj);
-				} else if (selectedObj instanceof AadlPackage) {
-					return (AadlPackage) selectedObj;
-				} else if (selectedObj instanceof Element) {
-					return getSelectedClassifier((EObject) selectedObj);
-				} else {
-					return null;
 				}
+			} else {
+				return null;
 			}
+		} else if (selectedObj instanceof PackageSection) {
+			return getSelectedPackage((PackageSection) selectedObj);
+		} else if (selectedObj instanceof AadlPackage) {
+			return (AadlPackage) selectedObj;
+		} else if (selectedObj instanceof Element) {
+			return getSelectedClassifier((EObject) selectedObj);
+		} else {
+			return null;
 		}
 		return null;
 	}
