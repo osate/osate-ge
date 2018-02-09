@@ -226,6 +226,7 @@ public class DefaultDiagramService implements DiagramService {
 		dialog.setAddCancelButton(true);
 		dialog.setTitle("Select Diagram");
 		dialog.setMessage("Select a Diagram to Open");
+		dialog.setWidthInChars(90);
 		dialog.setLabelProvider(new LabelProvider() {
 			@Override
 			public String getText(final Object element) {

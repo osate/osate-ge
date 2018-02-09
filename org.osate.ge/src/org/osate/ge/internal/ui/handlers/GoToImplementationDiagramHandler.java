@@ -10,21 +10,20 @@ import org.eclipse.core.runtime.Adapters;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.handlers.HandlerUtil;
 import org.osate.aadl2.ComponentImplementation;
-import org.osate.aadl2.ComponentType;
 import org.osate.aadl2.Subcomponent;
 import org.osate.aadl2.instance.ComponentInstance;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.services.DiagramService;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 
-public class GoToTypeDiagramHandler extends AbstractHandler {
+public class GoToImplementationDiagramHandler extends AbstractHandler {
 	@Override
 	public void setEnabled(final Object evaluationContext) {
 		boolean enabled = false;
 		final List<DiagramElement> selectedDiagramElements = AgeHandlerUtil
 				.getSelectedDiagramElementsFromContext(evaluationContext);
 		if (selectedDiagramElements.size() == 1) {
-			enabled = getComponentType(selectedDiagramElements.get(0).getBusinessObject()) != null;
+			enabled = getComponentImplementation(selectedDiagramElements.get(0).getBusinessObject()) != null;
 		}
 
 		setBaseEnabled(enabled);
@@ -49,19 +48,21 @@ public class GoToTypeDiagramHandler extends AbstractHandler {
 		final DiagramService diagramService = Objects.requireNonNull(Adapters.adapt(activeEditor, DiagramService.class),
 				"Unable to retrieve diagram service");
 
-		final ComponentType ct = Objects.requireNonNull(getComponentType(bo), "Unable to retrieve component type");;
-		diagramService.openOrCreateDiagramForBusinessObject(ct);
+		final ComponentImplementation ci = Objects.requireNonNull(getComponentImplementation(bo),
+				"Unable to retrieve component implementation");
+		;
+		diagramService.openOrCreateDiagramForBusinessObject(ci);
 
 		return null;
 	}
 
-	private ComponentType getComponentType(final Object bo) {
+	private ComponentImplementation getComponentImplementation(final Object bo) {
 		if(bo instanceof ComponentImplementation) {
-			return ((ComponentImplementation)bo).getType();
+			return (ComponentImplementation) bo;
 		} else if(bo instanceof Subcomponent) {
-			return ((Subcomponent) bo).getComponentType();
+			return ((Subcomponent) bo).getComponentImplementation();
 		} else if (bo instanceof ComponentInstance) {
-			return getComponentType(((ComponentInstance) bo).getComponentClassifier());
+			return getComponentImplementation(((ComponentInstance) bo).getComponentClassifier());
 		} else {
 			return null;
 		}

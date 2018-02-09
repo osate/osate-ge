@@ -193,6 +193,10 @@
             id="org.osate.ge.setDescendantsToAutomatic"
             name="Set Descendants to Automatic">
       </command>
+      <command
+            id="org.osate.ge.goToImplementationDiagram"
+            name="Go to Implementation Diagram">
+      </command>
    </extension>
  <extension
        point="org.eclipse.ui.handlers">
@@ -474,6 +478,10 @@
     <handler
           class="org.osate.ge.internal.ui.handlers.SetDescendantsToAutomaticHandler"
           commandId="org.osate.ge.setDescendantsToAutomatic">
+    </handler>
+    <handler
+          class="org.osate.ge.internal.ui.handlers.GoToImplementationDiagramHandler"
+          commandId="org.osate.ge.goToImplementationDiagram">
     </handler>
  </extension>
        
@@ -931,6 +939,14 @@
        <command
              commandId="org.osate.ge.goToTypeDiagram"
              label="Type Diagram"
+             style="push">
+          <visibleWhen
+                checkEnabled="true">
+          </visibleWhen>
+       </command>
+       <command
+             commandId="org.osate.ge.goToImplementationDiagram"
+             label="Implementation Diagram"
              style="push">
           <visibleWhen
                 checkEnabled="true">
