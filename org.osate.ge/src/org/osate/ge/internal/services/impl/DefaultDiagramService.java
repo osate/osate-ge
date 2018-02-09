@@ -253,7 +253,7 @@ public class DefaultDiagramService implements DiagramService {
 	public IFile createDiagram(final Object contextBo) {
 		final IProject project = Objects.requireNonNull(getProject(contextBo), "Unable to get project for business object: " + contextBo);
 
-		// TODO
+		// Prompt to determine the filepath and diagram type.
 		final CreateDiagramDialog.Model<DiagramType> createDiagramModel = new CreateDiagramDialog.Model<DiagramType>() {
 			@Override
 			public ImmutableCollection<DiagramType> getDiagramTypes() {
@@ -291,7 +291,6 @@ public class DefaultDiagramService implements DiagramService {
 			}
 		};
 
-		// Prompt the user for the file and diagram type
 		final CreateDiagramDialog.Result<DiagramType> result = CreateDiagramDialog.show(null, createDiagramModel);
 		if (result == null) {
 			return null;

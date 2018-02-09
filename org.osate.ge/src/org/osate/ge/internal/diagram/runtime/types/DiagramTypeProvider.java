@@ -19,7 +19,7 @@ public interface DiagramTypeProvider {
 	}
 
 	default ImmutableCollection<DiagramType> getApplicableDiagramTypes(final Object contextBo) {
-		return getDiagramTypes().stream().filter(dt -> dt.isCompatibleWithContext(contextBo))
+		return getDiagramTypes().stream().filter(dt -> dt.isApplicableToContext(contextBo))
 				.collect(ImmutableList.toImmutableList());
 	}
 }

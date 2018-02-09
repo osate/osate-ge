@@ -7,12 +7,9 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
-import org.osate.ge.internal.diagram.runtime.filtering.ContentFilterProvider;
 
 import com.google.common.collect.ImmutableSet;
 
-// TODO: Merge with other classes? Cleanup
-// TODO: Work off the content filter provider? Or not... May need to use filtered list of applicable/enabled filters for various reasons
 public class ContentFilterUtil {
 	public static Stream<ContentFilter> getDescendants(final ContentFilter filter,
 			final Collection<ContentFilter> applicableFilters) {
@@ -59,7 +56,15 @@ public class ContentFilterUtil {
 		return getAncestors(filterToCheck, applicableFilters).anyMatch(t -> enabledFilters.contains(t));
 	}
 
-	// TODO: Rename parameters.. cleanup. Enum for add vs remove?
+	/**
+	 * Adds or remove a content filter from the content filter set. If add is true, then the filter is added. Otherwise, it is removed. Handles combining and splitting filters when
+	 * children are added or removed.
+	 * @param enabledContentFilters
+	 * @param applicableContentFilters
+	 * @param updatedFilter
+	 * @param add
+	 * @return
+	 */
 	public static ImmutableSet<ContentFilter> updateContentFilterSet(
 			final Collection<ContentFilter> enabledContentFilters,
 			final Collection<ContentFilter> applicableContentFilters, final ContentFilter updatedFilter,
@@ -115,12 +120,5 @@ public class ContentFilterUtil {
 
 		// Update the content filters
 		return ImmutableSet.copyOf(contentFilters);
-	}
-
-	// TODO: move?
-	public static ImmutableSet<ContentFilter> getApplicableContentFilters(final Object bo,
-			final ContentFilterProvider contentFilterProvider) {
-		return contentFilterProvider.getContentFilters().stream().filter(cf -> cf.isApplicable(bo))
-				.collect(ImmutableSet.toImmutableSet());
 	}
 }

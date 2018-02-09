@@ -605,9 +605,6 @@ public class DiagramConfigurationDialog {
 			return ((ImmutableSet<ContentFilter>) inputElement).stream().filter(cf -> cf.getParentId() == null)
 					.toArray();
 		}
-		//
-		// TODO: These methods be more efficient if there was a map?
-		//
 
 		@Override
 		public Object[] getChildren(final Object parentElement) {

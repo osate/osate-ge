@@ -27,7 +27,6 @@ import org.osate.ge.internal.services.ExtensionRegistryService;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 import org.osate.ge.internal.ui.util.SelectionUtil;
 import org.osate.ge.internal.ui.util.UiUtil;
-import org.osate.ge.internal.util.ContentFilterUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 
@@ -106,8 +105,8 @@ public class ToggleAllFiltersHandler extends AbstractHandler implements IElement
 				.getSelectedDiagramElements(window.getActivePage().getSelection());
 		final ContentFilterProvider contentFilterProvider = getContentFilterProvider();
 		for (final DiagramElement de : selectedDiagramElements) {
-			for (final ContentFilter filter : ContentFilterUtil.getApplicableContentFilters(de.getBusinessObject(),
-					contentFilterProvider)) {
+			for (final ContentFilter filter : contentFilterProvider
+					.getApplicableContentFilters(de.getBusinessObject())) {
 				if (filter.getParentId() == null && !de.getContentFilters().contains(filter)) {
 					return false;
 				}

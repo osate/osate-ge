@@ -68,8 +68,8 @@ public class ToggleContentFilterHandler extends AbstractHandler implements IElem
 			for (final DiagramElement e : selectedDiagramElements) {
 				// Update the content filters
 				if (filter.isApplicable(e.getBusinessObject())) {
-					final Set<ContentFilter> applicableContentFilters = ContentFilterUtil
-							.getApplicableContentFilters(e.getBusinessObject(), contentFilterProvider);
+					final Set<ContentFilter> applicableContentFilters = contentFilterProvider
+							.getApplicableContentFilters(e.getBusinessObject());
 					final ImmutableSet<ContentFilter> newContentFilters = ContentFilterUtil.updateContentFilterSet(
 							e.getContentFilters(), applicableContentFilters, filter, addFilter);
 					m.setContentFilters(e, newContentFilters);
@@ -112,12 +112,12 @@ public class ToggleContentFilterHandler extends AbstractHandler implements IElem
 		final List<DiagramElement> selectedDiagramElements = SelectionUtil
 				.getSelectedDiagramElements(window.getActivePage().getSelection());
 		for (final DiagramElement de : selectedDiagramElements) {
-			if (ContentFilterUtil.getApplicableContentFilters(de.getBusinessObject(), contentFilterProvider)
+			if (contentFilterProvider.getApplicableContentFilters(de.getBusinessObject())
 					.contains(contentFilter)) {
 				if (!de.getContentFilters().contains(contentFilter)
 						&& !ContentFilterUtil.anyAncestorsEnabled(contentFilter,
-						de.getContentFilters(),
-						contentFilterProvider.getContentFilters())) {
+								de.getContentFilters(),
+								contentFilterProvider.getContentFilters())) {
 					return false;
 				}
 			}

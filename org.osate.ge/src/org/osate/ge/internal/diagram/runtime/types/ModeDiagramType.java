@@ -23,7 +23,7 @@ public class ModeDiagramType implements DiagramType {
 	}
 
 	@Override
-	public boolean isCompatibleWithContext(final Object contextBo) {
+	public boolean isApplicableToContext(final Object contextBo) {
 		return contextBo instanceof Classifier;
 	}
 

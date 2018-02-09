@@ -68,8 +68,6 @@ public class FeatureCategoryFilter implements ContentFilter {
 
 	@Override
 	public boolean isApplicable(final Object bo) {
-		// TODO: Need better restrictions depending on classifier or subcomponent type?
-
 		return bo instanceof Classifier || bo instanceof Subcomponent || bo instanceof FeatureGroup
 				|| bo instanceof ComponentInstance || (bo instanceof FeatureInstance
 						&& ((FeatureInstance) bo).getCategory() == FeatureCategory.FEATURE_GROUP);

@@ -3,6 +3,7 @@ package org.osate.ge.internal.diagram.runtime.filtering;
 import java.util.Optional;
 
 import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableSet;
 
 public interface ContentFilterProvider {
 	ImmutableCollection<ContentFilter> getContentFilters();
@@ -15,5 +16,9 @@ public interface ContentFilterProvider {
 		}
 
 		return Optional.empty();
+	}
+
+	default ImmutableSet<ContentFilter> getApplicableContentFilters(final Object bo) {
+		return getContentFilters().stream().filter(cf -> cf.isApplicable(bo)).collect(ImmutableSet.toImmutableSet());
 	}
 }

@@ -20,11 +20,11 @@ public interface DiagramType {
 	String getName();
 
 	/**
-	 * Returns whether the specified business object is a valid context for the diagram type.
+	 * Returns whether the diagram type supports the use of a specified business object as a context.
 	 * @param contextBo
 	 * @return
 	 */
-	boolean isCompatibleWithContext(final Object contextBo);
+	boolean isApplicableToContext(final Object contextBo);
 
 	/**
 	 * Returns the IDs of the default content filters for a business object. Must never return null.
