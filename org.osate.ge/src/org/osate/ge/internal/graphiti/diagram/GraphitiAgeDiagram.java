@@ -11,11 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IResourceDelta;
-import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.emf.common.command.AbstractCommand;
 import org.eclipse.emf.common.command.Command;
 import org.eclipse.emf.common.util.URI;
@@ -87,8 +87,7 @@ import com.google.common.base.Strings;
 public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 	public final static String AADL_DIAGRAM_TYPE_ID = "AADL Diagram";
 	public final static String incompleteIndicator = "*";
-	private LocalResourceManager localResourceManager = new LocalResourceManager(
-			AgeDiagramTypeProvider.getResources());
+	private LocalResourceManager localResourceManager = new LocalResourceManager(AgeDiagramTypeProvider.getResources());
 
 	private final UpdaterListener updateListener;
 	private final AgeDiagram ageDiagram;
@@ -118,8 +117,8 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 	 */
 	public GraphitiAgeDiagram(final AgeDiagram ageDiagram, final Diagram graphitiDiagram,
 			final EditingDomain editingDomain, final LayoutInfoProvider layoutInfoProvider,
-			final CommandExecutor cmdExecutor,
-			final ColoringProvider coloringProvider, final UpdaterListener updateListener) {
+			final CommandExecutor cmdExecutor, final ColoringProvider coloringProvider,
+			final UpdaterListener updateListener) {
 		this.ageDiagram = Objects.requireNonNull(ageDiagram, "ageDiagram must not be null");
 		Objects.requireNonNull(editingDomain, "editingDomain must not be null");
 		this.updateListener = Objects.requireNonNull(updateListener, "updateListener must not be null");
@@ -129,19 +128,19 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 		this.finalStyleProvider = new StyleCalculator(ageDiagram.getConfiguration(), de -> {
 			final org.osate.ge.graphics.Color foreground = overrideForegroundColorMap.get(de);
-			if(foreground == null) {
+			if (foreground == null) {
 				return Style.EMPTY;
 			} else {
 				return StyleBuilder.create().foregroundColor(foreground).build();
 			}
 		});
 
-		// Create a URI to use for the resource. This resource uses a scheme which does not have a registered handler.
-		// A handler is not needed the resource's save() should not be called. The URI just serves as a unique identifier in the resource set.
+// Create a URI to use for the resource. This resource uses a scheme which does not have a registered handler.
+// A handler is not needed the resource's save() should not be called. The URI just serves as a unique identifier in the resource set.
 		final URI ignoredUri = URI.createHierarchicalURI("osate_ge_ignore", null, null,
 				new String[] { "internal.aadl_diagram" }, null, null);
 
-		// Create the diagram resource and add the diagram to it.
+// Create the diagram resource and add the diagram to it.
 		final Resource diagramResource = editingDomain.getResourceSet().createResource(ignoredUri);
 		editingDomain.getCommandStack().execute(new AbstractCommand() {
 			@Override
@@ -166,32 +165,15 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 			}
 		});
 
-		// Listen for resource change
-		final IWorkspace workspace = ResourcesPlugin.getWorkspace();
-		workspace.addResourceChangeListener(event -> {
-			// Only update diagram if an image that is referenced by the diagram is modified/added/removed
-			for (final String image : ageDiagram.getAllDiagramNodes()
-					.filter(dn -> dn instanceof DiagramElement)
-					.map(dn -> ((DiagramElement) dn).getStyle().getImage())
-					.filter(image -> !Strings.isNullOrEmpty(image))
-					.collect(Collectors.toSet())) {
-				if (isResourceDeltaReferencedImage(event.getDelta(), image)) {
-					Display.getDefault().asyncExec(() -> {
-						ageDiagram.modify("Update on Resource Change", m -> createUpdateElementsFromAgeDiagram(m));
-					});
-
-					break;
-				}
-			}
-		});
-
+// Listen for resource change
+		ResourcesPlugin.getWorkspace().addResourceChangeListener(resourceChangeListener);
 		ageDiagram.addModificationListener(modificationListener); // Listen for updates
 		ageDiagram.setTransactionHandler((label, op) -> {
 			final boolean inTransaction = ((InternalTransactionalEditingDomain) editingDomain)
 					.getActiveTransaction() != null;
 
 			// Don't create a transaction if already in one or if the modification listener is disabled. In the latter case, the graphiti diagram will not be
-			// updated.
+// updated.
 			if (inTransaction || !modificationListener.enabled) {
 				op.run();
 			} else {
@@ -239,18 +221,78 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		});
 	}
 
-	private static boolean isResourceDeltaReferencedImage(IResourceDelta delta, final String image) {
-		if (delta.getFullPath().toOSString().equalsIgnoreCase(image)) {
-			return true;
+	private IResourceChangeListener resourceChangeListener = event -> {
+		// Map of a resource that was modified to the diagram elements that reference the resource
+		final Map<String, List<DiagramElement>> resourceChangedToDiagramElementMap = new HashMap<>();
+		final AgeDiagram ageDiagram = getAgeDiagram();
+// Build map
+		ageDiagram.getAllDiagramNodes().filter(dn -> dn instanceof DiagramElement).map(dn -> (DiagramElement) dn)
+		.forEach(de -> {
+			final String image = de.getStyle().getImage();
+			if (!Strings.isNullOrEmpty(image)) {
+				// Get resource if diagram needs an update
+				final String resource = getResourceIfReferencedByDiagram(event.getDelta(), image);
+				if (!Strings.isNullOrEmpty(resource)) {
+					final List<DiagramElement> list = resourceChangedToDiagramElementMap.containsKey(resource)
+							? resourceChangedToDiagramElementMap.get(resource)
+									: new ArrayList<>();
+							list.add(de);
+							resourceChangedToDiagramElementMap.put(resource, list);
+				}
+			}
+		});
+
+// Only update diagram if an image that is referenced by the diagram is modified/added/removed
+		if (!resourceChangedToDiagramElementMap.isEmpty()) {
+			Display.getDefault().syncExec(() -> {
+				ageDiagram.modify("Update Diagram After Resource Change", m -> {
+// Update diagram element images
+					for (final Map.Entry<String, List<DiagramElement>> entry : resourceChangedToDiagramElementMap
+							.entrySet()) {
+						for (final DiagramElement de : entry.getValue()) {
+							m.setStyle(de, getStyle(de, entry.getKey()));
+						}
+					}
+
+					createUpdateElementsFromAgeDiagram(m);
+				});
+			});
+		}
+	};
+
+	private Style getStyle(final DiagramElement diagramElement, final Object value) {
+		final StyleBuilder sb = StyleBuilder.create(diagramElement.getStyle());
+		return sb.image((String) value).build();
+	}
+
+	/**
+	 * Determine if resource added/removed/changed is referenced by the diagram
+	 * @param delta
+	 * @param image
+	 * @return resource referenced by diagram
+	 */
+	private String getResourceIfReferencedByDiagram(final IResourceDelta delta, final String image) {
+		if (delta.getKind() == IResourceDelta.ADDED) {
+			final IPath movedFromPath = delta.getMovedFromPath();
+			final String fullPath = delta.getFullPath().toOSString();
+			final String compString = movedFromPath == null ? fullPath : movedFromPath.toOSString();
+			return image.equalsIgnoreCase(compString) ? fullPath : null;
+		}
+
+		if (delta.getKind() == IResourceDelta.REMOVED) {
+			final IPath movedToPath = delta.getMovedToPath();
+			final String compString = movedToPath == null ? delta.getFullPath().toOSString() : movedToPath.toOSString();
+			return image.equalsIgnoreCase(compString) ? image : null;
 		}
 
 		for (final IResourceDelta childDelta : delta.getAffectedChildren()) {
-			if (isResourceDeltaReferencedImage(childDelta, image)) {
-				return true;
+			final String resource = getResourceIfReferencedByDiagram(childDelta, image);
+			if (resource != null) {
+				return resource;
 			}
 		}
 
-		return false;
+		return null;
 	}
 
 	private void refreshOverrideForegroundColorMap() {
@@ -269,6 +311,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 	@Override
 	public void close() {
+		ResourcesPlugin.getWorkspace().removeResourceChangeListener(resourceChangeListener);
 		localResourceManager.dispose();
 		ageDiagram.removeModificationListener(modificationListener);
 	};
@@ -317,7 +360,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 			removeMappingForBranch(child);
 		}
 
-		// Remove mapping for the element itself
+// Remove mapping for the element itself
 		final PictogramElement pe = getPictogramElement(dn);
 		pictogramElementToDiagramNodeMap.remove(pe);
 		diagramNodeToPictogramElementMap.remove(dn);
@@ -347,7 +390,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 				getPictogramElement(de));
 		Objects.requireNonNull(pe, "pe must not be null");
 
-		// Set whether the pictogram element is active based if the graphic is a decoration
+// Set whether the pictogram element is active based if the graphic is a decoration
 		if (de.getGraphicalConfiguration().isDecoration) {
 			pe.setActive(!(containerPe instanceof Connection) || g instanceof Label);
 
@@ -364,7 +407,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 		addMapping(de, pe);
 
-		// Configure PE if one exists
+// Configure PE if one exists
 		if (pe instanceof Shape) {
 			final Shape shape = ((Shape) pe);
 			AnchorUtil.createOrUpdateChopboxAnchor(shape);
@@ -377,7 +420,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 			}
 		}
 
-		// Update Children
+// Update Children
 		ensureCreatedChildren(de, pe);
 	}
 
@@ -418,7 +461,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 			PropertyUtil.setDockArea(pe, de.getDockArea());
 
-			// Delete Transient Shapes
+// Delete Transient Shapes
 			if (shape instanceof ContainerShape) {
 				List<Shape> shapesToDelete = null; // Shapes that should be deleted
 				final ContainerShape containerShape = (ContainerShape) shape;
@@ -432,7 +475,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 					}
 				}
 
-				// Delete all shapes that were marked for deletion
+// Delete all shapes that were marked for deletion
 				if (shapesToDelete != null) {
 					for (final Shape s : shapesToDelete) {
 						EcoreUtil.delete(s, true);
@@ -445,8 +488,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 			// Set Anchors
 			if (ac.isFlowIndicator) {
-				connection.setStart(
-						getAnchor(de.getStartElement(), true));
+				connection.setStart(getAnchor(de.getStartElement(), true));
 				// If it is a flow indicator, get the appropriate anchor from the start element
 				final PictogramElement startPe = diagramNodeToPictogramElementMap.get(de.getStartElement());
 				connection.setEnd(AnchorUtil.getAnchorByName(startPe, AnchorNames.FLOW_SPECIFICATION));
@@ -469,19 +511,18 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 				final List<org.eclipse.graphiti.mm.algorithms.styles.Point> graphitiBendpoints = ffc.getBendpoints();
 				graphitiBendpoints.clear();
 				for (final org.osate.ge.graphics.Point bendpoint : de.getBendpoints()) {
-					graphitiBendpoints
-					.add(Graphiti.getGaService().createPoint((int) Math.round(bendpoint.x),
+					graphitiBendpoints.add(Graphiti.getGaService().createPoint((int) Math.round(bendpoint.x),
 							(int) Math.round(bendpoint.y)));
 				}
 			}
 		}
 
-		// Update Children
+// Update Children
 		if (recursive) {
 			updateChildren(mod, de, recursive);
 		}
 
-		// Build the primary label which includes the element's name
+// Build the primary label which includes the element's name
 		final String completenessSuffix = de.getCompleteness() == Completeness.INCOMPLETE ? incompleteIndicator : "";
 		final Style finalStyle = finalStyleProvider.getStyle(de);
 		final String primaryLabelStr = (!finalStyle.getPrimaryLabelVisible().booleanValue() || de.getName() == null)
@@ -515,7 +556,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 			final IGaService gaService = Graphiti.getGaService();
 
-			// Create label decorator
+// Create label decorator
 			double labelX = 0;
 			double labelY = 0;
 			if (primaryLabelStr != null) {
@@ -529,15 +570,14 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 				TextUtil.setStyleAndSize(graphitiDiagram, text, de.getStyle().getFontSize());
 
-				final org.osate.ge.graphics.Point primaryLabelPosition = de
-						.getConnectionPrimaryLabelPosition();
+				final org.osate.ge.graphics.Point primaryLabelPosition = de.getConnectionPrimaryLabelPosition();
 				if (primaryLabelPosition == null) {
 					// Set default position
 					final IDimension labelTextSize = GraphitiUi.getUiLayoutService().calculateTextSize(primaryLabelStr,
 							text.getFont());
 					if (ageConnection.isFlowIndicator) { // Special default position for flow indicator labels
 						labelX = -28; // Position the label such that it the default text does not intersect with the border when docked on the left or on the
-						// right
+// right
 						labelY = 5;
 					} else {
 						labelX = -labelTextSize.getWidth() / 2;
@@ -551,14 +591,14 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 				gaService.setLocation(text, (int) Math.round(labelX), (int) Math.round(labelY));
 			}
 
-			// Create Graphiti decorators for connection terminators
+// Create Graphiti decorators for connection terminators
 			createDecorator(connection, ageConnection.srcTerminator, 0.0);
 			createDecorator(connection, ageConnection.dstTerminator, 1.0);
 		}
 
-		// Refresh the Top Level Graphics Algorithm. Connections do not have their graphics algorithms recreated because they all have the same type of
-		// GraphicsAlgorithm
-		// and because there are issues when recreating the graphics algorithm of connections. Upon update, the connections may disappear.
+// Refresh the Top Level Graphics Algorithm. Connections do not have their graphics algorithms recreated because they all have the same type of
+// GraphicsAlgorithm
+// and because there are issues when recreating the graphics algorithm of connections. Upon update, the connections may disappear.
 		if (pe instanceof Shape) {
 			final Shape shape = (Shape) pe;
 			// Set the position of the refreshed graphics algorithm
@@ -566,7 +606,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 			final GraphicsAlgorithm newGa = gaService.createInvisibleRectangle(shape);
 			PropertyUtil.setIsStylingContainer(newGa, true);
 
-			// Only set the size if it already has one assigned. Otherwise, leave it to the layout algorithm.
+// Only set the size if it already has one assigned. Otherwise, leave it to the layout algorithm.
 			if (de.hasSize()) {
 				final int width = Math.max(10, (int) Math.round(de.getWidth()));
 				final int height = Math.max(10, (int) Math.round(de.getHeight()));
@@ -575,7 +615,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 				gaService.setSize(newGa, width, height);
 			}
 
-			// Set Position
+// Set Position
 			final org.osate.ge.graphics.Point position = de.getPosition();
 			if (position != null) {
 				gaService.setLocation(newGa, (int) Math.round(position.x), (int) Math.round(position.y));
@@ -728,8 +768,8 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		return ageDiagram;
 	}
 
-	// Refreshes the override color map and the style of the specified elements. Does not refresh their descendants.
-	// Must be called within a transaction
+// Refreshes the override color map and the style of the specified elements. Does not refresh their descendants.
+// Must be called within a transaction
 	public void refreshStyle(final Collection<DiagramElement> elements) {
 		refreshOverrideForegroundColorMap();
 		for (final DiagramElement de : elements) {
@@ -744,7 +784,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		}
 	}
 
-	// Must be called inside the proper transaction
+// Must be called inside the proper transaction
 	public void refreshDiagramStyles() {
 		refreshOverrideForegroundColorMap();
 		// Refresh Coloring
@@ -886,7 +926,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 	}
 
-	// OPTIMIZE: This uses a simple algorithm where a diagram update is performed when a new item is added. Ideally, it would only update the affected items.
+// OPTIMIZE: This uses a simple algorithm where a diagram update is performed when a new item is added. Ideally, it would only update the affected items.
 	private class GraphitiDiagramModificationListener implements DiagramModificationListener {
 		private boolean enabled = true;
 		private boolean inBeforeModificationsCompleted = false;
@@ -924,11 +964,11 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		@Override
 		public void elementUpdated(final ElementUpdatedEvent e) {
 			// Don't store updated elements when an element has been added. The add will trigger a complete update.
-			// Ignore elements which don't have a graphical configuration.
+// Ignore elements which don't have a graphical configuration.
 			if (enabled && !needFullUpdate && e.element.getGraphicalConfiguration() != null
 					&& !inBeforeModificationsCompleted) {
 				// If the pictogram element type and the graphic type do not agree on whether the element is a connection, treat the update as an addition.
-				// This ensures the the pictogram element is recreated.
+// This ensures the the pictogram element is recreated.
 				final boolean peIsConnection = getPictogramElement(e.element) instanceof Connection;
 				final boolean graphicIsConnection = e.element.getGraphic() instanceof AgeConnection;
 				if (peIsConnection == graphicIsConnection) {
@@ -958,8 +998,9 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 						// Remove elements
 						for (final DiagramElement element : elementsToRemove) {
-							// Remove any contained connections first. Connections are stored at the diagram level in the Graphiti model so they need to be deleted
-							// individually.
+							// Remove any contained connections first. Connections are stored at the diagram level in the Graphiti model so they need to be
+// deleted
+// individually.
 							removeContainedConnections(element);
 
 							final PictogramElement pe = getPictogramElement(element);
@@ -967,7 +1008,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 								EcoreUtil.delete(pe, true);
 							}
 
-							// Remove the mapping
+// Remove the mapping
 							removeMappingForBranch(element);
 						}
 
@@ -982,25 +1023,27 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 								updateDiagramElement(event.mod, element, false);
 
 								if (pe instanceof ContainerShape || pe instanceof ConnectionDecorator) {
-									final DiagramNode undockedContainer = getUndockedDiagramNode(element.getContainer());
+									final DiagramNode undockedContainer = getUndockedDiagramNode(
+											element.getContainer());
 									nodesToLayout.add(undockedContainer);
 								} else if (pe instanceof Connection) { // Relayout connections
-									// Relayout the entire diagram. This is needed because line width of connection do not
-									// update visually until the diagram layout. Unsure what actually triggers the update of the UI
+// Relayout the entire diagram. This is needed because line width of connection do not
+// update visually until the diagram layout. Unsure what actually triggers the update of the UI
 									nodesToLayout.add(getAgeDiagram()); //
-									// nodesToLayout.add(getUndockedDiagramNode(element));
+// nodesToLayout.add(getUndockedDiagramNode(element));
 								}
 							}
 
-							// Layout Nodes
-							// OPTIMIZE: It would be more efficient to only layout the nodes that need to be layed out instead of laying out all descendants of the
-							// container.
+// Layout Nodes
+// OPTIMIZE: It would be more efficient to only layout the nodes that need to be layed out instead of laying out all descendants of the
+// container.
 							nodesToLayout.removeIf((n) -> collectionContainsAnyAncestor(nodesToLayout, n)); // Filter out elements whose parents are in the
-							// collection
-							// of nodes to layout
+// collection
+// of nodes to layout
 
-							Set<DiagramElement> elementsToCheckParentsForLayout = new HashSet<>(); // Contains the set of diagram elements whose parents need to be
-							// checked to see if they should be layed out
+							Set<DiagramElement> elementsToCheckParentsForLayout = new HashSet<>(); // Contains the set of diagram elements whose parents need to
+// be
+// checked to see if they should be layed out
 							for (final DiagramNode n : nodesToLayout) {
 								if (n instanceof AgeDiagram) {
 									LayoutUtil.layoutDepthFirst(graphitiDiagram, event.mod, (AgeDiagram) n,
@@ -1012,7 +1055,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 								}
 							}
 
-							// Check the elements to see if their parents need to be layed out
+// Check the elements to see if their parents need to be layed out
 							while (elementsToCheckParentsForLayout.size() > 0) {
 								final HashSet<DiagramElement> parentsToLayout = new HashSet<>();
 								for (final DiagramElement e : elementsToCheckParentsForLayout) {
@@ -1022,7 +1065,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 									}
 								}
 
-								// Layout the parents
+// Layout the parents
 								for (final DiagramElement parentToLayout : parentsToLayout) {
 									// Get the pictogram element and lay it out if it is a shape
 									final PictogramElement parentPe = getPictogramElement(parentToLayout);
@@ -1033,17 +1076,17 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 									}
 								}
 
-								// Check the parents next
+// Check the parents next
 								elementsToCheckParentsForLayout = parentsToLayout; // Check the parents next
 							}
 
-							// Update affected connections
+// Update affected connections
 							for (final DiagramElement element : elementsToUpdate) {
 								finishUpdating(element);
 							}
 						}
 
-						// Refresh the entire diagram's color. A model change could affect any number of diagram elements.
+// Refresh the entire diagram's color. A model change could affect any number of diagram elements.
 						refreshDiagramStyles();
 						localResourceManager.dispose();
 						localResourceManager = tmpLocalResourceManager;
@@ -1155,7 +1198,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 			return false;
 		}
 
-		// Check if e1 is inside the first undocked element in the e2 hierarchy
+// Check if e1 is inside the first undocked element in the e2 hierarchy
 		for (DiagramNode t1 = e1; t1 != null; t1 = t1.getParent()) {
 			if (t1 == nd2) {
 				return true;
