@@ -334,7 +334,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 	}
 
 	private static boolean supportsImage(final DiagramElement de) {
-		return de.getDockArea() == null;
+		return de.getDockArea() == null && de.getBendpoints().isEmpty();
 	}
 
 	private static boolean supportsFontOptions(final DiagramElement de) {

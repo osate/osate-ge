@@ -221,8 +221,9 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		});
 	}
 
+	// When an image resource is added/removed/modified, the diagram updates accordingly
 	private IResourceChangeListener resourceChangeListener = event -> {
-		// Map of a resource that was modified to the diagram elements that reference the resource
+		// Map of an image resource that was modified to the diagram elements that reference the resource
 		final Map<String, List<DiagramElement>> resourceChangedToDiagramElementMap = new HashMap<>();
 		final AgeDiagram ageDiagram = getAgeDiagram();
 // Build map

@@ -19,7 +19,7 @@ import org.eclipse.graphiti.ui.platform.AbstractImageProvider;
 import org.eclipse.graphiti.ui.platform.IImageProvider;
 
 public class AgeImageProvider extends AbstractImageProvider implements
-IImageProvider {
+		IImageProvider {
 	private static final String IMAGES_EXTENSION_POINT_ID = "org.osate.ge.images";
 
 	@Override
@@ -43,10 +43,6 @@ IImageProvider {
 				}
 			}
 		}
-	}
-
-	public void addImage(final String imageId, final String imageUri) {
-		addImageFilePath(imageId, imageUri);
 	}
 
 	private static URI getCompleteImagePath(final String imagePlugin, final String imagePath) {

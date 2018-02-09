@@ -319,8 +319,8 @@ public class DiagramSerialization {
 
 		final String image = currentStyle.getImage();
 		if (!Strings.isNullOrEmpty(image)) {
-			newElement.setImageVisible(currentStyle.isImageVisible());
 			newElement.setImage(image);
+			newElement.setImageVisible(currentStyle.isImageVisible());
 		}
 
 		final org.osate.ge.graphics.Color fontColor = currentStyle.getFontColor();
