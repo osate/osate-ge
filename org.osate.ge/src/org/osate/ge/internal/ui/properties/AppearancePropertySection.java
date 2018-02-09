@@ -204,7 +204,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			}
 		});
 
-		setImageButton.addSelectionListener(selectionAdapter);
+		setImageButton.addSelectionListener(imageSelectionAdapter);
 	}
 
 // Determine if the file is an image
@@ -299,8 +299,6 @@ public class AppearancePropertySection extends AbstractPropertySection {
 
 		final Button outlineButton = outlinePaintListener.getButton();
 		outlineButton.setEnabled(enableOutlineOption);
-
-
 
 		final Style defaultStyle = StyleBuilder.create(diagramElement.getGraphicalConfiguration().style, Style.DEFAULT)
 				.build();
@@ -712,11 +710,12 @@ public class AppearancePropertySection extends AbstractPropertySection {
 				}
 			}));
 
-	private SelectionAdapter selectionAdapter = new SelectionAdapter() {
+	private SelectionAdapter imageSelectionAdapter = new SelectionAdapter() {
 		@Override
 		public void widgetSelected(final SelectionEvent e) {
 			// Open menu that lets user choose new image or remove image
 			final Menu popupMenu = new Menu(setImageButton);
+			// Add menu item to launch choose new image dialog
 			final MenuItem chooseImgMenuItem = new MenuItem(popupMenu, SWT.NONE);
 			chooseImgMenuItem.setText("Choose...");
 			chooseImgMenuItem.addSelectionListener(new SelectionAdapter() {
@@ -725,23 +724,24 @@ public class AppearancePropertySection extends AbstractPropertySection {
 					final ElementTreeSelectionDialog dialog = createSelectionDialog();
 					if (dialog.open() == Window.OK) {
 						final IFile iFile = (IFile) dialog.getResult()[0];
-						runStyleCommand(iFile.getFullPath().toOSString(), sc);
+						runStyleCommand(iFile.getFullPath().toOSString(), imageStyleCommand);
 					}
 				}
 			});
 
+			// Menu item to remove image from diagram element
 			final MenuItem removeImgMenuItem = new MenuItem(popupMenu, SWT.NONE);
 			removeImgMenuItem.setText("Remove");
 			removeImgMenuItem.addSelectionListener(new SelectionAdapter() {
 				@Override
 				public void widgetSelected(final SelectionEvent e) {
-					runStyleCommand(new String(), sc);
-					runStyleCommand(false, imageVisibleStyleCmd);
+					runStyleCommand(new String(), imageStyleCommand);
 				}
 			});
 
-			final Point btnSize = setImageButton.getSize();
-			popupMenu.setLocation(getShellPosition(btnSize, setImageButton, 5));
+			// Set menu location
+			popupMenu.setLocation(getShellPosition(setImageButton.getSize(), setImageButton, 5));
+			// Show menu
 			popupMenu.setVisible(true);
 		}
 
@@ -764,12 +764,13 @@ public class AppearancePropertySection extends AbstractPropertySection {
 				return new Status(IStatus.ERROR, Activator.PLUGIN_ID, emptyOrInvalidMsg);
 			});
 
+			// Allow selection of project resources
 			dialog.setInput(ResourcesPlugin.getWorkspace().getRoot());
 			return dialog;
 		}
 
 // Only allow projects, folders, and image files to appear in dialog selection
-		private ViewerFilter selectionFilter = new ViewerFilter() {
+		private final ViewerFilter selectionFilter = new ViewerFilter() {
 			@Override
 			public boolean select(final Viewer viewer, final Object parentElement, final Object element) {
 				return element instanceof IProject || element instanceof IFolder
@@ -777,7 +778,8 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			}
 		};
 
-		final StyleCommand sc = new StyleCommand("Set Image", (diagramElement, sb, value) -> {
+		// Set image and visibility
+		final StyleCommand imageStyleCommand = new StyleCommand("Set Image", (diagramElement, sb, value) -> {
 			if (supportsImage(diagramElement)) {
 				final String image = (String) value;
 				sb.image(image);
@@ -786,6 +788,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		});
 	};
 
+	// Set image visibility
 	final StyleCommand imageVisibleStyleCmd = new StyleCommand("Show Image", (diagramElement, sb, value) -> {
 		if (supportsImage(diagramElement) && !Strings.isNullOrEmpty(diagramElement.getStyle().getImage())) {
 			sb.imageVisible((Boolean) value);
@@ -795,7 +798,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 	private final static ImageDescriptor outlineIcon = Activator.getImageDescriptor("icons/Outline.gif");
 	private final static ImageDescriptor backgroundIcon = Activator.getImageDescriptor("icons/Background.gif");
 	private final static ImageDescriptor fontColorIcon = Activator.getImageDescriptor("icons/FontColor.gif");
-	private final static ImageDescriptor imageIcon = Activator.getImageDescriptor("icons/Image.gif");
+	private final static ImageDescriptor imageIcon = Activator.getImageDescriptor("icons/BackgroundImage.gif");
 	private AgeDiagram ageDiagram;
 	private ResourceManager resourceMgr;
 	private List<DiagramElement> selectedDiagramElements = new ArrayList<>();

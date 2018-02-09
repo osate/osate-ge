@@ -10,6 +10,7 @@ import org.osate.ge.internal.graphiti.diagram.PropertyUtil;
 
 public class ImageGraphicsAlgorithmRendererFactory implements IGraphicsAlgorithmRendererFactory {
 	public final static String IMAGE_FIGURE = "org.osate.ge.image.figure";
+	public final static String DEFAULT_IMAGE = "/icons/DefaultImage.gif";
 
 	@Override
 	public IGraphicsAlgorithmRenderer createGraphicsAlgorithmRenderer(final IRendererContext context) {
@@ -27,7 +28,7 @@ public class ImageGraphicsAlgorithmRendererFactory implements IGraphicsAlgorithm
 		} catch (final Exception e) {
 			// Show default image if creating image fails
 			return new ImageFigure(AgeDiagramTypeProvider.getResources()
-					.createImage(ImageDescriptor.createFromFile(getClass(), "/icons/default_image.gif")));
+					.createImage(ImageDescriptor.createFromFile(getClass(), DEFAULT_IMAGE)));
 		}
 	}
 }
