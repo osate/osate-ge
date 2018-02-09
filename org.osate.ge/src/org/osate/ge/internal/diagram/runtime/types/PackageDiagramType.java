@@ -9,12 +9,14 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;
 
 public class PackageDiagramType implements DiagramType {
+	public final static String ID = "package";
+
 	private final ImmutableSet<String> defaultPackageFilters = ImmutableSet.of(ClassifierFilter.ID);
 	private final ImmutableSet<String> defaultClassifierFilters = ImmutableSet.of(GeneralizationFilter.ID);
 
 	@Override
 	public String getId() {
-		return "package";
+		return ID;
 	}
 
 	@Override

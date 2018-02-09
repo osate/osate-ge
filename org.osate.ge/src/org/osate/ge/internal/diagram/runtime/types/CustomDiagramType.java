@@ -41,11 +41,6 @@ public class CustomDiagramType implements DiagramType {
 	}
 
 	@Override
-	public boolean getDefaultConnectionPrimaryLabelsVisible() {
-		return true;
-	}
-
-	@Override
 	public boolean isUserCreatable() {
 		return false;
 	}

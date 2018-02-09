@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
@@ -37,6 +36,8 @@ import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ListDialog;
+import org.osate.aadl2.AadlPackage;
+import org.osate.aadl2.Classifier;
 import org.osate.aadl2.NamedElement;
 import org.osate.ge.EmfContainerProvider;
 import org.osate.ge.internal.AgeDiagramProvider;
@@ -48,13 +49,16 @@ import org.osate.ge.internal.diagram.runtime.DiagramModification;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.DiagramSerialization;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
-import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
+import org.osate.ge.internal.diagram.runtime.types.DiagramType;
+import org.osate.ge.internal.diagram.runtime.types.PackageDiagramType;
+import org.osate.ge.internal.diagram.runtime.types.StructureDiagramType;
 import org.osate.ge.internal.diagram.runtime.types.UnrecognizedDiagramType;
 import org.osate.ge.internal.indexing.SavedDiagramIndex;
 import org.osate.ge.internal.indexing.SavedDiagramIndexInvalidator;
 import org.osate.ge.internal.services.DiagramService;
 import org.osate.ge.internal.services.ExtensionRegistryService;
 import org.osate.ge.internal.services.ReferenceService;
+import org.osate.ge.internal.ui.dialogs.CreateDiagramDialog;
 import org.osate.ge.internal.ui.editor.AgeDiagramBehavior;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 import org.osate.ge.internal.ui.util.EditorUtil;
@@ -62,6 +66,8 @@ import org.osate.ge.internal.ui.util.SelectionUtil;
 import org.osate.ge.internal.util.BusinessObjectProviderHelper;
 import org.osate.ge.internal.util.Log;
 import org.osate.ge.internal.util.NonUndoableToolCommand;
+
+import com.google.common.collect.ImmutableCollection;
 
 public class DefaultDiagramService implements DiagramService {
 	private static final QualifiedName LEGACY_PROPERTY_NAME_MODIFICATION_TIMESTAMP = new QualifiedName("org.osate.ge", "diagram_name_modification_stamp");
@@ -193,10 +199,12 @@ public class DefaultDiagramService implements DiagramService {
 		} else if(diagramRefs.size() == 0) {
 			// Prompt user to determine whether a new diagram should be created
 			if(!promptForCreate || MessageDialog.openQuestion(null, "Create New Diagram?", "An existing diagram was not found for the specified model element.\nCreate new diagram?")) {
-				// TODO: Prompt for name and diagram type
-
 				// Create and open a new diagram
 				final IFile diagramFile = createDiagram(bo);
+				if (diagramFile == null) {
+					return null;
+				}
+
 				final AgeDiagramEditor editor = EditorUtil.openEditor(diagramFile, promptForConfigureAfterCreate);
 				return editor;
 			} else {
@@ -239,28 +247,54 @@ public class DefaultDiagramService implements DiagramService {
 		return (result != null && result.length > 0) ? (InternalDiagramReference)result[0] : null;
 	}
 
-	/**
-	 * Gets a new IFile for a new diagram.
-	 * @param resourceSet the resource set that will contain the new resource.
-	 * @param baseFilename the desired filename of the file that will store the resource. The method will adjust the filename to avoid returning an existing file resource
-	 * @return the file resource for the new diagram. The file resource will be one which does not exist.
-	 */
-	private IFile getNewDiagramFile(final IProject project, final String baseFilename) {
-		int nameCount = 1;
-		IFile diagramFile;
-		do
-		{
-			final IFolder diagramFolder = project.getFolder("diagrams/");
-			final String suffix = nameCount == 1 ? "" : "(" + nameCount + ")";
-			diagramFile = diagramFolder.getFile(baseFilename + suffix + AgeDiagramEditor.EXTENSION);
-			nameCount++;
-		} while(diagramFile.exists());
-
-		return diagramFile;
-	}
-
 	@Override
 	public IFile createDiagram(final Object contextBo) {
+		final IProject project = Objects.requireNonNull(getProject(contextBo), "Unable to get project for business object: " + contextBo);
+
+		// TODO
+		final CreateDiagramDialog.Model<DiagramType> createDiagramModel = new CreateDiagramDialog.Model<DiagramType>() {
+			@Override
+			public ImmutableCollection<DiagramType> getDiagramTypes() {
+				return extRegistry.getApplicableDiagramTypes(contextBo);
+			}
+
+			@Override
+			public String getDiagramTypeName(DiagramType diagramType) {
+				return diagramType.getName();
+			}
+
+			@Override
+			public IProject getProject() {
+				return project;
+			}
+
+			@Override
+			public String getDefaultName() {
+				if(contextBo instanceof NamedElement) {
+					return ((NamedElement) contextBo).getQualifiedName().replaceAll("::|:|\\.", "_");
+				} else {
+					return null;
+				}
+			}
+
+			@Override
+			public DiagramType getDefaultDiagramType() {
+				if (contextBo instanceof AadlPackage) {
+					return extRegistry.getDiagramTypeById(PackageDiagramType.ID).orElse(null);
+				} else if (contextBo instanceof Classifier) {
+					return extRegistry.getDiagramTypeById(StructureDiagramType.ID).orElse(null);
+				} else {
+					return null;
+				}
+			}
+		};
+
+		// Prompt the user for the file and diagram type
+		final CreateDiagramDialog.Result<DiagramType> result = CreateDiagramDialog.show(null, createDiagramModel);
+		if (result == null) {
+			return null;
+		}
+
 		// Create an AgeDiagram object. This object doesn't have to be completely valid. It just needs to be able to be written.
 		final AgeDiagram diagram = new AgeDiagram(0);
 
@@ -268,10 +302,12 @@ public class DefaultDiagramService implements DiagramService {
 		final CanonicalBusinessObjectReference contextBoCanonicalRef = Objects.requireNonNull(referenceService.getCanonicalReference(contextBo), "Unable to build canonical reference for business object: " + contextBo);
 		diagram.modify("Configure Diagram", m -> {
 			m.setDiagramConfiguration(
-					new DiagramConfigurationBuilder(new CustomDiagramType(), true)
+					new DiagramConfigurationBuilder(result.getDiagramType(), true)
 					.setContextBoReference(contextBoCanonicalRef).connectionPrimaryLabelsVisible(false)
 					.build());
+
 		});
+
 
 		// Create a root diagram element for the context which will be set to manual.
 		// This has the benefit that the root element will be checked when the user configures the diagram.
@@ -280,15 +316,12 @@ public class DefaultDiagramService implements DiagramService {
 			final DiagramElement contextElement = new DiagramElement(diagram, contextBo, null, contextBoRelRef);
 			m.setManual(contextElement, true);
 			m.addElement(contextElement);
+			m.setContentFilters(contextElement,
+					result.getDiagramType().getApplicableDefaultContentFilters(contextBo, extRegistry));
 		});
 
-		final IProject project = Objects.requireNonNull(getProject(contextBo), "Unable to get project for business object: " + contextBo);
-
 		// Determine the filename to use for the new diagram
-		final String baseDiagramName = contextBo instanceof NamedElement
-				? ((NamedElement) contextBo).getQualifiedName().replaceAll("::|:|\\.", "_")
-				: "untitled_diagram";
-		final IFile newDiagramFile = getNewDiagramFile(project, baseDiagramName);
+		final IFile newDiagramFile = result.getDiagramFile();
 
 		final URI newDiagramUri = URI.createPlatformResourceURI(newDiagramFile.getFullPath().toString(), true);
 		DiagramSerialization.write(diagram, newDiagramUri);
@@ -570,7 +603,7 @@ public class DefaultDiagramService implements DiagramService {
 		}
 	}
 
-	// Variables used during the update process
+// Variables used during the update process
 	private Resource referenceUpdateResource;
 	private DiagramModification referenceUpdateModification;
 
@@ -578,11 +611,11 @@ public class DefaultDiagramService implements DiagramService {
 		void update(CanonicalBusinessObjectReference newCanonicalReference, RelativeBusinessObjectReference newRelativeReference);
 	}
 
-	//
-	// Updateable Reference Implementations
-	//
+//
+// Updateable Reference Implementations
+//
 
-	// Reference to the context field in an open diagram's configuration
+// Reference to the context field in an open diagram's configuration
 	class OpenDiagramContextReference implements UpdateableReference {
 		private final AgeDiagram diagram;
 
@@ -599,7 +632,7 @@ public class DefaultDiagramService implements DiagramService {
 		}
 	}
 
-	// Reference to the reference of an open diagram element
+// Reference to the reference of an open diagram element
 	class OpenDiagramElementReference implements UpdateableReference {
 		private final DiagramElement diagramElement;
 
@@ -615,7 +648,7 @@ public class DefaultDiagramService implements DiagramService {
 		}
 	}
 
-	// Reference to the context field in an saved diagram configuration
+// Reference to the context field in an saved diagram configuration
 	class SavedDiagramContextReference implements UpdateableReference {
 		@Override
 		public void update(final CanonicalBusinessObjectReference newCanonicalReference, final RelativeBusinessObjectReference newRelativeReference) {
@@ -629,7 +662,7 @@ public class DefaultDiagramService implements DiagramService {
 		}
 	}
 
-	// Reference to the context field in an saved diagram element
+// Reference to the context field in an saved diagram element
 	class SavedDiagramElementReference implements UpdateableReference {
 		private final URI diagramElementUri;
 

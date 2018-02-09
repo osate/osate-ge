@@ -16,13 +16,15 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;
 
 public class StructureDiagramType implements DiagramType {
+	public static final String ID = "structure";
+
 	private final ImmutableSet<String> defaultPackageFilters = ImmutableSet.of(ClassifierFilter.ID);
 	private final ImmutableSet<String> defaultClassifierOrSubcomponentFilters = ImmutableSet.of(FeatureFilter.ID,
 			InternalFeatureFilter.ID, ProcessorFeatureFilter.ID, ConnectionFilter.ID, FlowSpecificationFilter.ID);
 
 	@Override
 	public String getId() {
-		return "structure";
+		return ID;
 	}
 
 	@Override
