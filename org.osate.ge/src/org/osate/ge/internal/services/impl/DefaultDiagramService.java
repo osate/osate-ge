@@ -39,6 +39,7 @@ import org.eclipse.ui.dialogs.ListDialog;
 import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.Classifier;
 import org.osate.aadl2.NamedElement;
+import org.osate.aadl2.instance.SystemInstance;
 import org.osate.ge.EmfContainerProvider;
 import org.osate.ge.internal.AgeDiagramProvider;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
@@ -281,7 +282,7 @@ public class DefaultDiagramService implements DiagramService {
 			public DiagramType getDefaultDiagramType() {
 				if (contextBo instanceof AadlPackage) {
 					return extRegistry.getDiagramTypeById(PackageDiagramType.ID).orElse(null);
-				} else if (contextBo instanceof Classifier) {
+				} else if (contextBo instanceof Classifier || contextBo instanceof SystemInstance) {
 					return extRegistry.getDiagramTypeById(StructureDiagramType.ID).orElse(null);
 				} else {
 					return null;

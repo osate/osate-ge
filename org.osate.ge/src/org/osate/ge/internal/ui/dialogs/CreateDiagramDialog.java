@@ -149,34 +149,13 @@ public class CreateDiagramDialog<DiagramType> {
 			typeField.setInput(model.getDiagramTypes());
 			typeField.addSelectionChangedListener(event -> {
 				diagramType = (DiagramType) ((StructuredSelection) typeField.getSelection()).getFirstElement();
+				validate();
 			});
 
 			diagramType = model.getDefaultDiagramType();
 			if (diagramType != null) {
 				typeField.setSelection(new StructuredSelection(diagramType));
 			}
-
-
-
-//			/**
-//			 * Gets a new IFile for a new diagram.
-//			 * @param resourceSet the resource set that will contain the new resource.
-//			 * @param baseFilename the desired filename of the file that will store the resource. The method will adjust the filename to avoid returning an existing file resource
-//			 * @return the file resource for the new diagram. The file resource will be one which does not exist.
-//			 */
-//			private IFile getNewDiagramFile(final IProject project, final String baseFilename) {
-//				int nameCount = 1;
-//				IFile diagramFile;
-//				do
-//				{
-//					final IFolder diagramFolder = project.getFolder("diagrams/");
-//					final String suffix = nameCount == 1 ? "" : "(" + nameCount + ")";
-//					diagramFile = diagramFolder.getFile(baseFilename + suffix + AgeDiagramEditor.EXTENSION);
-//					nameCount++;
-//				} while(diagramFile.exists());
-//
-//				return diagramFile;
-//			}
 
 			// Update the initial value for the file and validate initial values
 			updateFile();

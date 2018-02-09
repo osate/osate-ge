@@ -1,6 +1,5 @@
 package org.osate.ge.internal.diagram.runtime.types;
 
-import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.Classifier;
 import org.osate.aadl2.ComponentCategory;
 import org.osate.aadl2.Subcomponent;
@@ -32,7 +31,7 @@ public class ProcessorBindingDiagramType implements DiagramType {
 
 	@Override
 	public boolean isCompatibleWithContext(final Object contextBo) {
-		return contextBo instanceof AadlPackage || contextBo instanceof Classifier
+		return contextBo instanceof Classifier
 				|| contextBo instanceof ComponentInstance;
 	}
 

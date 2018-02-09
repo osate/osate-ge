@@ -1,6 +1,5 @@
 package org.osate.ge.internal.diagram.runtime.types;
 
-import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.Classifier;
 import org.osate.aadl2.Subcomponent;
 import org.osate.ge.internal.diagram.runtime.filtering.ModeFilter;
@@ -25,7 +24,7 @@ public class ModeDiagramType implements DiagramType {
 
 	@Override
 	public boolean isCompatibleWithContext(final Object contextBo) {
-		return contextBo instanceof AadlPackage || contextBo instanceof Classifier;
+		return contextBo instanceof Classifier;
 	}
 
 	@Override
