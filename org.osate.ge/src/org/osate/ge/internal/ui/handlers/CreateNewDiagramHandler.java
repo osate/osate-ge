@@ -52,7 +52,7 @@ public class CreateNewDiagramHandler extends AbstractHandler {
 
 		final IFile file = diagramService.createDiagram(bo);
 		if (file != null) {
-			EditorUtil.openEditor(file, true);
+			EditorUtil.openEditor(file, false);
 		}
 
 		return null;

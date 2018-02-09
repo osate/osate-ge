@@ -624,6 +624,16 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 	protected DefaultRefreshBehavior createRefreshBehavior() {
 		return new DefaultRefreshBehavior(this) {
 			@Override
+			public void handleAutoUpdateAtStartup() {
+				// Perform incremental layout on startup.
+				final LayoutInfoProvider layoutInfoProvider = (LayoutInfoProvider) getDiagramTypeProvider()
+						.getCurrentToolBehaviorProvider()
+						.getAdapter(LayoutInfoProvider.class);
+				ageDiagram.modify("Incremental Layout",
+						m -> DiagramElementLayoutUtil.layoutIncrementally(ageDiagram, m, layoutInfoProvider));
+			}
+
+			@Override
 			protected void autoUpdate() {
 				IDiagramTypeProvider diagramTypeProvider = getDiagramTypeProvider();
 				Diagram diagram = diagramTypeProvider.getDiagram();
@@ -878,7 +888,7 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 				if(mmDiagram.getFormatVersion() > DiagramSerialization.FORMAT_VERSION) {
 					MessageDialog.openWarning(Display.getCurrent().getActiveShell(),
 							"Diagram Created with Newer Version of OSATE", "The diagram '" + uri.lastSegment()
-									+ "' was created with a newer version of the OSATE. The diagram may not be correctly displayed. Saving the diagram with the running version of OSATE may result in the loss of diagram information.");
+							+ "' was created with a newer version of the OSATE. The diagram may not be correctly displayed. Saving the diagram with the running version of OSATE may result in the loss of diagram information.");
 				}
 
 				// Create an empty Graphiti diagram. It will be updated after in initDiagramTypeProvider() after the diagram type provider is initialized and
@@ -970,12 +980,6 @@ public class AgeDiagramBehavior extends DiagramBehavior implements GraphitiAgeDi
 
 			fp.getDiagramUpdater().updateDiagram(ageDiagram);
 		});
-
-		// Perform incremental layout
-		final LayoutInfoProvider layoutInfoProvider = (LayoutInfoProvider) dtp.getCurrentToolBehaviorProvider()
-				.getAdapter(LayoutInfoProvider.class);
-		ageDiagram.modify("Incremental Layout",
-				m -> DiagramElementLayoutUtil.layoutIncrementally(ageDiagram, m, layoutInfoProvider));
 
 		// Set the coloring service field. It is needed
 		final ColoringProvider coloringProvider = new ColoringProvider() {
