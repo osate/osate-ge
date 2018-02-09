@@ -2,8 +2,10 @@ package org.osate.ge.internal.diagram.runtime.types;
 
 import org.osate.aadl2.Classifier;
 import org.osate.aadl2.ComponentCategory;
+import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.Subcomponent;
 import org.osate.aadl2.instance.ComponentInstance;
+import org.osate.aadl2.instance.SystemInstance;
 import org.osate.ge.DiagramType;
 import org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilter;
 
@@ -32,8 +34,8 @@ public class ProcessorBindingDiagramType implements DiagramType {
 
 	@Override
 	public boolean isApplicableToContext(final Object contextBo) {
-		return contextBo instanceof Classifier
-				|| contextBo instanceof ComponentInstance;
+		return contextBo instanceof ComponentImplementation
+				|| contextBo instanceof SystemInstance;
 	}
 
 	@Override

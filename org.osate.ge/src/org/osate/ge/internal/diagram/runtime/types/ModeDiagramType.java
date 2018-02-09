@@ -1,6 +1,7 @@
 package org.osate.ge.internal.diagram.runtime.types;
 
 import org.osate.aadl2.Classifier;
+import org.osate.aadl2.ComponentClassifier;
 import org.osate.aadl2.Subcomponent;
 import org.osate.ge.DiagramType;
 import org.osate.ge.internal.diagram.runtime.filtering.ModeFilter;
@@ -25,7 +26,7 @@ public class ModeDiagramType implements DiagramType {
 
 	@Override
 	public boolean isApplicableToContext(final Object contextBo) {
-		return contextBo instanceof Classifier;
+		return contextBo instanceof ComponentClassifier;
 	}
 
 	@Override
