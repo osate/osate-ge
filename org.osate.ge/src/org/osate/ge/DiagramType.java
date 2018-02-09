@@ -1,6 +1,5 @@
-package org.osate.ge.internal.diagram.runtime.types;
+package org.osate.ge;
 
-import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
 import org.osate.ge.internal.diagram.runtime.filtering.ContentFilterProvider;
 
 import com.google.common.collect.ImmutableCollection;

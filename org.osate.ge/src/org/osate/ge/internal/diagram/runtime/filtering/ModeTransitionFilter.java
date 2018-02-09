@@ -3,6 +3,7 @@ package org.osate.ge.internal.diagram.runtime.filtering;
 import org.osate.aadl2.ComponentClassifier;
 import org.osate.aadl2.ModeTransition;
 import org.osate.aadl2.Subcomponent;
+import org.osate.ge.ContentFilter;
 
 public class ModeTransitionFilter implements ContentFilter {
 	public static final String ID = "modeTransitions";

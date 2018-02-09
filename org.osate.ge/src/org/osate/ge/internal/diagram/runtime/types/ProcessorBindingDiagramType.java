@@ -4,6 +4,7 @@ import org.osate.aadl2.Classifier;
 import org.osate.aadl2.ComponentCategory;
 import org.osate.aadl2.Subcomponent;
 import org.osate.aadl2.instance.ComponentInstance;
+import org.osate.ge.DiagramType;
 import org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilter;
 
 import com.google.common.collect.ImmutableCollection;

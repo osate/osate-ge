@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
+import org.osate.ge.ContentFilter;
 
 import com.google.common.collect.ImmutableSet;
 

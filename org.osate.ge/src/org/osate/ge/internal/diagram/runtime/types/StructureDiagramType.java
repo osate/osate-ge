@@ -4,6 +4,7 @@ import org.osate.aadl2.Classifier;
 import org.osate.aadl2.Subcomponent;
 import org.osate.aadl2.instance.ComponentInstance;
 import org.osate.aadl2.instance.SystemInstance;
+import org.osate.ge.DiagramType;
 import org.osate.ge.internal.diagram.runtime.filtering.ConnectionFilter;
 import org.osate.ge.internal.diagram.runtime.filtering.FeatureFilter;
 import org.osate.ge.internal.diagram.runtime.filtering.FlowSpecificationFilter;

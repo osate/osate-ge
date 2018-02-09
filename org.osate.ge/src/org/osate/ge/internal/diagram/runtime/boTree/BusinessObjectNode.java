@@ -9,8 +9,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.osate.ge.BusinessObjectContext;
+import org.osate.ge.ContentFilter;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
-import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
 
 import com.google.common.collect.ImmutableSet;
 

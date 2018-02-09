@@ -55,7 +55,7 @@
                   
                </documentation>
                <appinfo>
-                  <meta.attribute kind="java" basedOn=":org.osate.ge.internal.diagram.runtime.filters.ContentFilter"/>
+                  <meta.attribute kind="java" basedOn=":org.osate.ge.ContentFilter"/>
                </appinfo>
             </annotation>
          </attribute>

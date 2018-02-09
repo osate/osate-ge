@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-import org.osate.ge.internal.diagram.runtime.types.DiagramType;
+import org.osate.ge.DiagramType;
 
 /**
  * Immutable type which represents the diagram configuration.

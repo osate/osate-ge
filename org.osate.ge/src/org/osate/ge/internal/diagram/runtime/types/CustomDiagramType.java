@@ -3,6 +3,7 @@ package org.osate.ge.internal.diagram.runtime.types;
 import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.Classifier;
 import org.osate.aadl2.instance.SystemInstance;
+import org.osate.ge.DiagramType;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;

@@ -1,6 +1,7 @@
 package org.osate.ge.internal.diagram.runtime.filtering;
 
 import org.osate.aadl2.SubprogramCallSequence;
+import org.osate.ge.ContentFilter;
 import org.osate.ge.internal.model.SubprogramCallOrder;
 
 public class SubprogramCallOrderFilter implements ContentFilter {

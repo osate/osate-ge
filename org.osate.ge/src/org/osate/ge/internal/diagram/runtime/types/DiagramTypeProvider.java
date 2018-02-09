@@ -2,6 +2,8 @@ package org.osate.ge.internal.diagram.runtime.types;
 
 import java.util.Optional;
 
+import org.osate.ge.DiagramType;
+
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 

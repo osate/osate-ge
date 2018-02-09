@@ -6,6 +6,7 @@ import org.osate.aadl2.ComponentClassifier;
 import org.osate.aadl2.FlowKind;
 import org.osate.aadl2.FlowSpecification;
 import org.osate.aadl2.Subcomponent;
+import org.osate.ge.ContentFilter;
 import org.osate.ge.internal.util.StringUtil;
 
 public class FlowSpecificationKindFilter implements ContentFilter {

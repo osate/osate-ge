@@ -3,6 +3,7 @@ package org.osate.ge.internal.diagram.runtime.filtering;
 import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.Subcomponent;
 import org.osate.aadl2.SubprogramCallSequence;
+import org.osate.ge.ContentFilter;
 
 public class SubprogramCallSequenceFilter implements ContentFilter {
 	public static final String ID = "subprogramCallSequences";

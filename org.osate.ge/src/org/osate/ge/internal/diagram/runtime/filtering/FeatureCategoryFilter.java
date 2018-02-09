@@ -18,6 +18,7 @@ import org.osate.aadl2.SubprogramGroupAccess;
 import org.osate.aadl2.instance.ComponentInstance;
 import org.osate.aadl2.instance.FeatureCategory;
 import org.osate.aadl2.instance.FeatureInstance;
+import org.osate.ge.ContentFilter;
 
 public class FeatureCategoryFilter implements ContentFilter {
 	private final FeatureCategory category;

@@ -1,6 +1,7 @@
 package org.osate.ge.internal.diagram.runtime.filtering;
 
 import org.osate.aadl2.Subcomponent;
+import org.osate.ge.ContentFilter;
 import org.osate.ge.internal.model.Tag;
 
 public class SubcomponentTypeFilter implements ContentFilter {

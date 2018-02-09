@@ -33,8 +33,8 @@ import java.util.Collection;
 import java.util.List;
 
 import org.eclipse.e4.core.contexts.IEclipseContext;
-import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
-import org.osate.ge.internal.diagram.runtime.types.DiagramType;
+import org.osate.ge.ContentFilter;
+import org.osate.ge.DiagramType;
 import org.osate.ge.internal.services.ExtensionRegistryService;
 import org.osate.ge.internal.services.ExtensionService;
 

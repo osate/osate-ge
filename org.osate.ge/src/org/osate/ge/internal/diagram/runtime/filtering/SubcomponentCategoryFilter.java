@@ -6,6 +6,7 @@ import org.osate.aadl2.ComponentCategory;
 import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.Subcomponent;
 import org.osate.aadl2.instance.ComponentInstance;
+import org.osate.ge.ContentFilter;
 
 public class SubcomponentCategoryFilter implements ContentFilter {
 	private final ComponentCategory category;

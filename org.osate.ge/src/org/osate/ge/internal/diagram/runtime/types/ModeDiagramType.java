@@ -2,6 +2,7 @@ package org.osate.ge.internal.diagram.runtime.types;
 
 import org.osate.aadl2.Classifier;
 import org.osate.aadl2.Subcomponent;
+import org.osate.ge.DiagramType;
 import org.osate.ge.internal.diagram.runtime.filtering.ModeFilter;
 import org.osate.ge.internal.diagram.runtime.filtering.ModeTransitionFilter;
 

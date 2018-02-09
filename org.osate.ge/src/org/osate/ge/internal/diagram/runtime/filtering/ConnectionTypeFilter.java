@@ -5,7 +5,9 @@ import java.util.Objects;
 import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.Connection;
 import org.osate.aadl2.Subcomponent;
+import org.osate.aadl2.instance.ComponentInstance;
 import org.osate.aadl2.instance.ConnectionReference;
+import org.osate.ge.ContentFilter;
 
 public abstract class ConnectionTypeFilter implements ContentFilter {
 	public static final String ID = "connections";
@@ -24,7 +26,7 @@ public abstract class ConnectionTypeFilter implements ContentFilter {
 
 	@Override
 	public boolean isApplicable(final Object bo) {
-		return bo instanceof ComponentImplementation || bo instanceof Subcomponent;
+		return bo instanceof ComponentImplementation || bo instanceof Subcomponent || bo instanceof ComponentInstance;
 	}
 
 	@Override

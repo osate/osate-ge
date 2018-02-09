@@ -45,10 +45,10 @@ import org.eclipse.e4.core.contexts.ContextInjectionFactory;
 import org.eclipse.e4.core.contexts.EclipseContextFactory;
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.osate.ge.Categories;
+import org.osate.ge.ContentFilter;
+import org.osate.ge.DiagramType;
 import org.osate.ge.di.IsApplicable;
 import org.osate.ge.di.Names;
-import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
-import org.osate.ge.internal.diagram.runtime.types.DiagramType;
 import org.osate.ge.internal.services.ExtensionRegistryService;
 
 import com.google.common.collect.ImmutableCollection;

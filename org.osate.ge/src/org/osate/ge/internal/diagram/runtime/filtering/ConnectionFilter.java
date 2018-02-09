@@ -5,6 +5,7 @@ import org.osate.aadl2.Connection;
 import org.osate.aadl2.Subcomponent;
 import org.osate.aadl2.instance.ComponentInstance;
 import org.osate.aadl2.instance.ConnectionReference;
+import org.osate.ge.ContentFilter;
 
 public class ConnectionFilter implements ContentFilter {
 	public static final String ID = "connections";

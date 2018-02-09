@@ -2,6 +2,8 @@ package org.osate.ge.internal.diagram.runtime.filtering;
 
 import java.util.Optional;
 
+import org.osate.ge.ContentFilter;
+
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;
 

@@ -7,6 +7,7 @@ import org.osate.aadl2.Subcomponent;
 import org.osate.aadl2.instance.ComponentInstance;
 import org.osate.aadl2.instance.FeatureCategory;
 import org.osate.aadl2.instance.FeatureInstance;
+import org.osate.ge.ContentFilter;
 
 // Filter for features. Does not include processor or internal features
 public class FeatureFilter implements ContentFilter {

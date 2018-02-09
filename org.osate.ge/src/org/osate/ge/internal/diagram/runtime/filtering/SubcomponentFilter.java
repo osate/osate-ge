@@ -3,6 +3,7 @@ package org.osate.ge.internal.diagram.runtime.filtering;
 import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.Subcomponent;
 import org.osate.aadl2.instance.ComponentInstance;
+import org.osate.ge.ContentFilter;
 
 public class SubcomponentFilter implements ContentFilter {
 	public static final String ID = "subcomponents";

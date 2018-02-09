@@ -1,4 +1,4 @@
-package org.osate.ge.internal.diagram.runtime.filtering;
+package org.osate.ge;
 
 public interface ContentFilter {
 	String getId();
