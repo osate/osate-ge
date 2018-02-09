@@ -181,7 +181,7 @@ public class CreateDiagramDialog<DiagramType> {
 			} else if (file.exists()) {
 				setErrorMessage(
 						"File '" + file.getProjectRelativePath().makeAbsolute().toString() + "' already exists.");
-			} else if (!nameField.getText().matches("\\S[\\w\\d \\(\\)]*")) {
+			} else if (!nameField.getText().matches("\\S[\\w\\d \\(\\)-]*")) {
 				setErrorMessage(
 						"Name is not valid.");
 			} else if (diagramType == null) {
