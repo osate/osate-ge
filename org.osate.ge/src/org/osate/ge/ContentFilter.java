@@ -1,5 +1,9 @@
 package org.osate.ge;
 
+/**
+ * Content filters must be stateless.
+ *
+ */
 public interface ContentFilter {
 	String getId();
 
