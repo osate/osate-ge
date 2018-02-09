@@ -42,7 +42,7 @@ public enum LegacyContentFilterMapping {
 	private static ImmutableSet<String> getTypeFilters() {
 		final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
 		builder.addAll(getFundamentalFilters());
-		builder.add(TypeFeatureFilter.ID);
+		builder.add(FeatureFilter.ID);
 		builder.add(FlowSpecificationFilter.ID);
 		builder.add(ModeFilter.ID);
 		builder.add(ModeTransitionFilter.ID);
@@ -55,11 +55,9 @@ public enum LegacyContentFilterMapping {
 		final ImmutableSet.Builder<String> builder = ImmutableSet.builder();
 		builder.addAll(getTypeFilters());
 		builder.add(ClassifierFilter.ID);
-		builder.add(ComponentInstanceFilter.ID);
 		builder.add(ConnectionFilter.ID);
-		builder.add(ConnectionReferenceFilter.ID);
-		builder.add(FeatureInstanceFilter.ID);
-		builder.add(ImplementationFeatureFilter.ID);
+		builder.add(InternalFeatureFilter.ID);
+		builder.add(ProcessorFeatureFilter.ID);
 		builder.add(ModeTransitionTriggerNameFilter.ID);
 		builder.add(SubcomponentFilter.ID);
 		builder.add(SubprogramCallFilter.ID);

@@ -7,21 +7,18 @@ import org.osate.aadl2.instance.ComponentInstance;
 import org.osate.aadl2.instance.SystemInstance;
 import org.osate.ge.internal.diagram.runtime.filtering.ClassifierFilter;
 import org.osate.ge.internal.diagram.runtime.filtering.ConnectionFilter;
-import org.osate.ge.internal.diagram.runtime.filtering.ConnectionReferenceFilter;
-import org.osate.ge.internal.diagram.runtime.filtering.FeatureInstanceFilter;
+import org.osate.ge.internal.diagram.runtime.filtering.FeatureFilter;
 import org.osate.ge.internal.diagram.runtime.filtering.FlowSpecificationFilter;
-import org.osate.ge.internal.diagram.runtime.filtering.ImplementationFeatureFilter;
-import org.osate.ge.internal.diagram.runtime.filtering.TypeFeatureFilter;
+import org.osate.ge.internal.diagram.runtime.filtering.InternalFeatureFilter;
+import org.osate.ge.internal.diagram.runtime.filtering.ProcessorFeatureFilter;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableSet;
 
 public class StructureDiagramType implements DiagramType {
 	private final ImmutableSet<String> defaultPackageFilters = ImmutableSet.of(ClassifierFilter.ID);
-	private final ImmutableSet<String> defaultClassifierOrSubcomponentFilters = ImmutableSet.of(TypeFeatureFilter.ID,
-			ImplementationFeatureFilter.ID, ConnectionFilter.ID, FlowSpecificationFilter.ID);
-	private final ImmutableSet<String> defaultComponentInstanceFilters = ImmutableSet.of(FeatureInstanceFilter.ID,
-			ConnectionReferenceFilter.ID);
+	private final ImmutableSet<String> defaultClassifierOrSubcomponentFilters = ImmutableSet.of(FeatureFilter.ID,
+			InternalFeatureFilter.ID, ProcessorFeatureFilter.ID, ConnectionFilter.ID, FlowSpecificationFilter.ID);
 
 	@Override
 	public String getId() {
@@ -43,10 +40,8 @@ public class StructureDiagramType implements DiagramType {
 	public ImmutableSet<String> getDefaultContentFilters(final Object bo) {
 		if (bo instanceof AadlPackage) {
 			return defaultPackageFilters;
-		} else if (bo instanceof Classifier || bo instanceof Subcomponent) {
+		} else if (bo instanceof Classifier || bo instanceof Subcomponent || bo instanceof ComponentInstance) {
 			return defaultClassifierOrSubcomponentFilters;
-		} else if (bo instanceof ComponentInstance) {
-			return defaultComponentInstanceFilters;
 		}
 
 		return DiagramTypeUtil.getDefaultContentFilters(bo);

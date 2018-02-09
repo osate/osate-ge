@@ -26,6 +26,7 @@ import org.osate.ge.internal.ui.util.ImageUiHelper;
 import org.osate.ge.internal.ui.util.UiUtil;
 import org.osate.ge.internal.util.BusinessObjectContextHelper;
 import org.osate.ge.internal.util.BusinessObjectProviderHelper;
+import org.osate.ge.internal.util.ContentFilterUtil;
 import org.osate.ge.internal.util.ScopedEMFIndexRetrieval;
 import org.osate.ge.internal.util.StringUtil;
 
@@ -80,8 +81,7 @@ public class DefaultDiagramConfigurationDialogModel implements DiagramConfigurat
 
 	@Override
 	public ImmutableSet<ContentFilter> getApplicableContentFilters(final Object bo) {
-		return extService.getContentFilters().stream().filter(cf -> cf.isApplicable(bo))
-				.collect(ImmutableSet.toImmutableSet());
+		return ContentFilterUtil.getApplicableContentFilters(bo, extService);
 	}
 
 	@Override

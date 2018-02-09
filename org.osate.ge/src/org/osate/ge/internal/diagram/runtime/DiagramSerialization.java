@@ -179,10 +179,12 @@ public class DiagramSerialization {
 		}
 
 		ImmutableSet.Builder<ContentFilter> contentFilterSetBuilder = ImmutableSet.builder();
-		for (final String contentFilterId : mmChild.getContentFilters()) {
-			contentFilterProvider.getContentFilterById(contentFilterId).ifPresent(contentFilter -> {
-				contentFilterSetBuilder.add(contentFilter);
-			});
+		if (mmChild.getContentFilters() != null) {
+			for (final String contentFilterId : mmChild.getContentFilters().getFilter()) {
+				contentFilterProvider.getContentFilterById(contentFilterId).ifPresent(contentFilter -> {
+					contentFilterSetBuilder.add(contentFilter);
+				});
+			}
 		}
 
 		final String legacyFilterId = mmChild.getAutoContentsFilter();
@@ -343,8 +345,11 @@ public class DiagramSerialization {
 		}
 
 		newElement.setBo(e.getRelativeReference() == null ? null : e.getRelativeReference().toMetamodel());
+
+		final org.osate.ge.diagram.ContentFilters contentFilters = new org.osate.ge.diagram.ContentFilters();
+		newElement.setContentFilters(contentFilters);
 		for (final ContentFilter contentFilter : e.getContentFilters()) {
-			newElement.getContentFilters().add(contentFilter.getId());
+			contentFilters.getFilter().add(contentFilter.getId());
 		}
 
 		if (e.isManual()) {

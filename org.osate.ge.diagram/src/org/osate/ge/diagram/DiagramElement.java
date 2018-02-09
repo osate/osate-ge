@@ -2,16 +2,12 @@
  */
 package org.osate.ge.diagram;
 
-import java.util.Collection;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
-
-import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
 
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
-import org.eclipse.emf.ecore.util.EDataTypeUniqueEList;
 
 /**
  * <!-- begin-user-doc -->
@@ -296,14 +292,14 @@ public class DiagramElement extends DiagramNode {
 	protected Boolean primaryLabelVisible = PRIMARY_LABEL_VISIBLE_EDEFAULT;
 
 	/**
-	 * The cached value of the '{@link #getContentFilters() <em>Content Filters</em>}' attribute list.
+	 * The cached value of the '{@link #getContentFilters() <em>Content Filters</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @see #getContentFilters()
 	 * @generated
 	 * @ordered
 	 */
-	protected EList<String> contentFilters;
+	protected ContentFilters contentFilters;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -900,24 +896,58 @@ public class DiagramElement extends DiagramNode {
 	}
 
 	/**
-	 * Returns the value of the '<em><b>Content Filters</b></em>' attribute list.
-	 * The list contents are of type {@link java.lang.String}.
+	 * Returns the value of the '<em><b>Content Filters</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <p>
 	 * If the meaning of the '<em>Content Filters</em>' attribute list isn't clear,
 	 * there really should be more of a description here...
 	 * </p>
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Content Filters</em>' attribute list.
+	 * @return the value of the '<em>Content Filters</em>' containment reference.
+	 * @see #setContentFilters(ContentFilters)
 	 * @see org.osate.ge.diagram.DiagramPackage#getDiagramElement_ContentFilters()
-	 * @model dataType="org.eclipse.emf.ecore.xml.type.String" ordered="false"
+	 * @model containment="true"
 	 * @generated
 	 */
-	public EList<String> getContentFilters() {
-		if (contentFilters == null) {
-			contentFilters = new EDataTypeUniqueEList<String>(String.class, this, DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS);
-		}
+	public ContentFilters getContentFilters() {
 		return contentFilters;
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
+	public NotificationChain basicSetContentFilters(ContentFilters newContentFilters, NotificationChain msgs) {
+		ContentFilters oldContentFilters = contentFilters;
+		contentFilters = newContentFilters;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, oldContentFilters, newContentFilters);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * Sets the value of the '{@link org.osate.ge.diagram.DiagramElement#getContentFilters <em>Content Filters</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Content Filters</em>' containment reference.
+	 * @see #getContentFilters()
+	 * @generated
+	 */
+	public void setContentFilters(ContentFilters newContentFilters) {
+		if (newContentFilters != contentFilters) {
+			NotificationChain msgs = null;
+			if (contentFilters != null)
+				msgs = ((InternalEObject)contentFilters).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, null, msgs);
+			if (newContentFilters != null)
+				msgs = ((InternalEObject)newContentFilters).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, null, msgs);
+			msgs = basicSetContentFilters(newContentFilters, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, newContentFilters, newContentFilters));
 	}
 
 	/**
@@ -971,6 +1001,8 @@ public class DiagramElement extends DiagramNode {
 				return basicSetBendpoints(null, msgs);
 			case DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_POSITION:
 				return basicSetPrimaryLabelPosition(null, msgs);
+			case DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS:
+				return basicSetContentFilters(null, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -1074,8 +1106,7 @@ public class DiagramElement extends DiagramNode {
 				setPrimaryLabelVisible((Boolean)newValue);
 				return;
 			case DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS:
-				getContentFilters().clear();
-				getContentFilters().addAll((Collection<? extends String>)newValue);
+				setContentFilters((ContentFilters)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -1135,7 +1166,7 @@ public class DiagramElement extends DiagramNode {
 				setPrimaryLabelVisible(PRIMARY_LABEL_VISIBLE_EDEFAULT);
 				return;
 			case DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS:
-				getContentFilters().clear();
+				setContentFilters((ContentFilters)null);
 				return;
 		}
 		super.eUnset(featureID);
@@ -1180,7 +1211,7 @@ public class DiagramElement extends DiagramNode {
 			case DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE:
 				return PRIMARY_LABEL_VISIBLE_EDEFAULT == null ? primaryLabelVisible != null : !PRIMARY_LABEL_VISIBLE_EDEFAULT.equals(primaryLabelVisible);
 			case DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS:
-				return contentFilters != null && !contentFilters.isEmpty();
+				return contentFilters != null;
 		}
 		return super.eIsSet(featureID);
 	}
@@ -1215,8 +1246,6 @@ public class DiagramElement extends DiagramNode {
 		result.append(lineWidth);
 		result.append(", primaryLabelVisible: ");
 		result.append(primaryLabelVisible);
-		result.append(", contentFilters: ");
-		result.append(contentFilters);
 		result.append(')');
 		return result.toString();
 	}

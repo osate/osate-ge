@@ -31,6 +31,7 @@ package org.osate.ge.internal.services.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -181,9 +182,20 @@ public class DefaultExtensionRegistryService implements ExtensionRegistryService
 				for (final IConfigurationElement ce : extension.getConfigurationElements()) {
 					if (ce.getName().equals(elementName)) {
 						try {
-							final Object ext = ce.createExecutableExtension("class");
-							if (extClass.isInstance(ext)) {
-								extensionListBuilder.add(extClass.cast(ext));
+							final Object extObj = ce.createExecutableExtension("class");
+
+							// If object is iterable, add each element
+							final Iterable<?> exts;
+							if (extObj instanceof Iterable) {
+								exts = (Iterable<?>) extObj;
+							} else {
+								exts = Collections.singletonList(extObj);
+							}
+
+							for (final Object ext : exts) {
+								if (extClass.isInstance(ext)) {
+									extensionListBuilder.add(extClass.cast(ext));
+								}
 							}
 						} catch (final CoreException ex) {
 							throw new RuntimeException(ex);

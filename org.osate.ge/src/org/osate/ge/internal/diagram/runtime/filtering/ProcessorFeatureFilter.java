@@ -1,12 +1,11 @@
 package org.osate.ge.internal.diagram.runtime.filtering;
 
 import org.osate.aadl2.ComponentImplementation;
-import org.osate.aadl2.InternalFeature;
 import org.osate.aadl2.ProcessorFeature;
 import org.osate.aadl2.Subcomponent;
 
-public class ImplementationFeatureFilter implements ContentFilter {
-	public static final String ID = "implementationFeatures";
+public class ProcessorFeatureFilter implements ContentFilter {
+	public static final String ID = "processorFeatures";
 
 	@Override
 	public String getId() {
@@ -15,7 +14,7 @@ public class ImplementationFeatureFilter implements ContentFilter {
 
 	@Override
 	public String getName() {
-		return "Features (Implementation)";
+		return "Processor Features";
 	}
 
 	@Override
@@ -25,6 +24,6 @@ public class ImplementationFeatureFilter implements ContentFilter {
 
 	@Override
 	public boolean test(Object bo) {
-		return bo instanceof ProcessorFeature || bo instanceof InternalFeature;
+		return bo instanceof ProcessorFeature;
 	}
 }

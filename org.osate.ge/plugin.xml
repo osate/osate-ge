@@ -130,7 +130,7 @@
       </command>
       <command
             id="org.osate.ge.toggleContentFilter"
-            name="Set Auto Contents Filter">
+            name="Toggle Content Filter">
          <commandParameter
                id="contentsFilterId"
                name="Contents Filter ID"
@@ -138,12 +138,8 @@
          </commandParameter>
       </command>
       <command
-            id="org.osate.ge.enableAllFilters"
-            name="Enable All Filters">
-      </command>
-      <command
-            id="org.osate.ge.disableAllFilters"
-            name="Disable All Filters">
+            id="org.osate.ge.toggleAllFilters"
+            name="Toggle All Filters">
       </command>
       <command
             id="org.osate.ge.hideAllContents"
@@ -424,12 +420,8 @@
           commandId="org.osate.ge.toggleContentFilter">
     </handler>
     <handler
-          class="org.osate.ge.internal.ui.handlers.EnableAllFiltersHandler"
-          commandId="org.osate.ge.enableAllFilters">
-    </handler>
-    <handler
-          class="org.osate.ge.internal.ui.handlers.DisableAllFiltersHandler"
-          commandId="org.osate.ge.disableAllFilters">
+          class="org.osate.ge.internal.ui.handlers.ToggleAllFiltersHandler"
+          commandId="org.osate.ge.toggleAllFilters">
     </handler>
     <handler
           class="org.osate.ge.internal.ui.handlers.HideAllContentsHandler"
@@ -750,6 +742,45 @@
  <menuContribution
        allPopups="false"
        locationURI="popup:org.osate.ge.editor.AgeDiagramEditor">
+    <command
+          commandId="org.osate.ge.configureDiagram"
+          label="Configure Diagram..."
+          style="push">
+    </command>
+    <menu
+          id="org.osate.ge.showMenu"
+          label="Show">
+       <command
+             commandId="org.osate.ge.toggleAllFilters"
+             label="All Filters"
+             style="toggle">
+       </command>
+       <separator
+             name="org.osate.ge.separator1"
+             visible="true">
+       </separator>
+       <dynamic
+             class="org.osate.ge.internal.ui.editor.ToggleFiltersContributionItem"
+             id="org.osate.ge.toggleFilters">
+       </dynamic>
+       <command
+             commandId="org.osate.ge.hideAllContents"
+             style="push">
+       </command>
+       <command
+             commandId="org.osate.ge.setDescendantsToAutomatic"
+             style="push">
+       </command>
+       <separator
+             name="org.osate.ge.separator10"
+             visible="true">
+       </separator>
+       <command
+             commandId="org.osate.ge.configureDiagram"
+             label="Custom..."
+             style="push">
+       </command>
+    </menu>
     <menu
           id="org.osate.ge.layoutMenu"
           label="Layout">
@@ -862,50 +893,16 @@
              style="push">
        </command>
     </menu>
-    <command
-          commandId="org.osate.ge.configureDiagram"
-          label="Configure Diagram..."
-          style="push">
-    </command>
+    <separator
+          name="org.osate.ge.separator13"
+          visible="true">
+    </separator>
     <menu
-          id="org.osate.ge.showMenu"
-          label="Show">
-       <command
-             commandId="org.osate.ge.enableAllFilters"
-             style="push">
-       </command>
-       <command
-             commandId="org.osate.ge.disableAllFilters"
-             style="push">
-       </command>
-       <command
-             commandId="org.osate.ge.hideAllContents"
-             style="push">
-       </command>
-       <command
-             commandId="org.osate.ge.setDescendantsToAutomatic"
-             style="push">
-       </command>
-       <command
-             commandId="org.osate.ge.configureDiagram"
-             label="Configure Contents..."
-             style="push">
-       </command>
-       <separator
-             name="org.osate.ge.separator1"
-             visible="true">
-       </separator>
-       <dynamic
-             class="org.osate.ge.internal.ui.editor.ToggleFiltersContributionItem"
-             id="org.osate.ge.toggleFilters">
-       </dynamic>
-    </menu>
-    <menu
-          id="org.osate.ge.goToMenu"
-          label="Go to">
+          id="org.osate.ge.openMenu"
+          label="Open">
        <command
              commandId="org.osate.ge.createNewDiagram"
-             label="New Diagram"
+             label="New Diagram..."
              style="push">
           <visibleWhen
                 checkEnabled="true">
@@ -956,10 +953,6 @@
           commandId="org.osate.ge.selectContainer"
           style="push">
     </command>
-    <command
-          commandId="org.osate.ge.commands.properties"
-          style="push">
-    </command>
     <separator
           name="org.osate.ge.separator3"
           visible="true">
@@ -981,6 +974,10 @@
     </command>
     <command
           commandId="org.osate.ge.rename"
+          style="push">
+    </command>
+    <command
+          commandId="org.osate.ge.commands.properties"
           style="push">
     </command>
     <separator
@@ -2168,7 +2165,7 @@
             class="org.osate.ge.internal.diagram.runtime.filtering.CalledSubprogramFilter">
       </contentFilter>
       <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.TypeFeatureFilter">
+            class="org.osate.ge.internal.diagram.runtime.filtering.FeatureFilter">
       </contentFilter>
       <contentFilter
             class="org.osate.ge.internal.diagram.runtime.filtering.ModeTransitionTriggerNameFilter">
@@ -2198,58 +2195,37 @@
             class="org.osate.ge.internal.diagram.runtime.filtering.SubprogramCallSequenceFilter">
       </contentFilter>
       <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.ComponentInstanceFilter">
+            class="org.osate.ge.internal.diagram.runtime.filtering.ProcessorFeatureFilter">
       </contentFilter>
       <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.ConnectionReferenceFilter">
+            class="org.osate.ge.internal.diagram.runtime.filtering.InternalFeatureFilter">
       </contentFilter>
       <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.FeatureInstanceFilter">
+            class="org.osate.ge.internal.diagram.runtime.filtering.FeatureCategoryFilterFactory">
       </contentFilter>
       <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.ImplementationFeatureFilter">
+            class="org.osate.ge.internal.diagram.runtime.filtering.FlowSpecificationKindFilterFactory">
       </contentFilter>
       <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:abstract">
+            class="org.osate.ge.internal.diagram.runtime.filtering.AccessConnectionFilter">
       </contentFilter>
       <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:bus">
+            class="org.osate.ge.internal.diagram.runtime.filtering.FeatureConnectionFilter">
       </contentFilter>
       <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:data">
+            class="org.osate.ge.internal.diagram.runtime.filtering.FeatureGroupConnectionFilter">
       </contentFilter>
       <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:device">
+            class="org.osate.ge.internal.diagram.runtime.filtering.ParameterConnectionFilter">
       </contentFilter>
       <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:memory">
+            class="org.osate.ge.internal.diagram.runtime.filtering.PortConnectionFilter">
       </contentFilter>
       <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:process">
+            class="org.osate.ge.internal.diagram.runtime.filtering.FeatureGroupTypeFilter">
       </contentFilter>
       <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:processor">
-      </contentFilter>
-      <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:subprogram">
-      </contentFilter>
-      <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:subprogram group">
-      </contentFilter>
-      <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:system">
-      </contentFilter>
-      <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:thread">
-      </contentFilter>
-      <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:thread group">
-      </contentFilter>
-      <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:virtual bus">
-      </contentFilter>
-      <contentFilter
-            class="org.osate.ge.internal.diagram.runtime.filtering.SubcomponentCategoryFilterFactory:virtual processor">
+            class="org.osate.ge.internal.diagram.runtime.filtering.ComponentCategoryFilterFactory">
       </contentFilter>
    </extension>
    <extension

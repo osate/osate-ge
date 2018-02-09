@@ -1,5 +1,6 @@
 package org.osate.ge.internal.ui.handlers;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,9 +33,7 @@ import org.osgi.framework.FrameworkUtil;
 
 import com.google.common.collect.ImmutableSet;
 
-public class ToggleContentFilterHandler extends AbstractHandler implements IElementUpdater {
-	public static final String PARAM_CONTENTS_FILTER_ID = "contentsFilterId";
-
+public class ToggleAllFiltersHandler extends AbstractHandler implements IElementUpdater {
 	@Override
 	public Object execute(final ExecutionEvent event) throws ExecutionException {
 		final IEditorPart activeEditor = HandlerUtil.getActiveEditor(event);
@@ -42,7 +41,15 @@ public class ToggleContentFilterHandler extends AbstractHandler implements IElem
 			throw new RuntimeException("Unexpected editor: " + activeEditor);
 		}
 
-		// Get editor and various services
+		// Get the extension registry
+		final Bundle bundle = FrameworkUtil.getBundle(getClass());
+		final ExtensionRegistryService extService = EclipseContextFactory.getServiceContext(bundle.getBundleContext())
+				.get(ExtensionRegistryService.class);
+		if (extService == null) {
+			throw new RuntimeException("Unable to retrieve extension registry");
+		}
+
+		// Get diagram and selected elements
 		final AgeDiagramEditor diagramEditor = (AgeDiagramEditor) activeEditor;
 		final AgeFeatureProvider featureProvider = (AgeFeatureProvider) diagramEditor.getDiagramTypeProvider()
 				.getFeatureProvider();
@@ -52,30 +59,28 @@ public class ToggleContentFilterHandler extends AbstractHandler implements IElem
 			throw new RuntimeException("Unable to get diagram");
 		}
 
-		final String contentFilterId = (String) event.getParameters().get(PARAM_CONTENTS_FILTER_ID);
-		if (contentFilterId == null) {
-			throw new RuntimeException("Unable to get content filter");
-		}
-
-		final ContentFilterProvider contentFilterProvider = getContentFilterProvider();
-		final ContentFilter filter = contentFilterProvider.getContentFilterById(contentFilterId)
-				.orElseThrow(() -> new RuntimeException("Unable to get content filter"));
-		final boolean addFilter = !isFilterEnabled(filter, contentFilterProvider);
-
-		final String modLabel = (addFilter ? "Enable " : "Disable ") + "Show " + filter.getName();
-		diagram.modify(modLabel, m -> {
-			// Update the content filters of each element for which the content filter is applicable
-			for (final DiagramElement e : selectedDiagramElements) {
-				// Update the content filters
-				if (filter.isApplicable(e.getBusinessObject())) {
-					final Set<ContentFilter> applicableContentFilters = ContentFilterUtil
-							.getApplicableContentFilters(e.getBusinessObject(), contentFilterProvider);
-					final ImmutableSet<ContentFilter> newContentFilters = ContentFilterUtil.updateContentFilterSet(
-							e.getContentFilters(), applicableContentFilters, filter, addFilter);
-					m.setContentFilters(e, newContentFilters);
+		final boolean addFilters = !areAllApplicableFiltersEnabled();
+		if (addFilters) {
+			diagram.modify("Enable All Filters", m -> {
+				// Update all applicable content filters which do not have a parent to each element
+				for (final DiagramElement e : selectedDiagramElements) {
+					final Set<ContentFilter> newContentFilters = new HashSet<>(e.getContentFilters());
+					for (final ContentFilter filter : extService.getContentFilters()) {
+						if (filter.getParentId() == null && filter.isApplicable(e.getBusinessObject())) {
+							newContentFilters.add(filter);
+						}
+					}
+					m.setContentFilters(e, ImmutableSet.copyOf(newContentFilters));
 				}
-			}
-		});
+			});
+		} else {
+			diagram.modify("Disable All Filters", m -> {
+				// Update the content filters of each element
+				for (final DiagramElement e : selectedDiagramElements) {
+					m.setContentFilters(e, ImmutableSet.of());
+				}
+			});
+		}
 
 		// Update the diagram
 		final IUpdateContext updateCtx = new UpdateContext(diagramEditor.getGraphitiAgeDiagram().getGraphitiDiagram());
@@ -84,15 +89,32 @@ public class ToggleContentFilterHandler extends AbstractHandler implements IElem
 		return null;
 	}
 
-
 	@Override
 	public void updateElement(final UIElement element, @SuppressWarnings("rawtypes") final Map parameters) {
-		final String contentFilterId = (String) parameters.get(PARAM_CONTENTS_FILTER_ID);
+		element.setChecked(areAllApplicableFiltersEnabled());
+	}
+
+	/**
+	 * Returns whether all applicable filters which do not have a parent are enabled for all selected diagram elements.
+	 * @return
+	 */
+	private boolean areAllApplicableFiltersEnabled() {
+		final IWorkbenchWindow window = Objects.requireNonNull(PlatformUI.getWorkbench().getActiveWorkbenchWindow(),
+				"Unable to retrieve workbench window");
+
+		final List<DiagramElement> selectedDiagramElements = SelectionUtil
+				.getSelectedDiagramElements(window.getActivePage().getSelection());
 		final ContentFilterProvider contentFilterProvider = getContentFilterProvider();
-		final ContentFilter filter = contentFilterProvider.getContentFilterById(contentFilterId).orElseThrow(
-				() -> new RuntimeException("Unable to retrieve content filter for ID: " + contentFilterId));
-		element.setChecked(isFilterEnabled(filter,
-				contentFilterProvider));
+		for (final DiagramElement de : selectedDiagramElements) {
+			for (final ContentFilter filter : ContentFilterUtil.getApplicableContentFilters(de.getBusinessObject(),
+					contentFilterProvider)) {
+				if (filter.getParentId() == null && !de.getContentFilters().contains(filter)) {
+					return false;
+				}
+			}
+		}
+
+		return true;
 	}
 
 	private ContentFilterProvider getContentFilterProvider() {
@@ -101,28 +123,5 @@ public class ToggleContentFilterHandler extends AbstractHandler implements IElem
 				EclipseContextFactory.getServiceContext(bundle.getBundleContext()).get(ExtensionRegistryService.class),
 				"Unable to retrieve extension registry");
 		return extService;
-	}
-
-	// Returns true if the filter or any of its ancestors are enabled for all elements for which it is applicable
-	private static final boolean isFilterEnabled(final ContentFilter contentFilter,
-			final ContentFilterProvider contentFilterProvider) {
-		final IWorkbenchWindow window = Objects.requireNonNull(PlatformUI.getWorkbench().getActiveWorkbenchWindow(),
-				"Unable to retrieve workbench window");
-
-		final List<DiagramElement> selectedDiagramElements = SelectionUtil
-				.getSelectedDiagramElements(window.getActivePage().getSelection());
-		for (final DiagramElement de : selectedDiagramElements) {
-			if (ContentFilterUtil.getApplicableContentFilters(de.getBusinessObject(), contentFilterProvider)
-					.contains(contentFilter)) {
-				if (!de.getContentFilters().contains(contentFilter)
-						&& !ContentFilterUtil.anyAncestorsEnabled(contentFilter,
-						de.getContentFilters(),
-						contentFilterProvider.getContentFilters())) {
-					return false;
-				}
-			}
-		}
-
-		return true;
 	}
 }

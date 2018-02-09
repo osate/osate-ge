@@ -13,8 +13,6 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.layout.RowLayoutFactory;
-import org.eclipse.jface.viewers.ArrayContentProvider;
-import org.eclipse.jface.viewers.CheckboxTableViewer;
 import org.eclipse.jface.viewers.CheckboxTreeViewer;
 import org.eclipse.jface.viewers.ICheckStateProvider;
 import org.eclipse.jface.viewers.ISelection;
@@ -56,6 +54,7 @@ import org.osate.ge.internal.diagram.runtime.boTree.BusinessObjectNode;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
 import org.osate.ge.internal.diagram.runtime.filtering.ContentFilter;
 import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
+import org.osate.ge.internal.util.ContentFilterUtil;
 import org.osate.ge.internal.util.ManualBranchCache;
 
 import com.google.common.collect.ImmutableSet;
@@ -111,6 +110,7 @@ public class DiagramConfigurationDialog {
 
 	private class InnerDialog extends Dialog {
 		private CheckboxTreeViewer boTreeViewer;
+		private CheckboxTreeViewer contentFiltersViewer;
 
 		public InnerDialog(final Shell parentShell) {
 			super(parentShell);
@@ -233,27 +233,34 @@ public class DiagramConfigurationDialog {
 			//
 			// List for configuring the content filters
 			//
-			final CheckboxTableViewer contentFiltersViewer = CheckboxTableViewer
-					.newCheckList(modelElementSelectionGroup, SWT.BORDER);
-			contentFiltersViewer.getTable().setLayoutData(GridDataFactory.fillDefaults().grab(false, true).span(1, 1)
+			contentFiltersViewer = new CheckboxTreeViewer(modelElementSelectionGroup, SWT.BORDER);
+			contentFiltersViewer.getTree().setLayoutData(GridDataFactory.fillDefaults().grab(false, true).span(1, 1)
 					.minSize(SWT.DEFAULT, 100).hint(300, SWT.DEFAULT).create());
 			contentFiltersViewer.setComparator(new ViewerComparator());
-			contentFiltersViewer.setContentProvider(new ArrayContentProvider());
+			contentFiltersViewer.setContentProvider(new ContentFilterTreeContentProvider());
 
 			boTreeViewer.addSelectionChangedListener(event -> {
 				final BusinessObjectNode selectedBoNode = getSelectedBusinessObjectNode();
 
-				contentFiltersViewer.setInput(
-						selectedBoNode == null ? null
-								: model.getApplicableContentFilters(selectedBoNode.getBusinessObject()).toArray());
+				contentFiltersViewer.setInput(selectedBoNode == null ? null
+						: model.getApplicableContentFilters(selectedBoNode.getBusinessObject()));
 
-				contentFiltersViewer.getTable().setEnabled(selectedBoNode != null);
+				contentFiltersViewer.getTree().setEnabled(selectedBoNode != null);
 			});
 
 			contentFiltersViewer.setCheckStateProvider(new ICheckStateProvider() {
 				@Override
 				public boolean isGrayed(final Object element) {
-					return false;
+					final BusinessObjectNode selectedNode = getSelectedBusinessObjectNode();
+					if (selectedNode == null) {
+						return false;
+					}
+
+					final ContentFilter filter = (ContentFilter) element;
+
+					// Should be grayed if any of descendants are in content filter set
+					return ContentFilterUtil.anyDescendantsEnabled(filter, selectedNode.getContentFilters(),
+							getCurrentApplicableContentFilters());
 				}
 
 				@Override
@@ -263,7 +270,12 @@ public class DiagramConfigurationDialog {
 						return false;
 					}
 
-					return selectedNode.getContentFilters().contains(element);
+					final ContentFilter filter = (ContentFilter) element;
+
+					// Should be checked if in content filter set, any of it's children are in the set, or if it's parent is in the set.
+					return selectedNode.getContentFilters().contains(element) || isGrayed(element)
+							|| ContentFilterUtil.anyAncestorsEnabled(filter, selectedNode.getContentFilters(),
+									getCurrentApplicableContentFilters());
 				}
 			});
 
@@ -275,16 +287,12 @@ public class DiagramConfigurationDialog {
 
 				final ContentFilter updatedFilter = (ContentFilter) event.getElement();
 
-				// Create a mutable copy of the contents filters and update it based no the selection.
-				final Set<ContentFilter> contentFilters = new HashSet<>(selectedNode.getContentFilters());
-				if (event.getChecked()) {
-					contentFilters.add(updatedFilter);
-				} else {
-					contentFilters.remove(updatedFilter);
-				}
-
 				// Update the content filters
-				selectedNode.setContentFilters(ImmutableSet.copyOf(contentFilters));
+				final ImmutableSet<ContentFilter> newContentFilters = ContentFilterUtil.updateContentFilterSet(
+						selectedNode.getContentFilters(), getCurrentApplicableContentFilters(), updatedFilter,
+						event.getChecked());
+
+				selectedNode.setContentFilters(newContentFilters);
 
 				updateTree();
 			});
@@ -418,7 +426,7 @@ public class DiagramConfigurationDialog {
 			// Expand the root element
 			boTreeViewer.expandToLevel(2);
 
-			// Shwo Connection Primary Labels
+			// Show Connection Primary Labels
 			final Composite connectionPrimaryLabelsVisibleContainer = new Composite(container, SWT.NONE);
 			connectionPrimaryLabelsVisibleContainer
 			.setLayout(RowLayoutFactory.swtDefaults().type(SWT.HORIZONTAL).fill(true).create());
@@ -448,6 +456,11 @@ public class DiagramConfigurationDialog {
 			return area;
 		}
 
+		@SuppressWarnings("unchecked")
+		private final ImmutableSet<ContentFilter> getCurrentApplicableContentFilters() {
+			return (ImmutableSet<ContentFilter>) contentFiltersViewer.getInput();
+		}
+
 		private final BusinessObjectNode getSelectedBusinessObjectNode() {
 			final ISelection boNodeSelection = boTreeViewer.getSelection();
 			final BusinessObjectNode selectedBoNode;
@@ -472,6 +485,7 @@ public class DiagramConfigurationDialog {
 		 */
 		private void updateTree() {
 			boTreeViewer.update(getVisibleElements(), null);
+			contentFiltersViewer.refresh();
 		}
 
 		private void setSelection(final Object[] boPath) {
@@ -572,6 +586,48 @@ public class DiagramConfigurationDialog {
 		}
 	}
 
+	private class ContentFilterTreeContentProvider implements ITreeContentProvider {
+		private ImmutableSet<ContentFilter> input;
+
+		@Override
+		public void dispose() {
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public void inputChanged(final Viewer viewer, final Object oldInput, final Object newInput) {
+			this.input = (ImmutableSet<ContentFilter>) newInput;
+		}
+
+		@SuppressWarnings("unchecked")
+		@Override
+		public Object[] getElements(final Object inputElement) {
+			return ((ImmutableSet<ContentFilter>) inputElement).stream().filter(cf -> cf.getParentId() == null)
+					.toArray();
+		}
+		//
+		// TODO: These methods be more efficient if there was a map?
+		//
+
+		@Override
+		public Object[] getChildren(final Object parentElement) {
+			final ContentFilter parent = (ContentFilter) parentElement;
+			return input.stream().filter(cf -> cf.getParentId() == parent.getId()).toArray();
+		}
+
+		@Override
+		public Object getParent(final Object element) {
+			final ContentFilter child = (ContentFilter) element;
+			return input.stream().filter(cf -> cf.getId() == child.getParentId()).findFirst().orElse(null);
+		}
+
+		@Override
+		public boolean hasChildren(final Object element) {
+			final ContentFilter parent = (ContentFilter) element;
+			return input.stream().anyMatch(cf -> cf.getParentId() == parent.getId());
+		}
+	}
+
 	private final Model model;
 	private final InnerDialog dlg;
 	private final DiagramConfigurationBuilder diagramConfigBuilder;
@@ -644,11 +700,21 @@ public class DiagramConfigurationDialog {
 	}
 
 	enum TestContentsFilter implements ContentFilter {
-		FILTER1, FILTER2, NO_C1;
+		FILTER1, FILTER2, NO_C1, PARENT, CHILD1, CHILD2, CHILD1A, CHILD1B;
 
 		@Override
 		public String getId() {
 			return this.toString();
+		}
+
+		@Override
+		public String getParentId() {
+			if (this == CHILD1 || this == CHILD2) {
+				return PARENT.getId();
+			} else if (this == CHILD1A || this == CHILD1B) {
+				return CHILD1.getId();
+			}
+			return null;
 		}
 
 		@Override

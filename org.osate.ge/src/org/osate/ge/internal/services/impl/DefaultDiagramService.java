@@ -193,6 +193,8 @@ public class DefaultDiagramService implements DiagramService {
 		} else if(diagramRefs.size() == 0) {
 			// Prompt user to determine whether a new diagram should be created
 			if(!promptForCreate || MessageDialog.openQuestion(null, "Create New Diagram?", "An existing diagram was not found for the specified model element.\nCreate new diagram?")) {
+				// TODO: Prompt for name and diagram type
+
 				// Create and open a new diagram
 				final IFile diagramFile = createDiagram(bo);
 				final AgeDiagramEditor editor = EditorUtil.openEditor(diagramFile, promptForConfigureAfterCreate);
@@ -283,7 +285,9 @@ public class DefaultDiagramService implements DiagramService {
 		final IProject project = Objects.requireNonNull(getProject(contextBo), "Unable to get project for business object: " + contextBo);
 
 		// Determine the filename to use for the new diagram
-		final String baseDiagramName = contextBo instanceof NamedElement ? ((NamedElement)contextBo).getQualifiedName().replaceAll("::|:|\\.", "_") : "untitled_diagram";
+		final String baseDiagramName = contextBo instanceof NamedElement
+				? ((NamedElement) contextBo).getQualifiedName().replaceAll("::|:|\\.", "_")
+				: "untitled_diagram";
 		final IFile newDiagramFile = getNewDiagramFile(project, baseDiagramName);
 
 		final URI newDiagramUri = URI.createPlatformResourceURI(newDiagramFile.getFullPath().toString(), true);

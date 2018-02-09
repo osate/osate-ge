@@ -2,6 +2,7 @@ package org.osate.ge.internal.diagram.runtime.filtering;
 
 import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.Subcomponent;
+import org.osate.aadl2.instance.ComponentInstance;
 
 public class SubcomponentFilter implements ContentFilter {
 	public static final String ID = "subcomponents";
@@ -18,11 +19,11 @@ public class SubcomponentFilter implements ContentFilter {
 
 	@Override
 	public boolean isApplicable(final Object bo) {
-		return bo instanceof ComponentImplementation || bo instanceof Subcomponent;
+		return bo instanceof ComponentImplementation || bo instanceof Subcomponent || bo instanceof ComponentInstance;
 	}
 
 	@Override
 	public boolean test(Object bo) {
-		return bo instanceof Subcomponent;
+		return bo instanceof Subcomponent || bo instanceof ComponentInstance;
 	}
 }

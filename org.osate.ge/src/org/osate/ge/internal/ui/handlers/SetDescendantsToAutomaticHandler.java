@@ -61,8 +61,8 @@ public class SetDescendantsToAutomaticHandler extends AbstractHandler implements
 		}
 
 
-		// TODO: Adjust label
-		diagram.modify("Set Descendants to Automatic", m -> {
+		// Hide all manual descendants
+		diagram.modify("Reset Manual Descendants", m -> {
 			for (final DiagramElement e : getManualDescendants()) {
 				if (e.isManual()) {
 					m.setManual(e, false);
@@ -79,8 +79,7 @@ public class SetDescendantsToAutomaticHandler extends AbstractHandler implements
 
 	@Override
 	public void updateElement(final UIElement element, @SuppressWarnings("rawtypes") final Map parameters) {
-		// TODO
-		element.setText("Set AAA (" + getManualDescendants().size() + " Elements)");
+		element.setText("Reset Manual Descendants (" + getManualDescendants().size() + ")");
 	}
 
 	// Returns the manual descendants of the selected diagram elements
