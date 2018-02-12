@@ -152,14 +152,13 @@ public class DiagramSerialization {
 			final DiagramNode container, final org.osate.ge.diagram.DiagramNode mmContainer,
 			final Set<Long> usedIdSet, final boolean usingLegacyContentFilters) {
 		for (final org.osate.ge.diagram.DiagramElement mmElement : mmContainer.getElement()) {
-			createElement(m, contentFilterProvider, container, mmContainer, mmElement, usedIdSet,
+			createElement(m, contentFilterProvider, container, mmElement, usedIdSet,
 					usingLegacyContentFilters);
 		}
 	}
 
 	private static void createElement(final DiagramModification m, final ContentFilterProvider contentFilterProvider,
-			final DiagramNode container, final org.osate.ge.diagram.DiagramNode mmContainer,
-			final org.osate.ge.diagram.DiagramElement mmChild, final Set<Long> usedIdSet,
+			final DiagramNode container, final org.osate.ge.diagram.DiagramElement mmChild, final Set<Long> usedIdSet,
 			boolean usingLegacyContentFilters) {
 		final String[] refSegs = toReferenceSegments(mmChild.getBo());
 		if (refSegs == null) {
