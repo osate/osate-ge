@@ -194,6 +194,8 @@ An element's appearance can be changed using the following steps.
 	- The *Label Visibility* option allows hiding or showing the diagram element's label.
 	- Font size can be edited by selecting the font size drop-down menu.
 	- Line width can be edited by selecting the line width drop-down menu.
+	- Images can be set in place of shapes by clicking the image button and selecting *Choose...* to pick the desired image.
+		- Images can be shown/hidden by clicking the toggle button.
 	- Outline color can be edited by clicking the outline button and selecting the desired color.
 	- Font color can be edited by clicking the font color button and selecting the desired color.
 	- Background color can be edited by clicking the background color button and selecting the desired color.

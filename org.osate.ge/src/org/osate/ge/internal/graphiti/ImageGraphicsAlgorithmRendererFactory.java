@@ -22,13 +22,17 @@ public class ImageGraphicsAlgorithmRendererFactory implements IGraphicsAlgorithm
 	}
 
 	private ImageFigure createImageFigure(final String imagePath) {
+		final ImageDescriptor imageDesc = getImageDescriptor(imagePath);
+		return new ImageFigure(AgeDiagramTypeProvider.getResources().createImage(imageDesc));
+	}
+
+	// Create image descriptor
+	private ImageDescriptor getImageDescriptor(final String imagePath) {
 		try {
-			return new ImageFigure(AgeDiagramTypeProvider.getResources()
-					.createImage(ImageDescriptor.createFromURL(new URL(imagePath))));
+			return ImageDescriptor.createFromURL(new URL(imagePath));
 		} catch (final Exception e) {
-			// Show default image if creating image fails
-			return new ImageFigure(AgeDiagramTypeProvider.getResources()
-					.createImage(ImageDescriptor.createFromFile(getClass(), DEFAULT_IMAGE)));
+			// Return default image if image path is not valid
+			return ImageDescriptor.createFromFile(getClass(), DEFAULT_IMAGE);
 		}
 	}
 }

@@ -753,6 +753,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			dialog.setTitle("Image Selection");
 			dialog.setMessage("Select an image from the tree:");
 			dialog.setAllowMultiple(false);
+			dialog.setHelpAvailable(false);
 // Filter Resources
 			dialog.addFilter(selectionFilter);
 			final String emptyOrInvalidMsg = "Select an image";

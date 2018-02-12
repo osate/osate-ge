@@ -227,8 +227,9 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		final Map<String, List<DiagramElement>> resourceChangedToDiagramElementMap = new HashMap<>();
 		final AgeDiagram ageDiagram = getAgeDiagram();
 // Build map
-		ageDiagram.getAllDiagramNodes().filter(dn -> dn instanceof DiagramElement).map(dn -> (DiagramElement) dn)
-		.forEach(de -> {
+		ageDiagram.getAllDiagramNodes().filter(dn -> dn instanceof DiagramElement)
+				.forEach(dn -> {
+			final DiagramElement de = (DiagramElement) dn;
 			final String image = de.getStyle().getImage();
 			if (!Strings.isNullOrEmpty(image)) {
 				// Get resource if diagram needs an update

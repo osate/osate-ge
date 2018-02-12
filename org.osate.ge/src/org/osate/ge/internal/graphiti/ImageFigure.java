@@ -13,7 +13,7 @@ implements IGraphicsAlgorithmRenderer {
 	private Image image;
 
 	public ImageFigure(final Image image) {
-		this.image = Objects.requireNonNull(image);
+		this.image = Objects.requireNonNull(image, "image cannot be null");
 	}
 
 	@Override
