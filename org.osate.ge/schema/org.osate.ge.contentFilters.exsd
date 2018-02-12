@@ -6,7 +6,7 @@
          <meta.schema plugin="org.osate.ge" id="org.osate.ge.contentFilters" name="Content Filters"/>
       </appinfo>
       <documentation>
-         [Enter description of this extension point.]
+         Allows defining content filters for the OSATE Graphical Editor.
       </documentation>
    </annotation>
 

@@ -317,13 +317,12 @@ public class DefaultTreeUpdater implements TreeUpdater {
 			// Create node
 			final Object childBo = childEntry.getValue();
 			final RelativeBusinessObjectReference childRelReference = childEntry.getKey();
-			createNode(diagramType, bopHelper, newBoMap, oldNodeMap, parentNode, childBo, childRelReference,
+			createNode(diagramType, bopHelper, oldNodeMap, parentNode, childBo, childRelReference,
 					idGenerator, manualBranchCache);
 		}
 	}
 
 	private void createNode(final DiagramType diagramType, final BusinessObjectProviderHelper bopHelper,
-			final Map<RelativeBusinessObjectReference, Object> newBoMap,
 			final Map<RelativeBusinessObjectReference, BusinessObjectNode> oldNodeMap,
 			final BusinessObjectNode parentNode, final Object bo, final RelativeBusinessObjectReference relReference,
 			final IdGenerator idGenerator, final ManualBranchCache manualBranchCache) {

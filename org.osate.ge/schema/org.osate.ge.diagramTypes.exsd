@@ -6,7 +6,7 @@
          <meta.schema plugin="org.osate.ge" id="org.osate.ge.diagramTypes" name="Diagram Types"/>
       </appinfo>
       <documentation>
-         [Enter description of this extension point.]
+         Allows defining diagram types for the OSATE Graphical Editor.
       </documentation>
    </annotation>
 
