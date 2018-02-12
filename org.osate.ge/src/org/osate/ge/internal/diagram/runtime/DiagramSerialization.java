@@ -70,11 +70,10 @@ public class DiagramSerialization {
 		// Read the diagram configuration
 
 		// Set the diagram type
-		final DiagramType diagramType;
 		final String diagramTypeId = mmDiagram.getConfig() == null || mmDiagram.getConfig().getType() == null
 				? CustomDiagramType.ID
 						: mmDiagram.getConfig().getType();
-		diagramType = extRegistry.getDiagramTypeById(diagramTypeId)
+		final DiagramType diagramType = extRegistry.getDiagramTypeById(diagramTypeId)
 				.orElseGet(() -> new UnrecognizedDiagramType(diagramTypeId));
 
 		final DiagramConfigurationBuilder configBuilder = new DiagramConfigurationBuilder(diagramType,
