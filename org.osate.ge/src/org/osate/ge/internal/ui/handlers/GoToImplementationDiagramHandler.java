@@ -50,7 +50,6 @@ public class GoToImplementationDiagramHandler extends AbstractHandler {
 
 		final ComponentImplementation ci = Objects.requireNonNull(getComponentImplementation(bo),
 				"Unable to retrieve component implementation");
-		;
 		diagramService.openOrCreateDiagramForBusinessObject(ci);
 
 		return null;
