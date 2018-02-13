@@ -1,14 +1,12 @@
 package org.osate.ge.internal.ui.properties;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
+
+import javax.imageio.ImageIO;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -208,13 +206,13 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		setImageButton.addSelectionListener(imageSelectionAdapter);
 	}
 
-// Determine if the file is an image
-	private static boolean isImageFile(final Object element) {
-		try {
-			final File file = ((IFile) element).getFullPath().toFile();
-			final String type = Files.probeContentType(Paths.get(file.toURI()));
-			return type != null && type.split("/")[0].equals("image");
-		} catch (final IOException e) {
+// Determine if the file is an image and supported type
+	private static boolean isImageFile(final IFile file) {
+		final String ext = file.getFileExtension();
+		for (final String suf : ImageIO.getReaderFileSuffixes()) {
+			if (suf.equalsIgnoreCase(ext)) {
+				return true;
+			}
 		}
 		return false;
 	}
@@ -780,7 +778,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			@Override
 			public boolean select(final Viewer viewer, final Object parentElement, final Object element) {
 				return element instanceof IProject || element instanceof IFolder
-						|| (element instanceof IFile && isImageFile(element));
+						|| (element instanceof IFile && isImageFile((IFile) element));
 			}
 		};
 
