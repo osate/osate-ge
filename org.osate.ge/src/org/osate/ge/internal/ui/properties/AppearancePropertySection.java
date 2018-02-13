@@ -1,13 +1,14 @@
 package org.osate.ge.internal.ui.properties;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
-
-import javax.activation.MimetypesFileTypeMap;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -209,9 +210,13 @@ public class AppearancePropertySection extends AbstractPropertySection {
 
 // Determine if the file is an image
 	private static boolean isImageFile(final Object element) {
-		final File file = ((IFile) element).getFullPath().toFile();
-		final String type = new MimetypesFileTypeMap().getContentType(file).split("/")[0];
-		return type.equals("image");
+		try {
+			final File file = ((IFile) element).getFullPath().toFile();
+			final String type = Files.probeContentType(Paths.get(file.toURI()));
+			return type != null && type.split("/")[0].equals("image");
+		} catch (final IOException e) {
+		}
+		return false;
 	}
 
 	@Override

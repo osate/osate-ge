@@ -318,7 +318,7 @@ public class LayoutUtil {
 
 									imagePath = rawLocationURI.toString();
 								} else {
-					// Image cannot be found, load default image
+									// Image cannot be found, load default image
 									localResourceManager.createImage(ImageDescriptor.createFromFile(LayoutUtil.class,
 											ImageGraphicsAlgorithmRendererFactory.DEFAULT_IMAGE));
 									imagePath = "";
@@ -335,7 +335,7 @@ public class LayoutUtil {
 							}
 						}
 
-// Rotate shape
+						// Rotate shape
 						if (shapeDockArea != null) {
 							AgeGraphitiGraphicsUtil.rotate(innerGa, shapeDockArea);
 						}

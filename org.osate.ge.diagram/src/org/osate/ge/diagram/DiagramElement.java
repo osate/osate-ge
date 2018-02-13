@@ -36,6 +36,7 @@ import org.eclipse.emf.ecore.impl.ENotificationImpl;
  *   <li>{@link org.osate.ge.diagram.DiagramElement#getPrimaryLabelVisible <em>Primary Label Visible</em>}</li>
  *   <li>{@link org.osate.ge.diagram.DiagramElement#getImage <em>Image</em>}</li>
  *   <li>{@link org.osate.ge.diagram.DiagramElement#getImageVisible <em>Image Visible</em>}</li>
+ *   <li>{@link org.osate.ge.diagram.DiagramElement#getContentFilters <em>Content Filters</em>}</li>
  * </ul>
  *
  * @see org.osate.ge.diagram.DiagramPackage#getDiagramElement()
@@ -334,6 +335,16 @@ public class DiagramElement extends DiagramNode {
 	protected Boolean imageVisible = IMAGE_VISIBLE_EDEFAULT;
 
 	/**
+	 * The cached value of the '{@link #getContentFilters() <em>Content Filters</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getContentFilters()
+	 * @generated
+	 * @ordered
+	 */
+	protected ContentFilters contentFilters;
+
+	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
@@ -350,6 +361,39 @@ public class DiagramElement extends DiagramNode {
 	@Override
 	protected EClass eStaticClass() {
 		return DiagramPackage.Literals.DIAGRAM_ELEMENT;
+	}
+
+	/**
+	 * Returns the value of the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <p>
+	 * If the meaning of the '<em>Id</em>' attribute isn't clear,
+	 * there really should be more of a description here...
+	 * </p>
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Id</em>' attribute.
+	 * @see #setId(Long)
+	 * @see org.osate.ge.diagram.DiagramPackage#getDiagramElement_Id()
+	 * @model id="true" dataType="org.eclipse.emf.ecore.xml.type.LongObject"
+	 * @generated
+	 */
+	public Long getId() {
+		return id;
+	}
+
+	/**
+	 * Sets the value of the '{@link org.osate.ge.diagram.DiagramElement#getId <em>Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Id</em>' attribute.
+	 * @see #getId()
+	 * @generated
+	 */
+	public void setId(Long newId) {
+		Long oldId = id;
+		id = newId;
+		if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__ID, oldId, id));
 	}
 
 	/**
@@ -444,11 +488,10 @@ public class DiagramElement extends DiagramNode {
 	/**
 	 * Returns the value of the '<em><b>Auto Contents Filter</b></em>' attribute.
 	 * <!-- begin-user-doc -->
-	 * <p>
-	 * If the meaning of the '<em>Auto Contents Filter</em>' attribute isn't clear,
-	 * there really should be more of a description here...
-	 * </p>
 	 * <!-- end-user-doc -->
+	 * <!-- begin-model-doc -->
+	 * Deprecated
+	 * <!-- end-model-doc -->
 	 * @return the value of the '<em>Auto Contents Filter</em>' attribute.
 	 * @see #setAutoContentsFilter(String)
 	 * @see org.osate.ge.diagram.DiagramPackage#getDiagramElement_AutoContentsFilter()
@@ -991,36 +1034,58 @@ public class DiagramElement extends DiagramNode {
 	}
 
 	/**
-	 * Returns the value of the '<em><b>Id</b></em>' attribute.
+	 * Returns the value of the '<em><b>Content Filters</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <p>
-	 * If the meaning of the '<em>Id</em>' attribute isn't clear,
+	 * If the meaning of the '<em>Content Filters</em>' containment reference isn't clear,
 	 * there really should be more of a description here...
 	 * </p>
 	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Id</em>' attribute.
-	 * @see #setId(Long)
-	 * @see org.osate.ge.diagram.DiagramPackage#getDiagramElement_Id()
-	 * @model id="true" dataType="org.eclipse.emf.ecore.xml.type.LongObject"
+	 * @return the value of the '<em>Content Filters</em>' containment reference.
+	 * @see #setContentFilters(ContentFilters)
+	 * @see org.osate.ge.diagram.DiagramPackage#getDiagramElement_ContentFilters()
+	 * @model containment="true"
 	 * @generated
 	 */
-	public Long getId() {
-		return id;
+	public ContentFilters getContentFilters() {
+		return contentFilters;
 	}
 
 	/**
-	 * Sets the value of the '{@link org.osate.ge.diagram.DiagramElement#getId <em>Id</em>}' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Id</em>' attribute.
-	 * @see #getId()
 	 * @generated
 	 */
-	public void setId(Long newId) {
-		Long oldId = id;
-		id = newId;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__ID, oldId, id));
+	public NotificationChain basicSetContentFilters(ContentFilters newContentFilters, NotificationChain msgs) {
+		ContentFilters oldContentFilters = contentFilters;
+		contentFilters = newContentFilters;
+		if (eNotificationRequired()) {
+			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, oldContentFilters, newContentFilters);
+			if (msgs == null) msgs = notification; else msgs.add(notification);
+		}
+		return msgs;
+	}
+
+	/**
+	 * Sets the value of the '{@link org.osate.ge.diagram.DiagramElement#getContentFilters <em>Content Filters</em>}' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Content Filters</em>' containment reference.
+	 * @see #getContentFilters()
+	 * @generated
+	 */
+	public void setContentFilters(ContentFilters newContentFilters) {
+		if (newContentFilters != contentFilters) {
+			NotificationChain msgs = null;
+			if (contentFilters != null)
+				msgs = ((InternalEObject)contentFilters).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, null, msgs);
+			if (newContentFilters != null)
+				msgs = ((InternalEObject)newContentFilters).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, null, msgs);
+			msgs = basicSetContentFilters(newContentFilters, msgs);
+			if (msgs != null) msgs.dispatch();
+		}
+		else if (eNotificationRequired())
+			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, newContentFilters, newContentFilters));
 	}
 
 	/**
@@ -1041,6 +1106,8 @@ public class DiagramElement extends DiagramNode {
 				return basicSetBendpoints(null, msgs);
 			case DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_POSITION:
 				return basicSetPrimaryLabelPosition(null, msgs);
+			case DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS:
+				return basicSetContentFilters(null, msgs);
 		}
 		return super.eInverseRemove(otherEnd, featureID, msgs);
 	}
@@ -1087,6 +1154,8 @@ public class DiagramElement extends DiagramNode {
 				return getImage();
 			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE_VISIBLE:
 				return getImageVisible();
+			case DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS:
+				return getContentFilters();
 		}
 		return super.eGet(featureID, resolve, coreType);
 	}
@@ -1149,6 +1218,9 @@ public class DiagramElement extends DiagramNode {
 				return;
 			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE_VISIBLE:
 				setImageVisible((Boolean)newValue);
+				return;
+			case DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS:
+				setContentFilters((ContentFilters)newValue);
 				return;
 		}
 		super.eSet(featureID, newValue);
@@ -1213,6 +1285,9 @@ public class DiagramElement extends DiagramNode {
 			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE_VISIBLE:
 				setImageVisible(IMAGE_VISIBLE_EDEFAULT);
 				return;
+			case DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS:
+				setContentFilters((ContentFilters)null);
+				return;
 		}
 		super.eUnset(featureID);
 	}
@@ -1259,6 +1334,8 @@ public class DiagramElement extends DiagramNode {
 				return IMAGE_EDEFAULT == null ? image != null : !IMAGE_EDEFAULT.equals(image);
 			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE_VISIBLE:
 				return IMAGE_VISIBLE_EDEFAULT == null ? imageVisible != null : !IMAGE_VISIBLE_EDEFAULT.equals(imageVisible);
+			case DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS:
+				return contentFilters != null;
 		}
 		return super.eIsSet(featureID);
 	}

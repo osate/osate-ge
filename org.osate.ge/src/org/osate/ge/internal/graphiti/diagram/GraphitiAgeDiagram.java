@@ -68,7 +68,6 @@ import org.osate.ge.internal.diagram.runtime.ElementRemovedEvent;
 import org.osate.ge.internal.diagram.runtime.ElementUpdatedEvent;
 import org.osate.ge.internal.diagram.runtime.ModificationsCompletedEvent;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
-import org.osate.ge.internal.diagram.runtime.layout.LayoutInfoProvider;
 import org.osate.ge.internal.diagram.runtime.styling.StyleCalculator;
 import org.osate.ge.internal.graphiti.AgeDiagramTypeProvider;
 import org.osate.ge.internal.graphiti.AnchorNames;
@@ -116,7 +115,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 	 * @param editingDomain is the editing domain to use to make modifications to the diagram. It must not contain any other diagrams.
 	 */
 	public GraphitiAgeDiagram(final AgeDiagram ageDiagram, final Diagram graphitiDiagram,
-			final EditingDomain editingDomain, final LayoutInfoProvider layoutInfoProvider,
+			final EditingDomain editingDomain,
 			final CommandExecutor cmdExecutor, final ColoringProvider coloringProvider,
 			final UpdaterListener updateListener) {
 		this.ageDiagram = Objects.requireNonNull(ageDiagram, "ageDiagram must not be null");
@@ -228,7 +227,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		final AgeDiagram ageDiagram = getAgeDiagram();
 // Build map
 		ageDiagram.getAllDiagramNodes().filter(dn -> dn instanceof DiagramElement)
-				.forEach(dn -> {
+		.forEach(dn -> {
 			final DiagramElement de = (DiagramElement) dn;
 			final String image = de.getStyle().getImage();
 			if (!Strings.isNullOrEmpty(image)) {
