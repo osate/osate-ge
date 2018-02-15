@@ -1,5 +1,6 @@
 package org.osate.ge.graphics;
 
+import org.eclipse.core.runtime.IPath;
 import org.osate.ge.graphics.internal.LineStyle;
 
 public class Style {
@@ -15,7 +16,7 @@ public class Style {
 	private final Color fontColor;
 	private final Double fontSize;
 	private final Double lineWidth;
-	private final String image;
+	private final IPath image;
 	private final Boolean imageVisible;
 	private final LineStyle lineStyle;
 	private final LabelPosition horizontalLabelPosition;
@@ -23,7 +24,7 @@ public class Style {
 	private final Boolean primaryLabelVisible;
 
 	Style(final Color background, final Color fontColor, final Color outline, final Double fontSize,
-			final Boolean imageVisible, final String image,
+			final Boolean imageVisible, final IPath image,
 			final Double lineWidth, final LineStyle lineStyle, final LabelPosition horizontalLabelPosition,
 			final LabelPosition verticalLabelPosition, final Boolean primaryLabelVisible) {
 		this.background = background;
@@ -43,11 +44,11 @@ public class Style {
 		return background;
 	}
 
-	public final String getImage() {
+	public final IPath getImagePath() {
 		return image;
 	}
 
-	public final Boolean isImageVisible() {
+	public final Boolean showAsImage() {
 		return imageVisible;
 	}
 

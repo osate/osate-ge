@@ -9,6 +9,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -28,7 +31,6 @@ import org.osate.ge.internal.diagram.runtime.types.UnrecognizedDiagramType;
 import org.osate.ge.internal.services.ExtensionRegistryService;
 import org.osate.ge.internal.services.impl.DeclarativeReferenceType;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 
 /**
@@ -61,7 +63,7 @@ public class DiagramSerialization {
 		}
 	}
 
-	public static AgeDiagram createAgeDiagram(final org.osate.ge.diagram.Diagram mmDiagram,
+	public static AgeDiagram createAgeDiagram(final IProject project, final org.osate.ge.diagram.Diagram mmDiagram,
 			final ExtensionRegistryService extRegistry) {
 		Objects.requireNonNull(extRegistry, "extRegistry is null");
 
@@ -105,7 +107,7 @@ public class DiagramSerialization {
 		}
 
 		//  Read elements
-		ageDiagram.modify("Read from File", m -> readElements(m, extRegistry,
+		ageDiagram.modify("Read from File", m -> readElements(project, m, extRegistry,
 				ageDiagram, mmDiagram, new HashSet<>(), false));
 
 		return ageDiagram;
@@ -149,16 +151,18 @@ public class DiagramSerialization {
 		return max;
 	}
 
-	private static void readElements(final DiagramModification m, final ContentFilterProvider contentFilterProvider,
+	private static void readElements(final IProject project, final DiagramModification m,
+			final ContentFilterProvider contentFilterProvider,
 			final DiagramNode container, final org.osate.ge.diagram.DiagramNode mmContainer,
 			final Set<Long> usedIdSet, final boolean usingLegacyContentFilters) {
 		for (final org.osate.ge.diagram.DiagramElement mmElement : mmContainer.getElement()) {
-			createElement(m, contentFilterProvider, container, mmElement, usedIdSet,
+			createElement(project, m, contentFilterProvider, container, mmElement, usedIdSet,
 					usingLegacyContentFilters);
 		}
 	}
 
-	private static void createElement(final DiagramModification m, final ContentFilterProvider contentFilterProvider,
+	private static void createElement(final IProject project, final DiagramModification m,
+			final ContentFilterProvider contentFilterProvider,
 			final DiagramNode container, final org.osate.ge.diagram.DiagramElement mmChild, final Set<Long> usedIdSet,
 			boolean usingLegacyContentFilters) {
 		final String[] refSegs = toReferenceSegments(mmChild.getBo());
@@ -232,40 +236,42 @@ public class DiagramSerialization {
 		}
 
 		// Style
-		final Boolean imageVisible = mmChild.getImageVisible();
+		final Boolean imageVisible = mmChild.getShowAsImage();
 		final Color background = mmChild.getBackground() != null ? parseColor(mmChild.getBackground()) : null;
-		final String image = mmChild.getImage() != null ? mmChild.getImage() : null;
-		final Color fontColor = mmChild.getFontColor() != null ? parseColor(mmChild.getFontColor()) : null;
-		final Color outline = mmChild.getOutline() != null ? parseColor(mmChild.getOutline()) : null;
-		final Double lineWidth = mmChild.getLineWidth();
-		final Double fontSize = mmChild.getFontSize();
-		final Boolean primaryLabelVisible = mmChild.getPrimaryLabelVisible();
+		final IPath image = mmChild.getImage() != null
+				? project.getFile(Path.fromPortableString(mmChild.getImage())).getFullPath()
+						: null;
+				final Color fontColor = mmChild.getFontColor() != null ? parseColor(mmChild.getFontColor()) : null;
+				final Color outline = mmChild.getOutline() != null ? parseColor(mmChild.getOutline()) : null;
+				final Double lineWidth = mmChild.getLineWidth();
+				final Double fontSize = mmChild.getFontSize();
+				final Boolean primaryLabelVisible = mmChild.getPrimaryLabelVisible();
 
-		newElement.setStyle(StyleBuilder.create().backgroundColor(background).imageVisible(imageVisible).image(image)
-				.fontColor(fontColor).outlineColor(outline)
-				.fontSize(fontSize).lineWidth(lineWidth).primaryLabelVisible(primaryLabelVisible).build());
+				newElement.setStyle(StyleBuilder.create().backgroundColor(background).showAsImage(imageVisible).imagePath(image)
+						.fontColor(fontColor).outlineColor(outline)
+						.fontSize(fontSize).lineWidth(lineWidth).primaryLabelVisible(primaryLabelVisible).build());
 
-		// Bendpoints
-		final org.osate.ge.diagram.BendpointList mmBendpoints = mmChild.getBendpoints();
-		if (mmBendpoints == null) {
-			newElement.setBendpoints(Collections.emptyList());
-		} else {
-			newElement.setBendpoints(mmBendpoints.getPoint().stream().map(DiagramSerialization::convertPoint)
-					.collect(Collectors.toList()));
-		}
+				// Bendpoints
+				final org.osate.ge.diagram.BendpointList mmBendpoints = mmChild.getBendpoints();
+				if (mmBendpoints == null) {
+					newElement.setBendpoints(Collections.emptyList());
+				} else {
+					newElement.setBendpoints(mmBendpoints.getPoint().stream().map(DiagramSerialization::convertPoint)
+							.collect(Collectors.toList()));
+				}
 
-		// Primary Label Position (Only Supported for Connections)
-		newElement.setConnectionPrimaryLabelPosition(convertPoint(mmChild.getPrimaryLabelPosition()));
+				// Primary Label Position (Only Supported for Connections)
+				newElement.setConnectionPrimaryLabelPosition(convertPoint(mmChild.getPrimaryLabelPosition()));
 
-		// Add the element
-		m.addElement(newElement);
+				// Add the element
+				m.addElement(newElement);
 
-		if(newElement.getId() != null) {
-			usedIdSet.add(newElement.getId());
-		}
+				if(newElement.getId() != null) {
+					usedIdSet.add(newElement.getId());
+				}
 
-		// Create children
-		readElements(m, contentFilterProvider, newElement, mmChild, usedIdSet, usingLegacyContentFilters);
+				// Create children
+				readElements(project, m, contentFilterProvider, newElement, mmChild, usedIdSet, usingLegacyContentFilters);
 	}
 
 	private static Point convertPoint(final org.osate.ge.diagram.Point mmPoint) {
@@ -284,7 +290,7 @@ public class DiagramSerialization {
 		return new Dimension((int) Math.round(mmDimension.getWidth()), (int) Math.round(mmDimension.getHeight()));
 	}
 
-	public static void write(final AgeDiagram diagram, final URI uri) {
+	public static void write(final IProject project, final AgeDiagram diagram, final URI uri) {
 		// Convert from the runtime format to the metamodel format which is stored
 		final org.osate.ge.diagram.Diagram mmDiagram = new Diagram();
 		mmDiagram.setFormatVersion(FORMAT_VERSION);
@@ -305,7 +311,7 @@ public class DiagramSerialization {
 			enabledProperties.getProperty().add(enabledPropertyName);
 		}
 
-		convertElementsToMetamodel(mmDiagram, diagram.getDiagramElements());
+		convertElementsToMetamodel(project, mmDiagram, diagram.getDiagramElements());
 
 		// Save the resource
 		final ResourceSet rs = new ResourceSetImpl();
@@ -320,22 +326,24 @@ public class DiagramSerialization {
 
 	/**
 	 *  Converts specified elements from runtime datastructure into a metamodel.
+	 * @param project
 	 * @param mmContainer
 	 * @param elements
 	 */
-	private static void convertElementsToMetamodel(final org.osate.ge.diagram.DiagramNode mmContainer,
+	private static void convertElementsToMetamodel(IProject project, final org.osate.ge.diagram.DiagramNode mmContainer,
 			Collection<DiagramElement> elements) {
 		// Sort elements to ensure a consistent ordering after serialization
 		elements = elements.stream().sorted(elementComparator).collect(Collectors.toList());
 
 		if (elements.size() > 0) {
 			for (final DiagramElement e : elements) {
-				convertElementToMetamodel(mmContainer, e);
+				convertElementToMetamodel(project, mmContainer, e);
 			}
 		}
 	}
 
-	private static void convertElementToMetamodel(final org.osate.ge.diagram.DiagramNode mmContainer,
+	private static void convertElementToMetamodel(final IProject project,
+			final org.osate.ge.diagram.DiagramNode mmContainer,
 			final DiagramElement e) {
 		// Write BO Reference
 		final org.osate.ge.diagram.DiagramElement newElement = new org.osate.ge.diagram.DiagramElement();
@@ -376,10 +384,17 @@ public class DiagramSerialization {
 			newElement.setBackground(colorToHex(backgroundColor));
 		}
 
-		final String image = currentStyle.getImage();
-		if (!Strings.isNullOrEmpty(image)) {
-			newElement.setImage(image);
-			newElement.setImageVisible(currentStyle.isImageVisible());
+		final IPath image = currentStyle.getImagePath();
+		if (image != null) {
+			final String portablePath;
+			if (image.matchingFirstSegments(project.getFullPath()) == 0) {
+				portablePath = ".." + image.toPortableString();
+			} else {
+				portablePath = image.removeFirstSegments(1).toPortableString();
+			}
+
+			newElement.setImage(portablePath);
+			newElement.setShowAsImage(currentStyle.showAsImage());
 		}
 
 		final org.osate.ge.graphics.Color fontColor = currentStyle.getFontColor();
@@ -420,7 +435,7 @@ public class DiagramSerialization {
 			newElement.setPrimaryLabelPosition(e.getConnectionPrimaryLabelPosition().toMetamodel());
 		}
 
-		convertElementsToMetamodel(newElement, e.getDiagramElements());
+		convertElementsToMetamodel(project, newElement, e.getDiagramElements());
 	}
 
 	// Create hex string from color

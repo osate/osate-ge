@@ -317,13 +317,13 @@ public class DiagramPackage extends EPackageImpl {
 	public static final int DIAGRAM_ELEMENT__IMAGE = DIAGRAM_NODE_FEATURE_COUNT + 15;
 
 	/**
-	 * The feature id for the '<em><b>Image Visible</b></em>' attribute.
+	 * The feature id for the '<em><b>Show As Image</b></em>' attribute.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	public static final int DIAGRAM_ELEMENT__IMAGE_VISIBLE = DIAGRAM_NODE_FEATURE_COUNT + 16;
+	public static final int DIAGRAM_ELEMENT__SHOW_AS_IMAGE = DIAGRAM_NODE_FEATURE_COUNT + 16;
 
 	/**
 	 * The feature id for the '<em><b>Content Filters</b></em>' containment reference.
@@ -1181,15 +1181,15 @@ public class DiagramPackage extends EPackageImpl {
 
 
 	/**
-	 * Returns the meta object for the attribute '{@link org.osate.ge.diagram.DiagramElement#getImageVisible <em>Image Visible</em>}'.
+	 * Returns the meta object for the attribute '{@link org.osate.ge.diagram.DiagramElement#getShowAsImage <em>Show As Image</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @return the meta object for the attribute '<em>Image Visible</em>'.
-	 * @see org.osate.ge.diagram.DiagramElement#getImageVisible()
+	 * @return the meta object for the attribute '<em>Show As Image</em>'.
+	 * @see org.osate.ge.diagram.DiagramElement#getShowAsImage()
 	 * @see #getDiagramElement()
 	 * @generated
 	 */
-	public EAttribute getDiagramElement_ImageVisible() {
+	public EAttribute getDiagramElement_ShowAsImage() {
 		return (EAttribute)diagramElementEClass.getEStructuralFeatures().get(16);
 	}
 
@@ -1542,7 +1542,7 @@ public class DiagramPackage extends EPackageImpl {
 		createEAttribute(diagramElementEClass, DIAGRAM_ELEMENT__LINE_WIDTH);
 		createEAttribute(diagramElementEClass, DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE);
 		createEAttribute(diagramElementEClass, DIAGRAM_ELEMENT__IMAGE);
-		createEAttribute(diagramElementEClass, DIAGRAM_ELEMENT__IMAGE_VISIBLE);
+		createEAttribute(diagramElementEClass, DIAGRAM_ELEMENT__SHOW_AS_IMAGE);
 		createEReference(diagramElementEClass, DIAGRAM_ELEMENT__CONTENT_FILTERS);
 
 		pointEClass = createEClass(POINT);
@@ -1640,7 +1640,7 @@ public class DiagramPackage extends EPackageImpl {
 		initEAttribute(getDiagramElement_LineWidth(), theXMLTypePackage.getDoubleObject(), "lineWidth", null, 0, 1, DiagramElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDiagramElement_PrimaryLabelVisible(), ecorePackage.getEBooleanObject(), "primaryLabelVisible", null, 0, 1, DiagramElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEAttribute(getDiagramElement_Image(), theXMLTypePackage.getString(), "image", null, 0, 1, DiagramElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
-		initEAttribute(getDiagramElement_ImageVisible(), ecorePackage.getEBooleanObject(), "imageVisible", null, 0, 1, DiagramElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getDiagramElement_ShowAsImage(), ecorePackage.getEBooleanObject(), "showAsImage", null, 0, 1, DiagramElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getDiagramElement_ContentFilters(), this.getContentFilters(), null, "contentFilters", null, 0, 1, DiagramElement.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(pointEClass, Point.class, "Point", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
@@ -1877,12 +1877,12 @@ public class DiagramPackage extends EPackageImpl {
 		public static final EAttribute DIAGRAM_ELEMENT__IMAGE = eINSTANCE.getDiagramElement_Image();
 
 		/**
-		 * The meta object literal for the '<em><b>Image Visible</b></em>' attribute feature.
+		 * The meta object literal for the '<em><b>Show As Image</b></em>' attribute feature.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
 		 * @generated
 		 */
-		public static final EAttribute DIAGRAM_ELEMENT__IMAGE_VISIBLE = eINSTANCE.getDiagramElement_ImageVisible();
+		public static final EAttribute DIAGRAM_ELEMENT__SHOW_AS_IMAGE = eINSTANCE.getDiagramElement_ShowAsImage();
 
 		/**
 		 * The meta object literal for the '<em><b>Content Filters</b></em>' containment reference feature.

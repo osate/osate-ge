@@ -1,10 +1,11 @@
 package org.osate.ge.graphics;
 
+import org.eclipse.core.runtime.IPath;
 import org.osate.ge.graphics.internal.LineStyle;
 
 public class StyleBuilder {
 	private Color background;
-	private String image;
+	private IPath image;
 	private Boolean imageVisible;
 	private Color outline;
 	private Color fontColor;
@@ -67,12 +68,12 @@ public class StyleBuilder {
 				sb.primaryLabelVisible(s.getPrimaryLabelVisible());
 			}
 
-			if(s.isImageVisible() != null) {
-				sb.imageVisible(s.isImageVisible());
+			if(s.showAsImage() != null) {
+				sb.showAsImage(s.showAsImage());
 			}
 
-			if (s.getImage() != null) {
-				sb.image(s.getImage());
+			if (s.getImagePath() != null) {
+				sb.imagePath(s.getImagePath());
 			}
 		}
 
@@ -84,12 +85,12 @@ public class StyleBuilder {
 		return this;
 	}
 
-	public StyleBuilder imageVisible(final Boolean imageVisible) {
+	public StyleBuilder showAsImage(final Boolean imageVisible) {
 		this.imageVisible = imageVisible;
 		return this;
 	}
 
-	public StyleBuilder image(final String image) {
+	public StyleBuilder imagePath(final IPath image) {
 		this.image = image;
 		return this;
 	}

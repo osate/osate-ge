@@ -582,9 +582,9 @@
         </ownedStyle>
         <actualMapping xmi:type="description_1:NodeMapping" href="platform:/plugin/org.eclipse.emf.ecoretools.design/description/ecore.odesign#//@ownedViewpoints[name='Design']/@ownedRepresentations[name='Entities']/@defaultLayer/@containerMappings[name='EC%20EClass']/@subNodeMappings[name='EC%20EAttribute']"/>
       </ownedElements>
-      <ownedElements xmi:type="diagram:DNodeListElement" xmi:id="_lzQ3YRDKEeit97CVsI5RyA" name="imageVisible : EBooleanObject" tooltipText="">
-        <target xmi:type="ecore:EAttribute" href="diagram.ecore#//DiagramElement/imageVisible"/>
-        <semanticElements xmi:type="ecore:EAttribute" href="diagram.ecore#//DiagramElement/imageVisible"/>
+      <ownedElements xmi:type="diagram:DNodeListElement" xmi:id="_lzQ3YRDKEeit97CVsI5RyA" name="showAsImage : EBooleanObject" tooltipText="">
+        <target xmi:type="ecore:EAttribute" href="diagram.ecore#//DiagramElement/showAsImage"/>
+        <semanticElements xmi:type="ecore:EAttribute" href="diagram.ecore#//DiagramElement/showAsImage"/>
         <ownedStyle xmi:type="diagram:BundledImage" xmi:id="_lzQ3YhDKEeit97CVsI5RyA" labelAlignment="LEFT">
           <description xmi:type="style:BundledImageDescription" href="platform:/plugin/org.eclipse.emf.ecoretools.design/description/ecore.odesign#//@ownedViewpoints[name='Design']/@ownedRepresentations[name='Entities']/@defaultLayer/@containerMappings[name='EC%20EClass']/@subNodeMappings[name='EC%20EAttribute']/@style"/>
         </ownedStyle>

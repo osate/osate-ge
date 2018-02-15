@@ -6,13 +6,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import javax.imageio.ImageIO;
-
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Adapters;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.layout.GridDataFactory;
@@ -64,10 +63,9 @@ import org.osate.ge.graphics.internal.Label;
 import org.osate.ge.internal.Activator;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
+import org.osate.ge.internal.diagram.runtime.DiagramElementPredicates;
 import org.osate.ge.internal.ui.util.UiUtil;
 import org.osate.ge.internal.util.StringUtil;
-
-import com.google.common.base.Strings;
 
 public class AppearancePropertySection extends AbstractPropertySection {
 	public static class SelectionFilter implements IFilter {
@@ -175,11 +173,11 @@ public class AppearancePropertySection extends AbstractPropertySection {
 
 	private void createImageSection(final Composite parent) {
 		// Create controls
-		imageLabel = createLabel(parent, "Image:");
-		toggleImageVisible = new Button(parent, SWT.CHECK);
+		imageLabel = createLabel(parent, "Show As Image:");
+		toggleShowImage = new Button(parent, SWT.CHECK);
 		setImageButton = createButton(parent, imageIcon);
 
-// Set layout
+		// Set layout
 		FormData fd = new FormData();
 		fd.top = new FormAttachment(lineWidthLabel, 10);
 		fd.left = new FormAttachment(0, 10);
@@ -187,18 +185,18 @@ public class AppearancePropertySection extends AbstractPropertySection {
 
 		fd = new FormData();
 		fd.top = new FormAttachment(imageLabel, 0, SWT.TOP);
-		fd.left = new FormAttachment(toggleImageVisible, 0);
+		fd.left = new FormAttachment(toggleShowImage, 0);
 		setImageButton.setLayoutData(fd);
 
 		fd = new FormData();
 		fd.top = new FormAttachment(setImageButton, 0, SWT.CENTER);
 		fd.left = new FormAttachment(primaryLabelVisibleViewer.getControl(), 0, SWT.LEFT);
-		toggleImageVisible.setLayoutData(fd);
+		toggleShowImage.setLayoutData(fd);
 
-		toggleImageVisible.addSelectionListener(new SelectionAdapter() {
+		toggleShowImage.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
-				final boolean isVisible = toggleImageVisible.getSelection();
+				final boolean isVisible = toggleShowImage.getSelection();
 				runStyleCommand(isVisible, imageVisibleStyleCmd);
 			}
 		});
@@ -206,10 +204,10 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		setImageButton.addSelectionListener(imageSelectionAdapter);
 	}
 
-// Determine if the file is an image and supported type
-	private static boolean isImageFile(final IFile file) {
+	// Determine if the file is an image and supported type
+	private boolean isImageFile(final IFile file) {
 		final String ext = file.getFileExtension();
-		for (final String suf : ImageIO.getReaderFileSuffixes()) {
+		for (final String suf : supportedImageTypes) {
 			if (suf.equalsIgnoreCase(ext)) {
 				return true;
 			}
@@ -243,7 +241,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 				enableFontOptions = true;
 			}
 
-// Shape/Connection options
+			// Shape/Connection options
 			if (supportsLineWidth(diagramElement)) {
 				enableLineWidth = true;
 			}
@@ -260,32 +258,32 @@ public class AppearancePropertySection extends AbstractPropertySection {
 				enablePrimaryLabelVisibleOption = true;
 			}
 
-// Image options
-			if (supportsImage(diagramElement)) {
+			// Image options
+			if (DiagramElementPredicates.supportsImage(diagramElement)) {
 				enableImage = true;
 				final Style style = diagramElement.getStyle();
 				// If any elements have an image style
-				if (!Strings.isNullOrEmpty(style.getImage())) {
+				if (style.getImagePath() != null) {
 					enableIsVisible = true;
 
 					// If any elements are images
-					if (Boolean.TRUE.equals(style.isImageVisible())) {
+					if (Boolean.TRUE.equals(style.showAsImage())) {
 						isVisibleSelection = true;
 					}
 				}
 			}
 		}
 
-// Get the editor from the selected diagram elements
+		// Get the editor from the selected diagram elements
 		ageDiagram = Objects.requireNonNull(UiUtil.getDiagram(selectedDiagramElements), "Unable to retrieve diagram");
 
-// Set image controls
+		// Set image controls
 		imageLabel.setEnabled(enableImage);
 		setImageButton.setEnabled(enableImage);
-		toggleImageVisible.setEnabled(enableIsVisible);
-		toggleImageVisible.setSelection(isVisibleSelection);
+		toggleShowImage.setEnabled(enableIsVisible);
+		toggleShowImage.setSelection(isVisibleSelection);
 
-// Set options to match last selected element
+		// Set options to match last selected element
 		final DiagramElement diagramElement = selectedDiagramElements.get(selectedDiagramElements.size() - 1);
 		final Style currentStyle = diagramElement.getStyle();
 
@@ -330,14 +328,10 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			outline = disableColor;
 		}
 
-// Update UI
+		// Update UI
 		setComboViewersEnabled(enableFontOptions, enableLineWidth, enablePrimaryLabelVisibleOption);
 		setStructuredSelection(lastFontSizeSelected, lastLineWidthSelected, lastLabelVisibilitySelected);
 		setPaintListenerColors(background, fontColor, outline);
-	}
-
-	private static boolean supportsImage(final DiagramElement de) {
-		return de.getDockArea() == null && de.getBendpoints().isEmpty();
 	}
 
 	private static boolean supportsFontOptions(final DiagramElement de) {
@@ -446,7 +440,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 				btn.addSelectionListener(new ColorSelectionAdapter(shell, paintListener, pc.rgb, styleCmd));
 			}
 
-// Create custom color button
+			// Create custom color button
 			final boolean hasCustomColor = customPC != null;
 			final PresetColor customPresetColor = hasCustomColor ? customPC : white;
 			final Button customColorBtn = createButton(shell, customPresetColor.imageDescriptor);
@@ -454,7 +448,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			customColorBtn.addSelectionListener(
 					new ColorSelectionAdapter(shell, paintListener, customPresetColor.rgb, styleCmd));
 
-// Custom color dialog
+			// Custom color dialog
 			final Button colorDlgBtn = new Button(shell, SWT.PUSH);
 			colorDlgBtn.setText("Custom...");
 			GridDataFactory.fillDefaults().grab(true, true).span(5, 0).applyTo(colorDlgBtn);
@@ -480,7 +474,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 				}
 			});
 
-// Default button
+			// Default button
 			final Button defaultColorBtn = new Button(shell, SWT.PUSH);
 			defaultColorBtn.setText("Default");
 			GridDataFactory.fillDefaults().grab(true, true).span(6, 0).applyTo(defaultColorBtn);
@@ -493,7 +487,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 				}
 			});
 
-// Close shell if user clicks off of the shell
+			// Close shell if user clicks off of the shell
 			shell.addListener(SWT.Deactivate, e1 -> shell.setVisible(false));
 
 			shell.pack();
@@ -720,28 +714,29 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			final Menu popupMenu = new Menu(setImageButton);
 			// Add menu item to launch choose new image dialog
 			final MenuItem chooseImgMenuItem = new MenuItem(popupMenu, SWT.NONE);
-			chooseImgMenuItem.setText("Choose...");
+			chooseImgMenuItem.setText("Select...");
 			chooseImgMenuItem.addSelectionListener(new SelectionAdapter() {
 				@Override
 				public void widgetSelected(final SelectionEvent e) {
 					final ElementTreeSelectionDialog dialog = createSelectionDialog();
 					if (dialog.open() == Window.OK) {
 						final IFile iFile = (IFile) dialog.getResult()[0];
-						runStyleCommand(iFile.getFullPath().toOSString(), imageStyleCommand);
+						runStyleCommand(iFile.getFullPath(), imageStyleCommand);
 					}
 				}
 			});
 
-			// Menu item to remove image from diagram element
-			final MenuItem removeImgMenuItem = new MenuItem(popupMenu, SWT.NONE);
-			removeImgMenuItem.setText("Remove");
-			removeImgMenuItem.addSelectionListener(new SelectionAdapter() {
-				@Override
-				public void widgetSelected(final SelectionEvent e) {
-					runStyleCommand(new String(), imageStyleCommand);
-				}
-			});
-
+			if (toggleShowImage.isEnabled()) {
+				// Menu item to remove image from diagram element
+				final MenuItem removeImgMenuItem = new MenuItem(popupMenu, SWT.NONE);
+				removeImgMenuItem.setText("Remove");
+				removeImgMenuItem.addSelectionListener(new SelectionAdapter() {
+					@Override
+					public void widgetSelected(final SelectionEvent e) {
+						runStyleCommand(null, imageStyleCommand);
+					}
+				});
+			}
 			// Set menu location
 			popupMenu.setLocation(getShellPosition(setImageButton.getSize(), setImageButton, 5));
 			// Show menu
@@ -754,18 +749,16 @@ public class AppearancePropertySection extends AbstractPropertySection {
 					new BaseWorkbenchContentProvider());
 			// Configure selection dialog
 			dialog.setTitle("Image Selection");
-			dialog.setMessage("Select an image from the tree:");
+			dialog.setMessage("Select an image.");
 			dialog.setAllowMultiple(false);
 			dialog.setHelpAvailable(false);
-// Filter Resources
+			// Filter Resources
 			dialog.addFilter(selectionFilter);
-			final String emptyOrInvalidMsg = "Select an image";
-			dialog.setEmptyListMessage(emptyOrInvalidMsg);
 			dialog.setValidator(selection -> {
 				if (selection.length > 0 && selection[0] instanceof IFile) {
 					return new Status(IStatus.OK, Activator.PLUGIN_ID, "");
 				}
-				return new Status(IStatus.ERROR, Activator.PLUGIN_ID, emptyOrInvalidMsg);
+				return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "invalid selection");
 			});
 
 			// Allow selection of project resources
@@ -773,7 +766,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			return dialog;
 		}
 
-// Only allow projects, folders, and image files to appear in dialog selection
+		// Only allow projects, folders, and image files to appear in dialog selection
 		private final ViewerFilter selectionFilter = new ViewerFilter() {
 			@Override
 			public boolean select(final Viewer viewer, final Object parentElement, final Object element) {
@@ -784,18 +777,18 @@ public class AppearancePropertySection extends AbstractPropertySection {
 
 		// Set image and visibility
 		final StyleCommand imageStyleCommand = new StyleCommand("Set Image", (diagramElement, sb, value) -> {
-			if (supportsImage(diagramElement)) {
-				final String image = (String) value;
-				sb.image(image);
-				sb.imageVisible(!Strings.isNullOrEmpty(image));
+			if (DiagramElementPredicates.supportsImage(diagramElement)) {
+				final IPath imagePath = (IPath) value;
+				sb.imagePath(imagePath);
+				sb.showAsImage(imagePath != null);
 			}
 		});
 	};
 
 	// Set image visibility
 	final StyleCommand imageVisibleStyleCmd = new StyleCommand("Show Image", (diagramElement, sb, value) -> {
-		if (supportsImage(diagramElement) && !Strings.isNullOrEmpty(diagramElement.getStyle().getImage())) {
-			sb.imageVisible((Boolean) value);
+		if (DiagramElementPredicates.supportsImage(diagramElement) && value != null) {
+			sb.showAsImage((Boolean) value);
 		}
 	});
 
@@ -803,11 +796,12 @@ public class AppearancePropertySection extends AbstractPropertySection {
 	private final static ImageDescriptor backgroundIcon = Activator.getImageDescriptor("icons/Background.gif");
 	private final static ImageDescriptor fontColorIcon = Activator.getImageDescriptor("icons/FontColor.gif");
 	private final static ImageDescriptor imageIcon = Activator.getImageDescriptor("icons/BackgroundImage.gif");
+	private final String[] supportedImageTypes = { "bmp", "png", "jpg", "jpeg", "tif", "gif" };
 	private AgeDiagram ageDiagram;
 	private ResourceManager resourceMgr;
 	private List<DiagramElement> selectedDiagramElements = new ArrayList<>();
 	private Button setImageButton;
-	private Button toggleImageVisible;
+	private Button toggleShowImage;
 	private org.eclipse.swt.widgets.Label fontSizeLabel;
 	private org.eclipse.swt.widgets.Label lineWidthLabel;
 	private org.eclipse.swt.widgets.Label imageLabel;
@@ -820,37 +814,37 @@ public class AppearancePropertySection extends AbstractPropertySection {
 	private StylePaintListener fontColorPaintListener;
 	private StylePaintListener outlinePaintListener;
 
-// Red Column
+	// Red Column
 	private final PresetColor lighterRed = new PresetColor(new RGB(255, 204, 204));
 	private final PresetColor lightRed = new PresetColor(new RGB(255, 102, 102));
 	private final PresetColor red = new PresetColor(new RGB(255, 0, 0));
 	private final PresetColor darkRed = new PresetColor(new RGB(153, 0, 0));
 
-// Orange Column
+	// Orange Column
 	private final PresetColor lighterOrange = new PresetColor(new RGB(255, 229, 204));
 	private final PresetColor lightOrange = new PresetColor(new RGB(255, 178, 102));
 	private final PresetColor orange = new PresetColor(new RGB(255, 128, 0));
 	private final PresetColor darkOrange = new PresetColor(new RGB(153, 76, 0));
 
-// Blue Column
+	// Blue Column
 	private final PresetColor lighterBlue = new PresetColor(new RGB(204, 204, 255));
 	private final PresetColor lightBlue = new PresetColor(new RGB(102, 102, 255));
 	private final PresetColor blue = new PresetColor(new RGB(0, 0, 255));
 	private final PresetColor darkBlue = new PresetColor(new RGB(0, 0, 153));
 
-// Yellow Column
+	// Yellow Column
 	private final PresetColor lighterYellow = new PresetColor(new RGB(255, 255, 204));
 	private final PresetColor lightYellow = new PresetColor(new RGB(255, 255, 102));
 	private final PresetColor yellow = new PresetColor(new RGB(255, 255, 0));
 	private final PresetColor darkYellow = new PresetColor(new RGB(153, 153, 0));
 
-// Green Column
+	// Green Column
 	private final PresetColor lighterGreen = new PresetColor(new RGB(204, 255, 204));
 	private final PresetColor lightGreen = new PresetColor(new RGB(102, 255, 102));
 	private final PresetColor green = new PresetColor(new RGB(0, 255, 0));
 	private final PresetColor darkGreen = new PresetColor(new RGB(0, 153, 0));
 
-// Shade Column
+	// Shade Column
 	private final PresetColor white = new PresetColor(new RGB(255, 255, 255));
 	private final PresetColor lightGray = new PresetColor(new RGB(224, 224, 224));
 	private final PresetColor gray = new PresetColor(new RGB(160, 160, 160));
@@ -866,7 +860,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		colors.add(lighterGreen);
 		colors.add(white);
 
-// Light Colors
+		// Light Colors
 		colors.add(lightRed);
 		colors.add(lightBlue);
 		colors.add(lightOrange);
@@ -874,7 +868,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		colors.add(lightGreen);
 		colors.add(lightGray);
 
-// Normal Colors
+		// Normal Colors
 		colors.add(red);
 		colors.add(blue);
 		colors.add(orange);
@@ -882,7 +876,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		colors.add(green);
 		colors.add(gray);
 
-// Dark Colors
+		// Dark Colors
 		colors.add(darkRed);
 		colors.add(darkBlue);
 		colors.add(darkOrange);

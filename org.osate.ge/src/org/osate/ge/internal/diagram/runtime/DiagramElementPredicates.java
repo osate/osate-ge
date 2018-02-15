@@ -26,4 +26,8 @@ public class DiagramElementPredicates {
 	public static boolean isConnection(final DiagramElement de) {
 		return de.getGraphic() instanceof AgeConnection;
 	}
+
+	public static boolean supportsImage(final DiagramElement de) {
+		return de.getGraphic() instanceof AgeShape && isUndocked(de);
+	}
 }
