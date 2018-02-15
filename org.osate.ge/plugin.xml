@@ -1221,7 +1221,7 @@
         <includes>
            <contentExtension
                  isRoot="false"
-                 pattern="org.osate.ge.*">
+                 pattern="org.osate.ge.navigatorContent">
            </contentExtension>
         </includes>
      </viewerContentBinding>
@@ -1230,7 +1230,7 @@
         <includes>
            <contentExtension
                  isRoot="false"
-                 pattern="org.osate.ge.*">
+                 pattern="org.osate.ge.navigatorContent">
            </contentExtension>
         </includes>
      </viewerContentBinding>
@@ -2252,5 +2252,64 @@
       <diagramType
             class="org.osate.ge.internal.diagram.runtime.types.ProcessorBindingDiagramType">
       </diagramType>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            allowMultiple="false"
+            category="aadl.view_category"
+            class="org.osate.ge.internal.ui.diagramNavigator.DiagramsView"
+            id="org.osate.ge.diagramsView"
+            name="AADL Diagrams"
+            restorable="true">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.navigator.navigatorContent">
+      <navigatorContent
+            activeByDefault="true"
+            contentProvider="org.osate.ge.internal.ui.diagramNavigator.DiagramContentProvider"
+            id="org.osate.ge.internal.ui.diagramNavigator.content"
+            labelProvider="org.osate.ge.internal.ui.diagramNavigator.DiagramsLabelProvider"
+            name="AADL Diagrams Project Override"
+            priority="normal">
+         <triggerPoints>
+            <instanceof
+                  value="org.eclipse.core.resources.IResource">
+            </instanceof>
+         </triggerPoints>
+         <possibleChildren>
+            <or>
+               <instanceof
+                     value="org.eclipse.core.resources.IResource">
+               </instanceof>
+            </or>
+         </possibleChildren>
+         <override
+               policy="InvokeAlwaysRegardlessOfSuppressedExt"
+               suppressedExtensionId="org.eclipse.ui.navigator.resourceContent">
+         </override>
+      </navigatorContent>
+   </extension>
+   <extension
+         point="org.eclipse.ui.navigator.viewer">
+      <viewerContentBinding
+            viewerId="org.osate.ge.diagramsView">
+         <includes>
+            <contentExtension
+                  pattern="org.eclipse.ui.navigator.resourceContent">
+            </contentExtension>
+            <contentExtension
+                  pattern="org.osate.ge.internal.ui.diagramNavigator.content">
+            </contentExtension>
+            <contentExtension pattern="org.osate.ui.navigator.AadlNavigatorLinkHelper"/>
+         </includes>
+      </viewerContentBinding>
+      <viewerActionBinding
+        	viewerId="org.osate.ge.diagramsView">
+     		<includes>
+     			<actionExtension pattern="org.eclipse.ui.navigator.resources.*" />	
+     		</includes>
+	  </viewerActionBinding>
    </extension>
 </plugin>
