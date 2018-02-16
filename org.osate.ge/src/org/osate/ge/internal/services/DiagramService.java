@@ -33,11 +33,15 @@ public interface DiagramService {
 		AgeDiagramEditor getEditor();
 
 		IFile getFile();
+
+		String getDiagramTypeId();
+
+		CanonicalBusinessObjectReference getContextReference();
 	}
 
-	List<? extends DiagramReference> findDiagramsByContextBusinessObject(final Object bo);
+	List<DiagramReference> findDiagramsByContextBusinessObject(final Object bo);
 
-	List<? extends DiagramReference> findDiagrams(Set<IProject> projects);
+	List<DiagramReference> findDiagrams(Set<IProject> projects);
 
 
 	/**

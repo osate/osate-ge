@@ -101,13 +101,15 @@ public class DefaultDiagramService implements DiagramService {
 		private final IFile fileResource;
 		private final AgeDiagramEditor editor;
 		private final String diagramTypeId;
+		private final CanonicalBusinessObjectReference contextRef;
 
 		private InternalDiagramReference(final IFile file,
 				final AgeDiagramEditor editor,
-				final String diagramTypeId) {
+				final String diagramTypeId, final CanonicalBusinessObjectReference contextRef) {
 			this.fileResource = Objects.requireNonNull(file, "file must not be null");
 			this.editor = editor;
 			this.diagramTypeId = Objects.requireNonNull(diagramTypeId, "diagramTypeId must not be null");
+			this.contextRef = contextRef;
 		}
 
 		@Override
@@ -123,6 +125,16 @@ public class DefaultDiagramService implements DiagramService {
 		@Override
 		public boolean isOpen() {
 			return editor != null;
+		}
+
+		@Override
+		public String getDiagramTypeId() {
+			return diagramTypeId;
+		}
+
+		@Override
+		public CanonicalBusinessObjectReference getContextReference() {
+			return contextRef;
 		}
 	}
 
@@ -152,7 +164,7 @@ public class DefaultDiagramService implements DiagramService {
 	}
 
 	@Override
-	public List<InternalDiagramReference> findDiagramsByContextBusinessObject(final Object bo) {
+	public List<DiagramReference> findDiagramsByContextBusinessObject(final Object bo) {
 		final CanonicalBusinessObjectReference boReference = referenceService.getCanonicalReference(bo);
 		if(boReference == null) {
 			throw new RuntimeException("Unable to get canonical reference for business object : " + bo);
@@ -177,7 +189,7 @@ public class DefaultDiagramService implements DiagramService {
 		// Add saved diagram files if they are not open
 		return savedDiagramIndex.getDiagramsByContext(relevantProjects.stream(), boReference).stream()
 				.map(e -> new InternalDiagramReference(e.diagramFile, fileToEditorMap.get(e.diagramFile),
-						e.diagramTypeId))
+						e.diagramTypeId, e.reference))
 				.
 				collect(Collectors.toList());
 	}
@@ -185,11 +197,11 @@ public class DefaultDiagramService implements DiagramService {
 	@Override
 	public AgeDiagramEditor openOrCreateDiagramForBusinessObject(final Object bo, final boolean promptForCreate, final boolean promptForConfigureAfterCreate) {
 		// Look for an existing diagram
-		final List<InternalDiagramReference> diagramRefs = findDiagramsByContextBusinessObject(bo);
+		final List<DiagramReference> diagramRefs = findDiagramsByContextBusinessObject(bo);
 
 		// If there is just one diagram, open it
 		if(diagramRefs.size() == 1) {
-			final InternalDiagramReference diagramRef = diagramRefs.get(0);
+			final DiagramReference diagramRef = diagramRefs.get(0);
 			if(diagramRef.isOpen()) {
 				Log.info("Existing diagram found. Activating existing editor...");
 				PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().activate(diagramRef.getEditor());
@@ -213,12 +225,12 @@ public class DefaultDiagramService implements DiagramService {
 				return null;
 			}
 		} else {
-			final InternalDiagramReference diagramRef = promptForDiagram(diagramRefs);
+			final DiagramReference diagramRef = promptForDiagram(diagramRefs);
 			return diagramRef == null ? null : EditorUtil.openEditor(diagramRef.getFile(), false);
 		}
 	}
 
-	private InternalDiagramReference promptForDiagram(final List<InternalDiagramReference> diagramRefs) {
+	private DiagramReference promptForDiagram(final List<DiagramReference> diagramRefs) {
 		// Sort the diagram references
 		final InternalDiagramReference[] sortedDiagramRefs = diagramRefs.stream().sorted((r1, r2) -> getName(r1.getFile()).compareToIgnoreCase(getName(r2.getFile()))).toArray(InternalDiagramReference[]::new);
 
@@ -342,12 +354,13 @@ public class DefaultDiagramService implements DiagramService {
 	 * @return
 	 */
 	@Override
-	public List<InternalDiagramReference> findDiagrams(final Set<IProject> projects) {
+	public List<DiagramReference> findDiagrams(final Set<IProject> projects) {
 		final Map<IFile, AgeDiagramEditor> fileToEditorMap = getOpenEditorsMap(projects);
 
 		// Add saved diagram files if they are not open
 		return savedDiagramIndex.getDiagramsByProject(projects.stream()).stream().map(
-				e -> new InternalDiagramReference(e.diagramFile, fileToEditorMap.get(e.diagramFile), e.diagramTypeId))
+				e -> new InternalDiagramReference(e.diagramFile, fileToEditorMap.get(e.diagramFile), e.diagramTypeId,
+						e.reference))
 				.collect(Collectors.toList());
 	}
 

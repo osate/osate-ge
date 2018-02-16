@@ -2274,21 +2274,42 @@
             name="AADL Diagrams Project Override"
             priority="normal">
          <triggerPoints>
-            <instanceof
-                  value="org.eclipse.core.resources.IResource">
-            </instanceof>
+            <or>
+               <instanceof
+                     value="org.eclipse.core.resources.IProject">
+               </instanceof>
+            </or>
+         </triggerPoints>
+         <override
+               policy="InvokeOnlyIfSuppressedExtAlsoVisibleAndActive"
+               suppressedExtensionId="org.eclipse.ui.navigator.resourceContent">
+         </override>
+      </navigatorContent>
+      
+	<navigatorContent
+            activeByDefault="true"
+            contentProvider="org.osate.ge.internal.ui.diagramNavigator.DiagramContentProvider2"
+            id="org.osate.ge.internal.ui.diagramNavigator.content2"
+            labelProvider="org.osate.ge.internal.ui.diagramNavigator.DiagramsLabelProvider"
+            name="AADL Diagrams Project Override2"
+            priority="normal">
+         <triggerPoints>
+            <or>
+               <instanceof
+                     value="org.eclipse.core.resources.IProject">
+               </instanceof>
+               <instanceof
+                     value="org.osate.ge.internal.ui.diagramNavigator.DiagramGroup">
+               </instanceof>
+            </or>
          </triggerPoints>
          <possibleChildren>
             <or>
                <instanceof
-                     value="org.eclipse.core.resources.IResource">
+                     value="org.osate.ge.internal.ui.diagramNavigator.DiagramGroup">
                </instanceof>
             </or>
          </possibleChildren>
-         <override
-               policy="InvokeAlwaysRegardlessOfSuppressedExt"
-               suppressedExtensionId="org.eclipse.ui.navigator.resourceContent">
-         </override>
       </navigatorContent>
    </extension>
    <extension
@@ -2301,6 +2322,9 @@
             </contentExtension>
             <contentExtension
                   pattern="org.osate.ge.internal.ui.diagramNavigator.content">
+            </contentExtension>
+            <contentExtension
+                  pattern="org.osate.ge.internal.ui.diagramNavigator.content2">
             </contentExtension>
             <contentExtension pattern="org.osate.ui.navigator.AadlNavigatorLinkHelper"/>
          </includes>
