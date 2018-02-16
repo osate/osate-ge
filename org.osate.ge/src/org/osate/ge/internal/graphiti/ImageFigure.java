@@ -98,8 +98,7 @@ implements IGraphicsAlgorithmRenderer {
 	@Override
 	protected void outlineShape(final Graphics g) {
 		if (image == null) {
-			// Draw black outline
-			g.setForegroundColor(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
+			// Draw outline
 			super.outlineShape(g);
 		}
 	}
