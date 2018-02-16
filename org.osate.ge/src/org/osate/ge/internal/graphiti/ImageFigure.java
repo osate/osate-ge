@@ -6,16 +6,20 @@ import java.util.Objects;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.draw2d.FigureUtilities;
 import org.eclipse.draw2d.Graphics;
 import org.eclipse.draw2d.RectangleFigure;
+import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRenderer;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.Display;
+import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram;
 
 public class ImageFigure extends RectangleFigure
 implements IGraphicsAlgorithmRenderer {
@@ -33,8 +37,8 @@ implements IGraphicsAlgorithmRenderer {
 			return null;
 		}
 
-		final Object desc = AgeDiagramTypeProvider.getResources().find(imageDesc);
-		return desc instanceof Image ? (Image) desc : null;
+		final Object image = AgeDiagramTypeProvider.getResources().find(imageDesc);
+		return image instanceof Image ? (Image) image : null;
 	}
 
 	// Create image descriptor
@@ -68,28 +72,35 @@ implements IGraphicsAlgorithmRenderer {
 			// Scaled width and height
 			double scaledWidth = imageWidth * scalefactorX;
 			double scaledHeight = imageHeight * scalefactorY;
-
 			// Draw scaled image
 			g.drawImage(image, 0, 0, imageWidth, imageHeight, getLocation().x, getLocation().y, (int) scaledWidth, (int) scaledHeight);
 		} else {
-			g.setForegroundColor(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
-			// Set fill shape color to white
+			// Fill shape white
 			g.setBackgroundColor(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
-			// Draw error text and fill image
-			final Rectangle bounds = getBounds();
-			final String errorMsg = "Unable to load image: " + imagePath;
-			final int xOffset = g.getFontMetrics().getAverageCharWidth() * errorMsg.length() / 2;
-			final int yOffset = g.getFontMetrics().getHeight() / 2;
-			// Fill shape
 			super.fillShape(g);
-			// Draw outline
-			super.outlineShape(g);
+
+			// Set font color to black
+			g.setForegroundColor(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
+			// Draw unable to load image text centered
+			final Rectangle bounds = getBounds();
+			final Font font = (Font) AgeDiagramTypeProvider.getResources()
+					.find(GraphitiAgeDiagram.errorFontDesc);
+			g.setTextAntialias(SWT.ON);
+			g.setFont(font);
+			final String errorMsg = "Unable to load image: " + imagePath;
+			final Dimension textSize = FigureUtilities.getTextExtents(errorMsg, font);
 			g.drawText(errorMsg,
-					new Point((bounds.x + bounds.width / 2) - xOffset, bounds.y + bounds.height / 2 - yOffset));
+					new Point(bounds.x + (bounds.width - textSize.width) / 2,
+							bounds.y + (bounds.height - textSize.height) / 2));
 		}
 	}
 
 	@Override
 	protected void outlineShape(final Graphics g) {
+		if (image == null) {
+			// Draw black outline
+			g.setForegroundColor(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
+			super.outlineShape(g);
+		}
 	}
 }

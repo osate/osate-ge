@@ -1,7 +1,5 @@
 package org.osate.ge.internal.graphiti.diagram;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -11,9 +9,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IWorkspaceRoot;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.algorithms.Text;
@@ -27,8 +22,6 @@ import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.services.IGaService;
 import org.eclipse.graphiti.ui.services.GraphitiUi;
-import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.jface.resource.LocalResourceManager;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.LabelPosition;
 import org.osate.ge.graphics.Style;
@@ -45,7 +38,6 @@ import org.osate.ge.internal.graphiti.AnchorNames;
 import org.osate.ge.internal.graphiti.ImageGraphicsAlgorithmRendererFactory;
 import org.osate.ge.internal.graphiti.ShapeNames;
 import org.osate.ge.internal.graphiti.graphics.AgeGraphitiGraphicsUtil;
-import org.osate.ge.internal.util.Log;
 
 import com.google.common.base.Strings;
 
@@ -82,23 +74,22 @@ public class LayoutUtil {
 	}
 
 	public static void layoutDepthFirst(final Diagram graphitiDiagram, final DiagramModification mod,
-			final AgeDiagram ageDiagram, final NodePictogramBiMap mapping, final LocalResourceManager resourceManager) {
+			final AgeDiagram ageDiagram, final NodePictogramBiMap mapping) {
 		for (final DiagramElement child : ageDiagram.getDiagramElements()) {
-			layoutDepthFirst(graphitiDiagram, mod, child, mapping, resourceManager);
+			layoutDepthFirst(graphitiDiagram, mod, child, mapping);
 		}
 	}
 
 	public static void layoutDepthFirst(final Diagram graphitiDiagram, final DiagramModification mod,
-			final DiagramElement element, final NodePictogramBiMap mapping,
-			final LocalResourceManager resourceManager) {
+			final DiagramElement element, final NodePictogramBiMap mapping) {
 		for (final DiagramElement child : element.getDiagramElements()) {
-			layoutDepthFirst(graphitiDiagram, mod, child, mapping, resourceManager);
+			layoutDepthFirst(graphitiDiagram, mod, child, mapping);
 		}
 
 		// Get the pictogram element and lay it out if it is a shape
 		final PictogramElement pe = mapping.getPictogramElement(element);
 		if (pe instanceof ContainerShape) {
-			layout(graphitiDiagram, mod, element, (ContainerShape) pe, mapping, resourceManager);
+			layout(graphitiDiagram, mod, element, (ContainerShape) pe, mapping);
 		} else if (pe instanceof Connection) {
 			final Connection connection = (Connection) pe;
 
@@ -175,8 +166,7 @@ public class LayoutUtil {
 	 * @param diagramNodeProvider
 	 */
 	public static void layout(final Diagram graphitiDiagram, final DiagramModification mod,
-			final DiagramElement element, final ContainerShape shape, final NodePictogramBiMap diagramNodeProvider,
-			final LocalResourceManager localResourceManager) {
+			final DiagramElement element, final ContainerShape shape, final NodePictogramBiMap diagramNodeProvider) {
 		final LabelPosition horizontalLabelPositionFromStyle = element.getGraphicalConfiguration().style
 				.getHorizontalLabelPosition() == null ? Style.DEFAULT.getHorizontalLabelPosition()
 						: element.getGraphicalConfiguration().style.getHorizontalLabelPosition();
@@ -305,25 +295,7 @@ public class LayoutUtil {
 							// Check if diagram element is an image figure
 							if (DiagramElementPredicates.supportsImage(element)
 									&& Boolean.TRUE.equals(element.getStyle().showAsImage())) {
-								final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 								final IPath imagePath = element.getStyle().getImagePath();
-								// Find image
-								final IResource imageResource = workspaceRoot.findMember(imagePath);
-								if (imageResource != null) {
-									try {
-										// Image location
-										final URL rawLocationURL = imageResource.getRawLocationURI().toURL();
-										final ImageDescriptor imageDesc = ImageDescriptor.createFromURL(rawLocationURL);
-										// Check if resource already exists
-										if (localResourceManager.find(imageDesc) == null) {
-											// Create image
-											localResourceManager.createImage(imageDesc);
-										}
-									} catch (final MalformedURLException e) {
-										Log.error("Unable to load image: " + imagePath.toPortableString(), e);
-									}
-								}
-
 								innerGa = GraphitiUi.getGaService().createPlatformGraphicsAlgorithm(shapeGa,
 										ImageGraphicsAlgorithmRendererFactory.IMAGE_FIGURE);
 								innerGa.setWidth(lm.innerWidth);
