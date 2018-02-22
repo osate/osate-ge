@@ -33,8 +33,8 @@ import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
 import org.osate.ge.internal.query.Queryable;
 import org.osate.ge.internal.services.ProjectReferenceService;
 import org.osate.ge.internal.services.ReferenceService;
-import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 import org.osate.ge.internal.util.BusinessObjectProviderHelper;
+import org.osate.ge.internal.util.DiagramUtil;
 import org.osate.ge.internal.util.Log;
 
 // Indexes saved diagram files
@@ -308,7 +308,7 @@ public class SavedDiagramIndex {
 							findDiagramFiles((IContainer)resource, diagramFiles);
 						} else if (resource instanceof IFile) {
 							final IFile file = (IFile) resource;
-							if (isDiagram(file)) {
+							if (DiagramUtil.isDiagram(file)) {
 								diagramFiles.add(file);
 							}
 						}
@@ -403,10 +403,6 @@ public class SavedDiagramIndex {
 		final DiagramFileIndex diagramFileIndex = new DiagramFileIndex(projectDiagramIndex, diagramFile);
 		projectDiagramIndex.fileToIndexMap.put(diagramFile, diagramFileIndex);
 		return diagramFileIndex;
-	}
-
-	private static boolean isDiagram(final IFile file) {
-		return file.getName().endsWith(AgeDiagramEditor.EXTENSION);
 	}
 
 	private static class SimpleUnqueryableBusinessObjectContext implements BusinessObjectContext {

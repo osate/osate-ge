@@ -16,7 +16,6 @@ public class DiagramGroup {
 		private boolean contextRefValid = false;
 		private CanonicalBusinessObjectReference contextRef;
 
-		// TODO: Consider argument order
 		public Builder(final Collection<DiagramReference> validProjectDiagrams, final IProject project) {
 			this.validProjectDiagrams = Objects.requireNonNull(validProjectDiagrams,
 					"validProjectDiagrams must not be null");
@@ -70,7 +69,6 @@ public class DiagramGroup {
 	private boolean contextRefValid; // Indicates whether the contextRef field is valid. The context reference will be null for filtering contextless diagrams.
 	private final CanonicalBusinessObjectReference contextRef;
 
-	// TODO: Consider argument order
 	public DiagramGroup(final Collection<DiagramReference> validProjectDiagrams, final IProject project,
 			final String diagramTypeId, final boolean contextRefValid,
 			final CanonicalBusinessObjectReference contextRef) {

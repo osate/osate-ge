@@ -13,14 +13,15 @@ import org.eclipse.ui.IMemento;
 import org.eclipse.ui.model.WorkbenchContentProvider;
 import org.eclipse.ui.navigator.ICommonContentExtensionSite;
 import org.eclipse.ui.navigator.ICommonContentProvider;
+import org.eclipse.ui.navigator.IExtensionStateModel;
 import org.osate.ge.internal.services.DiagramService;
 import org.osate.ge.internal.services.DiagramService.DiagramReference;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 
-// TODO: Rename
-public class DiagramContentProvider extends WorkbenchContentProvider implements ICommonContentProvider {
+public class DiagramNavigatorContentProvider extends WorkbenchContentProvider implements ICommonContentProvider {
 	private DiagramService diagramService;
+	private IExtensionStateModel stateModel;
 
 	@Override
 	public void init(ICommonContentExtensionSite aConfig) {
@@ -28,43 +29,37 @@ public class DiagramContentProvider extends WorkbenchContentProvider implements 
 		final IEclipseContext context = EclipseContextFactory.getServiceContext(bundle.getBundleContext())
 				.createChild();
 		diagramService = Objects.requireNonNull(context.get(DiagramService.class), "Unable to get diagram service");
+
+		stateModel = aConfig.getExtensionStateModel();
 	}
 
 	@Override
 	public void restoreState(IMemento aMemento) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void saveState(IMemento aMemento) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public Object[] getElements(final Object inputElement) {
-		// System.err.println("B : " + inputElement);
 		return super.getElements(inputElement);
 	}
 
 	@Override
 	public Object[] getChildren(final Object parentElement) {
-		// System.err.println("GET CHILDREN: " + parentElement);
-
 		if (parentElement instanceof IProject) {
 			final IProject project = (IProject) parentElement;
 			final List<DiagramReference> projectDiagrams = diagramService
 					.findDiagrams(Collections.singleton(project)).stream().filter(dr -> dr.isValid())
 					.collect(Collectors.toList());
 
-			// TODO: Should builder() take arguments or should it be methods on the builder... Would be required methods though..
 			final DiagramGroup projectGroup = DiagramGroup.builder(projectDiagrams, project).build();
 			return getChildren(projectGroup);
 		} else if (parentElement instanceof DiagramGroup) {
 			final DiagramGroup parentGroup = (DiagramGroup) parentElement;
 
-			if (isGroupByDiagramTypesEnabled() && parentGroup.getDiagramTypeId() == null) {
+			if (isGroupByDiagramTypeEnabled() && parentGroup.getDiagramTypeId() == null) {
 				return parentGroup.findMatchingDiagramReferences().map(d -> d.getDiagramTypeId()).distinct()
 						.map(diagramTypeId -> DiagramGroup.builder(parentGroup).diagramType(diagramTypeId).build())
 						.toArray();
@@ -77,19 +72,11 @@ public class DiagramContentProvider extends WorkbenchContentProvider implements 
 			}
 		}
 
-		// TODO: Adjust behavior based on user settings
-		// TODO: Need a quick way to convert from file to the diagram reference?
-
-		// TODO: Can return null?
-		// return null;
-		// return new Object[0];
 		return super.getChildren(parentElement);
 	}
 
 	@Override
 	public Object getParent(final Object element) {
-		// TODO: Cleanup
-
 		if (element instanceof IFile) {
 			final IProject project = ((IFile) element).getProject();
 			if (project == null) {
@@ -111,24 +98,17 @@ public class DiagramContentProvider extends WorkbenchContentProvider implements 
 				diagramGroupBuilder.contextReference(referenceDiagram.getContextReference());
 			}
 
-			if (isGroupByDiagramTypesEnabled()) {
+			if (isGroupByDiagramTypeEnabled()) {
 				diagramGroupBuilder.diagramType(referenceDiagram.getDiagramTypeId());
 			}
 
 			return diagramGroupBuilder.build();
-		}
-		else if (element instanceof DiagramGroup) {
+		} else if (element instanceof DiagramGroup) {
 			final DiagramGroup dg = (DiagramGroup) element;
-			if (isGroupByContextEnabled() && dg.isContextReferenceValid() && isGroupByDiagramTypesEnabled()) {
+			if (isGroupByContextEnabled() && dg.isContextReferenceValid() && isGroupByDiagramTypeEnabled()) {
 				return DiagramGroup.builder(dg).resetContextReference().build();
-			} else if (isGroupByDiagramTypesEnabled() && dg.getDiagramTypeId() != null) {
+			} else if (isGroupByDiagramTypeEnabled() && dg.getDiagramTypeId() != null) {
 				return dg.getProject();
-			}
-		} else {
-			// TODO
-			System.err.println("GET PARENT: " + element);
-			if (element instanceof IProject) {
-				// return null;
 			}
 		}
 
@@ -147,12 +127,11 @@ public class DiagramContentProvider extends WorkbenchContentProvider implements 
 		return getChildren(element).length > 0;
 	}
 
-// TODO: Rename
-	private final boolean isGroupByDiagramTypesEnabled() {
-		return true;
+	private final boolean isGroupByDiagramTypeEnabled() {
+		return DiagramNavigatorProperties.getGroupByDiagramType(stateModel);
 	}
 
 	private final boolean isGroupByContextEnabled() {
-		return true;
+		return DiagramNavigatorProperties.getGroupByDiagramContext(stateModel);
 	}
 }

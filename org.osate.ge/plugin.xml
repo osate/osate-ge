@@ -1255,6 +1255,11 @@
      			<actionExtension pattern="org.eclipse.ui.navigator.resources.*" />
      		</includes>
 	  </viewerActionBinding>
+      <viewer viewerId="org.osate.ge.diagramsView">
+          <options>      
+              <property name="org.eclipse.ui.navigator.hideAvailableCustomizationsDialog" value="true"/>
+          </options> 
+      </viewer>
   </extension>
   
   <extension
@@ -2289,9 +2294,9 @@
          point="org.eclipse.ui.navigator.navigatorContent">     
 	<navigatorContent
             activeByDefault="true"
-            contentProvider="org.osate.ge.internal.ui.diagramNavigator.DiagramContentProvider"
+            contentProvider="org.osate.ge.internal.ui.diagramNavigator.DiagramNavigatorContentProvider"
             id="org.osate.ge.internal.ui.diagramNavigator.content"
-            labelProvider="org.osate.ge.internal.ui.diagramNavigator.DiagramsLabelProvider"
+            labelProvider="org.osate.ge.internal.ui.diagramNavigator.DiagramNavigatorLabelProvider"
             name="AADL Diagrams"
             priority="lowest">
          <triggerPoints>
@@ -2318,6 +2323,39 @@
                class="org.osate.ge.internal.ui.diagramNavigator.DiagramNavigatorActionProvider"
                id="org.osate.ge.internal.ui.diagramNavigator.editActions">
          </actionProvider>
+         <commonWizard
+               type="new"
+               wizardId="org.osate.ui.NewAadlPackageWizard">
+            <enablement>
+               <adapt
+                     type="org.eclipse.core.resources.IResource">
+               </adapt>
+            </enablement>
+         </commonWizard>
+         <commonWizard
+               type="new"
+               wizardId="org.osate.ui.wizards.AadlProjectWizardID">
+            <enablement>
+               <adapt
+                     type="org.eclipse.core.resources.IResource">
+               </adapt>
+            </enablement>
+         </commonWizard>
       </navigatorContent>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.osate.ui.perspective.AadlPerspective">
+         <view
+               id="org.osate.ge.diagramsView"
+               minimized="false"
+               relationship="stack"
+               relative="org.osate.ui.navigator.AadlNavigator">
+         </view>
+         <viewShortcut
+               id="org.osate.ge.diagramsView">
+         </viewShortcut>
+      </perspectiveExtension>
    </extension>
 </plugin>
