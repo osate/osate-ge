@@ -83,31 +83,37 @@ public class DiagramNavigatorContentProvider extends WorkbenchContentProvider im
 				return null;
 			}
 
-			final List<DiagramReference> projectDiagrams = diagramService
-					.findDiagrams(Collections.singleton(project)).stream().filter(dr -> dr.isValid())
-					.collect(Collectors.toList());
-			final DiagramReference referenceDiagram = projectDiagrams.stream()
-					.filter(dr -> element.equals(dr.getFile())).findAny().orElse(null);
-			if (referenceDiagram == null) {
-				return null;
+			// Determine the group which contains the diagram.
+			if (isGroupByContextEnabled() || isGroupByDiagramTypeEnabled()) {
+				final List<DiagramReference> projectDiagrams = diagramService
+						.findDiagrams(Collections.singleton(project)).stream().filter(dr -> dr.isValid())
+						.collect(Collectors.toList());
+				final DiagramReference referenceDiagram = projectDiagrams.stream()
+						.filter(dr -> element.equals(dr.getFile())).findAny().orElse(null);
+				if (referenceDiagram == null) {
+					return null;
+				}
+
+
+				final DiagramGroup.Builder diagramGroupBuilder = DiagramGroup.builder(projectDiagrams, project);
+
+				if (isGroupByContextEnabled()) {
+					diagramGroupBuilder.contextReference(referenceDiagram.getContextReference());
+				}
+
+				if (isGroupByDiagramTypeEnabled()) {
+					diagramGroupBuilder.diagramType(referenceDiagram.getDiagramTypeId());
+				}
+
+				return diagramGroupBuilder.build();
+			} else {
+				return project;
 			}
-
-			final DiagramGroup.Builder diagramGroupBuilder = DiagramGroup.builder(projectDiagrams, project);
-
-			if (isGroupByContextEnabled()) {
-				diagramGroupBuilder.contextReference(referenceDiagram.getContextReference());
-			}
-
-			if (isGroupByDiagramTypeEnabled()) {
-				diagramGroupBuilder.diagramType(referenceDiagram.getDiagramTypeId());
-			}
-
-			return diagramGroupBuilder.build();
 		} else if (element instanceof DiagramGroup) {
 			final DiagramGroup dg = (DiagramGroup) element;
 			if (isGroupByContextEnabled() && dg.isContextReferenceValid() && isGroupByDiagramTypeEnabled()) {
 				return DiagramGroup.builder(dg).resetContextReference().build();
-			} else if (isGroupByDiagramTypeEnabled() && dg.getDiagramTypeId() != null) {
+			} else {
 				return dg.getProject();
 			}
 		}
