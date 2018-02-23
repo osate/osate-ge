@@ -1232,6 +1232,7 @@
             viewerId="org.osate.ge.diagramsView">
          <includes>
             <contentExtension pattern="org.eclipse.ui.navigator.resources.workingSets"/>
+            <contentExtension pattern="org.eclipse.ui.navigator.resources.filters.*"/>
             <contentExtension
                   pattern="org.osate.ge.internal.ui.diagramNavigator.content">
             </contentExtension>
