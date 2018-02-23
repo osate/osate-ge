@@ -1,5 +1,7 @@
 package org.osate.ge.internal.ui.diagramNavigator;
 
+import java.util.Collections;
+
 import org.eclipse.core.resources.IResource;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
@@ -14,12 +16,15 @@ import org.eclipse.ui.IMemento;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchCommandConstants;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.actions.DeleteResourceAction;
 import org.eclipse.ui.actions.MoveResourceAction;
 import org.eclipse.ui.actions.RenameResourceAction;
 import org.eclipse.ui.ide.ResourceSelectionUtil;
+import org.eclipse.ui.menus.CommandContributionItem;
+import org.eclipse.ui.menus.CommandContributionItemParameter;
 import org.eclipse.ui.navigator.CommonActionProvider;
 import org.eclipse.ui.navigator.ICommonActionExtensionSite;
 import org.eclipse.ui.navigator.ICommonMenuConstants;
@@ -108,6 +113,15 @@ public class DiagramNavigatorActionProvider extends CommonActionProvider {
 
 			renameAction.selectionChanged(selection);
 			menu.insertAfter(moveAction.getId(), renameAction);
+		}
+
+		final IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+		if (window != null) {
+			final CommandContributionItem createDiagramContributionItem = new CommandContributionItem(
+					new CommandContributionItemParameter(window, null, "org.osate.ge.commands.creatediagram",
+							Collections.emptyMap(), null, null, null, null, null, null,
+							CommandContributionItem.STYLE_PUSH, null, true));
+			menu.add(createDiagramContributionItem);
 		}
 	}
 
