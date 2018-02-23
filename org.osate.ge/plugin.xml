@@ -2246,7 +2246,7 @@
       <view
             allowMultiple="false"
             category="aadl.view_category"
-            class="org.osate.ge.internal.ui.diagramNavigator.DiagramsView"
+            class="org.osate.ge.internal.ui.navigator.DiagramsView"
             id="org.osate.ge.diagramsView"
             name="AADL Diagrams"
             restorable="true">
@@ -2256,9 +2256,9 @@
          point="org.eclipse.ui.navigator.navigatorContent">     
 	<navigatorContent
             activeByDefault="true"
-            contentProvider="org.osate.ge.internal.ui.diagramNavigator.DiagramNavigatorContentProvider"
+            contentProvider="org.osate.ge.internal.ui.navigator.DiagramNavigatorContentProvider"
             id="org.osate.ge.internal.ui.diagramNavigator.content"
-            labelProvider="org.osate.ge.internal.ui.diagramNavigator.DiagramNavigatorLabelProvider"
+            labelProvider="org.osate.ge.internal.ui.navigator.DiagramNavigatorLabelProvider"
             name="AADL Diagrams"
             priority="lowest">
          <triggerPoints>
@@ -2267,7 +2267,7 @@
                      value="org.eclipse.core.resources.IResource">
                </instanceof>
                <instanceof
-                     value="org.osate.ge.internal.ui.diagramNavigator.DiagramGroup">
+                     value="org.osate.ge.internal.ui.navigator.DiagramGroup">
                </instanceof>
             </or>
          </triggerPoints>
@@ -2277,12 +2277,12 @@
                      value="org.eclipse.core.resources.IResource">
                </instanceof>
                <instanceof
-                     value="org.osate.ge.internal.ui.diagramNavigator.DiagramGroup">
+                     value="org.osate.ge.internal.ui.navigator.DiagramGroup">
                </instanceof>
             </or>
          </possibleChildren>
          <actionProvider
-               class="org.osate.ge.internal.ui.diagramNavigator.DiagramNavigatorActionProvider"
+               class="org.osate.ge.internal.ui.navigator.DiagramNavigatorActionProvider"
                id="org.osate.ge.internal.ui.diagramNavigator.editActions">
          </actionProvider>
          <commonWizard

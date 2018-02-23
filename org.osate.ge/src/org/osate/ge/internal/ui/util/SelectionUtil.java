@@ -35,7 +35,7 @@ import org.osate.aadl2.instance.SystemInstance;
 import org.osate.aadl2.modelsupport.resources.OsateResourceUtil;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.services.ReferenceService;
-import org.osate.ge.internal.ui.diagramNavigator.DiagramGroup;
+import org.osate.ge.internal.ui.navigator.DiagramGroup;
 import org.osate.workspace.WorkspacePlugin;
 public class SelectionUtil {
 	private static EObjectAtOffsetHelper eObjectAtOffsetHelper = new EObjectAtOffsetHelper();

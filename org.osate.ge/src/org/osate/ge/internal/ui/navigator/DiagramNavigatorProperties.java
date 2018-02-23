@@ -1,4 +1,4 @@
-package org.osate.ge.internal.ui.diagramNavigator;
+package org.osate.ge.internal.ui.navigator;
 
 import org.eclipse.ui.navigator.IExtensionStateModel;
 

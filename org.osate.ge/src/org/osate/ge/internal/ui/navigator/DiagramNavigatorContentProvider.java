@@ -1,4 +1,4 @@
-package org.osate.ge.internal.ui.diagramNavigator;
+package org.osate.ge.internal.ui.navigator;
 
 import java.util.Collections;
 import java.util.List;
