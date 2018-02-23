@@ -2247,6 +2247,7 @@
             allowMultiple="false"
             category="aadl.view_category"
             class="org.osate.ge.internal.ui.navigator.DiagramsView"
+            icon="icons/tango/x-office-drawing.png"
             id="org.osate.ge.diagramsView"
             name="AADL Diagrams"
             restorable="true">
