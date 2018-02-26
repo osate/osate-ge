@@ -48,9 +48,9 @@ import org.osgi.framework.FrameworkUtil;
 public class AgeDiagramTypeProvider extends AbstractDiagramTypeProvider {
 	public static final String id = "org.osate.ge.aadlDiagramTypeProvider";
 	private final IEclipseContext context;
+	private final AgeGraphicsAlgorithmRendererFactory graphicsAlgorithmRendererFactory = new AgeGraphicsAlgorithmRendererFactory();
 	private ProjectReferenceServiceProxy projectReferenceService;
 	private IToolBehaviorProvider[] toolBehaviorProviders;
-	private IGraphicsAlgorithmRendererFactory graphicsAlgorithmRendererFactory;
 
 	public AgeDiagramTypeProvider() {
 		final AgeFeatureProvider featureProvider = new AgeFeatureProvider(this);
@@ -99,6 +99,7 @@ public class AgeDiagramTypeProvider extends AbstractDiagramTypeProvider {
 
 	@Override
 	public void dispose() {
+		graphicsAlgorithmRendererFactory.close();
 		projectReferenceService.dispose();
 
 		if(context != null) {
@@ -136,9 +137,6 @@ public class AgeDiagramTypeProvider extends AbstractDiagramTypeProvider {
 
 	@Override
 	public IGraphicsAlgorithmRendererFactory getGraphicsAlgorithmRendererFactory() {
-		if (graphicsAlgorithmRendererFactory == null) {
-			graphicsAlgorithmRendererFactory = new ImageGraphicsAlgorithmRendererFactory();
-		}
 		return graphicsAlgorithmRendererFactory;
 	}
 

@@ -173,7 +173,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 
 	private void createImageSection(final Composite parent) {
 		// Create controls
-		imageLabel = createLabel(parent, "Show As Image:");
+		imageLabel = createLabel(parent, "Show as Image:");
 		toggleShowImage = new Button(parent, SWT.CHECK);
 		setImageButton = createButton(parent, imageIcon);
 
@@ -197,7 +197,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			@Override
 			public void widgetSelected(final SelectionEvent e) {
 				final boolean isVisible = toggleShowImage.getSelection();
-				runStyleCommand(isVisible, imageVisibleStyleCmd);
+				runStyleCommand(isVisible, showAsImageStyleCmd);
 			}
 		});
 
@@ -228,8 +228,8 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		boolean enableOutlineOption = false;
 		boolean enablePrimaryLabelVisibleOption = false;
 		boolean enableImage = false;
-		boolean enableIsVisible = false;
-		boolean isVisibleSelection = false;
+		boolean enableShowAsImage = false;
+		boolean isShowAsImageEnabled = false;
 		final Iterator<?> itr = ss.iterator();
 		while (itr.hasNext()) {
 			final Object o = itr.next();
@@ -264,24 +264,24 @@ public class AppearancePropertySection extends AbstractPropertySection {
 				final Style style = diagramElement.getStyle();
 				// If any elements have an image style
 				if (style.getImagePath() != null) {
-					enableIsVisible = true;
+					enableShowAsImage = true;
 
 					// If any elements are images
-					if (Boolean.TRUE.equals(style.showAsImage())) {
-						isVisibleSelection = true;
+					if (Boolean.TRUE.equals(style.getShowAsImage())) {
+						isShowAsImageEnabled = true;
 					}
 				}
 			}
 		}
 
-		// Get the editor from the selected diagram elements
+		// Get the diagram from the selected diagram elements
 		ageDiagram = Objects.requireNonNull(UiUtil.getDiagram(selectedDiagramElements), "Unable to retrieve diagram");
 
 		// Set image controls
 		imageLabel.setEnabled(enableImage);
 		setImageButton.setEnabled(enableImage);
-		toggleShowImage.setEnabled(enableIsVisible);
-		toggleShowImage.setSelection(isVisibleSelection);
+		toggleShowImage.setEnabled(enableShowAsImage);
+		toggleShowImage.setSelection(isShowAsImageEnabled);
 
 		// Set options to match last selected element
 		final DiagramElement diagramElement = selectedDiagramElements.get(selectedDiagramElements.size() - 1);
@@ -748,7 +748,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 					Display.getCurrent().getActiveShell(), new WorkbenchLabelProvider(),
 					new BaseWorkbenchContentProvider());
 			// Configure selection dialog
-			dialog.setTitle("Image Selection");
+			dialog.setTitle("Select an Image");
 			dialog.setMessage("Select an image.");
 			dialog.setAllowMultiple(false);
 			dialog.setHelpAvailable(false);
@@ -758,7 +758,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 				if (selection.length > 0 && selection[0] instanceof IFile) {
 					return new Status(IStatus.OK, Activator.PLUGIN_ID, "");
 				}
-				return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "invalid selection");
+				return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "No image selected.");
 			});
 
 			// Allow selection of project resources
@@ -786,8 +786,9 @@ public class AppearancePropertySection extends AbstractPropertySection {
 	};
 
 	// Set image visibility
-	final StyleCommand imageVisibleStyleCmd = new StyleCommand("Show Image", (diagramElement, sb, value) -> {
-		if (DiagramElementPredicates.supportsImage(diagramElement) && value != null) {
+	final StyleCommand showAsImageStyleCmd = new StyleCommand("Show as Image", (diagramElement, sb, value) -> {
+		if (DiagramElementPredicates.supportsImage(diagramElement) && value != null
+				&& diagramElement.getStyle().getImagePath() != null) {
 			sb.showAsImage((Boolean) value);
 		}
 	});
@@ -796,7 +797,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 	private final static ImageDescriptor backgroundIcon = Activator.getImageDescriptor("icons/Background.gif");
 	private final static ImageDescriptor fontColorIcon = Activator.getImageDescriptor("icons/FontColor.gif");
 	private final static ImageDescriptor imageIcon = Activator.getImageDescriptor("icons/BackgroundImage.gif");
-	private final String[] supportedImageTypes = { "bmp", "png", "jpg", "jpeg", "tif", "gif" };
+	private final String[] supportedImageTypes = { "bmp", "png", "jpg", "jpeg", "gif" };
 	private AgeDiagram ageDiagram;
 	private ResourceManager resourceMgr;
 	private List<DiagramElement> selectedDiagramElements = new ArrayList<>();

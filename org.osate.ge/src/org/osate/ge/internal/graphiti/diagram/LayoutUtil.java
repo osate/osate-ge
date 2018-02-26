@@ -35,7 +35,7 @@ import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.Dimension;
 import org.osate.ge.internal.diagram.runtime.DockArea;
 import org.osate.ge.internal.graphiti.AnchorNames;
-import org.osate.ge.internal.graphiti.ImageGraphicsAlgorithmRendererFactory;
+import org.osate.ge.internal.graphiti.AgeGraphicsAlgorithmRendererFactory;
 import org.osate.ge.internal.graphiti.ShapeNames;
 import org.osate.ge.internal.graphiti.graphics.AgeGraphitiGraphicsUtil;
 
@@ -294,10 +294,10 @@ public class LayoutUtil {
 						} else {
 							// Check if diagram element is an image figure
 							if (DiagramElementPredicates.supportsImage(element)
-									&& Boolean.TRUE.equals(element.getStyle().showAsImage())) {
+									&& Boolean.TRUE.equals(element.getStyle().getShowAsImage())) {
 								final IPath imagePath = element.getStyle().getImagePath();
 								innerGa = GraphitiUi.getGaService().createPlatformGraphicsAlgorithm(shapeGa,
-										ImageGraphicsAlgorithmRendererFactory.IMAGE_FIGURE);
+										AgeGraphicsAlgorithmRendererFactory.IMAGE_FIGURE);
 								innerGa.setWidth(lm.innerWidth);
 								innerGa.setHeight(lm.innerHeight);
 								PropertyUtil.setImage(innerGa, imagePath.toPortableString());

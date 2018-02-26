@@ -38,7 +38,7 @@ import com.google.common.collect.ImmutableSet;
  *
  */
 public class DiagramSerialization {
-	public final static int FORMAT_VERSION = 4;
+	public final static int FORMAT_VERSION = 5;
 
 	private static Comparator<DiagramElement> elementComparator = (e1, e2) -> e1.getRelativeReference()
 			.compareTo(e2.getRelativeReference());
@@ -236,7 +236,7 @@ public class DiagramSerialization {
 		}
 
 		// Style
-		final Boolean imageVisible = mmChild.getShowAsImage();
+		final Boolean showAsImage = mmChild.getShowAsImage();
 		final Color background = mmChild.getBackground() != null ? parseColor(mmChild.getBackground()) : null;
 		final IPath image = mmChild.getImage() != null
 				? project.getFile(Path.fromPortableString(mmChild.getImage())).getFullPath()
@@ -247,7 +247,7 @@ public class DiagramSerialization {
 				final Double fontSize = mmChild.getFontSize();
 				final Boolean primaryLabelVisible = mmChild.getPrimaryLabelVisible();
 
-				newElement.setStyle(StyleBuilder.create().backgroundColor(background).showAsImage(imageVisible).imagePath(image)
+				newElement.setStyle(StyleBuilder.create().backgroundColor(background).showAsImage(showAsImage).imagePath(image)
 						.fontColor(fontColor).outlineColor(outline)
 						.fontSize(fontSize).lineWidth(lineWidth).primaryLabelVisible(primaryLabelVisible).build());
 
@@ -396,7 +396,7 @@ public class DiagramSerialization {
 			}
 
 			newElement.setImage(portablePath);
-			newElement.setShowAsImage(currentStyle.showAsImage());
+			newElement.setShowAsImage(currentStyle.getShowAsImage());
 		}
 
 		final org.osate.ge.graphics.Color fontColor = currentStyle.getFontColor();

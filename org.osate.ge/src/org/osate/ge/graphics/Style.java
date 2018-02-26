@@ -17,21 +17,21 @@ public class Style {
 	private final Double fontSize;
 	private final Double lineWidth;
 	private final IPath image;
-	private final Boolean imageVisible;
+	private final Boolean showAsImage;
 	private final LineStyle lineStyle;
 	private final LabelPosition horizontalLabelPosition;
 	private final LabelPosition verticalLabelPosition;
 	private final Boolean primaryLabelVisible;
 
 	Style(final Color background, final Color fontColor, final Color outline, final Double fontSize,
-			final Boolean imageVisible, final IPath image,
+			final Boolean showAsImage, final IPath image,
 			final Double lineWidth, final LineStyle lineStyle, final LabelPosition horizontalLabelPosition,
 			final LabelPosition verticalLabelPosition, final Boolean primaryLabelVisible) {
 		this.background = background;
 		this.fontColor = fontColor;
 		this.outline = outline;
 		this.fontSize = fontSize;
-		this.imageVisible = imageVisible;
+		this.showAsImage = showAsImage;
 		this.image = image;
 		this.lineWidth = lineWidth;
 		this.lineStyle = lineStyle;
@@ -48,8 +48,8 @@ public class Style {
 		return image;
 	}
 
-	public final Boolean showAsImage() {
-		return imageVisible;
+	public final Boolean getShowAsImage() {
+		return showAsImage;
 	}
 
 	public final Color getOutlineColor() {
@@ -93,7 +93,7 @@ public class Style {
 		result = prime * result + ((fontSize == null) ? 0 : fontSize.hashCode());
 		result = prime * result + ((horizontalLabelPosition == null) ? 0 : horizontalLabelPosition.hashCode());
 		result = prime * result + ((image == null) ? 0 : image.hashCode());
-		result = prime * result + ((imageVisible == null) ? 0 : imageVisible.hashCode());
+		result = prime * result + ((showAsImage == null) ? 0 : showAsImage.hashCode());
 		result = prime * result + ((lineStyle == null) ? 0 : lineStyle.hashCode());
 		result = prime * result + ((lineWidth == null) ? 0 : lineWidth.hashCode());
 		result = prime * result + ((outline == null) ? 0 : outline.hashCode());
@@ -145,11 +145,11 @@ public class Style {
 		} else if (!image.equals(other.image)) {
 			return false;
 		}
-		if (imageVisible == null) {
-			if (other.imageVisible != null) {
+		if (showAsImage == null) {
+			if (other.showAsImage != null) {
 				return false;
 			}
-		} else if (!imageVisible.equals(other.imageVisible)) {
+		} else if (!showAsImage.equals(other.showAsImage)) {
 			return false;
 		}
 		if (lineStyle != other.lineStyle) {
