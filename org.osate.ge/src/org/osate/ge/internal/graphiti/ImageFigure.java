@@ -19,15 +19,16 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.Display;
-import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram;
 
 public class ImageFigure extends RectangleFigure
 implements IGraphicsAlgorithmRenderer {
 	private final String imagePath;
+	private final Font errorFont;
 	private final Image image;
 
-	public ImageFigure(final String imagePath) {
+	public ImageFigure(final String imagePath, final Font errorFont) {
 		this.imagePath = Objects.requireNonNull(imagePath, "image path must not be null");
+		this.errorFont = Objects.requireNonNull(errorFont, "errorFont must not be null");
 		this.image = createImage(imagePath);
 	}
 
@@ -55,9 +56,10 @@ implements IGraphicsAlgorithmRenderer {
 
 	@Override
 	protected void fillShape(final Graphics g) {
-		if (image != null) {
+		if (image != null && !image.isDisposed()) {
 			g.setAntialias(SWT.ON);
 			g.setInterpolation(SWT.HIGH);
+
 			// Get image data
 			final ImageData originalImageData = image.getImageData();
 			final int imageWidth = originalImageData.width;
@@ -83,12 +85,10 @@ implements IGraphicsAlgorithmRenderer {
 			g.setForegroundColor(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
 			// Draw unable to load image text centered
 			final Rectangle bounds = getBounds();
-			final Font font = (Font) AgeDiagramTypeProvider.getResources()
-					.find(GraphitiAgeDiagram.errorFontDesc);
 			g.setTextAntialias(SWT.ON);
-			g.setFont(font);
+			g.setFont(errorFont);
 			final String errorMsg = "Unable to load image: " + imagePath;
-			final Dimension textSize = FigureUtilities.getTextExtents(errorMsg, font);
+			final Dimension textSize = FigureUtilities.getTextExtents(errorMsg, errorFont);
 			g.drawText(errorMsg,
 					new Point(bounds.x + (bounds.width - textSize.width) / 2,
 							bounds.y + (bounds.height - textSize.height) / 2));

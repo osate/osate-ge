@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -50,11 +51,8 @@ import org.eclipse.graphiti.services.IGaService;
 import org.eclipse.graphiti.services.IPeCreateService;
 import org.eclipse.graphiti.ui.services.GraphitiUi;
 import org.eclipse.graphiti.util.IColorConstant;
-import org.eclipse.jface.resource.FontDescriptor;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.LocalResourceManager;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Display;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.Style;
@@ -84,7 +82,6 @@ import org.osate.ge.internal.graphiti.AgeDiagramTypeProvider;
 import org.osate.ge.internal.graphiti.AnchorNames;
 import org.osate.ge.internal.graphiti.ShapeNames;
 import org.osate.ge.internal.graphiti.graphics.AgeGraphitiGraphicsUtil;
-import org.osate.ge.internal.util.Log;
 
 /**
  * Class that integrates AgeDiagram with Graphiti.
@@ -96,7 +93,6 @@ import org.osate.ge.internal.util.Log;
 public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 	public final static String AADL_DIAGRAM_TYPE_ID = "AADL Diagram";
 	public final static String incompleteIndicator = "*";
-	public static final FontDescriptor errorFontDesc = FontDescriptor.createFrom(new FontData("Arial", 12, SWT.BOLD));
 	private LocalResourceManager localResourceManager = new LocalResourceManager(AgeDiagramTypeProvider.getResources());
 
 	private final UpdaterListener updateListener;
@@ -231,58 +227,61 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 	}
 
 	// When an image resource is added/removed/modified, the diagram updates accordingly
-	private IResourceChangeListener resourceChangeListener = event -> {
-		final AgeDiagram ageDiagram = getAgeDiagram();
-		for (final DiagramNode dn : ageDiagram.getAllDiagramNodes().filter(dn -> dn instanceof DiagramElement)
-				.collect(Collectors.toSet())) {
-			final DiagramElement de = (DiagramElement) dn;
-			final IPath image = de.getStyle().getImagePath();
-			if (image != null) {
-				// Check if diagram needs an update
-				final boolean resource = isDiagramUpdateRequired(event.getDelta(), image);
-				if (resource) {
-					// Only update diagram if an image that is referenced by the diagram is modified/added/removed
-					Display.getDefault().syncExec(() -> {
-						ageDiagram.modify("Update Diagram After Resource Change", m -> {
-							// LayoutUtil.layout(getGraphitiDiagram(), m, , shape, diagramNodeProvider, localResourceManager);
-							createUpdateElementsFromAgeDiagram(m);
+	private IResourceChangeListener resourceChangeListener = new IResourceChangeListener() {
+		@Override
+		public void resourceChanged(IResourceChangeEvent event) {
+			final AgeDiagram ageDiagram = getAgeDiagram();
+			for (final DiagramNode dn : ageDiagram.getAllDiagramNodes().filter(dn -> dn instanceof DiagramElement)
+					.collect(Collectors.toSet())) {
+				final DiagramElement de = (DiagramElement) dn;
+				final IPath image = de.getStyle().getImagePath();
+				if (image != null) {
+					// Check if diagram needs an update
+					final boolean resource = isDiagramUpdateRequired(event.getDelta(), image);
+					if (resource) {
+						// Only update diagram if an image that is referenced by the diagram is modified/added/removed
+						Display.getDefault().asyncExec(() -> {
+							ageDiagram.modify("Update Diagram After Resource Change", m -> {
+								createUpdateElementsFromAgeDiagram(m);
+							});
 						});
-					});
-					break;
+						break;
+					}
 				}
 			}
 		}
-	};
 
-	/**
-	 * Determine if resource added/removed/changed is referenced by the diagram
-	 * @param delta
-	 * @param image path
-	 * @return
-	 */
-	private boolean isDiagramUpdateRequired(final IResourceDelta delta, final IPath image) {
-		if (delta.getKind() == IResourceDelta.ADDED) {
-			final IPath movedFromPath = delta.getMovedFromPath();
-			final IPath fullPath = delta.getFullPath();
-			final IPath compPath = movedFromPath == null ? fullPath : movedFromPath;
-			return image.equals(compPath);
-		}
-
-		if (delta.getKind() == IResourceDelta.REMOVED) {
-			final IPath movedToPath = delta.getMovedToPath();
-			final IPath compPath = movedToPath == null ? delta.getFullPath() : movedToPath;
-			return image.equals(compPath);
-		}
-
-		for (final IResourceDelta childDelta : delta.getAffectedChildren()) {
-			final boolean updateRequired = isDiagramUpdateRequired(childDelta, image);
-			if (updateRequired) {
-				return updateRequired;
+		/**
+		 * Determine if resource added/removed/changed is referenced by the diagram
+		 * @param delta
+		 * @param image path
+		 * @return
+		 */
+		private boolean isDiagramUpdateRequired(final IResourceDelta delta, final IPath image) {
+			if (delta.getKind() == IResourceDelta.ADDED) {
+				final IPath movedFromPath = delta.getMovedFromPath();
+				final IPath fullPath = delta.getFullPath();
+				final IPath compPath = movedFromPath == null ? fullPath : movedFromPath;
+				return image.equals(compPath);
 			}
+
+			if (delta.getKind() == IResourceDelta.REMOVED) {
+				final IPath movedToPath = delta.getMovedToPath();
+				final IPath compPath = movedToPath == null ? delta.getFullPath() : movedToPath;
+				return image.equals(compPath);
+			}
+
+			for (final IResourceDelta childDelta : delta.getAffectedChildren()) {
+				final boolean updateRequired = isDiagramUpdateRequired(childDelta, image);
+				if (updateRequired) {
+					return updateRequired;
+				}
+			}
+
+			return false;
 		}
 
-		return false;
-	}
+	};
 
 	private void refreshOverrideForegroundColorMap() {
 		overrideForegroundColorMap = coloringProvider.buildForegroundColorMap();
@@ -517,7 +516,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		final Style finalStyle = finalStyleProvider.getStyle(de);
 		final String primaryLabelStr = (!finalStyle.getPrimaryLabelVisible().booleanValue() || de.getName() == null)
 				? null
-				: (de.getName() + completenessSuffix);
+						: (de.getName() + completenessSuffix);
 
 		if (pe instanceof ContainerShape) {
 			final double fontSize = de.getStyle().getFontSize() == null ? Style.DEFAULT.getFontSize()
@@ -1108,7 +1107,7 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 				final DiagramElement parent = (DiagramElement) de.getContainer();
 				if (!(parent.getGraphic() instanceof AgeConnection)
 						&& (de.getX() < 0 || de.getY() < 0 || parent.getWidth() < de.getX() + de.getWidth()
-								|| parent.getHeight() < de.getY() + de.getHeight())) {
+						|| parent.getHeight() < de.getY() + de.getHeight())) {
 					return true;
 				}
 			}
@@ -1197,31 +1196,31 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 
 	private void updateImageResources(final Stream<DiagramNode> allDiagramNodes) {
 		final LocalResourceManager newResourceManager = new LocalResourceManager(AgeDiagramTypeProvider.getResources());
-		final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
-		for (final DiagramNode dn : allDiagramNodes.filter(dn -> dn instanceof DiagramElement)
-				.collect(Collectors.toSet())) {
-			final DiagramElement de = (DiagramElement) dn;
-			// Check if diagram element is an image figure
-			if (DiagramElementPredicates.supportsImage(de) && Boolean.TRUE.equals(de.getStyle().showAsImage())) {
-				final IPath imagePath = de.getStyle().getImagePath();
-				final IResource imageResource = workspaceRoot.findMember(imagePath.toPortableString());
-				if (imageResource != null) {
-					try {
-						// Image location
-						final URL rawLocationURL = imageResource.getRawLocationURI().toURL();
-						final ImageDescriptor imageDesc = ImageDescriptor.createFromURL(rawLocationURL);
-						// Create image
-						newResourceManager.createImage(imageDesc);
-					} catch (final MalformedURLException e) {
-						Log.error("Unable to load image: " + imagePath.toPortableString(), e);
+		try {
+			final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+			for (final DiagramNode dn : allDiagramNodes.filter(dn -> dn instanceof DiagramElement)
+					.collect(Collectors.toSet())) {
+				final DiagramElement de = (DiagramElement) dn;
+				// Check if diagram element is an image figure
+				if (DiagramElementPredicates.supportsImage(de) && Boolean.TRUE.equals(de.getStyle().getShowAsImage())) {
+					final IPath imagePath = de.getStyle().getImagePath();
+					final IResource imageResource = workspaceRoot.findMember(imagePath.toPortableString());
+					if (imageResource != null) {
+						try {
+							// Image location
+							final URL rawLocationURL = imageResource.getRawLocationURI().toURL();
+							final ImageDescriptor imageDesc = ImageDescriptor.createFromURL(rawLocationURL);
+							// Create image
+							newResourceManager.createImage(imageDesc);
+						} catch (final MalformedURLException e) {
+							throw new RuntimeException(e);
+						}
 					}
-				} else {
-					newResourceManager.createFont(errorFontDesc);
 				}
 			}
+		} finally {
+			localResourceManager.dispose();
+			localResourceManager = newResourceManager;
 		}
-
-		localResourceManager.dispose();
-		localResourceManager = newResourceManager;
 	}
 }
