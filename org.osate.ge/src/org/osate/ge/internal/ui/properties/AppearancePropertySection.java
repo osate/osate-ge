@@ -139,7 +139,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 	}
 
 	private void createButtonSection(final Composite parent) {
-		final Button outlineButton = createButton(parent, outlineIcon);
+		final Button outlineButton = createButton(parent, outlineIcon, "Outline Color");
 		FormData fd = new FormData();
 		fd.top = new FormAttachment(imageLabel, 10);
 		fd.left = new FormAttachment(0, 30);
@@ -152,7 +152,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 					}
 				}));
 
-		final Button fontColorButton = createButton(parent, fontColorIcon);
+		final Button fontColorButton = createButton(parent, fontColorIcon, "Font Color");
 		fd = new FormData();
 		fd.top = new FormAttachment(outlineButton, 0, SWT.TOP);
 		fd.left = new FormAttachment(outlineButton, 0);
@@ -165,7 +165,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 					}
 				}));
 
-		final Button backgroundButton = createButton(parent, backgroundIcon);
+		final Button backgroundButton = createButton(parent, backgroundIcon, "Background Color");
 		fd = new FormData();
 		fd.top = new FormAttachment(fontColorButton, 0, SWT.TOP);
 		fd.left = new FormAttachment(fontColorButton, 0);
@@ -183,7 +183,8 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		// Create controls
 		imageLabel = createLabel(parent, "Show as Image:");
 		toggleShowImage = new Button(parent, SWT.CHECK);
-		setImageButton = createButton(parent, imageIcon);
+		toggleShowImage.setToolTipText("Show Image");
+		setImageButton = createButton(parent, imageIcon, "Set Image");
 
 		// Set layout
 		FormData fd = new FormData();
@@ -382,10 +383,11 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		return label;
 	}
 
-	private static Button createButton(final Composite parent, final ImageDescriptor imageDescriptor) {
+	private static Button createButton(final Composite parent, final ImageDescriptor imageDescriptor,
+			final String toolTipText) {
 		final Button button = new Button(parent, SWT.PUSH);
 		button.setImage(imageDescriptor.createImage());
-
+		button.setToolTipText(toolTipText);
 		return button;
 	}
 
@@ -452,7 +454,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			// Create custom color button
 			final boolean hasCustomColor = customPC != null;
 			final PresetColor customPresetColor = hasCustomColor ? customPC : white;
-			final Button customColorBtn = createButton(shell, customPresetColor.imageDescriptor);
+			final Button customColorBtn = createButton(shell, customPresetColor.imageDescriptor, "Custom...");
 			customColorBtn.setEnabled(hasCustomColor);
 			customColorBtn.addSelectionListener(
 					new ColorSelectionAdapter(shell, paintListener, customPresetColor.rgb, styleCmd));

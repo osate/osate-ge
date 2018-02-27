@@ -1,57 +1,23 @@
 package org.osate.ge.internal.graphiti;
 
-import java.net.MalformedURLException;
-import java.util.Objects;
-
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.draw2d.FigureUtilities;
 import org.eclipse.draw2d.Graphics;
 import org.eclipse.draw2d.RectangleFigure;
-import org.eclipse.draw2d.geometry.Dimension;
-import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRenderer;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.Display;
+import org.osate.ge.internal.util.ImageHelper;
 
 public class ImageFigure extends RectangleFigure
 implements IGraphicsAlgorithmRenderer {
-	private final String imagePath;
-	private final Font errorFont;
 	private final Image image;
 
 	public ImageFigure(final String imagePath, final Font errorFont) {
-		this.imagePath = Objects.requireNonNull(imagePath, "image path must not be null");
-		this.errorFont = Objects.requireNonNull(errorFont, "errorFont must not be null");
-		this.image = createImage(imagePath);
-	}
-
-	private static Image createImage(final String imagePath) {
-		final ImageDescriptor imageDesc = getImageDescriptor(imagePath);
-		if (imageDesc == null) {
-			return null;
-		}
-
-		final Object image = AgeDiagramTypeProvider.getResources().find(imageDesc);
-		return image instanceof Image ? (Image) image : null;
-	}
-
-	// Create image descriptor
-	private static ImageDescriptor getImageDescriptor(final String imagePath) {
-		try {
-			final IResource imageResource = ResourcesPlugin.getWorkspace().getRoot()
-					.findMember(Path.fromPortableString(imagePath));
-			return imageResource == null ? null
-					: ImageDescriptor.createFromURL(imageResource.getRawLocationURI().toURL());
-		} catch (final MalformedURLException e) {
-			throw new RuntimeException("Not a valid image path: " + imagePath);
-		}
+		this.image = ImageHelper.createImage(Path.fromPortableString(imagePath));
 	}
 
 	@Override
@@ -81,23 +47,27 @@ implements IGraphicsAlgorithmRenderer {
 			g.setBackgroundColor(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
 			super.fillShape(g);
 
-			// Set font color to black
-			g.setForegroundColor(Display.getDefault().getSystemColor(SWT.COLOR_BLACK));
-			// Draw unable to load image text centered
+			// Draw a red dashed X through the element symbolizing an error
+			g.setForegroundColor(Display.getDefault().getSystemColor(SWT.COLOR_RED));
+			g.setLineWidth(5);
+			g.setLineStyle(Graphics.LINE_DASH);
 			final Rectangle bounds = getBounds();
-			g.setTextAntialias(SWT.ON);
-			g.setFont(errorFont);
-			final String errorMsg = "Unable to load image: " + imagePath;
-			final Dimension textSize = FigureUtilities.getTextExtents(errorMsg, errorFont);
-			g.drawText(errorMsg,
-					new Point(bounds.x + (bounds.width - textSize.width) / 2,
-							bounds.y + (bounds.height - textSize.height) / 2));
+			final int borderIndent = 5;
+			// Get points to draw image error lines
+			final int x = bounds.x + borderIndent;
+			final int y = bounds.y + borderIndent;
+			final int width = bounds.x + bounds.width - borderIndent;
+			final int height = bounds.y + bounds.height - borderIndent;
+			g.drawLine(x, y, width, height);
+			g.drawLine(width, y, x, height);
 		}
 	}
 
 	@Override
 	protected void outlineShape(final Graphics g) {
 		if (image == null) {
+			g.setForegroundColor(Display.getDefault().getSystemColor(SWT.COLOR_RED));
+			g.setLineWidth(8);
 			// Draw outline
 			super.outlineShape(g);
 		}
