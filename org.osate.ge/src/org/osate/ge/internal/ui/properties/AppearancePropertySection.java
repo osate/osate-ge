@@ -9,11 +9,14 @@ import java.util.stream.Stream;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Adapters;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.emf.common.util.URI;
+import org.eclipse.graphiti.ui.editor.DiagramEditorInput;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.resource.DeviceResourceManager;
@@ -50,7 +53,11 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ElementTreeSelectionDialog;
 import org.eclipse.ui.model.BaseWorkbenchContentProvider;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
@@ -64,6 +71,7 @@ import org.osate.ge.internal.Activator;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramElementPredicates;
+import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 import org.osate.ge.internal.ui.util.UiUtil;
 import org.osate.ge.internal.util.StringUtil;
 
@@ -218,6 +226,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 	@Override
 	public void setInput(final IWorkbenchPart part, final ISelection selection) {
 		super.setInput(part, selection);
+
 		selectedDiagramElements.clear();
 
 		final IStructuredSelection ss = (IStructuredSelection) selection;
@@ -761,9 +770,32 @@ public class AppearancePropertySection extends AbstractPropertySection {
 				return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "No image selected.");
 			});
 
+			final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 			// Allow selection of project resources
-			dialog.setInput(ResourcesPlugin.getWorkspace().getRoot());
+			dialog.setInput(workspaceRoot);
+
+			// Set initial selection
+			final IEditorPart editor = getActiveEditor();
+			if (editor instanceof AgeDiagramEditor && editor.getEditorInput() instanceof DiagramEditorInput) {
+				final DiagramEditorInput dei = (DiagramEditorInput) editor.getEditorInput();
+				// Get file directory
+				final URI fileDirectory = dei.getUri().trimFragment().trimSegments(1);
+				dialog.setInitialSelection(
+						workspaceRoot.findMember(fileDirectory.toPlatformString(true)));
+			}
+
 			return dialog;
+		}
+
+		private IEditorPart getActiveEditor() {
+			final IWorkbenchWindow activeWindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+			if (activeWindow != null) {
+				final IWorkbenchPage activePage = activeWindow.getActivePage();
+				if (activePage != null) {
+					return activePage.getActiveEditor();
+				}
+			}
+			return null;
 		}
 
 		// Only allow projects, folders, and image files to appear in dialog selection
@@ -776,7 +808,7 @@ public class AppearancePropertySection extends AbstractPropertySection {
 		};
 
 		// Set image and visibility
-		final StyleCommand imageStyleCommand = new StyleCommand("Set Image", (diagramElement, sb, value) -> {
+		private final StyleCommand imageStyleCommand = new StyleCommand("Set Image", (diagramElement, sb, value) -> {
 			if (DiagramElementPredicates.supportsImage(diagramElement)) {
 				final IPath imagePath = (IPath) value;
 				sb.imagePath(imagePath);
