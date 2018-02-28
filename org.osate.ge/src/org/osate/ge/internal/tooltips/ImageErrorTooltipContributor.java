@@ -19,7 +19,7 @@ public class ImageErrorTooltipContributor {
 		if (boc instanceof DiagramElement) {
 			final DiagramElement de = (DiagramElement) boc;
 			final Style style = de.getStyle();
-			if (style != null && Boolean.TRUE.equals(style.getShowAsImage()) && style.getImagePath() != null) {
+			if (style != null && Boolean.TRUE.equals(style.getShowAsImage())) {
 				final IPath imagePath = style.getImagePath();
 				if (ImageHelper.createImage(imagePath) == null) {
 					final Label lbl = new Label(parent, SWT.NONE);

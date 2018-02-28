@@ -22,6 +22,7 @@ import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.Graphiti;
 import org.eclipse.graphiti.services.IGaService;
 import org.eclipse.graphiti.ui.services.GraphitiUi;
+import org.eclipse.graphiti.util.IColorConstant;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.LabelPosition;
 import org.osate.ge.graphics.Style;
@@ -34,8 +35,8 @@ import org.osate.ge.internal.diagram.runtime.DiagramModification;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.Dimension;
 import org.osate.ge.internal.diagram.runtime.DockArea;
-import org.osate.ge.internal.graphiti.AnchorNames;
 import org.osate.ge.internal.graphiti.AgeGraphicsAlgorithmRendererFactory;
+import org.osate.ge.internal.graphiti.AnchorNames;
 import org.osate.ge.internal.graphiti.ShapeNames;
 import org.osate.ge.internal.graphiti.graphics.AgeGraphitiGraphicsUtil;
 
@@ -295,11 +296,16 @@ public class LayoutUtil {
 							// Check if diagram element is an image figure
 							if (DiagramElementPredicates.supportsImage(element)
 									&& Boolean.TRUE.equals(element.getStyle().getShowAsImage())) {
-								final IPath imagePath = element.getStyle().getImagePath();
 								innerGa = GraphitiUi.getGaService().createPlatformGraphicsAlgorithm(shapeGa,
 										AgeGraphicsAlgorithmRendererFactory.IMAGE_FIGURE);
 								innerGa.setWidth(lm.innerWidth);
 								innerGa.setHeight(lm.innerHeight);
+								// Initialize for style overrides
+								innerGa.setForeground(GraphitiUi.getGaService().manageColor(graphitiDiagram, IColorConstant.BLACK));
+								innerGa.setBackground(GraphitiUi.getGaService().manageColor(graphitiDiagram, IColorConstant.WHITE));
+								PropertyUtil.setIsStylingOutlineEnabled(innerGa, true);
+								PropertyUtil.setIsStylingChild(innerGa, true);
+								final IPath imagePath = element.getStyle().getImagePath();
 								PropertyUtil.setImage(innerGa, imagePath.toPortableString());
 							} else {
 								innerGa = AgeGraphitiGraphicsUtil.createGraphicsAlgorithm(graphitiDiagram, shapeGa, gr, lm.innerWidth,

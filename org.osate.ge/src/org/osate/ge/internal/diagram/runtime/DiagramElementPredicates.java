@@ -3,6 +3,7 @@ package org.osate.ge.internal.diagram.runtime;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.internal.AgeConnection;
 import org.osate.ge.graphics.internal.AgeShape;
+import org.osate.ge.graphics.internal.Label;
 
 public class DiagramElementPredicates {
 	public static boolean isResizeable(final DiagramElement de) {
@@ -28,6 +29,6 @@ public class DiagramElementPredicates {
 	}
 
 	public static boolean supportsImage(final DiagramElement de) {
-		return de.getGraphic() instanceof AgeShape && isUndocked(de);
+		return !(de.getGraphic() instanceof Label) && de.getGraphic() instanceof AgeShape && isUndocked(de);
 	}
 }

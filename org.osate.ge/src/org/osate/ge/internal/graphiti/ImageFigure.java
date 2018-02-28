@@ -1,12 +1,12 @@
 package org.osate.ge.internal.graphiti;
 
-import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.draw2d.Graphics;
 import org.eclipse.draw2d.RectangleFigure;
+import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.graphiti.platform.ga.IGraphicsAlgorithmRenderer;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.Display;
@@ -16,13 +16,14 @@ public class ImageFigure extends RectangleFigure
 implements IGraphicsAlgorithmRenderer {
 	private final Image image;
 
-	public ImageFigure(final String imagePath, final Font errorFont) {
-		this.image = ImageHelper.createImage(Path.fromPortableString(imagePath));
+	public ImageFigure(final IPath imagePath) {
+		this.image = ImageHelper.createImage(imagePath);
 	}
 
 	@Override
 	protected void fillShape(final Graphics g) {
 		if (image != null && !image.isDisposed()) {
+			super.fillShape(g);
 			g.setAntialias(SWT.ON);
 			g.setInterpolation(SWT.HIGH);
 
@@ -32,16 +33,16 @@ implements IGraphicsAlgorithmRenderer {
 			final int imageHeight = originalImageData.height;
 
 			// Scaling
-			double scalefactorX = 1.0;
-			double scalefactorY = 1.0;
-			scalefactorX = getBounds().preciseWidth() / (double) imageWidth;
-			scalefactorY = getBounds().preciseHeight() / (double) imageHeight;
+			final Rectangle bounds = getBounds();
+			// Find dimension used to make proportional image
+			final int minDimension = Math.min(bounds.width, bounds.height);
+			final int imageOffset = minDimension / 2;
+			final Point imagePoint = new Point(bounds.x() + bounds.width / 2 - imageOffset,
+					bounds.y() + bounds.height / 2 - imageOffset);
 
-			// Scaled width and height
-			double scaledWidth = imageWidth * scalefactorX;
-			double scaledHeight = imageHeight * scalefactorY;
 			// Draw scaled image
-			g.drawImage(image, 0, 0, imageWidth, imageHeight, getLocation().x, getLocation().y, (int) scaledWidth, (int) scaledHeight);
+			g.drawImage(image, 0, 0, imageWidth, imageHeight, imagePoint.x(), imagePoint.y(),
+					minDimension, minDimension);
 		} else {
 			// Fill shape white
 			g.setBackgroundColor(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
@@ -65,11 +66,8 @@ implements IGraphicsAlgorithmRenderer {
 
 	@Override
 	protected void outlineShape(final Graphics g) {
-		if (image == null) {
-			g.setForegroundColor(Display.getDefault().getSystemColor(SWT.COLOR_RED));
-			g.setLineWidth(8);
-			// Draw outline
-			super.outlineShape(g);
-		}
+		g.setLineWidth(8);
+		// Draw outline
+		super.outlineShape(g);
 	}
 }

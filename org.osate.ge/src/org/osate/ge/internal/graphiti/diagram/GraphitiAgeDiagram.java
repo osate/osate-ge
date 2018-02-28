@@ -258,26 +258,27 @@ public class GraphitiAgeDiagram implements NodePictogramBiMap, AutoCloseable {
 		 * @return
 		 */
 		private boolean isDiagramUpdateRequired(final IResourceDelta delta, final IPath image) {
-			if (delta.getKind() == IResourceDelta.ADDED) {
-				final IPath movedFromPath = delta.getMovedFromPath();
-				final IPath fullPath = delta.getFullPath();
-				final IPath compPath = movedFromPath == null ? fullPath : movedFromPath;
-				return image.equals(compPath);
-			}
+			if (delta != null) {
+				if (delta.getKind() == IResourceDelta.ADDED) {
+					final IPath movedFromPath = delta.getMovedFromPath();
+					final IPath fullPath = delta.getFullPath();
+					final IPath compPath = movedFromPath == null ? fullPath : movedFromPath;
+					return image.equals(compPath);
+				}
 
-			if (delta.getKind() == IResourceDelta.REMOVED) {
-				final IPath movedToPath = delta.getMovedToPath();
-				final IPath compPath = movedToPath == null ? delta.getFullPath() : movedToPath;
-				return image.equals(compPath);
-			}
+				if (delta.getKind() == IResourceDelta.REMOVED) {
+					final IPath movedToPath = delta.getMovedToPath();
+					final IPath compPath = movedToPath == null ? delta.getFullPath() : movedToPath;
+					return image.equals(compPath);
+				}
 
-			for (final IResourceDelta childDelta : delta.getAffectedChildren()) {
-				final boolean updateRequired = isDiagramUpdateRequired(childDelta, image);
-				if (updateRequired) {
-					return updateRequired;
+				for (final IResourceDelta childDelta : delta.getAffectedChildren()) {
+					final boolean updateRequired = isDiagramUpdateRequired(childDelta, image);
+					if (updateRequired) {
+						return updateRequired;
+					}
 				}
 			}
-
 			return false;
 		}
 

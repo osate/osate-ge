@@ -12,6 +12,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Adapters;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -71,9 +72,12 @@ import org.osate.ge.internal.Activator;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramElementPredicates;
+import org.osate.ge.internal.graphiti.services.GraphitiService;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 import org.osate.ge.internal.ui.util.UiUtil;
 import org.osate.ge.internal.util.StringUtil;
+
+import com.google.common.collect.Lists;
 
 public class AppearancePropertySection extends AbstractPropertySection {
 	public static class SelectionFilter implements IFilter {
@@ -729,10 +733,13 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			chooseImgMenuItem.addSelectionListener(new SelectionAdapter() {
 				@Override
 				public void widgetSelected(final SelectionEvent e) {
-					final ElementTreeSelectionDialog dialog = createSelectionDialog();
-					if (dialog.open() == Window.OK) {
-						final IFile iFile = (IFile) dialog.getResult()[0];
-						runStyleCommand(iFile.getFullPath(), imageStyleCommand);
+					final IEditorPart editor = getActiveEditor();
+					if (editor instanceof AgeDiagramEditor) {
+						final ElementTreeSelectionDialog dialog = createSelectionDialog((AgeDiagramEditor) editor);
+						if (dialog.open() == Window.OK) {
+							final IFile iFile = (IFile) dialog.getResult()[0];
+							runStyleCommand(iFile.getFullPath(), imageStyleCommand);
+						}
 					}
 				}
 			});
@@ -754,36 +761,43 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			popupMenu.setVisible(true);
 		}
 
-		private ElementTreeSelectionDialog createSelectionDialog() {
+		private ElementTreeSelectionDialog createSelectionDialog(final AgeDiagramEditor editor) {
 			final ElementTreeSelectionDialog dialog = new ElementTreeSelectionDialog(
 					Display.getCurrent().getActiveShell(), new WorkbenchLabelProvider(),
 					new BaseWorkbenchContentProvider());
-			// Configure selection dialog
-			dialog.setTitle("Select an Image");
-			dialog.setMessage("Select an image.");
-			dialog.setAllowMultiple(false);
-			dialog.setHelpAvailable(false);
-			// Filter Resources
-			dialog.addFilter(selectionFilter);
-			dialog.setValidator(selection -> {
-				if (selection.length > 0 && selection[0] instanceof IFile) {
-					return new Status(IStatus.OK, Activator.PLUGIN_ID, "");
+			try {
+				final GraphitiService graphitiService = Objects
+						.requireNonNull(Adapters.adapt(editor, GraphitiService.class),
+								"graphiti service must not be null");
+				// Configure selection dialog
+				dialog.setTitle("Select an Image");
+				dialog.setMessage("Select an image.");
+				dialog.setAllowMultiple(false);
+				dialog.setHelpAvailable(false);
+				final IProject project = graphitiService.getProject();
+				final IProject[] referencedProjects = project.getReferencedProjects();
+				// Filter Resources
+				dialog.addFilter(new ImageSelectionViewerFilter(Lists.asList(project, referencedProjects)));
+				dialog.setValidator(selection -> {
+					if (selection.length > 0 && selection[0] instanceof IFile) {
+						return new Status(IStatus.OK, Activator.PLUGIN_ID, "");
+					}
+					return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "No image selected.");
+				});
+
+				// Set initial selection
+				final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+				// Allow selection of project resources
+				dialog.setInput(workspaceRoot);
+
+				if (editor.getEditorInput() instanceof DiagramEditorInput) {
+					final DiagramEditorInput dei = (DiagramEditorInput) editor.getEditorInput();
+					// Get file directory
+					final URI fileDirectory = dei.getUri().trimFragment().trimSegments(1);
+					dialog.setInitialSelection(workspaceRoot.findMember(fileDirectory.toPlatformString(true)));
 				}
-				return new Status(IStatus.ERROR, Activator.PLUGIN_ID, "No image selected.");
-			});
-
-			final IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
-			// Allow selection of project resources
-			dialog.setInput(workspaceRoot);
-
-			// Set initial selection
-			final IEditorPart editor = getActiveEditor();
-			if (editor instanceof AgeDiagramEditor && editor.getEditorInput() instanceof DiagramEditorInput) {
-				final DiagramEditorInput dei = (DiagramEditorInput) editor.getEditorInput();
-				// Get file directory
-				final URI fileDirectory = dei.getUri().trimFragment().trimSegments(1);
-				dialog.setInitialSelection(
-						workspaceRoot.findMember(fileDirectory.toPlatformString(true)));
+			} catch (final CoreException e) {
+				throw new RuntimeException("unable to get referenced projects");
 			}
 
 			return dialog;
@@ -799,15 +813,6 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			}
 			return null;
 		}
-
-		// Only allow projects, folders, and image files to appear in dialog selection
-		private final ViewerFilter selectionFilter = new ViewerFilter() {
-			@Override
-			public boolean select(final Viewer viewer, final Object parentElement, final Object element) {
-				return element instanceof IProject || element instanceof IFolder
-						|| (element instanceof IFile && isImageFile((IFile) element));
-			}
-		};
 
 		// Set image and visibility
 		private final StyleCommand imageStyleCommand = new StyleCommand("Set Image", (diagramElement, sb, value) -> {
@@ -826,6 +831,30 @@ public class AppearancePropertySection extends AbstractPropertySection {
 			sb.showAsImage((Boolean) value);
 		}
 	});
+
+	// Only allow resources that are in the current project or referenced projects to be in dialog
+	private class ImageSelectionViewerFilter extends ViewerFilter {
+		private final List<IProject> projects;
+
+		private ImageSelectionViewerFilter(final List<IProject> projects) {
+			this.projects = projects;
+		}
+
+		@Override
+		public boolean select(final Viewer viewer, final Object parentElement, final Object element) {
+			return isReferencedProject(element) || element instanceof IFolder
+					|| (element instanceof IFile && isImageFile((IFile) element));
+		}
+
+		private boolean isReferencedProject(final Object element) {
+			for (final IProject project : projects) {
+				if (project == element) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
 
 	private final static ImageDescriptor outlineIcon = Activator.getImageDescriptor("icons/Outline.gif");
 	private final static ImageDescriptor backgroundIcon = Activator.getImageDescriptor("icons/Background.gif");
