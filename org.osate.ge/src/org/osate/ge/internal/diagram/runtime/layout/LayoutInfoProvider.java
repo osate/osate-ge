@@ -11,14 +11,14 @@ public interface LayoutInfoProvider {
 	/**
 	 *
 	 * @param de
-	 * @return null if a size cannot be determined.
+	 * @return a valid size. Must never return null.
 	 */
 	Dimension getPrimaryLabelSize(DiagramElement de);
 
 	/**
 	 *
 	 * @param de
-	 * @return null if a size cannot be determined.
+	 * @return a valid size. Must never return null.
 	 */
 	Dimension getAnnotationLabelSize(DiagramElement de);
 

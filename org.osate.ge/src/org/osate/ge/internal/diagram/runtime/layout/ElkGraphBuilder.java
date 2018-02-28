@@ -413,11 +413,8 @@ class ElkGraphBuilder {
 
 		// Create label for annotations which are part of the graphic configuration. These are only supported by non-connections.
 		if (!isConnection && parentElement.getGraphicalConfiguration().annotation != null) {
-			final Dimension annotationLabelSize = layoutInfoProvider.getAnnotationLabelSize(parentElement);
-			if (annotationLabelSize.width > 0.0 && annotationLabelSize.height > 0.0) {
-				createElkLabel(parentLayoutElement, parentElement.getGraphicalConfiguration().annotation,
-						annotationLabelSize);
-			}
+			createElkLabel(parentLayoutElement, parentElement.getGraphicalConfiguration().annotation,
+					layoutInfoProvider.getAnnotationLabelSize(parentElement));
 		}
 
 		// Create Secondary Labels
