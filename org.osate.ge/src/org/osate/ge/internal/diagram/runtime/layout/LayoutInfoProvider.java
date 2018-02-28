@@ -16,6 +16,13 @@ public interface LayoutInfoProvider {
 	Dimension getPrimaryLabelSize(DiagramElement de);
 
 	/**
+	 *
+	 * @param de
+	 * @return null if a size cannot be determined.
+	 */
+	Dimension getAnnotationLabelSize(DiagramElement de);
+
+	/**
 	 * Returns the unrotated size of the port for a docked diagram element.
 	 * For example, for data ports this is the size of the graphic if the port was docked to the left or right side of its parent. For feature groups it is the size of the circle.
 	 * Must not return null.
