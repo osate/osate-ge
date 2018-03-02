@@ -12,12 +12,14 @@ import org.osate.ge.internal.util.DiagramUtil;
 
 public class DiagramsView extends CommonNavigator {
 	private final IResourceChangeListener resourceChangeListener = event -> {
-		// Refresh the view when resource changes are made
-		final Control ctrl = getCommonViewer().getControl();
-		if (ctrl != null && !ctrl.isDisposed()) {
-			// Refresh the viewer if the change could affect it.
-			if (needsRefresh(event.getDelta())) {
-				ctrl.getDisplay().asyncExec(() -> getCommonViewer().refresh());
+		if (event.getDelta() != null) {
+			// Refresh the view when resource changes are made
+			final Control ctrl = getCommonViewer().getControl();
+			if (ctrl != null && !ctrl.isDisposed()) {
+				// Refresh the viewer if the change could affect it.
+				if (needsRefresh(event.getDelta())) {
+					ctrl.getDisplay().asyncExec(() -> getCommonViewer().refresh());
+				}
 			}
 		}
 	};
