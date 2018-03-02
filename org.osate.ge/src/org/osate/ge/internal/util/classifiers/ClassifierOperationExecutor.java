@@ -43,10 +43,10 @@ public class ClassifierOperationExecutor {
 		this.classifierCreationHelper = new ClassifierCreationHelper(namingService, resourceSet);
 	}
 
-	public void execute(final CreateOperation createOp, final ClassifierOperation op,
+	public final Supplier<Classifier> execute(final CreateOperation createOp, final ClassifierOperation op,
 			final BusinessObjectContext primaryPkgBoc) {
 		final Supplier<Classifier> baseOperationResult = addStep(createOp, op.getBasePart(), null, () -> null, null);
-		addStep(createOp, op.getPrimaryPart(), op.getBasePart(), baseOperationResult, primaryPkgBoc);
+		return addStep(createOp, op.getPrimaryPart(), op.getBasePart(), baseOperationResult, primaryPkgBoc);
 	}
 
 	private Supplier<Classifier> addStep(final CreateOperation createOp, final ClassifierOperationPart part,
@@ -129,14 +129,28 @@ public class ClassifierOperationExecutor {
 						}
 
 					} else if (newClassifier instanceof ComponentType && baseOperationResult instanceof ComponentType) {
+						final ComponentType baseComponentType = (ComponentType) baseOperationResult;
+
+						// Import the base package if necessary
+						final AadlPackage baseComponentTypePkg = (AadlPackage) baseComponentType.getNamespace().getOwner();
+						AadlImportsUtil.addImportIfNeeded(section, baseComponentTypePkg);
+
+						// Create the extension
 						final ComponentType newType = (ComponentType) newClassifier;
 						final TypeExtension extension = newType.createOwnedExtension();
-						extension.setExtended((ComponentType) baseOperationResult);
+						extension.setExtended(baseComponentType);
 					} else if (newClassifier instanceof FeatureGroupType
 							&& baseOperationResult instanceof FeatureGroupType) {
+						final FeatureGroupType baseFeatureGroupType = (FeatureGroupType) baseOperationResult;
+
+						// Import the base package if necessary
+						final AadlPackage baseFeatureGroupTypePkg = (AadlPackage) baseFeatureGroupType.getNamespace()
+								.getOwner();
+						AadlImportsUtil.addImportIfNeeded(section, baseFeatureGroupTypePkg);
+
 						final FeatureGroupType newFgt = (FeatureGroupType) newClassifier;
 						final GroupExtension extension = newFgt.createOwnedExtension();
-						extension.setExtended((FeatureGroupType) baseOperationResult);
+						extension.setExtended(baseFeatureGroupType);
 					}
 
 					result = newClassifier == null ? null

@@ -11,8 +11,10 @@ import org.eclipse.emf.ecore.EObject;
 import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.BusinessObjectSelection;
 import org.osate.ge.internal.services.AadlModificationService;
+import org.osate.ge.internal.services.AadlModificationService.MappedObjectModifier;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.LinkedListMultimap;
 
 class AgeBusinessObjectSelection implements BusinessObjectSelection {
 	private final ImmutableList<BusinessObjectContext> bocs;
@@ -46,5 +48,25 @@ class AgeBusinessObjectSelection implements BusinessObjectSelection {
 	@Override
 	public <T extends EObject> void modify(final Class<T> c, final Consumer<T> modifier) {
 		modify(boc -> c.cast(boc.getBusinessObject()), (bo, boc) -> modifier.accept(bo));
+	}
+
+	// TODO: New names for generic types
+	// TODO: Cleanup
+	// TODO: Rename
+	public <T extends E, E extends EObject, R> void modifyWithPreSteps(final Class<T> c, final Consumer<T> modifier,
+			final LinkedListMultimap<EObject, MappedObjectModifier<EObject, R>> objectsToModifierMap) {
+		final MappedObjectModifier<EObject, R> bocModifier = (resource, bo, obj) -> {
+			modifier.accept((T) bo); // TODO
+			return null;
+		};
+
+		LinkedListMultimap<EObject, MappedObjectModifier<EObject, R>> copy = LinkedListMultimap
+				.create(objectsToModifierMap); // TODO: Read docs
+		for(final BusinessObjectContext boc : bocs) {
+			copy.put(c.cast(boc.getBusinessObject()), bocModifier);
+		}
+
+		modificationService.modify(copy, bo -> bo, results -> {
+		});
 	}
 }

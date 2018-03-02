@@ -289,24 +289,26 @@ public class ClassifierOperationDialog {
 			final ClassifierOperationPartType primaryOp = primaryPartEditor.getConfiguredOperation().getType();
 			baseGroup.setVisible(ClassifierOperationPartType.isCreate(primaryOp));
 
-			if (baseGroup.getVisible()) {
+			if (primaryOp != null) {
 				switch (primaryOp) {
 				case NEW_COMPONENT_TYPE:
-					baseValueWidget
-					.setAllowedOperations(EnumSet.of(ClassifierOperationPartType.NONE, ClassifierOperationPartType.EXISTING));
+					baseValueWidget.setAllowedOperations(
+							EnumSet.of(ClassifierOperationPartType.NONE, ClassifierOperationPartType.EXISTING));
 					break;
 
 				case NEW_COMPONENT_IMPLEMENTATION:
-					baseValueWidget.setAllowedOperations(
-							EnumSet.of(ClassifierOperationPartType.NEW_COMPONENT_TYPE, ClassifierOperationPartType.EXISTING));
+					baseValueWidget.setAllowedOperations(EnumSet.of(ClassifierOperationPartType.NEW_COMPONENT_TYPE,
+							ClassifierOperationPartType.EXISTING));
 					break;
 
 				case NEW_FEATURE_GROUP_TYPE:
-					baseValueWidget
-					.setAllowedOperations(EnumSet.of(ClassifierOperationPartType.NONE, ClassifierOperationPartType.EXISTING));
+					baseValueWidget.setAllowedOperations(
+							EnumSet.of(ClassifierOperationPartType.NONE, ClassifierOperationPartType.EXISTING));
 					break;
 
-				default:
+				case EXISTING:
+				case NONE:
+					baseValueWidget.setAllowedOperations(EnumSet.of(ClassifierOperationPartType.NONE));
 
 				}
 			}

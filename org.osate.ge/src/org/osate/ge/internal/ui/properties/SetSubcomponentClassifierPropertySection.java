@@ -1,17 +1,24 @@
 package org.osate.ge.internal.ui.properties;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.Adapters;
+import org.eclipse.e4.core.contexts.EclipseContextFactory;
+import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.jface.viewers.IFilter;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -35,8 +42,10 @@ import org.osate.aadl2.AbstractSubcomponent;
 import org.osate.aadl2.AbstractSubcomponentType;
 import org.osate.aadl2.BusSubcomponent;
 import org.osate.aadl2.BusSubcomponentType;
+import org.osate.aadl2.Classifier;
 import org.osate.aadl2.ComponentCategory;
 import org.osate.aadl2.ComponentClassifier;
+import org.osate.aadl2.ComponentType;
 import org.osate.aadl2.DataSubcomponent;
 import org.osate.aadl2.DataSubcomponentType;
 import org.osate.aadl2.DeviceSubcomponent;
@@ -67,11 +76,21 @@ import org.osate.aadl2.VirtualBusSubcomponentType;
 import org.osate.aadl2.VirtualProcessorSubcomponent;
 import org.osate.aadl2.VirtualProcessorSubcomponentType;
 import org.osate.ge.BusinessObjectSelection;
-import org.osate.ge.internal.ui.dialogs.ElementSelectionDialog;
+import org.osate.ge.internal.CreateOperation;
+import org.osate.ge.internal.graphiti.features.SimpleCreateOperation;
+import org.osate.ge.internal.services.NamingService;
+import org.osate.ge.internal.ui.dialogs.ClassifierOperationDialog;
+import org.osate.ge.internal.ui.dialogs.DefaultCreateSelectClassifierDialogModel;
 import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
+import org.osate.ge.internal.ui.util.SelectionUtil;
 import org.osate.ge.internal.util.AadlImportsUtil;
 import org.osate.ge.internal.util.ScopedEMFIndexRetrieval;
+import org.osate.ge.internal.util.classifiers.ClassifierOperation;
+import org.osate.ge.internal.util.classifiers.ClassifierOperationExecutor;
+import org.osate.ge.internal.util.classifiers.ClassifierOperationPartType;
 import org.osate.ge.ui.properties.PropertySectionUtil;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 
 public class SetSubcomponentClassifierPropertySection extends AbstractPropertySection {
 	public static class Filter implements IFilter {
@@ -115,36 +134,112 @@ public class SetSubcomponentClassifierPropertySection extends AbstractPropertySe
 			final List<Subcomponent> scs = selectedBos.boStream(Subcomponent.class).collect(Collectors.toList());
 			final Iterator<Subcomponent> it = scs.iterator();
 			final Subcomponent sc = it.next();
-			final List<Object> potentialFeatureClassifiers = new ArrayList<>(
+			final List<Object> potentialClassifiers = new ArrayList<>(
 					getPotentialSubcomponentTypes(sc));
 			while (it.hasNext()) {
-				potentialFeatureClassifiers.retainAll(getPotentialSubcomponentTypes(it.next()));
+				potentialClassifiers.retainAll(getPotentialSubcomponentTypes(it.next()));
 			}
 
-			// Prompt the user for the element
-			final ElementSelectionDialog dlg = new ElementSelectionDialog(Display.getCurrent().getActiveShell(),
-					"Select a Classifier", "Select a classifier.", potentialFeatureClassifiers);
-			if (dlg.open() != Window.CANCEL) {
-				// Set the classifier
-				// Import the package if necessary
-				final SubcomponentType selectedSubcomponentType;
-				if (dlg.getFirstSelectedElement() != null) {
-					// Resolve the reference
-					selectedSubcomponentType = (SubcomponentType) EcoreUtil
-							.resolve((EObject) dlg.getFirstSelectedElement(),
-									sc);
-				} else {
-					selectedSubcomponentType = null;
-				}
+			// TODO: Check before casting
+			final AadlPackage scPkg = (AadlPackage) sc.getElementRoot();
+			final SimpleCreateOperation createOp = new SimpleCreateOperation();
+			final IProject project = SelectionUtil.getProject(scPkg.eResource()); // TODO: Check result
+			final Bundle bundle = FrameworkUtil.getBundle(getClass());
+			final IEclipseContext context = EclipseContextFactory.getServiceContext(bundle.getBundleContext())
+					.createChild();
+			final NamingService namingService = Objects.requireNonNull(context.getActive(NamingService.class),
+					"Unable to retrieve naming service");
 
-				// Set the classifier
-				selectedBos.modify(Subcomponent.class, subcomponent -> {
-					setClassifier(subcomponent, selectedSubcomponentType);
-				});
+			final Supplier<Classifier> selectedSubcomponentTypeSupplier = promptForSubcomponentType(createOp, potentialClassifiers,
+					sc.getCategory(), project, namingService,
+					scPkg.eResource().getResourceSet(), scPkg);
+			if (selectedSubcomponentTypeSupplier != null) {
+				selectedBos.modifyWithPreSteps(Subcomponent.class, subcomponent -> {
+					SubcomponentType selectedSubcomponentType = (SubcomponentType) selectedSubcomponentTypeSupplier
+							.get();
+					if (selectedSubcomponentType != null) {
+						selectedSubcomponentType = (SubcomponentType) EcoreUtil.resolve(
+								(EObject) selectedSubcomponentType,
+								subcomponent);
+					}
+
+					setSubcomponentType(subcomponent, selectedSubcomponentType);
+				}, createOp.getStepMap());
 			}
 		}
 
-		private void setClassifier(final Subcomponent sc, final SubcomponentType selectedSubcomponentType) {
+		/**
+		 * The result is a supplier for a classifier which should be used as the subcomponent type.
+		 * @param createOp
+		 * @param potentialBaseClassifiers
+		 * @param category
+		 * @param project
+		 * @param namingService
+		 * @param rs
+		 * @param defaultPackage
+		 * @return
+		 */
+		private Supplier<Classifier> promptForSubcomponentType(final CreateOperation createOp, final Collection<?> potentialBaseClassifiers,
+				final ComponentCategory category,
+				final IProject project, final NamingService namingService,
+				final ResourceSet rs,
+				final AadlPackage defaultPackage) {
+			final ClassifierOperationDialog.Model model = new DefaultCreateSelectClassifierDialogModel(project,
+					namingService, rs, "Select Subcomponent Classifier") {
+				@Override
+				public String getTitle() {
+					return "Select Subcomponent Classifier";
+				}
+
+				@Override
+				public Collection<?> getBaseSelectOptions(final ClassifierOperationPartType primaryOperation) {
+					if (primaryOperation == ClassifierOperationPartType.NEW_COMPONENT_TYPE) {
+						// TODO: Check the type of potential subcomponent classifiers
+						return potentialBaseClassifiers.stream()
+								.filter(o -> o instanceof ComponentType || (o instanceof IEObjectDescription
+										&& ((IEObjectDescription) o).getEObjectOrProxy() instanceof ComponentType))
+								.collect(Collectors.toList());
+					} else {
+						return potentialBaseClassifiers;
+					}
+				}
+
+				@Override
+				public Collection<?> getUnfilteredBaseSelectOptions(
+						final ClassifierOperationPartType primaryOperation) {
+					return null;
+				}
+
+				@Override
+				public Collection<?> getPrimarySelectOptions() {
+					return potentialBaseClassifiers;
+				}
+
+				@Override
+				public Collection<?> getUnfilteredPrimarySelectOptions() {
+					return null;
+				}
+			};
+
+			// Show the dialog to determine the operation
+			final ClassifierOperation operation = ClassifierOperationDialog.show(Display.getCurrent().getActiveShell(),
+					new ClassifierOperationDialog.ArgumentBuilder(model,
+							EnumSet.of(ClassifierOperationPartType.NONE, ClassifierOperationPartType.EXISTING,
+									ClassifierOperationPartType.NEW_COMPONENT_TYPE,
+									ClassifierOperationPartType.NEW_COMPONENT_IMPLEMENTATION))
+					.defaultPackage(defaultPackage)
+					.showPrimaryPackageSelector(true).componentCategory(category)
+					.create());
+
+			if (operation == null) {
+				return null;
+			}
+
+			final ClassifierOperationExecutor opExec = new ClassifierOperationExecutor(namingService, rs, project);
+			return opExec.execute(createOp, operation, null);
+		}
+
+		private void setSubcomponentType(final Subcomponent sc, final SubcomponentType selectedSubcomponentType) {
 			// Import as necessary
 			if (selectedSubcomponentType != null) {
 				// Import its package if necessary

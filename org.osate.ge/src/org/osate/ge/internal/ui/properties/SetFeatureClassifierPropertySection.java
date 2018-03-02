@@ -3,19 +3,26 @@ package org.osate.ge.internal.ui.properties;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.Adapters;
+import org.eclipse.e4.core.contexts.EclipseContextFactory;
+import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.jface.viewers.IFilter;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -39,12 +46,15 @@ import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.BusFeatureClassifier;
 import org.osate.aadl2.BusSubcomponentType;
 import org.osate.aadl2.Classifier;
+import org.osate.aadl2.ComponentCategory;
 import org.osate.aadl2.ComponentClassifier;
+import org.osate.aadl2.ComponentType;
 import org.osate.aadl2.DataClassifier;
 import org.osate.aadl2.DataSubcomponentType;
 import org.osate.aadl2.Feature;
 import org.osate.aadl2.FeatureClassifier;
 import org.osate.aadl2.FeatureGroup;
+import org.osate.aadl2.FeatureGroupType;
 import org.osate.aadl2.FeatureType;
 import org.osate.aadl2.NamedElement;
 import org.osate.aadl2.PackageSection;
@@ -53,11 +63,21 @@ import org.osate.aadl2.SubprogramClassifier;
 import org.osate.aadl2.SubprogramGroupSubcomponentType;
 import org.osate.aadl2.SubprogramSubcomponentType;
 import org.osate.ge.BusinessObjectSelection;
-import org.osate.ge.internal.ui.dialogs.ElementSelectionDialog;
+import org.osate.ge.internal.CreateOperation;
+import org.osate.ge.internal.graphiti.features.SimpleCreateOperation;
+import org.osate.ge.internal.services.NamingService;
+import org.osate.ge.internal.ui.dialogs.ClassifierOperationDialog;
+import org.osate.ge.internal.ui.dialogs.DefaultCreateSelectClassifierDialogModel;
 import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
+import org.osate.ge.internal.ui.util.SelectionUtil;
 import org.osate.ge.internal.util.AadlImportsUtil;
 import org.osate.ge.internal.util.ScopedEMFIndexRetrieval;
+import org.osate.ge.internal.util.classifiers.ClassifierOperation;
+import org.osate.ge.internal.util.classifiers.ClassifierOperationExecutor;
+import org.osate.ge.internal.util.classifiers.ClassifierOperationPartType;
 import org.osate.ge.ui.properties.PropertySectionUtil;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 
 public class SetFeatureClassifierPropertySection extends AbstractPropertySection {
 	public static class Filter implements IFilter {
@@ -167,24 +187,128 @@ public class SetFeatureClassifierPropertySection extends AbstractPropertySection
 				potentialFeatureClassifiers.retainAll(getPotentialFeatureClassifiers(it.next()));
 			}
 
-			// Prompt the user for the element
-			final ElementSelectionDialog dlg = new ElementSelectionDialog(Display.getCurrent().getActiveShell(),
-					"Select a Classifier", "Select a classifier.", potentialFeatureClassifiers);
-			if (dlg.open() != Window.CANCEL) {
-				// Import the package if necessary
-				final EObject selectedType;
-				if (dlg.getFirstSelectedElement() != null) {
-					// Resolve the reference
-					selectedType = EcoreUtil.resolve((EObject) dlg.getFirstSelectedElement(), feature.eResource());
-				} else {
-					selectedType = null;
+			final boolean firstIsFeatureGroup = features.get(0) instanceof FeatureGroup;
+			final boolean consistent = features.stream()
+					.allMatch(f -> f instanceof FeatureGroup == firstIsFeatureGroup); // TODO: rename
+			if (!consistent) {
+				// TODO: Error message?
+				return;
+			}
+
+
+			// TODO: Check before casting
+			final AadlPackage featurePkg = (AadlPackage) feature.getElementRoot();
+			final SimpleCreateOperation createOp = new SimpleCreateOperation();
+			final IProject project = SelectionUtil.getProject(featurePkg.eResource()); // TODO: Check result
+			final Bundle bundle = FrameworkUtil.getBundle(getClass());
+			final IEclipseContext context = EclipseContextFactory.getServiceContext(bundle.getBundleContext())
+					.createChild();
+			final NamingService namingService = Objects.requireNonNull(context.getActive(NamingService.class),
+					"Unable to retrieve naming service");
+
+			// TODO: Set component category based on feature. Could have multiple categories.. Need to exist dialog to allow selection.
+			final Supplier<Classifier> selectedSubcomponentTypeSupplier = promptForFeatureType(createOp,
+					potentialFeatureClassifiers, ComponentCategory.DATA, project, namingService,
+					featurePkg.eResource().getResourceSet(), featurePkg, firstIsFeatureGroup);
+			if (selectedSubcomponentTypeSupplier != null) {
+				selectedBos.modifyWithPreSteps(Feature.class, featureToModify -> {
+					// TODO: The supplier only works for classifiers
+					EObject selectedType = selectedSubcomponentTypeSupplier
+							.get();
+					if (selectedType != null) {
+						selectedType = EcoreUtil.resolve((EObject) selectedType, featureToModify);
+					}
+
+					setFeatureClassifier(featureToModify, selectedType);
+				}, createOp.getStepMap());
+			}
+		}
+
+		// TODO: Need to support prototypes
+		/**
+		 * The result is a supplier for a classifier which should be used as the feature type.
+		 * @param createOp
+		 * @param potentialBaseClassifiers
+		 * @param category
+		 * @param project
+		 * @param namingService
+		 * @param rs
+		 * @param defaultPackage
+		 * @return
+		 */
+		private Supplier<Classifier> promptForFeatureType(final CreateOperation createOp,
+				final Collection<?> potentialBaseClassifiers, final ComponentCategory category, final IProject project,
+				final NamingService namingService, final ResourceSet rs, final AadlPackage defaultPackage, final boolean isFeatureGroup) {
+
+			// TODO: Improve filtering based on whether the port is being refined
+			final ClassifierOperationDialog.Model model = new DefaultCreateSelectClassifierDialogModel(project,
+					namingService, rs, "Select Feature Classifier") {
+				@Override
+				public String getTitle() {
+					return "Select Feature Classifier";
 				}
 
-				// Set the classifier
-				selectedBos.modify(Feature.class, f -> {
-					setFeatureClassifier(f, selectedType);
-				});
+				@Override
+				public Collection<?> getBaseSelectOptions(final ClassifierOperationPartType primaryOperation) {
+					// TODO: Share with SetSubcomponentClassifier? Some of the code is identical
+					if (primaryOperation == ClassifierOperationPartType.NEW_COMPONENT_TYPE) {
+						// TODO: Check the type of potential feature classifiers
+						return potentialBaseClassifiers.stream()
+								.filter(o -> o instanceof ComponentType || (o instanceof IEObjectDescription
+										&& ((IEObjectDescription) o).getEObjectOrProxy() instanceof ComponentType))
+								.collect(Collectors.toList());
+					} else if (primaryOperation == ClassifierOperationPartType.NEW_FEATURE_GROUP_TYPE) {
+						// TODO: Check the type of potential feature classifiers
+						return potentialBaseClassifiers.stream()
+								.filter(o -> o instanceof FeatureGroupType || (o instanceof IEObjectDescription
+										&& ((IEObjectDescription) o).getEObjectOrProxy() instanceof FeatureGroupType))
+								.collect(Collectors.toList());
+					} else {
+						return potentialBaseClassifiers;
+					}
+				}
+
+				@Override
+				public Collection<?> getUnfilteredBaseSelectOptions(
+						final ClassifierOperationPartType primaryOperation) {
+					return null;
+				}
+
+				@Override
+				public Collection<?> getPrimarySelectOptions() {
+					return potentialBaseClassifiers;
+				}
+
+				@Override
+				public Collection<?> getUnfilteredPrimarySelectOptions() {
+					return null;
+				}
+			};
+
+			final EnumSet<ClassifierOperationPartType> allowedOperations;
+			if (isFeatureGroup) {
+				allowedOperations = EnumSet.of(ClassifierOperationPartType.NONE, ClassifierOperationPartType.EXISTING,
+						ClassifierOperationPartType.NEW_FEATURE_GROUP_TYPE);
+			} else {
+				allowedOperations = EnumSet.of(ClassifierOperationPartType.NONE, ClassifierOperationPartType.EXISTING,
+						ClassifierOperationPartType.NEW_COMPONENT_TYPE,
+						ClassifierOperationPartType.NEW_COMPONENT_IMPLEMENTATION);
 			}
+
+			// TODO: Default value
+
+			// Show the dialog to determine the operation
+			final ClassifierOperation operation = ClassifierOperationDialog.show(Display.getCurrent().getActiveShell(),
+					new ClassifierOperationDialog.ArgumentBuilder(model, allowedOperations)
+					.defaultPackage(defaultPackage).showPrimaryPackageSelector(true)
+					.componentCategory(category).create());
+
+			if (operation == null) {
+				return null;
+			}
+
+			final ClassifierOperationExecutor opExec = new ClassifierOperationExecutor(namingService, rs, project);
+			return opExec.execute(createOp, operation, null);
 		}
 
 		private void setFeatureClassifier(final NamedElement feature, final Object classifier) {

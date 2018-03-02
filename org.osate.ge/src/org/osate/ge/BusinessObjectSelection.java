@@ -6,6 +6,9 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.eclipse.emf.ecore.EObject;
+import org.osate.ge.internal.services.AadlModificationService.MappedObjectModifier;
+
+import com.google.common.collect.LinkedListMultimap;
 
 public interface BusinessObjectSelection {
 	/**
@@ -39,5 +42,11 @@ public interface BusinessObjectSelection {
 	 * @param modifier
 	 */
 	<T extends EObject> void modify(Class<T> c, Consumer<T> modifier);
+
+	// TODO: Rename
+	// TODO: Clean
+	// TODO: Make internal?
+	<T extends E, E extends EObject, R> void modifyWithPreSteps(final Class<T> c, final Consumer<T> modifier,
+			final LinkedListMultimap<EObject, MappedObjectModifier<EObject, R>> objectsToModifierMap);
 
 }

@@ -6,7 +6,7 @@ import org.osate.ge.internal.services.AadlModificationService;
 
 import com.google.common.collect.LinkedListMultimap;
 
-class SimpleCreateOperation implements CreateOperation {
+public class SimpleCreateOperation implements CreateOperation {
 	// Maps from the object being modified to the modifier
 	final LinkedListMultimap<EObject, AadlModificationService.MappedObjectModifier<EObject, CreateStepResult>> stepMap = LinkedListMultimap
 			.create();
@@ -20,5 +20,9 @@ class SimpleCreateOperation implements CreateOperation {
 
 	public final boolean isEmpty() {
 		return stepMap.isEmpty();
+	}
+
+	public LinkedListMultimap<EObject, AadlModificationService.MappedObjectModifier<EObject, CreateStepResult>> getStepMap() {
+		return stepMap;
 	}
 }
