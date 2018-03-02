@@ -31,7 +31,7 @@ public class ImageHelper {
 		return getImage(eClass.getName());
 	}
 
-	public static Image createImage(final IPath imagePath) {
+	public static Image findImage(final IPath imagePath) {
 		final ImageDescriptor imageDesc = getImageDescriptor(imagePath);
 		if (imageDesc == null) {
 			return null;
@@ -48,7 +48,7 @@ public class ImageHelper {
 			return imageResource == null ? null
 					: ImageDescriptor.createFromURL(imageResource.getRawLocationURI().toURL());
 		} catch (final MalformedURLException e) {
-			throw new RuntimeException("Not a valid image path: " + imagePath);
+			throw new RuntimeException(e);
 		}
 	}
 }

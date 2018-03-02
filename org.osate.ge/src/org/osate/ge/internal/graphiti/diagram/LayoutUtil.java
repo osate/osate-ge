@@ -303,7 +303,6 @@ public class LayoutUtil {
 								// Initialize for style overrides
 								innerGa.setForeground(GraphitiUi.getGaService().manageColor(graphitiDiagram, IColorConstant.BLACK));
 								innerGa.setBackground(GraphitiUi.getGaService().manageColor(graphitiDiagram, IColorConstant.WHITE));
-								PropertyUtil.setIsStylingOutlineEnabled(innerGa, true);
 								PropertyUtil.setIsStylingChild(innerGa, true);
 								final IPath imagePath = element.getStyle().getImagePath();
 								PropertyUtil.setImage(innerGa, imagePath.toPortableString());

@@ -17,7 +17,7 @@ public class Style {
 	private final Double fontSize;
 	private final Double lineWidth;
 	private final IPath image;
-	private final Boolean showAsImage;
+	private final Boolean showAsImage; // If this is true, then image must not be null.
 	private final LineStyle lineStyle;
 	private final LabelPosition horizontalLabelPosition;
 	private final LabelPosition verticalLabelPosition;
@@ -38,6 +38,10 @@ public class Style {
 		this.horizontalLabelPosition = horizontalLabelPosition;
 		this.verticalLabelPosition = verticalLabelPosition;
 		this.primaryLabelVisible = primaryLabelVisible;
+
+		if (showAsImage == Boolean.TRUE && image == null) {
+			throw new RuntimeException("showAsImage must be false if image is not set.");
+		}
 	}
 
 	public final Color getBackgroundColor() {

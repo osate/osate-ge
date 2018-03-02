@@ -386,15 +386,8 @@ public class DiagramSerialization {
 
 		final IPath image = currentStyle.getImagePath();
 		if (image != null) {
-			final String portablePath;
-			// Check if image is in current project
-			if (image.matchingFirstSegments(project.getFullPath()) == 0) {
-				// Go up directory for iamge located in a different project
-				portablePath = ".." + image.toPortableString();
-			} else {
-				portablePath = image.removeFirstSegments(1).toPortableString();
-			}
-
+			// Get image path relative to the diagram's project
+			final String portablePath = image.makeRelativeTo(project.getFullPath()).toPortableString();
 			newElement.setImage(portablePath);
 			newElement.setShowAsImage(currentStyle.getShowAsImage());
 		}

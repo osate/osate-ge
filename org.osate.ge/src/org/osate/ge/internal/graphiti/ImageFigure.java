@@ -17,7 +17,7 @@ implements IGraphicsAlgorithmRenderer {
 	private final Image image;
 
 	public ImageFigure(final IPath imagePath) {
-		this.image = ImageHelper.createImage(imagePath);
+		this.image = ImageHelper.findImage(imagePath);
 	}
 
 	@Override
@@ -31,18 +31,31 @@ implements IGraphicsAlgorithmRenderer {
 			final ImageData originalImageData = image.getImageData();
 			final int imageWidth = originalImageData.width;
 			final int imageHeight = originalImageData.height;
+			final double imageAspectRatio = imageWidth / (double) imageHeight;
 
 			// Scaling
 			final Rectangle bounds = getBounds();
+			final double figureAspectRatio = bounds.preciseWidth() / bounds.preciseHeight();
+
 			// Find dimension used to make proportional image
-			final int minDimension = Math.min(bounds.width, bounds.height);
-			final int imageOffset = minDimension / 2;
-			final Point imagePoint = new Point(bounds.x() + bounds.width / 2 - imageOffset,
-					bounds.y() + bounds.height / 2 - imageOffset);
+			final int scaledWidth;
+			final int scaledHeight;
+			if (imageAspectRatio > figureAspectRatio) {
+				// Image will be centered vertically
+				scaledWidth = (int) bounds.width;
+				scaledHeight = (int) (bounds.width / imageAspectRatio);
+			} else {
+				// Image will be centered horizontally
+				scaledWidth = (int) (bounds.height * imageAspectRatio);
+				scaledHeight = (int) bounds.height;
+			}
+
+			final Point imagePoint = new Point(bounds.x() + (bounds.width - scaledWidth) / 2,
+					bounds.y() + (bounds.height - scaledHeight) / 2);
 
 			// Draw scaled image
 			g.drawImage(image, 0, 0, imageWidth, imageHeight, imagePoint.x(), imagePoint.y(),
-					minDimension, minDimension);
+					scaledWidth, scaledHeight);
 		} else {
 			// Fill shape white
 			g.setBackgroundColor(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));

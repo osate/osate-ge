@@ -95,7 +95,6 @@ public class AgeDiagramTypeProvider extends AbstractDiagramTypeProvider {
 
 	@Override
 	public void dispose() {
-		graphicsAlgorithmRendererFactory.close();
 		projectReferenceService.dispose();
 
 		if(context != null) {

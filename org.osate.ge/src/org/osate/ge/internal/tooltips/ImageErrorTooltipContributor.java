@@ -21,7 +21,7 @@ public class ImageErrorTooltipContributor {
 			final Style style = de.getStyle();
 			if (style != null && Boolean.TRUE.equals(style.getShowAsImage())) {
 				final IPath imagePath = style.getImagePath();
-				if (ImageHelper.createImage(imagePath) == null) {
+				if (ImageHelper.findImage(imagePath) == null) {
 					final Label lbl = new Label(parent, SWT.NONE);
 					lbl.setText("Unable to load image: " + imagePath.toPortableString());
 				}
