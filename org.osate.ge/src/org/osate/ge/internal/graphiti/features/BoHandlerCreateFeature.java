@@ -172,6 +172,9 @@ public class BoHandlerCreateFeature extends AbstractCreateFeature implements Cat
 							} else {
 								position = null;
 							}
+
+							System.err.println("TEST " + newRef);
+
 							diagramUpdater.addToNextUpdate(containerNode, newRef,
 									new FutureElementInfo(manual, position));
 						}

@@ -2,17 +2,11 @@ package org.osate.ge.internal.services.impl;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -59,8 +53,6 @@ import org.osate.ge.internal.services.ModelChangeNotifier.Lock;
 import org.osate.ge.internal.ui.xtext.AgeXtextUtil;
 import org.osate.ge.internal.util.Log;
 
-import com.google.common.collect.LinkedListMultimap;
-
 public class DefaultAadlModificationService implements AadlModificationService {
 	public static class ContextFunction extends SimpleServiceContextFunction<AadlModificationService> {
 		@Override
@@ -77,37 +69,17 @@ public class DefaultAadlModificationService implements AadlModificationService {
 	}
 
 	@Override
-	public <I, E extends EObject, R> List<R> modify(final List<I> objs, final Function<I, E> objToBoToModifyMapper,
-			final MappedObjectModifier<E, R> modifier) {
-		Objects.requireNonNull(objs, "objs must not be null");
-		Objects.requireNonNull(objToBoToModifyMapper, "objToBoToModifyMapper must not be null");
-		Objects.requireNonNull(modifier, "modifier must not be null");
-
-		// Create a map containing a mapping from each specified object to the specified modifier so that a common modify() implementation can be used.
-		final LinkedListMultimap<I, MappedObjectModifier<E, R>> objectsToModifierMap = LinkedListMultimap.create(objs.size());
-		for (final I obj : objs) {
-			objectsToModifierMap.put(obj, modifier);
-		}
-
-		return modify(objectsToModifierMap, objToBoToModifyMapper, results -> {
-		});
-	}
-
-	@Override
-	public <I, E extends EObject, R> List<R> modify(
-			LinkedListMultimap<I, MappedObjectModifier<E, R>> objectsToModifierMap,
-			Function<I, E> objToBoToModifyMapper, final Consumer<List<R>> resultConsumer) {
-		Objects.requireNonNull(objectsToModifierMap, "objectsToModifierMap must not be null");
-		Objects.requireNonNull(objToBoToModifyMapper, "objToBoToModifyMapper must not be null");
-
+	public <I, E extends EObject> void modify(final List<Modification<I, E>> modifierArgs,
+			final ModificationPostprocessor postProcessor) {
 		class ModifyRunnable implements Runnable {
-			public List<R> result;
-
 			@Override
 			public void run() {
 				try (Lock lock = modelChangeNotifier.lock()) {
-					result = doModification(objectsToModifierMap, objToBoToModifyMapper);
-					resultConsumer.accept(result);
+					boolean allSuccessful = doModification(modifierArgs);
+
+					if (postProcessor != null) {
+						postProcessor.modificationCompleted(allSuccessful);
+					}
 				}
 			}
 		}
@@ -127,31 +99,22 @@ public class DefaultAadlModificationService implements AadlModificationService {
 			Log.info("Executing modification after switching to display thread");
 			Display.getDefault().syncExec(modifyRunnable);
 		}
-
-		return modifyRunnable.result;
 	}
 
 	// Assumes that the modification notifier is already locked
-	private <I, E extends EObject, R> List<R> doModification(
-			LinkedListMultimap<I, MappedObjectModifier<E, R>> inputObjectsToModifierMap,
-			final Function<I, E> objToBoToModifyMapper) {
-		final List<R> result = new ArrayList<>(inputObjectsToModifierMap.size());
+	private <I, E extends EObject> boolean doModification(final List<Modification<I, E>> modifierArgs) {
 		final Set<IProject> projectsToBuild = new HashSet<>();
 
+		boolean allSuccessful = true;
+
 		// Iterate over the input objects
-		for (final Entry<I, MappedObjectModifier<E, R>> objToModifierEntry : inputObjectsToModifierMap.entries()) {
-			final I obj = objToModifierEntry.getKey();
-			final MappedObjectModifier<E, R> modifier = objToModifierEntry.getValue();
+		// TODO: Rename field
+		for (final Modification<I, E> modificationArg : modifierArgs) {
+			final I obj = modificationArg.getObject();
 
 			// Determine the object to modify
-			final E bo = objToBoToModifyMapper.apply(obj);
+			final E bo = modificationArg.getObjectToBoToModifyMapper().apply(obj);
 
-			// Create a modifier for it which will call the mapped object modifier
-			final Modifier<E, R> innerModifier = (resource, boToModify) -> {
-				return modifier.modify(resource, boToModify, obj);
-			};
-
-			final R modifierResult;
 			if (!(bo.eResource() instanceof XtextResource)) {
 				throw new RuntimeException("Unexpected case. Resource is not an XtextResource");
 			}
@@ -160,11 +123,12 @@ public class DefaultAadlModificationService implements AadlModificationService {
 			final Object root = bo.eResource() == null ? null : bo.eResource().getContents().get(0);
 			final IXtextDocument doc = AgeXtextUtil
 					.getDocumentByRootElement(root instanceof NamedElement ? (NamedElement) root : null);
+			final ModifySafelyResults modifySafelyResult;
 			if (doc == null) {
 				// Modify the EMF resource directly
 				final XtextResource res = (XtextResource) bo.eResource();
-				final ModifySafelyResults<R> modifySafelyResult = modifySafely(res, bo, innerModifier, true);
-				modifierResult = modifySafelyResult.modifierResult;
+				modifySafelyResult = modifySafely(res, obj, bo, modificationArg.getModifier(),
+						true);
 
 				if (modifySafelyResult.modificationSuccessful) {
 					// Save the model
@@ -211,26 +175,27 @@ public class DefaultAadlModificationService implements AadlModificationService {
 				// may not have unique URI's
 				final EObject objectToModify = parsedAnnexRoot == null ? bo : parsedAnnexRoot.eContainer();
 				final URI modificationObjectUri = EcoreUtil.getURI(objectToModify);
-				final ModifySafelyResults<R> modifySafelyResult = doc
-						.modify(new IUnitOfWork<ModifySafelyResults<R>, XtextResource>() {
+				modifySafelyResult = doc
+						.modify(new IUnitOfWork<ModifySafelyResults, XtextResource>() {
 							@SuppressWarnings("unchecked")
 							@Override
-							public ModifySafelyResults<R> exec(final XtextResource res) throws Exception {
+							public ModifySafelyResults exec(final XtextResource res) throws Exception {
 								final EObject objectToModify = res.getResourceSet().getEObject(modificationObjectUri,
 										true);
 								if (objectToModify == null) {
-									return new ModifySafelyResults<R>(false, null);
+									return new ModifySafelyResults(false);
 								}
 
 								if (parsedAnnexRoot != null && (objectToModify instanceof DefaultAnnexLibrary
 										|| objectToModify instanceof DefaultAnnexSubclause)) {
-									return modifyAnnexInXtextDocument(res, objectToModify, bo, innerModifier);
+									return modifyAnnexInXtextDocument(res, objectToModify, obj, bo,
+											modificationArg.getModifier());
 								} else {
-									return modifySafely(res, (E) objectToModify, innerModifier, false);
+									return modifySafely(res, obj, (E) objectToModify, modificationArg.getModifier(),
+											false);
 								}
 							}
 						});
-				modifierResult = modifySafelyResult.modifierResult;
 
 				// Call the after modification callback
 				if (modifySafelyResult.modificationSuccessful) {
@@ -241,7 +206,7 @@ public class DefaultAadlModificationService implements AadlModificationService {
 				}
 			}
 
-			result.add(modifierResult);
+			allSuccessful &= modifySafelyResult.modificationSuccessful;
 		}
 
 		// Build projects before unlocking. This will cause the post build notifications to be sent out before the lock is released.
@@ -255,20 +220,11 @@ public class DefaultAadlModificationService implements AadlModificationService {
 			}
 		}
 
-		return result;
+		return allSuccessful;
 	}
 
-	@Override
-	public <E extends EObject, R> R modify(final E bo, final Modifier<E, R> modifier) {
-		if(bo == null) {
-			return null;
-		}
-
-		return modify(Collections.singletonList(bo), Function.identity(),
-				(Resource resource, E boToModify, Object obj) -> modifier.modify(resource, boToModify)).get(0);
-	}
-
-	private <E extends EObject, R> ModifySafelyResults<R> modifyAnnexInXtextDocument(final XtextResource resource, final EObject defaultAnnexElement, final E userObject, final Modifier<E, R> modifier) {
+	private <I, E extends EObject> ModifySafelyResults modifyAnnexInXtextDocument(final XtextResource resource,
+			final EObject defaultAnnexElement, final I obj, final E userObject, final NewModifier<I, E> modifier) {
 		// Make a copy of the resource
 		final EObject parsedAnnexElement = getParsedAnnexElement(defaultAnnexElement);
 		final ResourceSet tmpResourceSet = new ResourceSetImpl();
@@ -287,9 +243,9 @@ public class DefaultAadlModificationService implements AadlModificationService {
 		final E clonedUserObject = (E)tmpClonedObject;
 
 		// Modify the annex by modifying the cloned object, unparsing, and then updating the source text of the original default annex element.
-		return modifySafely(resource, defaultAnnexElement, (resource1, defaultAnnexElement1) -> {
+		return modifySafely(resource, obj, defaultAnnexElement, (defaultAnnexElement1, obj2) -> {
 			// Modify the cloned object
-			final R result = modifier.modify(clonedUserObject.eResource(), clonedUserObject);
+			modifier.modify(clonedUserObject, obj);
 
 			// Unparse the annex text of the cloned object and update the Xtext document
 			if(parsedAnnexRootClone instanceof AnnexLibrary) {
@@ -305,8 +261,6 @@ public class DefaultAadlModificationService implements AadlModificationService {
 			} else {
 				throw new RuntimeException("Unhandled case, parsedAnnexRoot is of type: " + parsedAnnexRootClone.getClass());
 			}
-
-			return result;
 		}, false);
 	}
 
@@ -375,14 +329,12 @@ public class DefaultAadlModificationService implements AadlModificationService {
 	 *
 	 * @param <R>
 	 */
-	private static class ModifySafelyResults<R> {
-		public ModifySafelyResults(final boolean modificationSuccessful, final R modifierResult) {
+	private static class ModifySafelyResults {
+		public ModifySafelyResults(final boolean modificationSuccessful) {
 			this.modificationSuccessful = modificationSuccessful;
-			this.modifierResult = modifierResult;
 		}
 
 		public final boolean modificationSuccessful;
-		public final R modifierResult;
 	}
 
 	/**
@@ -394,8 +346,8 @@ public class DefaultAadlModificationService implements AadlModificationService {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	private <E extends EObject, R> ModifySafelyResults<R> modifySafely(final XtextResource resource, final E element,
-			final Modifier<E, R> modifier, final boolean testSerialization) {
+	private <I, E extends EObject> ModifySafelyResults modifySafely(final XtextResource resource, final I obj, final E element,
+			final NewModifier<I, E> modifier, final boolean testSerialization) {
 		if(resource.getContents().size() < 1) {
 			return null;
 		}
@@ -404,62 +356,41 @@ public class DefaultAadlModificationService implements AadlModificationService {
 				"Unable to retrieve resource set");
 		TransactionalEditingDomain domain = null;
 
-		R result = null;
 		boolean modificationSuccessful = false;
-		try {
-			domain = TransactionalEditingDomain.Factory.INSTANCE.getEditingDomain(resourceSet);
+		domain = TransactionalEditingDomain.Factory.INSTANCE.getEditingDomain(resourceSet);
 
-			final Command undoCommand = domain == null ? null : domain.getCommandStack().getUndoCommand();
-			if (domain == null) {
-				// Perform the modification without a transaction
-				result = modifier.modify(resource, element);
-			} else {
-				// Make modification in a transaction
-				final RecordingCommand cmd = new RecordingCommand(domain) {
-					private R modifierResult;
-
-					@Override
-					protected void doExecute() {
-						modifierResult = modifier.modify(resource, element);
-					}
-
-					@Override
-					public Collection<?> getResult() {
-						return Collections.singletonList(modifierResult);
-					}
-
-				};
-				domain.getCommandStack().execute(cmd);
-
-				final Object[] cmdResult = cmd.getResult().toArray();
-				if (cmdResult.length > 0) {
-					result = (R) cmdResult[0];
+		final Command undoCommand = domain == null ? null : domain.getCommandStack().getUndoCommand();
+		if (domain == null) {
+			// Perform the modification without a transaction
+			modifier.modify(element, obj);
+		} else {
+			// Make modification in a transaction
+			final RecordingCommand cmd = new RecordingCommand(domain) {
+				@Override
+				protected void doExecute() {
+					modifier.modify(element, obj);
 				}
-			}
-
-			// Try to serialize the resource. In some cases serialization can fail and leave a corrupt model if we are editing without an xtext document
-			// The real serialization will occur later.
-			if(testSerialization) {
-				final String serializedSrc = resource.getSerializer().serialize(resource.getContents().get(0));
-				modificationSuccessful = serializedSrc != null && !serializedSrc.trim().isEmpty();
-
-				if (!modificationSuccessful) {
-					while (domain != null && domain.getCommandStack().canUndo()
-							&& domain.getCommandStack().getUndoCommand() != undoCommand) {
-						domain.getCommandStack().undo();
-					}
-					result = null;
-				}
-			} else {
-				// Mark the modification as successful
-				modificationSuccessful = true;
-			}
-		} finally {
-			if (!modificationSuccessful) {
-				result = null;
-			}
+			};
+			domain.getCommandStack().execute(cmd);
 		}
 
-		return new ModifySafelyResults<R>(modificationSuccessful, result);
+		// Try to serialize the resource. In some cases serialization can fail and leave a corrupt model if we are editing without an xtext document
+		// The real serialization will occur later.
+		if (testSerialization) {
+			final String serializedSrc = resource.getSerializer().serialize(resource.getContents().get(0));
+			modificationSuccessful = serializedSrc != null && !serializedSrc.trim().isEmpty();
+
+			if (!modificationSuccessful) {
+				while (domain != null && domain.getCommandStack().canUndo()
+						&& domain.getCommandStack().getUndoCommand() != undoCommand) {
+					domain.getCommandStack().undo();
+				}
+			}
+		} else {
+			// Mark the modification as successful
+			modificationSuccessful = true;
+		}
+
+		return new ModifySafelyResults(modificationSuccessful);
 	}
 }
