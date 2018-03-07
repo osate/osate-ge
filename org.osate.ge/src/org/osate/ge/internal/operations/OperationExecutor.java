@@ -68,6 +68,7 @@ public class OperationExecutor {
 
 		resultsProcessor.processResults(allResults);
 	}
+
 	/**
 	 *
 	 * @param step is the step to process. The steps and all subsequent steps will be processed.
@@ -154,7 +155,10 @@ public class OperationExecutor {
 		final ModificationStepModifier modifier = new ModificationStepModifier();
 
 		final AadlModificationService.Modification<TagType, BusinessObjectType> modification = AadlModificationService.Modification
-				.create(modificationStep.getTag(), modificationStep.getTagToBusinessObjectMapper(), modifier);
+				.create(modificationStep.getTag(),
+						(tag) -> modificationStep.getBusinessObjectProvider().getBusinessObject(tag,
+								prevResultSupplier.get()),
+						modifier);
 		modifications.add(modification);
 		return () -> modifier.result;
 	}
@@ -165,26 +169,25 @@ public class OperationExecutor {
 		final OperationBuilder<Integer> b = rootOpBuilder.transform(arg -> StepResultBuilder.create(5).build());
 
 		b.transform(pr -> StepResultBuilder.create(pr.getUserValue() + 5).build())
-		.modify(5, tag -> null, (tag, boToModify, prevResult) -> {
+		.modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
 			System.out.println("M1-A: " + prevResult.getUserValue());
 			return StepResultBuilder.create(prevResult.getUserValue() + 5).build();
-		}).modify(5, tag -> null, (tag, boToModify, prevResult) -> {
+		}).modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
 			System.out.println("M2-A: " + prevResult.getUserValue());
 			return StepResultBuilder.create(prevResult.getUserValue() + 5).build();
 		});
 
 		b.transform(pr -> StepResultBuilder.create(pr.getUserValue() + 6).build())
-		.modify(5, tag -> null, (tag, boToModify, prevResult) -> {
+		.modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
 			System.out.println("M1-B: " + prevResult.getUserValue());
 			return StepResultBuilder.create(prevResult.getUserValue() + 6).build();
-		}).modify(5, tag -> null, (tag, boToModify, prevResult) -> {
+		}).modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
 			System.out.println("M2-B: " + prevResult.getUserValue());
 			return StepResultBuilder.create(prevResult.getUserValue() + 6).build();
 		}).transform(pr -> {
 			System.out.println("T3-B: " + pr.getUserValue());
 			return null;
 		});
-
 
 		final Step<?> firstStep = rootOpBuilder.build();
 

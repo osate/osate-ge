@@ -21,7 +21,7 @@ public interface AadlModificationService {
 	 */
 	static class Modification<TagType, BusinessObjectType extends EObject> {
 		/**
-		 * Value used by mapper to determine the business object to modify.
+		 * Value used by mapper to determine the business object to modify. Optional.
 		 */
 		private final TagType tag;
 
@@ -50,7 +50,7 @@ public interface AadlModificationService {
 
 		private Modification(final TagType tag, final Function<TagType, BusinessObjectType> tagToBusinessObjectMapper,
 				final Modifier<TagType, BusinessObjectType> modifier) {
-			this.tag = Objects.requireNonNull(tag, "tag must not be null");
+			this.tag = tag;
 			this.tagToBusinessObjectMapper = Objects.requireNonNull(tagToBusinessObjectMapper,
 					"tagToBusinessObjectMapper must not be null");
 			this.modifier = Objects.requireNonNull(modifier, "modifier must not be null");

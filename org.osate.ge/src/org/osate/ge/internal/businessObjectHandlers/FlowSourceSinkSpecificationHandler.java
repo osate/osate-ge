@@ -147,7 +147,7 @@ public class FlowSourceSinkSpecificationHandler extends FlowSpecificationHandler
 			return;
 		}
 
-		createOp.modify(selectedClassifier, tag -> tag, (tag, ct, prevResult) -> {
+		createOp.transform((prevResult) -> StepResultBuilder.build(selectedClassifier)).modifyModel(pv -> pv, ct -> {
 			final FlowSpecification fs = ct.createOwnedFlowSpecification();
 			fs.setKind(flowKind);
 			fs.setName(getNewFlowSpecificationName(ct, namingService));

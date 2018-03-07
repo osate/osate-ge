@@ -1,7 +1,10 @@
 package org.osate.ge.internal.businessObjectHandlers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -11,13 +14,67 @@ import org.osate.aadl2.Classifier;
 import org.osate.aadl2.ComponentClassifier;
 import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.ComponentType;
+import org.osate.aadl2.Element;
 import org.osate.aadl2.FeatureGroup;
 import org.osate.aadl2.FeatureGroupType;
 import org.osate.aadl2.NamedElement;
 import org.osate.aadl2.Subcomponent;
 import org.osate.ge.internal.ui.dialogs.ElementSelectionDialog;
+import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.StepResultBuilder;
 
 public class ClassifierEditingUtil {
+	public static final OperationBuilder<ComponentImplementation> modifyComponentImplementation(
+			final OperationBuilder<?> operation,
+			final Element targetBo, final Predicate<? super ComponentImplementation> filter) {
+		return operation.transform(prevResult -> {
+			if (targetBo instanceof Subcomponent) {
+				final Subcomponent tmpSc = (Subcomponent) targetBo;
+				if (!(tmpSc.getClassifier() instanceof ComponentImplementation)) {
+					MessageDialog.openError(Display.getDefault().getActiveShell(), "Component Implementation Not Set",
+							"The subcomponent '" + tmpSc.getQualifiedName()
+							+ "' does not have a component implementation set. Set a component implementation before creating a subcomponent.");
+					// return;
+					// TODO
+				}
+			}
+
+			// Determine which classifier should own the new element
+			final ComponentImplementation selectedClassifier = (ComponentImplementation) getClassifierToModify(
+					getPotentialComponentImplementations(targetBo, filter));
+			if (selectedClassifier == null) {
+//			return;
+				// TODO
+			}
+
+			return StepResultBuilder.create(selectedClassifier).build(); // TODO: Result... abort, etc
+		});
+	}
+
+	public static List<ComponentImplementation> getPotentialComponentImplementations(final Element bo,
+			final Predicate<? super ComponentImplementation> filter) {
+		if (bo instanceof ComponentImplementation) {
+			final ComponentImplementation ci = (ComponentImplementation) bo;
+			if (filter.test(ci)) {
+				return Collections.singletonList(ci);
+			} else {
+				return Collections.emptyList();
+			}
+		} else if (bo instanceof Subcomponent) {
+			final ComponentImplementation ci = ((Subcomponent) bo).getComponentImplementation();
+			if (ci == null) {
+				return Collections.emptyList();
+			} else {
+				return ci.getSelfPlusAllExtended().stream()
+						.filter(tmp -> tmp instanceof ComponentImplementation
+								&& filter.test(ci))
+						.map(ComponentImplementation.class::cast).collect(Collectors.toList());
+			}
+		} else {
+			return Collections.emptyList();
+		}
+	}
+
 	/**
 	 * Returns a list of component types and feature group types for editing based on a specified business object.
 	 * If the specified object is a component type, only it is returned.
@@ -45,8 +102,7 @@ public class ClassifierEditingUtil {
 		return results;
 	}
 
-	private static void addSelfAndExtendedClassifierTypes(final Classifier c,
-			final List<Classifier> results) {
+	private static void addSelfAndExtendedClassifierTypes(final Classifier c, final List<Classifier> results) {
 		if (c != null) {
 			for (final Classifier tmpClassifier : c.getSelfPlusAllExtended()) {
 				if (tmpClassifier instanceof ComponentType || tmpClassifier instanceof FeatureGroupType) {
@@ -73,8 +129,8 @@ public class ClassifierEditingUtil {
 			final ComponentClassifier subcomponentClassifier = ((Subcomponent) bo).getClassifier();
 			addComponentClassifierAndExtended(subcomponentClassifier, results);
 			if (subcomponentClassifier instanceof ComponentImplementation) {
-				addComponentClassifierAndExtended(
-						((ComponentImplementation) subcomponentClassifier).getType(), results);
+				addComponentClassifierAndExtended(((ComponentImplementation) subcomponentClassifier).getType(),
+						results);
 			}
 		}
 
@@ -157,8 +213,8 @@ public class ClassifierEditingUtil {
 			final String targetDescription = bo instanceof NamedElement
 					? ("The element '" + ((NamedElement) bo).getQualifiedName() + "'")
 							: "The target element";
-					MessageDialog.openError(Display.getDefault().getActiveShell(), "Classifier Not Set", targetDescription
-							+ " does not have a classifier. " + secondaryMsg);
+					MessageDialog.openError(Display.getDefault().getActiveShell(), "Classifier Not Set",
+							targetDescription + " does not have a classifier. " + secondaryMsg);
 		}
 
 		return showMsg;

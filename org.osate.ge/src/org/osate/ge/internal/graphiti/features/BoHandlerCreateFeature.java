@@ -129,7 +129,7 @@ public class BoHandlerCreateFeature extends AbstractCreateFeature implements Cat
 				final DiagramNode ownerNode = getOwnerDiagramNode(targetNode);
 				final EObject boToModify = getBusinessObjectToModify(targetNode, ownerNode.getBusinessObject());
 
-				rootOpBuilder.modify(boToModify, tag -> tag, (tag, boToModify1, prevResult) -> {
+				rootOpBuilder.modifyModel(boToModify, (tag, prevResult) -> tag, (tag, boToModify1, prevResult) -> {
 					eclipseCtx.set(Names.MODIFY_BO, boToModify1);
 					final Object newBo1 = ContextInjectionFactory.invoke(handler, Create.class, eclipseCtx);
 					return StepResultBuilder.create().showNewBusinessObject(ownerNode, newBo1).build();

@@ -1,9 +1,7 @@
 package org.osate.ge.internal.businessObjectHandlers;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.inject.Named;
 
@@ -146,6 +144,11 @@ public class SubcomponentHandler {
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass subcomponentType,
 			final QueryService queryService, final NamingService namingService) {
 
+		ClassifierEditingUtil.modifyComponentImplementation(createOp, targetBo,
+				ci -> AadlSubcomponentUtil.canContainSubcomponentType(ci, subcomponentType));
+
+		// TODO: Remove this prompting when no longer needed
+
 		if (targetBo instanceof Subcomponent) {
 			final Subcomponent tmpSc = (Subcomponent) targetBo;
 			if (!(tmpSc.getClassifier() instanceof ComponentImplementation)) {
@@ -163,7 +166,8 @@ public class SubcomponentHandler {
 		}
 
 		// Create the subcomponent
-		createOp.modify(selectedClassifier, tag -> tag, (tag, owner, prevResult) -> {
+		createOp.transform((prevResult) -> StepResultBuilder.build(selectedClassifier))
+		.modifyModel(pv -> pv, owner -> {
 			final String name = namingService.buildUniqueIdentifier(owner, "new_subcomponent");
 			final Subcomponent sc = AadlSubcomponentUtil.createSubcomponent(owner, subcomponentType);
 			sc.setName(name);
@@ -177,27 +181,8 @@ public class SubcomponentHandler {
 
 	private static List<ComponentImplementation> getPotentialOwners(final Element bo,
 			final EClass subcomponentType) {
-		if (bo instanceof ComponentImplementation) {
-			final ComponentImplementation ci = (ComponentImplementation) bo;
-			if (AadlSubcomponentUtil.canContainSubcomponentType(ci, subcomponentType)) {
-				return Collections.singletonList(ci);
-			} else {
-				return Collections.emptyList();
-			}
-		} else if (bo instanceof Subcomponent) {
-			final ComponentImplementation ci = ((Subcomponent) bo).getComponentImplementation();
-			if (ci == null) {
-				return Collections.emptyList();
-			} else {
-				return ci.getSelfPlusAllExtended().stream()
-						.filter(tmp -> tmp instanceof ComponentImplementation
-								&& AadlSubcomponentUtil.canContainSubcomponentType(ci, subcomponentType))
-						.map(ComponentImplementation.class::cast)
-						.collect(Collectors.toList());
-			}
-		} else {
-			return Collections.emptyList();
-		}
+		return ClassifierEditingUtil.getPotentialComponentImplementations(bo,
+				ci -> AadlSubcomponentUtil.canContainSubcomponentType(ci, subcomponentType));
 	}
 
 	// Renaming

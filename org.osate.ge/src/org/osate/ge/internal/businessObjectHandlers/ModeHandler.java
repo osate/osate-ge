@@ -115,7 +115,7 @@ public class ModeHandler {
 					return;
 				}
 
-				createOp.modify(selectedClassifier, tag -> tag, (tag, boToModify, prevResult) -> {
+				createOp.transform((prevResult) -> StepResultBuilder.build(selectedClassifier)).modifyModel(pv -> pv, boToModify -> {
 					final String newModeName = namingService.buildUniqueIdentifier(boToModify, "new_mode");
 
 					final Mode newMode = boToModify.createOwnedMode();

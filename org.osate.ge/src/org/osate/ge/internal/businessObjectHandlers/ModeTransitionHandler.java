@@ -156,7 +156,7 @@ public class ModeTransitionHandler {
 			return;
 		}
 
-		createOp.modify(selectedClassifier, tag -> tag, (tag, cc, prevResult) -> {
+		createOp.transform((prevResult) -> StepResultBuilder.build(selectedClassifier)).modifyModel(pv -> pv, cc -> {
 			// Determine the name for the new mode transition
 			final String newElementName = namingService.buildUniqueIdentifier(cc, "new_transition");
 

@@ -126,7 +126,7 @@ public class FeatureHandler {
 			}
 
 			// Create the feature
-			createOp.modify(selectedClassifier, tag -> tag, (tag, owner, prevResult) -> {
+			createOp.transform((prevResult) -> StepResultBuilder.build(selectedClassifier)).modifyModel(pv -> pv, owner -> {
 				final String newFeatureName = namingService.buildUniqueIdentifier(owner, "new_feature");
 
 				final NamedElement newFeature = AadlFeatureUtil.createFeature(owner, featureType);

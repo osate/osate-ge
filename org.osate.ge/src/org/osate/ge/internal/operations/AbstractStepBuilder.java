@@ -2,7 +2,6 @@ package org.osate.ge.internal.operations;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import org.eclipse.emf.ecore.EObject;
 import org.osate.ge.operations.Modifier;
@@ -16,10 +15,10 @@ abstract class AbstractStepBuilder<PrevResultUserType> implements OperationBuild
 	private final List<AbstractStepBuilder<?>> nextStepBuilders = new ArrayList<>();
 
 	@Override
-	public <TagType, BusinessObjectType extends EObject, ResultUserType> OperationBuilder<ResultUserType> modify(final TagType tag,
-			final Function<TagType, BusinessObjectType> tagToBoMapper,
+	public <TagType, BusinessObjectType extends EObject, ResultUserType> OperationBuilder<ResultUserType> modifyModel(final TagType tag,
+			BusinessObjectProvider<TagType, BusinessObjectType, PrevResultUserType> boProvider,
 			final Modifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modifier) {
-		return addNextStepBuilder(new ModificationStepBuilder<>(tag, tagToBoMapper, modifier));
+		return addNextStepBuilder(new ModificationStepBuilder<>(tag, boProvider, modifier));
 	}
 
 	@Override

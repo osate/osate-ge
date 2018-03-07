@@ -1,24 +1,23 @@
 package org.osate.ge.internal.operations;
 
 import java.util.Objects;
-import java.util.function.Function;
 
 import org.eclipse.emf.ecore.EObject;
 import org.osate.ge.operations.Modifier;
+import org.osate.ge.operations.OperationBuilder.BusinessObjectProvider;
 
 class ModificationStep<TagType, BusinessObjectType extends EObject, PrevResultUserType, ResultUserType>
 extends AbstractStep<ResultUserType> {
 	private final TagType tag;
-	private final Function<TagType, BusinessObjectType> tagToBoMapper;
+	private final BusinessObjectProvider<TagType, BusinessObjectType, PrevResultUserType> boProvider;
 	private final Modifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modifier;
 
 	public ModificationStep(final Step<?> nextStep, final TagType tag,
-			final Function<TagType, BusinessObjectType> tagToBoMapper,
+			final BusinessObjectProvider<TagType, BusinessObjectType, PrevResultUserType> boProvider,
 			final Modifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modifier) {
 		super(nextStep);
-		this.tag = Objects.requireNonNull(tag, "tag must not be null");
-		this.tagToBoMapper = Objects.requireNonNull(tagToBoMapper,
-				"tagToBoMapper must not be null");
+		this.tag = tag;
+		this.boProvider = Objects.requireNonNull(boProvider, "boProvider must not be null");
 		this.modifier = Objects.requireNonNull(modifier, "modifier must not be null");
 	}
 
@@ -26,8 +25,8 @@ extends AbstractStep<ResultUserType> {
 		return tag;
 	}
 
-	public final Function<TagType, BusinessObjectType> getTagToBusinessObjectMapper() {
-		return tagToBoMapper;
+	public final BusinessObjectProvider<TagType, BusinessObjectType, PrevResultUserType> getBusinessObjectProvider() {
+		return boProvider;
 	}
 
 	public final Modifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> getModifier() {

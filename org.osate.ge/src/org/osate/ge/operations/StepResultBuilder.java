@@ -39,4 +39,8 @@ public class StepResultBuilder<UserValueType> {
 	public StepResult<UserValueType> build() {
 		return new DefaultStepResult<>(userValue, ImmutableMultimap.copyOf(containerToBoToShowMap));
 	}
+
+	public static <UserValueType> StepResult<UserValueType> build(final UserValueType userValue) {
+		return create(userValue).build();
+	}
 }

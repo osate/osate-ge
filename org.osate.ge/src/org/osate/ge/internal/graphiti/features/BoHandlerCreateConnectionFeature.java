@@ -154,8 +154,8 @@ public class BoHandlerCreateConnectionFeature extends AbstractCreateConnectionFe
 				}
 
 				final DiagramNode ownerNode = (DiagramNode) ownerBoc;
-
-				rootOpBuilder.modify((EObject) boToModify, tag -> tag, (tag, ownerBo, prevResult) -> {
+				rootOpBuilder.modifyModel((EObject) boToModify, (tag, prevResult) -> tag,
+						(tag, ownerBo, prevResult) -> {
 					eclipseCtx.set(Names.MODIFY_BO, ownerBo);
 					final Object newBo = ContextInjectionFactory.invoke(handler, Create.class, eclipseCtx, null);
 					return StepResultBuilder.create().showNewBusinessObject(ownerNode, newBo).build();

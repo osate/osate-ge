@@ -261,7 +261,7 @@ public class ConnectionHandler {
 		}
 
 		// Create the subcomponent
-		createOp.modify(selectedClassifier, tag -> tag, (tag, owner, prevResult) -> {
+		createOp.transform((prevResult) -> StepResultBuilder.build(selectedClassifier)).modifyModel(pv -> pv, owner -> {
 			// Create the appropriate type of connection object
 			final org.osate.aadl2.Connection newAadlConnection = AadlConnectionUtil.createConnection(owner,
 					connectionType);

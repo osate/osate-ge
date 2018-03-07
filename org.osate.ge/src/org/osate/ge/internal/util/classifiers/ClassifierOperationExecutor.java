@@ -77,7 +77,7 @@ public class ClassifierOperationExecutor {
 			final PackageSection unmodifiableSection = classifierCreationHelper
 					.getResolvedPublicSection(part.getSelectedPackage());
 
-			return operation.modify(unmodifiableSection, tag -> tag, (tag, section, prevResult) -> {
+			return operation.modifyModel(unmodifiableSection, (tag, prevResult) -> tag, (tag, section, prevResult) -> {
 				// Create the new classifier
 				final Classifier newClassifier = section.createOwnedClassifier(creationEClass);
 
