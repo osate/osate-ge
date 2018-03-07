@@ -1,23 +1,42 @@
 package org.osate.ge.operations;
 
+import java.util.Objects;
+
+import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.internal.operations.DefaultStepResult;
 
-// TODO: is a builder appropriate?
-public class StepResultBuilder<UserValue> {
-	private UserValue userValue;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
 
-	public StepResultBuilder(final UserValue userValue) {
+public class StepResultBuilder<UserValueType> {
+	private UserValueType userValue;
+	private Multimap<BusinessObjectContext, Object> containerToBoToShowMap = ArrayListMultimap.create();
+
+	private StepResultBuilder(final UserValueType userValue) {
 		this.userValue = userValue;
+	}
+
+	// TODO: Rename
+	public StepResultBuilder<UserValueType> showNewBusinessObject(final BusinessObjectContext container,
+			final Object bo) {
+		Objects.requireNonNull(container, "container must not be null");
+		Objects.requireNonNull(bo, "bo must not be null");
+		containerToBoToShowMap.put(container, bo);
+		return this;
 	}
 
 	public static <UserValue> StepResultBuilder<UserValue> create(final UserValue userValue) {
 		return new StepResultBuilder<>(userValue);
 	}
-	// BO
 
-	// Add to container
+	public static StepResultBuilder<Void> create() {
+		return new StepResultBuilder<>(null);
+	}
 
-	public StepResult<UserValue> build() {
-		return new DefaultStepResult<>(userValue);
+	// TODO: Methods to provide hints to add to container. Support multiple values per step.
+
+	public StepResult<UserValueType> build() {
+		return new DefaultStepResult<>(userValue, ImmutableMultimap.copyOf(containerToBoToShowMap));
 	}
 }

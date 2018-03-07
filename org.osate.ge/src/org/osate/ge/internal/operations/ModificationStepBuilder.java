@@ -6,22 +6,22 @@ import java.util.function.Function;
 import org.eclipse.emf.ecore.EObject;
 import org.osate.ge.operations.Modifier;
 
-class ModificationStepBuilder<I, E extends EObject, PrevReturnType, ReturnType>
-extends AbstractOperationBuilder<ReturnType> {
-	private final I obj;
-	private final Function<I, E> objToBoToModifyMapper;
-	private final Modifier<E, PrevReturnType, ReturnType> modifier;
+class ModificationStepBuilder<TagType, BusinessObjectType extends EObject, PrevResultUserType, ResultUserType>
+extends AbstractStepBuilder<ResultUserType> {
+	private final TagType tag;
+	private final Function<TagType, BusinessObjectType> tagToBoMapper;
+	private final Modifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modifier;
 
-	public ModificationStepBuilder(final I obj, final Function<I, E> objToBoToModifyMapper,
-			final Modifier<E, PrevReturnType, ReturnType> modifier) {
-		this.obj = Objects.requireNonNull(obj, "obj must not be null");
-		this.objToBoToModifyMapper = Objects.requireNonNull(objToBoToModifyMapper,
-				"objToBoToModifyMapper must not be null");
+	public ModificationStepBuilder(final TagType tag, final Function<TagType, BusinessObjectType> tagToBoMapper,
+			final Modifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modifier) {
+		this.tag = Objects.requireNonNull(tag, "tag must not be null");
+		this.tagToBoMapper = Objects.requireNonNull(tagToBoMapper,
+				"tagToBoMapper must not be null");
 		this.modifier = Objects.requireNonNull(modifier, "modifier must not be null");
 	}
 
 	@Override
-	protected Step buildThisStep(final Step nextStep) {
-		return new ModificationStep<>(nextStep, obj, objToBoToModifyMapper, modifier);
+	protected Step<?> buildThisStep(final Step<?> nextStep) {
+		return new ModificationStep<>(nextStep, tag, tagToBoMapper, modifier);
 	}
 }

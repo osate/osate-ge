@@ -69,7 +69,7 @@ public class DefaultAadlModificationService implements AadlModificationService {
 	}
 
 	@Override
-	public <TagType, BusinessObjectType extends EObject> void modify(final List<Modification<TagType, BusinessObjectType>> modifications,
+	public void modify(final List<? extends Modification<?, ?>> modifications,
 			final ModificationPostprocessor postProcessor) {
 		class ModifyRunnable implements Runnable {
 			@Override
@@ -102,107 +102,14 @@ public class DefaultAadlModificationService implements AadlModificationService {
 	}
 
 	// Assumes that the modification notifier is already locked
-	private <TagType, BusinessObjectType extends EObject> boolean performModifications(final List<Modification<TagType, BusinessObjectType>> modifiers) {
+	private boolean performModifications(final List<? extends Modification<?, ?>> modifiers) {
 		final Set<IProject> projectsToBuild = new HashSet<>();
 
 		boolean allSuccessful = true;
 
 		// Iterate over the input objects
-		for (final Modification<TagType, BusinessObjectType> modification : modifiers) {
-			final TagType tag = modification.getTag();
-
-			// Determine the object to modify
-			final BusinessObjectType bo = modification.getTagToBusinessObjectMapper().apply(tag);
-
-			if (!(bo.eResource() instanceof XtextResource)) {
-				throw new RuntimeException("Unexpected case. Resource is not an XtextResource");
-			}
-
-			// Try to get the Xtext document
-			final Object root = bo.eResource() == null ? null : bo.eResource().getContents().get(0);
-			final IXtextDocument doc = AgeXtextUtil
-					.getDocumentByRootElement(root instanceof NamedElement ? (NamedElement) root : null);
-			final ModifySafelyResults modifySafelyResult;
-			if (doc == null) {
-				// Modify the EMF resource directly
-				final XtextResource res = (XtextResource) bo.eResource();
-				modifySafelyResult = modifySafely(res, tag, bo, modification.getModifier(),
-						true);
-
-				if (modifySafelyResult.modificationSuccessful) {
-					// Save the model
-					try {
-						res.save(SaveOptions.newBuilder().format().getOptions().toOptionsMap());
-					} catch (final IOException e) {
-						throw new RuntimeException(e);
-					}
-				}
-
-				// Try to get the project for the resource and add it to the list of projects to build.
-				final URI resourceUri = res.getURI();
-				if (resourceUri != null) {
-					final IPath projectPath = new Path(resourceUri.toPlatformString(true)).uptoSegment(1);
-					final IResource projectResource = ResourcesPlugin.getWorkspace().getRoot().findMember(projectPath);
-					if (projectResource instanceof IProject) {
-						projectsToBuild.add((IProject) projectResource);
-					}
-				}
-			} else {
-				// TODO: Remove when issue regarding Xtext Dirty State has been resolved.
-				// https://github.com/osate/osate-ge/issues/210
-				// This works around the issue by getting the xtext editor and calling doVerify() on it's dirty state editor support which starts
-				// managing
-				// the dirty state.
-				for (final IEditorReference editorRef : PlatformUI.getWorkbench().getActiveWorkbenchWindow()
-						.getActivePage().getEditorReferences()) {
-					final IEditorPart editor = editorRef.getEditor(false);
-					if (editor instanceof XtextEditor) {
-						final XtextEditor xtextEditor = (XtextEditor) editor;
-						if (xtextEditor.getDocument() == doc) {
-							xtextEditor.getDirtyStateEditorSupport().doVerify();
-							break;
-						}
-					}
-				}
-
-				// If the element is in an annex, determine the root actual/parsed annex element
-				final EObject parsedAnnexRoot = getParsedAnnexRoot(bo);
-
-				// If the element which needs to be edited is in an annex, modify the default annex element. This is needed because objects inside
-				// of annexes may not have unique URI's
-				final EObject objectToModify = parsedAnnexRoot == null ? bo : parsedAnnexRoot.eContainer();
-				final URI modificationObjectUri = EcoreUtil.getURI(objectToModify);
-				modifySafelyResult = doc
-						.modify(new IUnitOfWork<ModifySafelyResults, XtextResource>() {
-							@SuppressWarnings("unchecked")
-							@Override
-							public ModifySafelyResults exec(final XtextResource res) throws Exception {
-								final EObject objectToModify = res.getResourceSet().getEObject(modificationObjectUri,
-										true);
-								if (objectToModify == null) {
-									return new ModifySafelyResults(false);
-								}
-
-								if (parsedAnnexRoot != null && (objectToModify instanceof DefaultAnnexLibrary
-										|| objectToModify instanceof DefaultAnnexSubclause)) {
-									return modifyAnnexInXtextDocument(res, objectToModify, tag, bo,
-											modification.getModifier());
-								} else {
-									return modifySafely(res, tag, (BusinessObjectType) objectToModify, modification.getModifier(),
-											false);
-								}
-							}
-						});
-
-				// Call the after modification callback
-				if (modifySafelyResult.modificationSuccessful) {
-					// Call readonly on the document. This will should cause Xtext's reconciler to be called to ensure the document matches the
-					// model.
-					// If modify() has been called in the display thread, then the diagram should be updated by the diagram editor as well
-					doc.readOnly(res -> null);
-				}
-			}
-
+		for (final Modification<?, ?> modification : modifiers) {
+			final ModifySafelyResults modifySafelyResult = performModification(modification, projectsToBuild);
 			allSuccessful &= modifySafelyResult.modificationSuccessful;
 		}
 
@@ -218,6 +125,105 @@ public class DefaultAadlModificationService implements AadlModificationService {
 		}
 
 		return allSuccessful;
+	}
+
+	private <TagType, BusinessObjectType extends EObject> ModifySafelyResults performModification(
+			final Modification<TagType, BusinessObjectType> modification, final Set<IProject> projectsToBuild) {
+		final TagType tag = modification.getTag();
+
+		// Determine the object to modify
+		final BusinessObjectType bo = modification.getTagToBusinessObjectMapper().apply(tag);
+
+		if (!(bo.eResource() instanceof XtextResource)) {
+			throw new RuntimeException("Unexpected case. Resource is not an XtextResource");
+		}
+
+		// Try to get the Xtext document
+		final Object root = bo.eResource() == null ? null : bo.eResource().getContents().get(0);
+		final IXtextDocument doc = AgeXtextUtil
+				.getDocumentByRootElement(root instanceof NamedElement ? (NamedElement) root : null);
+		final ModifySafelyResults modifySafelyResult;
+		if (doc == null) {
+			// Modify the EMF resource directly
+			final XtextResource res = (XtextResource) bo.eResource();
+			modifySafelyResult = modifySafely(res, tag, bo, modification.getModifier(),
+					true);
+
+			if (modifySafelyResult.modificationSuccessful) {
+				// Save the model
+				try {
+					res.save(SaveOptions.newBuilder().format().getOptions().toOptionsMap());
+				} catch (final IOException e) {
+					throw new RuntimeException(e);
+				}
+			}
+
+			// Try to get the project for the resource and add it to the list of projects to build.
+			final URI resourceUri = res.getURI();
+			if (resourceUri != null) {
+				final IPath projectPath = new Path(resourceUri.toPlatformString(true)).uptoSegment(1);
+				final IResource projectResource = ResourcesPlugin.getWorkspace().getRoot().findMember(projectPath);
+				if (projectResource instanceof IProject) {
+					projectsToBuild.add((IProject) projectResource);
+				}
+			}
+		} else {
+			// TODO: Remove when issue regarding Xtext Dirty State has been resolved.
+			// https://github.com/osate/osate-ge/issues/210
+			// This works around the issue by getting the xtext editor and calling doVerify() on it's dirty state editor support which starts
+			// managing
+			// the dirty state.
+			for (final IEditorReference editorRef : PlatformUI.getWorkbench().getActiveWorkbenchWindow()
+					.getActivePage().getEditorReferences()) {
+				final IEditorPart editor = editorRef.getEditor(false);
+				if (editor instanceof XtextEditor) {
+					final XtextEditor xtextEditor = (XtextEditor) editor;
+					if (xtextEditor.getDocument() == doc) {
+						xtextEditor.getDirtyStateEditorSupport().doVerify();
+						break;
+					}
+				}
+			}
+
+			// If the element is in an annex, determine the root actual/parsed annex element
+			final EObject parsedAnnexRoot = getParsedAnnexRoot(bo);
+
+			// If the element which needs to be edited is in an annex, modify the default annex element. This is needed because objects inside
+			// of annexes may not have unique URI's
+			final EObject objectToModify = parsedAnnexRoot == null ? bo : parsedAnnexRoot.eContainer();
+			final URI modificationObjectUri = EcoreUtil.getURI(objectToModify);
+			modifySafelyResult = doc
+					.modify(new IUnitOfWork<ModifySafelyResults, XtextResource>() {
+						@SuppressWarnings("unchecked")
+						@Override
+						public ModifySafelyResults exec(final XtextResource res) throws Exception {
+							final EObject objectToModify = res.getResourceSet().getEObject(modificationObjectUri,
+									true);
+							if (objectToModify == null) {
+								return new ModifySafelyResults(false);
+							}
+
+							if (parsedAnnexRoot != null && (objectToModify instanceof DefaultAnnexLibrary
+									|| objectToModify instanceof DefaultAnnexSubclause)) {
+								return modifyAnnexInXtextDocument(res, objectToModify, tag, bo,
+										modification.getModifier());
+							} else {
+								return modifySafely(res, tag, (BusinessObjectType) objectToModify, modification.getModifier(),
+										false);
+							}
+						}
+					});
+
+			// Call the after modification callback
+			if (modifySafelyResult.modificationSuccessful) {
+				// Call readonly on the document. This will should cause Xtext's reconciler to be called to ensure the document matches the
+				// model.
+				// If modify() has been called in the display thread, then the diagram should be updated by the diagram editor as well
+				doc.readOnly(res -> null);
+			}
+		}
+
+		return modifySafelyResult;
 	}
 
 	private <TagType, BusinessObjectType extends EObject> ModifySafelyResults modifyAnnexInXtextDocument(final XtextResource resource,

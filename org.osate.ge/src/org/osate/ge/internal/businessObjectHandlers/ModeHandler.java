@@ -34,13 +34,13 @@ import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.ModeGraphicBuilder;
-import org.osate.ge.internal.CreateOperation;
-import org.osate.ge.internal.CreateOperation.CreateStepResult;
 import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
+import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.services.QueryService;
 
 public class ModeHandler {
@@ -93,7 +93,7 @@ public class ModeHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(@Named(InternalNames.OPERATION) final CreateOperation createOp,
+	public void buildCreateOperation(@Named(InternalNames.OPERATION) final OperationBuilder<Object> createOp,
 			final @Named(Names.TARGET_BO) EObject target,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
 			final QueryService queryService, final NamingService namingService) {
@@ -115,17 +115,17 @@ public class ModeHandler {
 					return;
 				}
 
-				createOp.addStep(selectedClassifier, (resource, owner) -> {
-					final String newModeName = namingService.buildUniqueIdentifier(owner, "new_mode");
+				createOp.modify(selectedClassifier, tag -> tag, (tag, boToModify, prevResult) -> {
+					final String newModeName = namingService.buildUniqueIdentifier(boToModify, "new_mode");
 
-					final Mode newMode = owner.createOwnedMode();
+					final Mode newMode = boToModify.createOwnedMode();
 					newMode.setInitial(false);
 					newMode.setName(newModeName);
 
 					// Clear the no modes flag
-					owner.setNoModes(false);
+					boToModify.setNoModes(false);
 
-					return new CreateStepResult(targetBoc, newMode);
+					return StepResultBuilder.create().showNewBusinessObject(targetBoc, newMode).build();
 				});
 	}
 

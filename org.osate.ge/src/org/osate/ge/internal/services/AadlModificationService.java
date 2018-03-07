@@ -103,27 +103,23 @@ public interface AadlModificationService {
 	 * @param modifications
 	 * @param postProcessor
 	 */
-	<TagType, BusinessObjectType extends EObject> void modify(
-			List<Modification<TagType, BusinessObjectType>> modifications,
-			ModificationPostprocessor postProcessor);
+	void modify(
+			List<? extends Modification<?, ?>> modifications,
+					ModificationPostprocessor postProcessor);
 
-	default <TagType, BusinessObjectType extends EObject> void modify(
-			List<Modification<TagType, BusinessObjectType>> modifications) {
+	default void modify(List<? extends Modification<?, ?>> modifications) {
 		modify(modifications, null);
 	}
 
-	default <TagType, BusinessObjectType extends EObject> void modify(
-			Modification<TagType, BusinessObjectType> modification,
-			ModificationPostprocessor postProcessor) {
+	default void modify(Modification<?, ?> modification, ModificationPostprocessor postProcessor) {
 		modify(Collections.singletonList(modification), postProcessor);
 	}
 
-	default <TagType, BusinessObjectType extends EObject> void modify(
-			Modification<TagType, BusinessObjectType> modification) {
+	default void modify(Modification<?, ?> modification) {
 		modify(modification, null);
 	}
 
-	default <TagType, BusinessObjectType extends EObject> void modify(final BusinessObjectType bo,
+	default <BusinessObjectType extends EObject> void modify(final BusinessObjectType bo,
 			final SimpleModifier<BusinessObjectType> modifier) {
 		modify(Modification.create(bo, modifier), null);
 	}

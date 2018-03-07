@@ -28,13 +28,13 @@ import org.osate.ge.graphics.ConnectionBuilder;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
-import org.osate.ge.internal.CreateOperation;
-import org.osate.ge.internal.CreateOperation.CreateStepResult;
 import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
+import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
 
@@ -133,7 +133,7 @@ public class FlowPathSpecificationHandler extends FlowSpecificationHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(@Named(InternalNames.OPERATION) final CreateOperation createOp,
+	public void buildCreateOperation(final @Named(InternalNames.OPERATION) OperationBuilder<Object> createOp,
 			final @Named(Names.SOURCE_BO) Feature srcFeature,
 			final @Named(Names.SOURCE_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext srcBoc,
 			final @Named(Names.DESTINATION_BO) Feature dstFeature,
@@ -153,7 +153,7 @@ public class FlowPathSpecificationHandler extends FlowSpecificationHandler {
 			return;
 		}
 
-		createOp.addStep(selectedClassifier, (resource, ct) -> {
+		createOp.modify(selectedClassifier, tag -> tag, (tag, ct, prevResult) -> {
 			final FlowSpecification fs = ct.createOwnedFlowSpecification();
 			fs.setKind(FlowKind.PATH);
 			fs.setName(getNewFlowSpecificationName(ct, namingService));
@@ -169,7 +169,7 @@ public class FlowPathSpecificationHandler extends FlowSpecificationHandler {
 
 			ct.setNoFlows(false);
 
-			return new CreateStepResult(container, fs);
+			return StepResultBuilder.create().showNewBusinessObject(container, fs).build();
 		});
 
 	}

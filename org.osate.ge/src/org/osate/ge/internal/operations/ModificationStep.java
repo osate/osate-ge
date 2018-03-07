@@ -6,31 +6,31 @@ import java.util.function.Function;
 import org.eclipse.emf.ecore.EObject;
 import org.osate.ge.operations.Modifier;
 
-class ModificationStep<I, E extends EObject, PrevReturnType, ReturnType> extends AbstractStep {
-	private final I obj;
-	private final Function<I, E> objToBoToModifyMapper;
-	private final Modifier<E, PrevReturnType, ReturnType> modifier;
+class ModificationStep<TagType, BusinessObjectType extends EObject, PrevResultUserType, ResultUserType>
+extends AbstractStep<ResultUserType> {
+	private final TagType tag;
+	private final Function<TagType, BusinessObjectType> tagToBoMapper;
+	private final Modifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modifier;
 
-	public ModificationStep(final Step nextStep, final I obj, final Function<I, E> objToBoToModifyMapper,
-			final Modifier<E, PrevReturnType, ReturnType> modifier) {
+	public ModificationStep(final Step<?> nextStep, final TagType tag,
+			final Function<TagType, BusinessObjectType> tagToBoMapper,
+			final Modifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modifier) {
 		super(nextStep);
-		this.obj = Objects.requireNonNull(obj, "obj must not be null");
-		this.objToBoToModifyMapper = Objects.requireNonNull(objToBoToModifyMapper,
-				"objToBoToModifyMapper must not be null");
+		this.tag = Objects.requireNonNull(tag, "tag must not be null");
+		this.tagToBoMapper = Objects.requireNonNull(tagToBoMapper,
+				"tagToBoMapper must not be null");
 		this.modifier = Objects.requireNonNull(modifier, "modifier must not be null");
 	}
 
-	// TODO: REname
-
-	public final I getObject() {
-		return obj;
+	public final TagType getTag() {
+		return tag;
 	}
 
-	public final Function<I, E> getObjectToBoToModifyMapper() {
-		return objToBoToModifyMapper;
+	public final Function<TagType, BusinessObjectType> getTagToBusinessObjectMapper() {
+		return tagToBoMapper;
 	}
 
-	public final Modifier<E, PrevReturnType, ReturnType> getModifier() {
+	public final Modifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> getModifier() {
 		return modifier;
 	}
 }

@@ -4,13 +4,12 @@ import java.util.function.Function;
 
 import org.eclipse.emf.ecore.EObject;
 
-// TODO: Rename
-public interface OperationBuilder<PrevReturnType> {
-	<I, E extends EObject, ReturnType> OperationBuilder<ReturnType> modify(I obj,
-			Function<I, E> objToBoToModifyMapper,
-			Modifier<E, PrevReturnType, ReturnType> modifier);
+public interface OperationBuilder<PrevResultUserType> {
+	<TagType, BusinessObjectType extends EObject, ResultUserType> OperationBuilder<ResultUserType> modify(TagType obj,
+			Function<TagType, BusinessObjectType> tagToBoMapper,
+			Modifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modifier);
 
 	// TODO: Rename.
-	<ReturnType> OperationBuilder<ReturnType> transform(
-			Transformer<PrevReturnType, ReturnType> stepHandler);
+	<ResultUserType> OperationBuilder<ResultUserType> transform(
+			Transformer<PrevResultUserType, ResultUserType> stepHandler);
 }

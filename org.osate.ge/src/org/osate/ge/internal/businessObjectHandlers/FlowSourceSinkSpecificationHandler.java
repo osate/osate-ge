@@ -25,13 +25,13 @@ import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.FlowIndicatorBuilder;
 import org.osate.ge.graphics.internal.OrthogonalLineBuilder;
-import org.osate.ge.internal.CreateOperation;
-import org.osate.ge.internal.CreateOperation.CreateStepResult;
 import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
+import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
 
@@ -129,7 +129,7 @@ public class FlowSourceSinkSpecificationHandler extends FlowSpecificationHandler
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(@Named(InternalNames.OPERATION) final CreateOperation createOp,
+	public void buildCreateOperation(final @Named(InternalNames.OPERATION) OperationBuilder<Object> createOp,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext featureBoc,
 			final @Named(Names.TARGET_BO) Feature feature,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) FlowKind flowKind, final QueryService queryService,
@@ -147,7 +147,7 @@ public class FlowSourceSinkSpecificationHandler extends FlowSpecificationHandler
 			return;
 		}
 
-		createOp.addStep(selectedClassifier, (resource, ct) -> {
+		createOp.modify(selectedClassifier, tag -> tag, (tag, ct, prevResult) -> {
 			final FlowSpecification fs = ct.createOwnedFlowSpecification();
 			fs.setKind(flowKind);
 			fs.setName(getNewFlowSpecificationName(ct, namingService));
@@ -167,7 +167,7 @@ public class FlowSourceSinkSpecificationHandler extends FlowSpecificationHandler
 			// Clear the no flows flag
 			ct.setNoFlows(false);
 
-			return new CreateStepResult(container, fs);
+			return StepResultBuilder.create().showNewBusinessObject(container, fs).build();
 		});
 	}
 }

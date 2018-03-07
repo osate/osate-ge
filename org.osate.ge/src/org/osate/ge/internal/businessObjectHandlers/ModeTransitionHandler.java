@@ -37,8 +37,6 @@ import org.osate.ge.graphics.ConnectionBuilder;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
-import org.osate.ge.internal.CreateOperation;
-import org.osate.ge.internal.CreateOperation.CreateStepResult;
 import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.services.NamingService;
@@ -46,6 +44,8 @@ import org.osate.ge.internal.ui.dialogs.ModeTransitionTriggerSelectionDialog;
 import org.osate.ge.internal.ui.dialogs.ModeTransitionTriggerSelectionDialog.ModeTransitionTriggerInfo;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
+import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
 
@@ -129,7 +129,7 @@ public class ModeTransitionHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(@Named(InternalNames.OPERATION) final CreateOperation createOp,
+	public void buildCreateOperation(@Named(InternalNames.OPERATION) final OperationBuilder<Object> createOp,
 			@Named(Names.SOURCE_BO) final Mode srcMode,
 			final @Named(Names.SOURCE_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext srcBoc,
 			@Named(Names.DESTINATION_BO) final Mode dstMode,
@@ -151,12 +151,12 @@ public class ModeTransitionHandler {
 		// Prompt for transition triggers
 		final ModeTransitionTriggerInfo[] selectedTriggers = ModeTransitionTriggerSelectionDialog
 				.promptForTriggers(selectedClassifier,
-				null);
+						null);
 		if (selectedTriggers == null) {
 			return;
 		}
 
-		createOp.addStep(selectedClassifier, (resource, cc) -> {
+		createOp.modify(selectedClassifier, tag -> tag, (tag, cc, prevResult) -> {
 			// Determine the name for the new mode transition
 			final String newElementName = namingService.buildUniqueIdentifier(cc, "new_transition");
 
@@ -180,7 +180,7 @@ public class ModeTransitionHandler {
 				mtt.setContext(selectedPort.context);
 			}
 
-			return new CreateStepResult(container, newModeTransition);
+			return StepResultBuilder.create().showNewBusinessObject(container, newModeTransition).build();
 		});
 	}
 

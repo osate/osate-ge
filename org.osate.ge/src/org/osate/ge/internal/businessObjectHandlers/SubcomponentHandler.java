@@ -34,8 +34,6 @@ import org.osate.ge.di.ValidateName;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
-import org.osate.ge.internal.CreateOperation;
-import org.osate.ge.internal.CreateOperation.CreateStepResult;
 import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.graphics.AadlGraphics;
@@ -45,6 +43,8 @@ import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.AadlSubcomponentUtil;
 import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.internal.util.StringUtil;
+import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.services.QueryService;
 
 public class SubcomponentHandler {
@@ -140,7 +140,7 @@ public class SubcomponentHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(@Named(InternalNames.OPERATION) final CreateOperation createOp,
+	public void buildCreateOperation(@Named(InternalNames.OPERATION) final OperationBuilder<Object> createOp,
 			final @Named(Names.TARGET_BO) Element targetBo,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass subcomponentType,
@@ -163,7 +163,7 @@ public class SubcomponentHandler {
 		}
 
 		// Create the subcomponent
-		createOp.addStep(selectedClassifier, (resource, owner) -> {
+		createOp.modify(selectedClassifier, tag -> tag, (tag, owner, prevResult) -> {
 			final String name = namingService.buildUniqueIdentifier(owner, "new_subcomponent");
 			final Subcomponent sc = AadlSubcomponentUtil.createSubcomponent(owner, subcomponentType);
 			sc.setName(name);
@@ -171,7 +171,7 @@ public class SubcomponentHandler {
 			// Reset the no subcomponents flag
 			owner.setNoSubcomponents(false);
 
-			return new CreateStepResult(targetBoc, sc);
+			return StepResultBuilder.create().showNewBusinessObject(targetBoc, sc).build();
 		});
 	}
 

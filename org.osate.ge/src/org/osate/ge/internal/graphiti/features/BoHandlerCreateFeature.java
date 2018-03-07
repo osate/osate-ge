@@ -1,7 +1,5 @@
 package org.osate.ge.internal.graphiti.features;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 import org.eclipse.e4.core.contexts.ContextInjectionFactory;
@@ -19,8 +17,8 @@ import org.osate.ge.di.Create;
 import org.osate.ge.di.GetBusinessObjectToModify;
 import org.osate.ge.di.GetCreateOwner;
 import org.osate.ge.di.Names;
+import org.osate.ge.graphics.Point;
 import org.osate.ge.internal.Categorized;
-import org.osate.ge.internal.CreateOperation.CreateStepResult;
 import org.osate.ge.internal.SimplePaletteEntry;
 import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
@@ -28,9 +26,14 @@ import org.osate.ge.internal.diagram.runtime.AgeDiagramUtil;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.updating.DiagramUpdater;
 import org.osate.ge.internal.graphiti.services.GraphitiService;
+import org.osate.ge.internal.operations.DefaultOperationBuilder;
+import org.osate.ge.internal.operations.DefaultOperationResultsProcessor;
+import org.osate.ge.internal.operations.OperationExecutor;
+import org.osate.ge.internal.operations.Step;
 import org.osate.ge.internal.services.AadlModificationService;
 import org.osate.ge.internal.services.ExtensionService;
 import org.osate.ge.internal.util.AnnotationUtil;
+import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.services.ReferenceBuilderService;
 
 // ICreateFeature implementation that delegates behavior to a business object handler
@@ -105,7 +108,7 @@ public class BoHandlerCreateFeature extends AbstractCreateFeature implements Cat
 				context.getX(), context.getY(), 0, 0);
 
 		// CreateOperation is used for all code paths
-		final SimpleCreateOperation createOp = new SimpleCreateOperation();
+		final DefaultOperationBuilder rootOpBuilder = new DefaultOperationBuilder();
 
 		final IEclipseContext eclipseCtx = extService.createChildContext();
 		try {
@@ -117,70 +120,32 @@ public class BoHandlerCreateFeature extends AbstractCreateFeature implements Cat
 
 			// Check if the handler will modify the create operation directly
 			if (AnnotationUtil.hasMethodWithAnnotation(BuildCreateOperation.class, handler)) {
-				eclipseCtx.set(InternalNames.OPERATION, createOp);
+				eclipseCtx.set(InternalNames.OPERATION, rootOpBuilder);
 				ContextInjectionFactory.invoke(handler,
 						BuildCreateOperation.class,
 						eclipseCtx);
-
-				if(createOp.isEmpty()) {
-					return EMPTY;
-				}
 			} else {
 				// Otherwise, create a single step based on other annotated methods
 				final DiagramNode ownerNode = getOwnerDiagramNode(targetNode);
 				final EObject boToModify = getBusinessObjectToModify(targetNode, ownerNode.getBusinessObject());
 
-				createOp.addStep(boToModify, (resource, boToModify1) -> {
+				rootOpBuilder.modify(boToModify, tag -> tag, (tag, boToModify1, prevResult) -> {
 					eclipseCtx.set(Names.MODIFY_BO, boToModify1);
 					final Object newBo1 = ContextInjectionFactory.invoke(handler, Create.class, eclipseCtx);
-					return new CreateStepResult(ownerNode, newBo1);
+					return StepResultBuilder.create().showNewBusinessObject(ownerNode, newBo1).build();
 				});
 			}
 
-			// Perform modification
-			final List<Object> newBos = new ArrayList<>(createOp.stepMap.size());
-			// TODO: Use new operation system
-//			aadlModService.modify(createOp.stepMap, obj -> obj, results -> {
-//				// Process results. Add created elements to the diagram
-//				for (final CreateStepResult stepResult : results) {
-//					if (stepResult != null && stepResult.newBo != null) {
-//						final RelativeBusinessObjectReference newRef = refBuilder.getRelativeReference(stepResult.newBo);
-//						if (newRef != null && stepResult.container instanceof DiagramNode) {
-//							final DiagramNode containerNode = (DiagramNode) stepResult.container;
-//
-//							// Set the new element as manual if and only if it does not match any of the container's filters
-//							final boolean manual;
-//							if (containerNode instanceof DiagramElement) {
-//								manual = !((DiagramElement) containerNode)
-//										.getContentFilters().stream()
-//										.anyMatch(cf -> cf.test(stepResult.newBo));
-//							} else {
-//								manual = false;
-//							}
-//
-//							// Don't set the position if the incremental layout mode is set to diagram.
-//							// This will ensure the shape is layed out even if it is a docked shape.
-//							final Point position;
-//							if (LayoutPreferences.getCurrentLayoutMode() != IncrementalLayoutMode.LAYOUT_DIAGRAM
-//									&& containerNode == targetNode) {
-//								position = new Point(context.getX(), context.getY());
-//							} else {
-//								position = null;
-//							}
-//
-//							System.err.println("TEST " + newRef);
-//
-//							diagramUpdater.addToNextUpdate(containerNode, newRef,
-//									new FutureElementInfo(manual, position));
-//						}
-//
-//						newBos.add(stepResult.newBo);
-//					}
-//				}
-//			});
+			final Step<?> firstStep = rootOpBuilder.build();
+			if (firstStep == null) {
+				return null;
+			}
 
-			// Return new business objects
-			return newBos.isEmpty() ? EMPTY : newBos.toArray();
+			// Perform modification
+			final OperationExecutor opExecutor = new OperationExecutor(aadlModService);
+			opExecutor.execute(firstStep, new DefaultOperationResultsProcessor(diagramUpdater, refBuilder, targetNode,
+					new Point(context.getX(), context.getY())));
+			return EMPTY;
 		} finally {
 			eclipseCtx.dispose();
 		}
@@ -204,7 +169,7 @@ public class BoHandlerCreateFeature extends AbstractCreateFeature implements Cat
 		}
 	}
 
-	// Returns null if the business object to be modified is not an EObject
+// Returns null if the business object to be modified is not an EObject
 	private EObject getBusinessObjectToModify(final DiagramNode targetNode, final Object defaultValue) {
 		final IEclipseContext eclipseCtx = extService.createChildContext();
 		try {
@@ -223,7 +188,7 @@ public class BoHandlerCreateFeature extends AbstractCreateFeature implements Cat
 		}
 	}
 
-	// ICustomUndoRedoFeature
+// ICustomUndoRedoFeature
 	@Override
 	public boolean canUndo(final IContext context) {
 		return false;

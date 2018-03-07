@@ -53,8 +53,6 @@ import org.osate.ge.graphics.ConnectionBuilder;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
-import org.osate.ge.internal.CreateOperation;
-import org.osate.ge.internal.CreateOperation.CreateStepResult;
 import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.services.NamingService;
@@ -62,6 +60,8 @@ import org.osate.ge.internal.util.AadlConnectionUtil;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.internal.util.StringUtil;
+import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
 
@@ -241,7 +241,7 @@ public class ConnectionHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(final @Named(InternalNames.OPERATION) CreateOperation createOp,
+	public void buildCreateOperation(final @Named(InternalNames.OPERATION) OperationBuilder<Object> createOp,
 			final @Named(Names.SOURCE_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext srcBoc,
 			final @Named(Names.DESTINATION_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext dstBoc,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass connectionType, final QueryService queryService,
@@ -261,7 +261,7 @@ public class ConnectionHandler {
 		}
 
 		// Create the subcomponent
-		createOp.addStep(selectedClassifier, (resource, owner) -> {
+		createOp.modify(selectedClassifier, tag -> tag, (tag, owner, prevResult) -> {
 			// Create the appropriate type of connection object
 			final org.osate.aadl2.Connection newAadlConnection = AadlConnectionUtil.createConnection(owner,
 					connectionType);
@@ -301,9 +301,8 @@ public class ConnectionHandler {
 				}
 			}
 
-			return new CreateStepResult(container, newAadlConnection);
+			return StepResultBuilder.create().showNewBusinessObject(container, newAadlConnection).build();
 		});
-
 	}
 
 	private static BusinessObjectContext getOwnerBoc(final BusinessObjectContext srcBoc,

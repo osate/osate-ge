@@ -1,7 +1,5 @@
 package org.osate.ge.internal.graphiti.features;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 import org.eclipse.e4.core.contexts.ContextInjectionFactory;
@@ -21,7 +19,6 @@ import org.osate.ge.di.GetBusinessObjectToModify;
 import org.osate.ge.di.GetCreateOwner;
 import org.osate.ge.di.Names;
 import org.osate.ge.internal.Categorized;
-import org.osate.ge.internal.CreateOperation.CreateStepResult;
 import org.osate.ge.internal.SimplePaletteEntry;
 import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
@@ -30,9 +27,14 @@ import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.updating.DiagramUpdater;
 import org.osate.ge.internal.graphiti.GraphitiAgeDiagramProvider;
 import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram;
+import org.osate.ge.internal.operations.DefaultOperationBuilder;
+import org.osate.ge.internal.operations.DefaultOperationResultsProcessor;
+import org.osate.ge.internal.operations.OperationExecutor;
+import org.osate.ge.internal.operations.Step;
 import org.osate.ge.internal.services.AadlModificationService;
 import org.osate.ge.internal.services.ExtensionService;
 import org.osate.ge.internal.util.AnnotationUtil;
+import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.services.ReferenceBuilderService;
 
 // ICreateConnectionFeature implementation that delegates behavior to a business object handler
@@ -125,7 +127,7 @@ public class BoHandlerCreateConnectionFeature extends AbstractCreateConnectionFe
 		}
 
 		// CreateOperation is used for all code paths
-		final SimpleCreateOperation createOp = new SimpleCreateOperation();
+		final DefaultOperationBuilder rootOpBuilder = new DefaultOperationBuilder();
 
 		final IEclipseContext eclipseCtx = extService.createChildContext();
 		try {
@@ -137,12 +139,8 @@ public class BoHandlerCreateConnectionFeature extends AbstractCreateConnectionFe
 
 			// Check if the handler will modify the create operation directly
 			if (AnnotationUtil.hasMethodWithAnnotation(BuildCreateOperation.class, handler)) {
-				eclipseCtx.set(InternalNames.OPERATION, createOp);
+				eclipseCtx.set(InternalNames.OPERATION, rootOpBuilder);
 				ContextInjectionFactory.invoke(handler, BuildCreateOperation.class, eclipseCtx);
-
-				if (createOp.isEmpty()) {
-					return null;
-				}
 			} else {
 				final BusinessObjectContext ownerBoc = (BusinessObjectContext)ContextInjectionFactory.invoke(handler, GetCreateOwner.class, eclipseCtx);
 				if (!(ownerBoc instanceof DiagramNode)) {
@@ -157,38 +155,21 @@ public class BoHandlerCreateConnectionFeature extends AbstractCreateConnectionFe
 
 				final DiagramNode ownerNode = (DiagramNode) ownerBoc;
 
-				createOp.addStep((EObject) boToModify, (resource, ownerBo) -> {
+				rootOpBuilder.modify((EObject) boToModify, tag -> tag, (tag, ownerBo, prevResult) -> {
 					eclipseCtx.set(Names.MODIFY_BO, ownerBo);
 					final Object newBo = ContextInjectionFactory.invoke(handler, Create.class, eclipseCtx, null);
-					return new CreateStepResult(ownerNode, newBo);
+					return StepResultBuilder.create().showNewBusinessObject(ownerNode, newBo).build();
 				});
 			}
 
+			final Step<?> firstStep = rootOpBuilder.build();
+			if (firstStep == null) {
+				return null;
+			}
+
 			// Perform modification
-			final List<Object> newBos = new ArrayList<>(createOp.stepMap.size());
-			// TODO: use new operation system
-//			aadlModService.modify(createOp.stepMap, obj -> obj, results -> {
-//				// Process results. Add created elements to the diagram
-//				for (final CreateStepResult stepResult : results) {
-//					if (stepResult != null && stepResult.newBo != null) {
-//						final RelativeBusinessObjectReference newRef = refBuilder.getRelativeReference(stepResult.newBo);
-//						if (newRef != null && stepResult.container instanceof DiagramNode) {
-//							final DiagramNode containerNode = (DiagramNode) stepResult.container;
-//							final boolean manual;
-//							if (containerNode instanceof DiagramElement) {
-//								manual = !((DiagramElement) containerNode).getContentFilters().stream()
-//										.anyMatch(cf -> cf.test(stepResult.newBo));
-//							} else {
-//								manual = false;
-//							}
-//
-//							diagramUpdater.addToNextUpdate(containerNode, newRef, new FutureElementInfo(manual));
-//						}
-//
-//						newBos.add(stepResult.newBo);
-//					}
-//				}
-//			});
+			final OperationExecutor opExecutor = new OperationExecutor(aadlModService);
+			opExecutor.execute(firstStep, new DefaultOperationResultsProcessor(diagramUpdater, refBuilder));
 		} finally {
 			eclipseCtx.dispose();
 		}

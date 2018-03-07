@@ -55,8 +55,6 @@ import org.osate.ge.di.ValidateName;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.FeatureGraphic;
-import org.osate.ge.internal.CreateOperation;
-import org.osate.ge.internal.CreateOperation.CreateStepResult;
 import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.graphics.AadlGraphics;
@@ -67,6 +65,8 @@ import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.AadlPrototypeUtil;
 import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.internal.util.StringUtil;
+import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.services.QueryService;
 
 public class FeatureHandler {
@@ -107,7 +107,7 @@ public class FeatureHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(@Named(InternalNames.OPERATION) final CreateOperation createOp,
+	public void buildCreateOperation(final @Named(InternalNames.OPERATION) OperationBuilder<Object> createOp,
 			final @Named(Names.TARGET_BO) EObject targetBo,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass featureType,
@@ -126,7 +126,7 @@ public class FeatureHandler {
 			}
 
 			// Create the feature
-			createOp.addStep(selectedClassifier, (resource, owner) -> {
+			createOp.modify(selectedClassifier, tag -> tag, (tag, owner, prevResult) -> {
 				final String newFeatureName = namingService.buildUniqueIdentifier(owner, "new_feature");
 
 				final NamedElement newFeature = AadlFeatureUtil.createFeature(owner, featureType);
@@ -149,7 +149,7 @@ public class FeatureHandler {
 					((ComponentType) owner).setNoFeatures(false);
 				}
 
-				return new CreateStepResult(targetBoc, newFeature);
+				return StepResultBuilder.create().showNewBusinessObject(targetBoc, newFeature).build();
 			});
 		}
 	}

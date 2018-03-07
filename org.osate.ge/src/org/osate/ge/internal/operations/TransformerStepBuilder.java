@@ -4,15 +4,15 @@ import java.util.Objects;
 
 import org.osate.ge.operations.Transformer;
 
-class TransformerStepBuilder<PrevReturnType, ReturnType> extends AbstractOperationBuilder<ReturnType> {
-	private final Transformer<PrevReturnType, ReturnType> handler;
+class TransformerStepBuilder<PrevResultUserType, ResultUserType> extends AbstractStepBuilder<ResultUserType> {
+	private final Transformer<PrevResultUserType, ResultUserType> handler;
 
-	public TransformerStepBuilder(final Transformer<PrevReturnType, ReturnType> handler) {
+	public TransformerStepBuilder(final Transformer<PrevResultUserType, ResultUserType> handler) {
 		this.handler = Objects.requireNonNull(handler, "handler must not be null");
 	}
 
 	@Override
-	protected Step buildThisStep(final Step nextStep) {
-		return new TransformerStep<PrevReturnType, ReturnType>(nextStep, handler);
+	protected Step<?> buildThisStep(final Step<?> nextStep) {
+		return new TransformerStep<PrevResultUserType, ResultUserType>(nextStep, handler);
 	}
 }
