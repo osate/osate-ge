@@ -69,13 +69,13 @@ public class DefaultAadlModificationService implements AadlModificationService {
 	}
 
 	@Override
-	public <I, E extends EObject> void modify(final List<Modification<I, E>> modifierArgs,
+	public <TagType, BusinessObjectType extends EObject> void modify(final List<Modification<TagType, BusinessObjectType>> modifications,
 			final ModificationPostprocessor postProcessor) {
 		class ModifyRunnable implements Runnable {
 			@Override
 			public void run() {
 				try (Lock lock = modelChangeNotifier.lock()) {
-					boolean allSuccessful = doModification(modifierArgs);
+					boolean allSuccessful = performModifications(modifications);
 
 					if (postProcessor != null) {
 						postProcessor.modificationCompleted(allSuccessful);
@@ -102,18 +102,17 @@ public class DefaultAadlModificationService implements AadlModificationService {
 	}
 
 	// Assumes that the modification notifier is already locked
-	private <I, E extends EObject> boolean doModification(final List<Modification<I, E>> modifierArgs) {
+	private <TagType, BusinessObjectType extends EObject> boolean performModifications(final List<Modification<TagType, BusinessObjectType>> modifiers) {
 		final Set<IProject> projectsToBuild = new HashSet<>();
 
 		boolean allSuccessful = true;
 
 		// Iterate over the input objects
-		// TODO: Rename field
-		for (final Modification<I, E> modificationArg : modifierArgs) {
-			final I obj = modificationArg.getObject();
+		for (final Modification<TagType, BusinessObjectType> modification : modifiers) {
+			final TagType tag = modification.getTag();
 
 			// Determine the object to modify
-			final E bo = modificationArg.getObjectToBoToModifyMapper().apply(obj);
+			final BusinessObjectType bo = modification.getTagToBusinessObjectMapper().apply(tag);
 
 			if (!(bo.eResource() instanceof XtextResource)) {
 				throw new RuntimeException("Unexpected case. Resource is not an XtextResource");
@@ -127,7 +126,7 @@ public class DefaultAadlModificationService implements AadlModificationService {
 			if (doc == null) {
 				// Modify the EMF resource directly
 				final XtextResource res = (XtextResource) bo.eResource();
-				modifySafelyResult = modifySafely(res, obj, bo, modificationArg.getModifier(),
+				modifySafelyResult = modifySafely(res, tag, bo, modification.getModifier(),
 						true);
 
 				if (modifySafelyResult.modificationSuccessful) {
@@ -166,13 +165,11 @@ public class DefaultAadlModificationService implements AadlModificationService {
 					}
 				}
 
-				// Determine what the root actual/parsed annex element is if the element is in an annex
+				// If the element is in an annex, determine the root actual/parsed annex element
 				final EObject parsedAnnexRoot = getParsedAnnexRoot(bo);
 
 				// If the element which needs to be edited is in an annex, modify the default annex element. This is needed because objects inside
-				// of
-				// annexes
-				// may not have unique URI's
+				// of annexes may not have unique URI's
 				final EObject objectToModify = parsedAnnexRoot == null ? bo : parsedAnnexRoot.eContainer();
 				final URI modificationObjectUri = EcoreUtil.getURI(objectToModify);
 				modifySafelyResult = doc
@@ -188,10 +185,10 @@ public class DefaultAadlModificationService implements AadlModificationService {
 
 								if (parsedAnnexRoot != null && (objectToModify instanceof DefaultAnnexLibrary
 										|| objectToModify instanceof DefaultAnnexSubclause)) {
-									return modifyAnnexInXtextDocument(res, objectToModify, obj, bo,
-											modificationArg.getModifier());
+									return modifyAnnexInXtextDocument(res, objectToModify, tag, bo,
+											modification.getModifier());
 								} else {
-									return modifySafely(res, obj, (E) objectToModify, modificationArg.getModifier(),
+									return modifySafely(res, tag, (BusinessObjectType) objectToModify, modification.getModifier(),
 											false);
 								}
 							}
@@ -223,29 +220,29 @@ public class DefaultAadlModificationService implements AadlModificationService {
 		return allSuccessful;
 	}
 
-	private <I, E extends EObject> ModifySafelyResults modifyAnnexInXtextDocument(final XtextResource resource,
-			final EObject defaultAnnexElement, final I obj, final E userObject, final NewModifier<I, E> modifier) {
+	private <TagType, BusinessObjectType extends EObject> ModifySafelyResults modifyAnnexInXtextDocument(final XtextResource resource,
+			final EObject defaultAnnexElement, final TagType tag, final BusinessObjectType bo, final Modifier<TagType, BusinessObjectType> modifier) {
 		// Make a copy of the resource
 		final EObject parsedAnnexElement = getParsedAnnexElement(defaultAnnexElement);
 		final ResourceSet tmpResourceSet = new ResourceSetImpl();
 		final Resource tmpResource = tmpResourceSet.createResource(resource.getURI());
 		tmpResource.getContents().addAll(EcoreUtil.copyAll(resource.getContents()));
 
-		// Get the clones user object
+		// Clone the bo specified by the modfication
 		final EObject parsedAnnexRootClone = tmpResourceSet.getEObject(EcoreUtil.getURI(parsedAnnexElement), false);
-		final Deque<Integer> indexStack = getParsedAnnexRootIndices(userObject);
+		final Deque<Integer> indexStack = getParsedAnnexRootIndices(bo);
 		EObject tmpClonedObject = parsedAnnexRootClone;
 		while(!indexStack.isEmpty()) {
 			tmpClonedObject = tmpClonedObject.eContents().get(indexStack.pop());
 		}
 
 		@SuppressWarnings("unchecked")
-		final E clonedUserObject = (E)tmpClonedObject;
+		final BusinessObjectType clonedUserObject = (BusinessObjectType)tmpClonedObject;
 
 		// Modify the annex by modifying the cloned object, unparsing, and then updating the source text of the original default annex element.
-		return modifySafely(resource, obj, defaultAnnexElement, (defaultAnnexElement1, obj2) -> {
+		return modifySafely(resource, tag, defaultAnnexElement, (defaultAnnexElement1, obj2) -> {
 			// Modify the cloned object
-			modifier.modify(clonedUserObject, obj);
+			modifier.modify(tag, clonedUserObject);
 
 			// Unparse the annex text of the cloned object and update the Xtext document
 			if(parsedAnnexRootClone instanceof AnnexLibrary) {
@@ -345,9 +342,8 @@ public class DefaultAadlModificationService implements AadlModificationService {
 	 * @param testSerialization
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
-	private <I, E extends EObject> ModifySafelyResults modifySafely(final XtextResource resource, final I obj, final E element,
-			final NewModifier<I, E> modifier, final boolean testSerialization) {
+	private <TagType, BusinessObjectType extends EObject> ModifySafelyResults modifySafely(final XtextResource resource, final TagType tag, final BusinessObjectType element,
+			final Modifier<TagType, BusinessObjectType> modifier, final boolean testSerialization) {
 		if(resource.getContents().size() < 1) {
 			return null;
 		}
@@ -362,13 +358,13 @@ public class DefaultAadlModificationService implements AadlModificationService {
 		final Command undoCommand = domain == null ? null : domain.getCommandStack().getUndoCommand();
 		if (domain == null) {
 			// Perform the modification without a transaction
-			modifier.modify(element, obj);
+			modifier.modify(tag, element);
 		} else {
 			// Make modification in a transaction
 			final RecordingCommand cmd = new RecordingCommand(domain) {
 				@Override
 				protected void doExecute() {
-					modifier.modify(element, obj);
+					modifier.modify(tag, element);
 				}
 			};
 			domain.getCommandStack().execute(cmd);

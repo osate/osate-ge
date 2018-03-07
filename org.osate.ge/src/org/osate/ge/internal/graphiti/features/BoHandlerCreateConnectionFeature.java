@@ -27,9 +27,7 @@ import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
-import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
 import org.osate.ge.internal.diagram.runtime.updating.DiagramUpdater;
-import org.osate.ge.internal.diagram.runtime.updating.FutureElementInfo;
 import org.osate.ge.internal.graphiti.GraphitiAgeDiagramProvider;
 import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram;
 import org.osate.ge.internal.services.AadlModificationService;
@@ -168,28 +166,29 @@ public class BoHandlerCreateConnectionFeature extends AbstractCreateConnectionFe
 
 			// Perform modification
 			final List<Object> newBos = new ArrayList<>(createOp.stepMap.size());
-			aadlModService.modify(createOp.stepMap, obj -> obj, results -> {
-				// Process results. Add created elements to the diagram
-				for (final CreateStepResult stepResult : results) {
-					if (stepResult != null && stepResult.newBo != null) {
-						final RelativeBusinessObjectReference newRef = refBuilder.getRelativeReference(stepResult.newBo);
-						if (newRef != null && stepResult.container instanceof DiagramNode) {
-							final DiagramNode containerNode = (DiagramNode) stepResult.container;
-							final boolean manual;
-							if (containerNode instanceof DiagramElement) {
-								manual = !((DiagramElement) containerNode).getContentFilters().stream()
-										.anyMatch(cf -> cf.test(stepResult.newBo));
-							} else {
-								manual = false;
-							}
-
-							diagramUpdater.addToNextUpdate(containerNode, newRef, new FutureElementInfo(manual));
-						}
-
-						newBos.add(stepResult.newBo);
-					}
-				}
-			});
+			// TODO: use new operation system
+//			aadlModService.modify(createOp.stepMap, obj -> obj, results -> {
+//				// Process results. Add created elements to the diagram
+//				for (final CreateStepResult stepResult : results) {
+//					if (stepResult != null && stepResult.newBo != null) {
+//						final RelativeBusinessObjectReference newRef = refBuilder.getRelativeReference(stepResult.newBo);
+//						if (newRef != null && stepResult.container instanceof DiagramNode) {
+//							final DiagramNode containerNode = (DiagramNode) stepResult.container;
+//							final boolean manual;
+//							if (containerNode instanceof DiagramElement) {
+//								manual = !((DiagramElement) containerNode).getContentFilters().stream()
+//										.anyMatch(cf -> cf.test(stepResult.newBo));
+//							} else {
+//								manual = false;
+//							}
+//
+//							diagramUpdater.addToNextUpdate(containerNode, newRef, new FutureElementInfo(manual));
+//						}
+//
+//						newBos.add(stepResult.newBo);
+//					}
+//				}
+//			});
 		} finally {
 			eclipseCtx.dispose();
 		}

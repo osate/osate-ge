@@ -1,19 +1,11 @@
 package org.osate.ge.internal.operations;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.function.Supplier;
 
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.osate.ge.internal.services.AadlModificationService.MappedObjectModifier;
 import org.osate.ge.operations.StepResult;
 import org.osate.ge.operations.StepResultBuilder;
-
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.ListMultimap;
 
 public class TestOperationExecutor {
 	public void execute(final Step step) {
@@ -24,11 +16,11 @@ public class TestOperationExecutor {
 		// unevaluated steps should be transform steps.
 		// TODO: Execute the statements. Remove steps from a list of unevaluated transform steps.
 		// TODO: Execute the modifiers.
-
-		final ListMultimap<Object, MappedObjectModifier> objectsToModifierMap = LinkedListMultimap.create();
-
-		final List<StepResult> allResults = new ArrayList<>(); // TODO: Rename.., Only non-null results
-		prepareToExecute(step, () -> null, allResults);
+//
+//		final ListMultimap<Object, MappedObjectModifier> objectsToModifierMap = LinkedListMultimap.create();
+//
+//		final List<StepResult> allResults = new ArrayList<>(); // TODO: Rename.., Only non-null results
+//		prepareToExecute(step, () -> null, allResults);
 
 		// TODO: Do the actual execution...
 	}
@@ -48,25 +40,27 @@ public class TestOperationExecutor {
 			}
 			stepResultSupplier = () -> null; // Split steps don't produce a result and shouldn't have next steps either.
 		} else if (step instanceof ModificationStep) {
-			final ModificationStep ms = (ModificationStep) step;
-			class ModificationMappedObjectModifier implements MappedObjectModifier {
-				StepResult result;
-
-				@Override
-				public Object modify(Resource resource, Object boToModify, Object obj) {
-					result = ms.getModifier().modify(obj, (EObject) boToModify, prevResultSupplier.get());
-					if (result != null) {
-						allResults.add(result);
-					}
-
-					return null;
-				}
-			}
-			final ModificationMappedObjectModifier modifier = new ModificationMappedObjectModifier();
+			// TODO
+//			final ModificationStep ms = (ModificationStep) step;
+//			class ModificationMappedObjectModifier implements MappedObjectModifier {
+//				StepResult result;
+//
+//				@Override
+//				public Object modify(Resource resource, Object boToModify, Object obj) {
+//					result = ms.getModifier().modify(obj, (EObject) boToModify, prevResultSupplier.get());
+//					if (result != null) {
+//						allResults.add(result);
+//					}
+//
+//					return null;
+//				}
+//			}
+			// final ModificationMappedObjectModifier modifier = new ModificationMappedObjectModifier();
 			// objectsToModifierMap.put(ms.getObject(), modifier);
 			// TODO: Store modifier somewhere..
 
-			stepResultSupplier = () -> modifier.result;
+			// stepResultSupplier = () -> modifier.result;
+			stepResultSupplier = null;
 
 		} else if (step instanceof TransformerStep) {
 			stepResultSupplier = new java.util.function.Supplier<StepResult>() {

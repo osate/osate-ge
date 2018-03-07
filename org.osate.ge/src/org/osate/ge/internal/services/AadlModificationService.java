@@ -3,140 +3,128 @@ package org.osate.ge.internal.services;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.resource.Resource;
-
-import com.google.common.collect.LinkedListMultimap;
 
 /**
  * Service providing a mechanism for making changes to the model
- *
+ * Only EObjects may be modified using the modification service.
  */
 public interface AadlModificationService {
-	// TODO: Rename
-	// TODO: Document that mapper is guaranteed to be called after any locking
-	// TODO: SHould this be moved out of this service?
-	static class Modification<I, E extends EObject> {
-		private final I obj; // TODO: Rename
-		private final Function<I, E> objToBoToModifyMapper;
-		private final NewModifier<I, E> modifier;
+	/**
+	 * POJO representing a change to the model.
+	 * A modification is provided to the modification service in order to execute it.
+	 *
+	 * @param <TagType>
+	 * @param <BusinessObjectType>
+	 */
+	static class Modification<TagType, BusinessObjectType extends EObject> {
+		/**
+		 * Value used by mapper to determine the business object to modify.
+		 */
+		private final TagType tag;
 
-		// TODO: Rename
-		// TODO: Anyway to make this API private?
-		public I getObject() {
-			return obj;
+		/**
+		 * Maps the tag to the business object which should be modifying. The mapper allows the business object to be lazily determined.
+		 * It also allows the mapping to take place after the model has been locked.
+		 */
+		private final Function<TagType, BusinessObjectType> tagToBusinessObjectMapper;
+
+		/**
+		 * The the object which is used to modify the model.
+		 */
+		private final Modifier<TagType, BusinessObjectType> modifier;
+
+		public TagType getTag() {
+			return tag;
 		}
 
-		public Function<I, E> getObjectToBoToModifyMapper() {
-			return objToBoToModifyMapper;
+		public Function<TagType, BusinessObjectType> getTagToBusinessObjectMapper() {
+			return tagToBusinessObjectMapper;
 		}
 
-		public NewModifier<I, E> getModifier() {
+		public Modifier<TagType, BusinessObjectType> getModifier() {
 			return modifier;
 		}
 
-		// TODO
-		private Modification(final I obj, final Function<I, E> objToBoToModifyMapper,
-				final NewModifier<I, E> modifier) {
-			this.obj = obj;
-			this.objToBoToModifyMapper = objToBoToModifyMapper;
-			this.modifier = modifier;
+		private Modification(final TagType tag, final Function<TagType, BusinessObjectType> tagToBusinessObjectMapper,
+				final Modifier<TagType, BusinessObjectType> modifier) {
+			this.tag = Objects.requireNonNull(tag, "tag must not be null");
+			this.tagToBusinessObjectMapper = Objects.requireNonNull(tagToBusinessObjectMapper,
+					"tagToBusinessObjectMapper must not be null");
+			this.modifier = Objects.requireNonNull(modifier, "modifier must not be null");
 		}
 
-		public static <I, E extends EObject> Modification<I, E> create(final I obj,
-				final Function<I, E> objToBoToModifyMapper,
-				final NewModifier<I, E> modifier) {
-			return new Modification<>(obj, objToBoToModifyMapper, modifier);
+		/**
+		 * Creates a modification with a tag and mapping function from that tag to the business object to be modified.
+		 * @param tag must not be null
+		 * @param tagToBusinessObjectMapper
+		 * @param modifier
+		 * @return
+		 */
+		public static <TagType, BusinessObjectType extends EObject> Modification<TagType, BusinessObjectType> create(final TagType tag,
+				final Function<TagType, BusinessObjectType> tagToBusinessObjectMapper,
+				final Modifier<TagType, BusinessObjectType> modifier) {
+			return new Modification<>(tag, tagToBusinessObjectMapper, modifier);
 		}
 
-		public static <E extends EObject> Modification<E, E> create(final E boToModify,
-				final NewModifier<E, E> modifier) {
-			return new Modification<>(boToModify, bo -> bo, modifier);
+		/**
+		 * Creates a modification for an explicitly specified business object.
+		 * @param bo
+		 * @param modifier
+		 * @return
+		 */
+		public static <BusinessObjectType extends EObject> Modification<BusinessObjectType, BusinessObjectType> create(final BusinessObjectType bo,
+				final SimpleModifier<BusinessObjectType> modifier) {
+			return new Modification<>(bo, bo1 -> bo1, (obj, boToModify1) -> modifier.modify(boToModify1));
 		}
 	}
 
-	// TODO: Rename interface and argument.
-	static interface NewModifier<I, E extends EObject> {
-		void modify(final E boToModify, final I obj);
+	static interface Modifier<TagType, BusinessObjectType extends EObject> {
+		void modify(final TagType tag, final BusinessObjectType boToModify);
+	}
+
+	static interface SimpleModifier<BusinessObjectType extends EObject> {
+		void modify(final BusinessObjectType boToModify);
 	}
 
 	static interface ModificationPostprocessor {
+		/**
+		 * Calls after all modifications are performed.
+		 * @param allSuccessful is true if all the modifications were completed successfully
+		 */
 		void modificationCompleted(boolean allSuccessful);
 	}
 
-	// TODO: Need to notify caller if modification was successful
-	// TODO: Need a function to be called after it is finished
-	// TODO: Rename arguments
-	// Postprocessor argument is whether all modification were successful.
-	// TODO: Consider an interface for that
-	<I, E extends EObject> void modify(List<Modification<I, E>> modifierArgs,
+	/**
+	 * Performs a series of modifications then executes a post processor. Performing all modifications with a single call is preferred because the implementation
+	 * may perform locking to prevent change notifications while modifications are being performed.
+	 * @param modifications
+	 * @param postProcessor
+	 */
+	<TagType, BusinessObjectType extends EObject> void modify(
+			List<Modification<TagType, BusinessObjectType>> modifications,
 			ModificationPostprocessor postProcessor);
 
-	// TODO: Remove all other modify functions
-
-	/**
-	 * Calls the specified modifier for each business object provided by applying objToBoToModifyMapper for each object object in the specified object list.
-	 * @param modifier
-	 * @param objToBoToModifyMapper
-	 */
-	default <I, E extends EObject, R> List<R> modify(List<I> objs, Function<I, E> objToBoToModifyMapper,
-			MappedObjectModifier<E, R> modifier) {
-		Objects.requireNonNull(objs, "objs must not be null");
-		Objects.requireNonNull(objToBoToModifyMapper, "objToBoToModifyMapper must not be null");
-		Objects.requireNonNull(modifier, "modifier must not be null");
-
-		// Create a map containing a mapping from each specified object to the specified modifier so that a common modify() implementation can be used.
-		final LinkedListMultimap<I, MappedObjectModifier<E, R>> objectsToModifierMap = LinkedListMultimap.create(objs.size());
-		for (final I obj : objs) {
-			objectsToModifierMap.put(obj, modifier);
-		}
-
-		return modify(objectsToModifierMap, objToBoToModifyMapper, results -> {
-		});
+	default <TagType, BusinessObjectType extends EObject> void modify(
+			List<Modification<TagType, BusinessObjectType>> modifications) {
+		modify(modifications, null);
 	}
 
-	/**
-	 * For each key in the specified map, calls the value modifier for each business object provided by applying objToBoToModifyMapper.
-	 * @param objectsToModifierMap
-	 * @param objToBoToModifyMapper
-	 * @param resultConsumer is a consumer which is called with the results before the modification is completed and the change notifier is unlocked.
-	 */
-	default <I, E extends EObject, R> List<R> modify(
-			LinkedListMultimap<I, MappedObjectModifier<E, R>> objectsToModifierMap,
-			Function<I, E> objToBoToModifyMapper, final Consumer<List<R>> resultConsumer) {
-		// TODO
-		throw new RuntimeException("NOT IMPLEMENTED");
+	default <TagType, BusinessObjectType extends EObject> void modify(
+			Modification<TagType, BusinessObjectType> modification,
+			ModificationPostprocessor postProcessor) {
+		modify(Collections.singletonList(modification), postProcessor);
 	}
 
-	// TODO: Remove
-
-	/**
-	 * Modifies an AADL model. Performs any necessary work to ensure it is done safely and appropriately regardless of the current state.
-	 * The modification is considered to have failed if the model that results from the modification contains validation errors.
-	 * @param element a named element that is contained in the model to be modified
-	 * @param modifier the modifier that will perform the actual modification
-	 * @returns the result of the modification or null if the modification failed
-	 */
-	default <E extends EObject, R> R modify(E bo, Modifier<E, R> modifier) {
-		if (bo == null) {
-			return null;
-		}
-
-		return modify(Collections.singletonList(bo), Function.identity(),
-				(Resource resource, E boToModify, Object obj) -> modifier.modify(resource, boToModify)).get(0);
+	default <TagType, BusinessObjectType extends EObject> void modify(
+			Modification<TagType, BusinessObjectType> modification) {
+		modify(modification, null);
 	}
 
-	public static interface Modifier<E, R> {
-		R modify(Resource resource, final E bo);
-	}
-
-	/**
-	 * Version of Modifier which provides the object that was mapped to be business object.
-	 */
-	public static interface MappedObjectModifier<E, R> {
-		R modify(Resource resource, final E bo, final Object obj);
+	default <TagType, BusinessObjectType extends EObject> void modify(final BusinessObjectType bo,
+			final SimpleModifier<BusinessObjectType> modifier) {
+		modify(Modification.create(bo, modifier), null);
 	}
 }

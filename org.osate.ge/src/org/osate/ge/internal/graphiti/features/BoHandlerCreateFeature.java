@@ -19,20 +19,14 @@ import org.osate.ge.di.Create;
 import org.osate.ge.di.GetBusinessObjectToModify;
 import org.osate.ge.di.GetCreateOwner;
 import org.osate.ge.di.Names;
-import org.osate.ge.graphics.Point;
 import org.osate.ge.internal.Categorized;
 import org.osate.ge.internal.CreateOperation.CreateStepResult;
 import org.osate.ge.internal.SimplePaletteEntry;
 import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.diagram.runtime.AgeDiagramUtil;
-import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
-import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
-import org.osate.ge.internal.diagram.runtime.layout.IncrementalLayoutMode;
-import org.osate.ge.internal.diagram.runtime.layout.LayoutPreferences;
 import org.osate.ge.internal.diagram.runtime.updating.DiagramUpdater;
-import org.osate.ge.internal.diagram.runtime.updating.FutureElementInfo;
 import org.osate.ge.internal.graphiti.services.GraphitiService;
 import org.osate.ge.internal.services.AadlModificationService;
 import org.osate.ge.internal.services.ExtensionService;
@@ -145,44 +139,45 @@ public class BoHandlerCreateFeature extends AbstractCreateFeature implements Cat
 
 			// Perform modification
 			final List<Object> newBos = new ArrayList<>(createOp.stepMap.size());
-			aadlModService.modify(createOp.stepMap, obj -> obj, results -> {
-				// Process results. Add created elements to the diagram
-				for (final CreateStepResult stepResult : results) {
-					if (stepResult != null && stepResult.newBo != null) {
-						final RelativeBusinessObjectReference newRef = refBuilder.getRelativeReference(stepResult.newBo);
-						if (newRef != null && stepResult.container instanceof DiagramNode) {
-							final DiagramNode containerNode = (DiagramNode) stepResult.container;
-
-							// Set the new element as manual if and only if it does not match any of the container's filters
-							final boolean manual;
-							if (containerNode instanceof DiagramElement) {
-								manual = !((DiagramElement) containerNode)
-										.getContentFilters().stream()
-										.anyMatch(cf -> cf.test(stepResult.newBo));
-							} else {
-								manual = false;
-							}
-
-							// Don't set the position if the incremental layout mode is set to diagram.
-							// This will ensure the shape is layed out even if it is a docked shape.
-							final Point position;
-							if (LayoutPreferences.getCurrentLayoutMode() != IncrementalLayoutMode.LAYOUT_DIAGRAM
-									&& containerNode == targetNode) {
-								position = new Point(context.getX(), context.getY());
-							} else {
-								position = null;
-							}
-
-							System.err.println("TEST " + newRef);
-
-							diagramUpdater.addToNextUpdate(containerNode, newRef,
-									new FutureElementInfo(manual, position));
-						}
-
-						newBos.add(stepResult.newBo);
-					}
-				}
-			});
+			// TODO: Use new operation system
+//			aadlModService.modify(createOp.stepMap, obj -> obj, results -> {
+//				// Process results. Add created elements to the diagram
+//				for (final CreateStepResult stepResult : results) {
+//					if (stepResult != null && stepResult.newBo != null) {
+//						final RelativeBusinessObjectReference newRef = refBuilder.getRelativeReference(stepResult.newBo);
+//						if (newRef != null && stepResult.container instanceof DiagramNode) {
+//							final DiagramNode containerNode = (DiagramNode) stepResult.container;
+//
+//							// Set the new element as manual if and only if it does not match any of the container's filters
+//							final boolean manual;
+//							if (containerNode instanceof DiagramElement) {
+//								manual = !((DiagramElement) containerNode)
+//										.getContentFilters().stream()
+//										.anyMatch(cf -> cf.test(stepResult.newBo));
+//							} else {
+//								manual = false;
+//							}
+//
+//							// Don't set the position if the incremental layout mode is set to diagram.
+//							// This will ensure the shape is layed out even if it is a docked shape.
+//							final Point position;
+//							if (LayoutPreferences.getCurrentLayoutMode() != IncrementalLayoutMode.LAYOUT_DIAGRAM
+//									&& containerNode == targetNode) {
+//								position = new Point(context.getX(), context.getY());
+//							} else {
+//								position = null;
+//							}
+//
+//							System.err.println("TEST " + newRef);
+//
+//							diagramUpdater.addToNextUpdate(containerNode, newRef,
+//									new FutureElementInfo(manual, position));
+//						}
+//
+//						newBos.add(stepResult.newBo);
+//					}
+//				}
+//			});
 
 			// Return new business objects
 			return newBos.isEmpty() ? EMPTY : newBos.toArray();
