@@ -6,8 +6,6 @@ import java.util.List;
 import javax.inject.Named;
 
 import org.eclipse.emf.ecore.EClass;
-import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.swt.widgets.Display;
 import org.osate.aadl2.ComponentClassifier;
 import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.ComponentType;
@@ -15,6 +13,7 @@ import org.osate.aadl2.Element;
 import org.osate.aadl2.Subcomponent;
 import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.Categories;
+import org.osate.ge.ClassifierEditingUtil;
 import org.osate.ge.GraphicalConfiguration;
 import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.PaletteEntry;
@@ -133,8 +132,8 @@ public class SubcomponentHandler {
 	@CanCreate
 	public boolean canCreate(final @Named(Names.TARGET_BO) Element bo,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass subcomponentType) {
-		return getPotentialOwners(bo, subcomponentType).size() > 0
-				|| ClassifierEditingUtil.isSubcomponentWithoutClassifier(bo);
+		return ClassifierEditingUtil.canCreateInComponentImplementation(bo,
+				ci -> AadlSubcomponentUtil.canContainSubcomponentType(ci, subcomponentType));
 	}
 
 	@BuildCreateOperation
@@ -144,30 +143,10 @@ public class SubcomponentHandler {
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass subcomponentType,
 			final QueryService queryService, final NamingService namingService) {
 
-		ClassifierEditingUtil.modifyComponentImplementation(createOp, targetBo,
-				ci -> AadlSubcomponentUtil.canContainSubcomponentType(ci, subcomponentType));
-
-		// TODO: Remove this prompting when no longer needed
-
-		if (targetBo instanceof Subcomponent) {
-			final Subcomponent tmpSc = (Subcomponent) targetBo;
-			if (!(tmpSc.getClassifier() instanceof ComponentImplementation)) {
-				MessageDialog.openError(Display.getDefault().getActiveShell(), "Component Implementation Not Set",
-						"The subcomponent '" + tmpSc.getQualifiedName()
-						+ "' does not have a component implementation set. Set a component implementation before creating a subcomponent.");
-				return;
-			}
-		}
-		// Determine which classifier should own the new element
-		final ComponentImplementation selectedClassifier = (ComponentImplementation) ClassifierEditingUtil
-				.getClassifierToModify(getPotentialOwners(targetBo, subcomponentType));
-		if (selectedClassifier == null) {
-			return;
-		}
-
-		// Create the subcomponent
-		createOp.transform((prevResult) -> StepResultBuilder.build(selectedClassifier))
-		.modifyModel(pv -> pv, owner -> {
+		ClassifierEditingUtil
+		.selectComponentImplementation(createOp, targetBo,
+				ci -> AadlSubcomponentUtil.canContainSubcomponentType(ci, subcomponentType))
+		.modifyPreviousResult(owner -> {
 			final String name = namingService.buildUniqueIdentifier(owner, "new_subcomponent");
 			final Subcomponent sc = AadlSubcomponentUtil.createSubcomponent(owner, subcomponentType);
 			sc.setName(name);
@@ -177,12 +156,6 @@ public class SubcomponentHandler {
 
 			return StepResultBuilder.create().showNewBusinessObject(targetBoc, sc).build();
 		});
-	}
-
-	private static List<ComponentImplementation> getPotentialOwners(final Element bo,
-			final EClass subcomponentType) {
-		return ClassifierEditingUtil.getPotentialComponentImplementations(bo,
-				ci -> AadlSubcomponentUtil.canContainSubcomponentType(ci, subcomponentType));
 	}
 
 	// Renaming

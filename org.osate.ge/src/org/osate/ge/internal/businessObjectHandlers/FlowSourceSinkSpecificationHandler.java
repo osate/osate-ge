@@ -2,7 +2,6 @@ package org.osate.ge.internal.businessObjectHandlers;
 
 import javax.inject.Named;
 
-import org.osate.aadl2.ComponentType;
 import org.osate.aadl2.DirectionType;
 import org.osate.aadl2.Feature;
 import org.osate.aadl2.FlowEnd;
@@ -140,14 +139,8 @@ public class FlowSourceSinkSpecificationHandler extends FlowSpecificationHandler
 			return;
 		}
 
-		// Determine which classifier should own the new element
-		final ComponentType selectedClassifier = (ComponentType) ClassifierEditingUtil
-				.getClassifierToModify(getPotentialOwnersByFeature(featureBoc, queryService));
-		if(selectedClassifier == null) {
-			return;
-		}
-
-		createOp.transform((prevResult) -> StepResultBuilder.build(selectedClassifier)).modifyModel(pv -> pv, ct -> {
+		InternalClassifierEditingUtil.selectClassifier(createOp, getPotentialOwnersByFeature(featureBoc, queryService))
+		.modifyPreviousResult(ct -> {
 			final FlowSpecification fs = ct.createOwnedFlowSpecification();
 			fs.setKind(flowKind);
 			fs.setName(getNewFlowSpecificationName(ct, namingService));

@@ -43,9 +43,6 @@ public class ClassifierOperationExecutor {
 
 	public void execute(final OperationBuilder<Object> operation, final ClassifierOperation classifierOp,
 			final BusinessObjectContext primaryPkgBoc) {
-		// final Supplier<Classifier> baseOperationResult = addStep(createOp, op.getBasePart(), null, () -> null, null);
-		// addStep(createOp, op.getPrimaryPart(), op.getBasePart(), baseOperationResult, primaryPkgBoc);
-
 		final OperationBuilder<Classifier> baseOp = addStep(operation, classifierOp.getBasePart(), null, null);
 		addStep(baseOp, classifierOp.getPrimaryPart(), classifierOp.getBasePart(), primaryPkgBoc);
 	}
@@ -66,7 +63,7 @@ public class ClassifierOperationExecutor {
 
 		switch (part.getType()) {
 		case EXISTING:
-			return operation.transform(prevResult -> StepResultBuilder
+			return operation.supply(() -> StepResultBuilder
 					.create(classifierCreationHelper.getResolvedClassifier(part.getSelectedClassifier())).build());
 
 		case NEW_COMPONENT_IMPLEMENTATION:
@@ -85,7 +82,7 @@ public class ClassifierOperationExecutor {
 				newClassifier.setName(classifierCreationHelper.getName(part, basePart));
 
 				final Classifier baseOperationResult = resolveWithLiveResourceSetOrThrowIfProxy(
-						(Classifier) prevResult.getUserValue());
+						(Classifier) prevResult);
 
 				// Handle component implementations
 				if (newClassifier instanceof ComponentImplementation) {

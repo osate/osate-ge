@@ -97,7 +97,7 @@ public class ModeHandler {
 			final @Named(Names.TARGET_BO) EObject target,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
 			final QueryService queryService, final NamingService namingService) {
-		if (ClassifierEditingUtil.showMessageIfSubcomponentOrFeatureGroupWithoutClassifier(target,
+		if (InternalClassifierEditingUtil.showMessageIfSubcomponentOrFeatureGroupWithoutClassifier(target,
 				"Set a classifier before creating a mode.")) {
 			return;
 		}
@@ -109,13 +109,14 @@ public class ModeHandler {
 				&& ((Subcomponent) target).getClassifier() instanceof ComponentImplementation))
 				&& potentialOwners.size() > 0 && !(potentialOwners.get(0) instanceof ComponentImplementation);
 
-				final ComponentClassifier selectedClassifier = (ComponentClassifier) ClassifierEditingUtil
+				final ComponentClassifier selectedClassifier = (ComponentClassifier) InternalClassifierEditingUtil
 						.getClassifierToModify(potentialOwners, forcePrompt);
 				if (selectedClassifier == null) {
 					return;
 				}
 
-				createOp.transform((prevResult) -> StepResultBuilder.build(selectedClassifier)).modifyModel(pv -> pv, boToModify -> {
+		createOp.supply(() -> StepResultBuilder.build(selectedClassifier))
+				.modifyPreviousResult(boToModify -> {
 					final String newModeName = namingService.buildUniqueIdentifier(boToModify, "new_mode");
 
 					final Mode newMode = boToModify.createOwnedMode();

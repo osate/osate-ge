@@ -110,7 +110,11 @@ public class DefaultAadlModificationService implements AadlModificationService {
 		// Iterate over the input objects
 		for (final Modification<?, ?> modification : modifiers) {
 			final ModifySafelyResults modifySafelyResult = performModification(modification, projectsToBuild);
-			allSuccessful &= modifySafelyResult.modificationSuccessful;
+			allSuccessful = modifySafelyResult.modificationSuccessful;
+
+			if (!allSuccessful) {
+				break;
+			}
 		}
 
 		// Build projects before unlocking. This will cause the post build notifications to be sent out before the lock is released.
@@ -133,6 +137,9 @@ public class DefaultAadlModificationService implements AadlModificationService {
 
 		// Determine the object to modify
 		final BusinessObjectType bo = modification.getTagToBusinessObjectMapper().apply(tag);
+		if (bo == null) {
+			return new ModifySafelyResults(false);
+		}
 
 		if (!(bo.eResource() instanceof XtextResource)) {
 			throw new RuntimeException("Unexpected case. Resource is not an XtextResource");

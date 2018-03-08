@@ -27,7 +27,7 @@ public interface AadlModificationService {
 
 		/**
 		 * Maps the tag to the business object which should be modifying. The mapper allows the business object to be lazily determined.
-		 * It also allows the mapping to take place after the model has been locked.
+		 * It also allows the mapping to take place after the model has been locked. If the mapper returns null, then the modification is skipped.
 		 */
 		private final Function<TagType, BusinessObjectType> tagToBusinessObjectMapper;
 
@@ -99,7 +99,7 @@ public interface AadlModificationService {
 
 	/**
 	 * Performs a series of modifications then executes a post processor. Performing all modifications with a single call is preferred because the implementation
-	 * may perform locking to prevent change notifications while modifications are being performed.
+	 * may perform locking to prevent change notifications while modifications are being performed. If any of the modifications fail, subsequent modifications will not be performed.
 	 * @param modifications
 	 * @param postProcessor
 	 */

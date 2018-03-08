@@ -142,7 +142,7 @@ public class ModeTransitionHandler {
 		}
 
 		// Determine which classifier should own the new element
-		final ComponentClassifier selectedClassifier = (ComponentClassifier) ClassifierEditingUtil
+		final ComponentClassifier selectedClassifier = (ComponentClassifier) InternalClassifierEditingUtil
 				.getClassifierToModify(getPotentialOwners(srcBoc, dstBoc, queryService));
 		if (selectedClassifier == null) {
 			return;
@@ -156,7 +156,7 @@ public class ModeTransitionHandler {
 			return;
 		}
 
-		createOp.transform((prevResult) -> StepResultBuilder.build(selectedClassifier)).modifyModel(pv -> pv, cc -> {
+		createOp.supply(() -> StepResultBuilder.build(selectedClassifier)).modifyPreviousResult(cc -> {
 			// Determine the name for the new mode transition
 			final String newElementName = namingService.buildUniqueIdentifier(cc, "new_transition");
 
@@ -212,7 +212,7 @@ public class ModeTransitionHandler {
 
 		final Element bo = (Element) containerBoc.getBusinessObject();
 
-		return ClassifierEditingUtil.getPotentialComponentClassifiersForEditing(bo).stream()
+		return InternalClassifierEditingUtil.getPotentialComponentClassifiers(bo).stream()
 				.filter(tmpBo -> tmpBo instanceof ComponentClassifier
 						&& !(((ComponentClassifier) tmpBo).isDerivedModes()))
 				.filter(cc -> hasModeWithName(cc, modeName)).collect(Collectors.toList());

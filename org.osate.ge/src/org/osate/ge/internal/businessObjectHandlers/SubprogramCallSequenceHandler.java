@@ -9,10 +9,12 @@ import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.BehavioredImplementation;
 import org.osate.aadl2.CallContext;
 import org.osate.aadl2.CalledSubprogram;
+import org.osate.aadl2.Element;
 import org.osate.aadl2.SubprogramCall;
 import org.osate.aadl2.SubprogramCallSequence;
 import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.Categories;
+import org.osate.ge.ClassifierEditingUtil;
 import org.osate.ge.GraphicalConfiguration;
 import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.PaletteEntry;
@@ -20,7 +22,6 @@ import org.osate.ge.PaletteEntryBuilder;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.CanDelete;
 import org.osate.ge.di.CanRename;
-import org.osate.ge.di.Create;
 import org.osate.ge.di.GetGraphicalConfiguration;
 import org.osate.ge.di.GetName;
 import org.osate.ge.di.GetPaletteEntries;
@@ -31,12 +32,16 @@ import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.RectangleBuilder;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
+import org.osate.ge.internal.di.BuildCreateOperation;
+import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.ui.dialogs.DefaultSelectSubprogramDialogModel;
 import org.osate.ge.internal.ui.dialogs.SelectSubprogramDialog;
 import org.osate.ge.internal.util.AadlHelper;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
+import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.StepResultBuilder;
 
 public class SubprogramCallSequenceHandler {
 	private Graphic graphic = RectangleBuilder.create().build();
@@ -50,22 +55,23 @@ public class SubprogramCallSequenceHandler {
 
 	@GetPaletteEntries
 	public PaletteEntry[] getPaletteEntries(final @Named(Names.DIAGRAM_BO) Object diagramBo) {
-		final boolean applicable = diagramBo == null || diagramBo instanceof AadlPackage || diagramBo instanceof BehavioredImplementation;
-		if(!applicable) {
+		final boolean applicable = diagramBo == null || diagramBo instanceof AadlPackage
+				|| diagramBo instanceof BehavioredImplementation;
+		if (!applicable) {
 			return null;
 		}
 
-		return new PaletteEntry[] {
-				PaletteEntryBuilder.create().label("Subprogram Call Sequence").icon(ImageHelper.getImage(Aadl2Factory.eINSTANCE.getAadl2Package().getSubprogramCallSequence())).category(Categories.SUBPROGRAM_CALLS).build()
-		};
+		return new PaletteEntry[] { PaletteEntryBuilder.create().label("Subprogram Call Sequence")
+				.icon(ImageHelper.getImage(Aadl2Factory.eINSTANCE.getAadl2Package().getSubprogramCallSequence()))
+				.category(Categories.SUBPROGRAM_CALLS).build() };
 	}
 
 	@GetGraphicalConfiguration
-	public GraphicalConfiguration getGraphicalConfiguration(final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc) {
-		return GraphicalConfigurationBuilder.create().
-				graphic(graphic).
-				style(StyleBuilder.create(
-						AadlInheritanceUtil.isInherited(boc) ? Styles.INHERITED_ELEMENT : Style.EMPTY).dashed()
+	public GraphicalConfiguration getGraphicalConfiguration(
+			final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc) {
+		return GraphicalConfigurationBuilder.create().graphic(graphic)
+				.style(StyleBuilder
+						.create(AadlInheritanceUtil.isInherited(boc) ? Styles.INHERITED_ELEMENT : Style.EMPTY).dashed()
 						.labelsTop().labelsHorizontalCenter().build())
 				.build();
 	}
@@ -76,43 +82,72 @@ public class SubprogramCallSequenceHandler {
 	}
 
 	@ValidateName
-	public String validateName(final @Named(Names.BUSINESS_OBJECT) SubprogramCallSequence cs, final @Named(Names.NAME) String value, final NamingService namingService) {
+	public String validateName(final @Named(Names.BUSINESS_OBJECT) SubprogramCallSequence cs,
+			final @Named(Names.NAME) String value, final NamingService namingService) {
 		return namingService.checkNameValidity(cs, value);
 	}
 
 	@CanCreate
-	public boolean canCreate(final @Named(Names.TARGET_BO) BehavioredImplementation bi) {
-		return true;
+	public boolean canCreate(final @Named(Names.TARGET_BO) Element bo) {
+		return ClassifierEditingUtil.canCreateInComponentImplementation(bo,
+				ci -> ci instanceof BehavioredImplementation);
 	}
 
-	@Create
-	public SubprogramCallSequence createBusinessObject(@Named(Names.MODIFY_BO) BehavioredImplementation bi, final NamingService namingService) {
-		final DefaultSelectSubprogramDialogModel subprogramSelectionModel = new DefaultSelectSubprogramDialogModel(bi);
-		final SelectSubprogramDialog dlg = new SelectSubprogramDialog(Display.getCurrent().getActiveShell(), subprogramSelectionModel);
-		if(dlg.open() == Window.CANCEL) {
-			return null;
+	@BuildCreateOperation
+	public void createBusinessObject(@Named(InternalNames.OPERATION) final OperationBuilder<Object> createOp,
+			final @Named(Names.TARGET_BO) Element targetBo,
+			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
+			final NamingService namingService) {
+
+		// Used to pass arguments between steps
+		class CreateArgs {
+			final BehavioredImplementation bi;
+			final CallContext callContext;
+			final CalledSubprogram calledSubprogram;
+
+			public CreateArgs(final BehavioredImplementation bi, final CallContext callContext,
+					final CalledSubprogram calledSubprogram) {
+				this.bi = bi;
+				this.callContext = callContext;
+				this.calledSubprogram = calledSubprogram;
+			}
 		}
 
-		// Get the CallContext and Called Subprogram
-		final CallContext callContext = subprogramSelectionModel.getCallContext(dlg.getSelectedContext());
-		final CalledSubprogram calledSubprogram = subprogramSelectionModel.getCalledSubprogram(dlg.getSelectedSubprogram());
+		ClassifierEditingUtil
+		.selectComponentImplementation(createOp, targetBo, ci -> ci instanceof BehavioredImplementation)
+		.transform(ci -> {
+			final BehavioredImplementation bi = (BehavioredImplementation) ci;
+			final DefaultSelectSubprogramDialogModel subprogramSelectionModel = new DefaultSelectSubprogramDialogModel(
+					bi);
+			final SelectSubprogramDialog dlg = new SelectSubprogramDialog(Display.getCurrent().getActiveShell(),
+					subprogramSelectionModel);
+			if (dlg.open() == Window.CANCEL) {
+				return StepResultBuilder.buildAbort();
+			}
 
-		// Get the classifier
-		final String newScsName = namingService.buildUniqueIdentifier(bi, "new_call_sequence");
-		final String initialSubprogramCallName = namingService.buildUniqueIdentifier(bi, "new_call");
+			// Get the CallContext and Called Subprogram
+			final CallContext callContext = subprogramSelectionModel.getCallContext(dlg.getSelectedContext());
+			final CalledSubprogram calledSubprogram = subprogramSelectionModel
+					.getCalledSubprogram(dlg.getSelectedSubprogram());
 
-		final SubprogramCallSequence newScs = bi.createOwnedSubprogramCallSequence();
-		newScs.setName(newScsName);
+			return StepResultBuilder.build(new CreateArgs(bi, callContext, calledSubprogram));
+		}).modifyModel(null, (tag, createArgs) -> createArgs.bi, (tag, bi, createArgs) -> {
+			final String newScsName = namingService.buildUniqueIdentifier(bi, "new_call_sequence");
+			final String initialSubprogramCallName = namingService.buildUniqueIdentifier(bi, "new_call");
 
-		// Create an initial call. Needed because call sequences must have at least one call
-		final SubprogramCall initialSubprogramCall = newScs.createOwnedSubprogramCall();
-		initialSubprogramCall.setName(initialSubprogramCallName);
-		initialSubprogramCall.setContext(callContext);
-		initialSubprogramCall.setCalledSubprogram(calledSubprogram);
+			final SubprogramCallSequence newScs = bi.createOwnedSubprogramCallSequence();
+			newScs.setName(newScsName);
 
-		AadlHelper.ensurePackageIsImported(bi, callContext);
-		AadlHelper.ensurePackageIsImported(bi, calledSubprogram);
+			// Create an initial call. Needed because call sequences must have at least one call
+			final SubprogramCall initialSubprogramCall = newScs.createOwnedSubprogramCall();
+			initialSubprogramCall.setName(initialSubprogramCallName);
+					initialSubprogramCall.setContext(createArgs.callContext);
+					initialSubprogramCall.setCalledSubprogram(createArgs.calledSubprogram);
 
-		return newScs;
+					AadlHelper.ensurePackageIsImported(bi, createArgs.callContext);
+					AadlHelper.ensurePackageIsImported(bi, createArgs.calledSubprogram);
+
+			return StepResultBuilder.create().showNewBusinessObject(targetBoc, newScs).build();
+		});
 	}
 }

@@ -12,6 +12,7 @@ import com.google.common.collect.Multimap;
 public class StepResultBuilder<UserValueType> {
 	private UserValueType userValue;
 	private Multimap<BusinessObjectContext, Object> containerToBoToShowMap = ArrayListMultimap.create();
+	private boolean aborted = false;
 
 	private StepResultBuilder(final UserValueType userValue) {
 		this.userValue = userValue;
@@ -26,6 +27,11 @@ public class StepResultBuilder<UserValueType> {
 		return this;
 	}
 
+	public StepResultBuilder<UserValueType> abort() {
+		aborted = true;
+		return this;
+	}
+
 	public static <UserValue> StepResultBuilder<UserValue> create(final UserValue userValue) {
 		return new StepResultBuilder<>(userValue);
 	}
@@ -37,7 +43,12 @@ public class StepResultBuilder<UserValueType> {
 	// TODO: Methods to provide hints to add to container. Support multiple values per step.
 
 	public StepResult<UserValueType> build() {
-		return new DefaultStepResult<>(userValue, ImmutableMultimap.copyOf(containerToBoToShowMap));
+		return new DefaultStepResult<>(userValue, ImmutableMultimap.copyOf(containerToBoToShowMap), aborted);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <UserValueType> StepResult<UserValueType> buildAbort() {
+		return (StepResult<UserValueType>) create().abort().build();
 	}
 
 	public static <UserValueType> StepResult<UserValueType> build(final UserValueType userValue) {

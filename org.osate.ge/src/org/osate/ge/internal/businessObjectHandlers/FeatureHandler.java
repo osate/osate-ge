@@ -103,7 +103,7 @@ public class FeatureHandler {
 		// Return true if there is a potential owner or if the target is a feature group or subcomponent without a classifier.
 		// The latter case is needed to allow displaying an error message.
 		return getPotentialOwners(targetBo, featureType).size() > 0
-				|| ClassifierEditingUtil.isSubcomponentOrFeatureGroupWithoutClassifier(targetBo);
+				|| InternalClassifierEditingUtil.isSubcomponentOrFeatureGroupWithoutClassifier(targetBo);
 	}
 
 	@BuildCreateOperation
@@ -115,18 +115,11 @@ public class FeatureHandler {
 			final @Named(InternalNames.PROJECT) IProject project,
 			final QueryService queryService, final NamingService namingService) {
 
-		if (!ClassifierEditingUtil.showMessageIfSubcomponentOrFeatureGroupWithoutClassifier(targetBo,
+		if (!InternalClassifierEditingUtil.showMessageIfSubcomponentOrFeatureGroupWithoutClassifier(targetBo,
 				"Set a classifier before creating a feature.")) {
-			// Determine which classifier should own the new element
-			final Classifier selectedClassifier = ClassifierEditingUtil
-					.getClassifierToModify(getPotentialOwners(targetBo, featureType));
-
-			if (selectedClassifier == null) {
-				return;
-			}
-
 			// Create the feature
-			createOp.transform((prevResult) -> StepResultBuilder.build(selectedClassifier)).modifyModel(pv -> pv, owner -> {
+			InternalClassifierEditingUtil.selectClassifier(createOp, getPotentialOwners(targetBo, featureType))
+			.modifyPreviousResult(owner -> {
 				final String newFeatureName = namingService.buildUniqueIdentifier(owner, "new_feature");
 
 				final NamedElement newFeature = AadlFeatureUtil.createFeature(owner, featureType);
@@ -168,7 +161,7 @@ public class FeatureHandler {
 			return Collections.singletonList((Classifier) targetBo);
 		}
 
-		return ClassifierEditingUtil.getPotentialClassifierTypesForEditing(targetBo).stream()
+		return InternalClassifierEditingUtil.getPotentialClassifierTypesForEditing(targetBo).stream()
 				.filter(c -> AadlFeatureUtil.canOwnFeatureType(c, featureType)).collect(Collectors.toList());
 	}
 

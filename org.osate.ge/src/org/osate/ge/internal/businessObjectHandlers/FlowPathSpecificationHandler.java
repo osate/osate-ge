@@ -146,14 +146,8 @@ public class FlowPathSpecificationHandler extends FlowSpecificationHandler {
 			return;
 		}
 
-		// Determine which classifier should own the new element
-		final ComponentType selectedClassifier = (ComponentType) ClassifierEditingUtil
-				.getClassifierToModify(getPotentialOwners(srcBoc, dstBoc, queryService));
-		if (selectedClassifier == null) {
-			return;
-		}
-
-		createOp.transform((prevResult) -> StepResultBuilder.build(selectedClassifier)).modifyModel(pv -> pv, ct -> {
+		InternalClassifierEditingUtil.selectClassifier(createOp, getPotentialOwners(srcBoc, dstBoc, queryService))
+		.modifyPreviousResult(ct -> {
 			final FlowSpecification fs = ct.createOwnedFlowSpecification();
 			fs.setKind(FlowKind.PATH);
 			fs.setName(getNewFlowSpecificationName(ct, namingService));

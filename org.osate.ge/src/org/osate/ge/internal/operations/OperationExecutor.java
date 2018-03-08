@@ -105,7 +105,14 @@ public class OperationExecutor {
 					if (!resultIsValid) {
 						@SuppressWarnings("unchecked")
 						final TransformerStep<PrevResultUserType, ResultUserType> ts = (TransformerStep<PrevResultUserType, ResultUserType>) step;
-						result = ts.getHandler().apply(prevResultSupplier.get());
+						final DefaultStepResult<PrevResultUserType> prevResult = (DefaultStepResult<PrevResultUserType>) prevResultSupplier
+								.get();
+						if (prevResult.aborted()) {
+							result = StepResultBuilder.buildAbort();
+						} else {
+							result = ts.getHandler().apply(prevResult.getUserValue());
+						}
+
 						resultIsValid = true;
 
 						uncalledStepResultSuppliers.remove(this);
@@ -145,7 +152,8 @@ public class OperationExecutor {
 
 			@Override
 			public void modify(final TagType tag, final BusinessObjectType boToModify) {
-				result = modificationStep.getModifier().modify(tag, boToModify, prevResultSupplier.get());
+				result = modificationStep.getModifier().modify(tag, boToModify,
+						prevResultSupplier.get().getUserValue());
 				if (result != null) {
 					allResults.add(result);
 				}
@@ -156,8 +164,13 @@ public class OperationExecutor {
 
 		final AadlModificationService.Modification<TagType, BusinessObjectType> modification = AadlModificationService.Modification
 				.create(modificationStep.getTag(),
-						(tag) -> modificationStep.getBusinessObjectProvider().getBusinessObject(tag,
-								prevResultSupplier.get()),
+						(tag) -> {
+							final DefaultStepResult<PrevResultUserType> prevResult = (DefaultStepResult<PrevResultUserType>) prevResultSupplier
+									.get();
+							return prevResult.aborted() ? null
+									: modificationStep.getBusinessObjectProvider().getBusinessObject(tag,
+											prevResult.getUserValue());
+						},
 						modifier);
 		modifications.add(modification);
 		return () -> modifier.result;
@@ -168,24 +181,24 @@ public class OperationExecutor {
 		DefaultOperationBuilder rootOpBuilder = new DefaultOperationBuilder();
 		final OperationBuilder<Integer> b = rootOpBuilder.transform(arg -> StepResultBuilder.create(5).build());
 
-		b.transform(pr -> StepResultBuilder.create(pr.getUserValue() + 5).build())
+		b.transform(pr -> StepResultBuilder.create(pr + 5).build())
 		.modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
-			System.out.println("M1-A: " + prevResult.getUserValue());
-			return StepResultBuilder.create(prevResult.getUserValue() + 5).build();
+			System.out.println("M1-A: " + prevResult);
+			return StepResultBuilder.create(prevResult + 5).build();
 		}).modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
-			System.out.println("M2-A: " + prevResult.getUserValue());
-			return StepResultBuilder.create(prevResult.getUserValue() + 5).build();
+			System.out.println("M2-A: " + prevResult);
+			return StepResultBuilder.create(prevResult + 5).build();
 		});
 
-		b.transform(pr -> StepResultBuilder.create(pr.getUserValue() + 6).build())
+		b.transform(pr -> StepResultBuilder.create(pr + 6).build())
 		.modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
-			System.out.println("M1-B: " + prevResult.getUserValue());
-			return StepResultBuilder.create(prevResult.getUserValue() + 6).build();
+			System.out.println("M1-B: " + prevResult);
+			return StepResultBuilder.create(prevResult + 6).build();
 		}).modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
-			System.out.println("M2-B: " + prevResult.getUserValue());
-			return StepResultBuilder.create(prevResult.getUserValue() + 6).build();
+			System.out.println("M2-B: " + prevResult);
+			return StepResultBuilder.create(prevResult + 6).build();
 		}).transform(pr -> {
-			System.out.println("T3-B: " + pr.getUserValue());
+			System.out.println("T3-B: " + pr);
 			return null;
 		});
 
@@ -206,7 +219,10 @@ public class OperationExecutor {
 
 			private <TagType, BusinessObjectType extends EObject> void executeModification(
 					final Modification<TagType, BusinessObjectType> m) {
-				m.getModifier().modify(m.getTag(), m.getTagToBusinessObjectMapper().apply(m.getTag()));
+				final BusinessObjectType bo = m.getTagToBusinessObjectMapper().apply(m.getTag());
+				if (bo != null) {
+					m.getModifier().modify(m.getTag(), bo);
+				}
 			}
 		};
 
