@@ -253,7 +253,7 @@ public class DefaultAadlModificationService implements AadlModificationService {
 		final BusinessObjectType clonedUserObject = (BusinessObjectType)tmpClonedObject;
 
 		// Modify the annex by modifying the cloned object, unparsing, and then updating the source text of the original default annex element.
-		return modifySafely(resource, tag, defaultAnnexElement, (defaultAnnexElement1, obj2) -> {
+		return modifySafely(resource, tag, defaultAnnexElement, (unusedTag, defaultAnnexElement1) -> {
 			// Modify the cloned object
 			modifier.modify(tag, clonedUserObject);
 

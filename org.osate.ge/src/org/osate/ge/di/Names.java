@@ -49,5 +49,4 @@ public interface Names {
 	public static final String DESTINATION_BUSINESS_OBJECT_CONTEXT = "dbocs";
 	public static final String TARGET_BUSINESS_OBJECT_CONTEXT = "tbocs";
 	public static final String DOCKING_POSITION = "docking_position";
-	public static final String OPERATION = "operation";
 }

@@ -92,11 +92,11 @@ public class ClassifierSelectionOperationBuilder<ClassifierType extends Classifi
 	public boolean canBuildOperation(final Object bo) {
 		// Return true for subcomponents / feature groups which do not have a classifier assigned so that the operation can show an explanation.
 		if (ComponentClassifier.class.isAssignableFrom(classifierType)) {
-			if (!ClassifierEditingUtil.isSubcomponentWithoutClassifier(bo)) {
+			if (ClassifierEditingUtil.isSubcomponentWithoutClassifier(bo)) {
 				return true;
 			}
 		} else {
-			if (!ClassifierEditingUtil.isSubcomponentOrFeatureGroupWithoutClassifier(bo)) {
+			if (ClassifierEditingUtil.isSubcomponentOrFeatureGroupWithoutClassifier(bo)) {
 				return true;
 			}
 		}

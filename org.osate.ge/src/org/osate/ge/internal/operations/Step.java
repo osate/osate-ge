@@ -1,5 +1,7 @@
 package org.osate.ge.internal.operations;
 
-public interface Step<ResultUserType> {
+import org.osate.ge.operations.Operation;
+
+public interface Step<ResultUserType> extends Operation {
 	Step<?> getNextStep();
 }

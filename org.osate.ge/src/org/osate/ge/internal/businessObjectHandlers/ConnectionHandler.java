@@ -58,7 +58,7 @@ import org.osate.ge.internal.util.AadlConnectionUtil;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.internal.util.StringUtil;
-import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.Operation;
 import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
@@ -243,61 +243,63 @@ public class ConnectionHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(final @Named(Names.OPERATION) OperationBuilder<Object> createOp,
+	public Operation buildCreateOperation(
 			final @Named(Names.SOURCE_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext srcBoc,
 			final @Named(Names.DESTINATION_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext dstBoc,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass connectionType, final QueryService queryService,
 			final NamingService namingService) {
-
 		// Find the common ancestor which will be the BOC which will own the new connection.
 		final BusinessObjectContext container = getOwnerBoc(srcBoc, dstBoc);
 		if (container == null) {
-			return;
+			return null;
 		}
 
-		// Create the subcomponent
-		getClassifierOpBuilder().buildOperation(createOp, container.getBusinessObject())
-		.modifyPreviousResult(owner -> {
-			// Create the appropriate type of connection object
-			final org.osate.aadl2.Connection newAadlConnection = AadlConnectionUtil.createConnection(owner,
-					connectionType);
-			if (newAadlConnection == null) {
-				return null;
-			}
-
-			// Reset the no connections flag
-			owner.setNoConnections(false);
-
-			// Set the source and destination
-			final ConnectedElement src = getConnectedElementForBusinessObjectContext(srcBoc, connectionType, false,
-					container);
-			newAadlConnection.setSource(src);
-			final ConnectedElement dst = getConnectedElementForBusinessObjectContext(dstBoc, connectionType,
-					!(src.getContext() instanceof Subcomponent), container);
-			newAadlConnection.setDestination(dst);
-
-			// Determine the name for the new connection
-			final String newConnectionName = namingService.buildUniqueIdentifier(owner, "new_connection");
-			newAadlConnection.setName(newConnectionName);
-
-			// Set type of access connection
-			if (newAadlConnection instanceof AccessConnection) {
-				final AccessConnection ac = (AccessConnection) newAadlConnection;
-				if (src.getConnectionEnd() instanceof SubprogramAccess
-						|| dst.getConnectionEnd() instanceof SubprogramAccess) {
-					ac.setAccessCategory(AccessCategory.SUBPROGRAM);
-				} else if (src.getConnectionEnd() instanceof SubprogramGroupAccess
-						|| dst.getConnectionEnd() instanceof SubprogramGroupAccess) {
-					ac.setAccessCategory(AccessCategory.SUBPROGRAM_GROUP);
-				} else if (src.getConnectionEnd() instanceof BusAccess || dst.getConnectionEnd() instanceof BusAccess) {
-					ac.setAccessCategory(AccessCategory.BUS);
-				} else if (src.getConnectionEnd() instanceof DataAccess
-						|| dst.getConnectionEnd() instanceof DataAccess) {
-					ac.setAccessCategory(AccessCategory.DATA);
+		return Operation.create(createOp -> {
+			// Create the subcomponent
+			getClassifierOpBuilder().buildOperation(createOp, container.getBusinessObject())
+			.modifyPreviousResult(owner -> {
+				// Create the appropriate type of connection object
+				final org.osate.aadl2.Connection newAadlConnection = AadlConnectionUtil.createConnection(owner,
+						connectionType);
+				if (newAadlConnection == null) {
+					return null;
 				}
-			}
 
-			return StepResultBuilder.create().showNewBusinessObject(container, newAadlConnection).build();
+				// Reset the no connections flag
+				owner.setNoConnections(false);
+
+				// Set the source and destination
+				final ConnectedElement src = getConnectedElementForBusinessObjectContext(srcBoc, connectionType,
+						false, container);
+				newAadlConnection.setSource(src);
+				final ConnectedElement dst = getConnectedElementForBusinessObjectContext(dstBoc, connectionType,
+						!(src.getContext() instanceof Subcomponent), container);
+				newAadlConnection.setDestination(dst);
+
+				// Determine the name for the new connection
+				final String newConnectionName = namingService.buildUniqueIdentifier(owner, "new_connection");
+				newAadlConnection.setName(newConnectionName);
+
+				// Set type of access connection
+				if (newAadlConnection instanceof AccessConnection) {
+					final AccessConnection ac = (AccessConnection) newAadlConnection;
+					if (src.getConnectionEnd() instanceof SubprogramAccess
+							|| dst.getConnectionEnd() instanceof SubprogramAccess) {
+						ac.setAccessCategory(AccessCategory.SUBPROGRAM);
+					} else if (src.getConnectionEnd() instanceof SubprogramGroupAccess
+							|| dst.getConnectionEnd() instanceof SubprogramGroupAccess) {
+						ac.setAccessCategory(AccessCategory.SUBPROGRAM_GROUP);
+					} else if (src.getConnectionEnd() instanceof BusAccess
+							|| dst.getConnectionEnd() instanceof BusAccess) {
+						ac.setAccessCategory(AccessCategory.BUS);
+					} else if (src.getConnectionEnd() instanceof DataAccess
+							|| dst.getConnectionEnd() instanceof DataAccess) {
+						ac.setAccessCategory(AccessCategory.DATA);
+					}
+				}
+
+				return StepResultBuilder.create().showNewBusinessObject(container, newAadlConnection).build();
+			});
 		});
 	}
 

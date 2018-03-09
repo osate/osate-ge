@@ -32,7 +32,7 @@ import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
-import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.Operation;
 import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
@@ -132,38 +132,37 @@ public class FlowPathSpecificationHandler extends FlowSpecificationHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(final @Named(Names.OPERATION) OperationBuilder<Object> createOp,
-			final @Named(Names.SOURCE_BO) Feature srcFeature,
+	public Operation buildCreateOperation(final @Named(Names.SOURCE_BO) Feature srcFeature,
 			final @Named(Names.SOURCE_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext srcBoc,
 			final @Named(Names.DESTINATION_BO) Feature dstFeature,
 			final @Named(Names.DESTINATION_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext dstBoc,
 			final QueryService queryService,
 			final NamingService namingService) {
-
 		final BusinessObjectContext container = getFlowSpecificationOwnerBoc(srcBoc, queryService);
 		if (container == null) {
-			return;
+			return null;
 		}
 
-		ClassifierEditingUtil.selectClassifier(createOp, getPotentialOwners(srcBoc, dstBoc, queryService))
-		.modifyPreviousResult(ct -> {
-			final FlowSpecification fs = ct.createOwnedFlowSpecification();
-			fs.setKind(FlowKind.PATH);
-			fs.setName(getNewFlowSpecificationName(ct, namingService));
+		return Operation.create(createOp -> {
+			ClassifierEditingUtil.selectClassifier(createOp, getPotentialOwners(srcBoc, dstBoc, queryService))
+			.modifyPreviousResult(ct -> {
+				final FlowSpecification fs = ct.createOwnedFlowSpecification();
+				fs.setKind(FlowKind.PATH);
+				fs.setName(getNewFlowSpecificationName(ct, namingService));
 
-			// Create the flow ends
-			final FlowEnd inFlowEnd = fs.createInEnd();
-			inFlowEnd.setFeature(srcFeature);
-			inFlowEnd.setContext(getContext(srcBoc, queryService));
+				// Create the flow ends
+				final FlowEnd inFlowEnd = fs.createInEnd();
+				inFlowEnd.setFeature(srcFeature);
+				inFlowEnd.setContext(getContext(srcBoc, queryService));
 
-			final FlowEnd outFlowEnd = fs.createOutEnd();
-			outFlowEnd.setFeature(dstFeature);
-			outFlowEnd.setContext(getContext(dstBoc, queryService));
+				final FlowEnd outFlowEnd = fs.createOutEnd();
+				outFlowEnd.setFeature(dstFeature);
+				outFlowEnd.setContext(getContext(dstBoc, queryService));
 
-			ct.setNoFlows(false);
+				ct.setNoFlows(false);
 
-			return StepResultBuilder.create().showNewBusinessObject(container, fs).build();
+				return StepResultBuilder.create().showNewBusinessObject(container, fs).build();
+			});
 		});
-
 	}
 }

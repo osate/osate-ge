@@ -26,13 +26,12 @@ import org.osate.ge.internal.diagram.runtime.AgeDiagramUtil;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.updating.DiagramUpdater;
 import org.osate.ge.internal.graphiti.services.GraphitiService;
-import org.osate.ge.internal.operations.DefaultOperationBuilder;
 import org.osate.ge.internal.operations.DefaultOperationResultsProcessor;
 import org.osate.ge.internal.operations.OperationExecutor;
-import org.osate.ge.internal.operations.Step;
 import org.osate.ge.internal.services.AadlModificationService;
 import org.osate.ge.internal.services.ExtensionService;
 import org.osate.ge.internal.util.AnnotationUtil;
+import org.osate.ge.operations.Operation;
 import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.services.ReferenceBuilderService;
 
@@ -107,9 +106,6 @@ public class BoHandlerCreateFeature extends AbstractCreateFeature implements Cat
 		final DockingPosition targetDockingPosition = AgeDiagramUtil.determineDockingPosition(targetNode,
 				context.getX(), context.getY(), 0, 0);
 
-		// CreateOperation is used for all code paths
-		final DefaultOperationBuilder rootOpBuilder = new DefaultOperationBuilder();
-
 		final IEclipseContext eclipseCtx = extService.createChildContext();
 		try {
 			eclipseCtx.set(Names.PALETTE_ENTRY_CONTEXT, paletteEntry.getContext());
@@ -118,32 +114,34 @@ public class BoHandlerCreateFeature extends AbstractCreateFeature implements Cat
 			eclipseCtx.set(Names.DOCKING_POSITION, targetDockingPosition); // Specify even if the shape will not be docked.
 			eclipseCtx.set(Names.TARGET_BUSINESS_OBJECT_CONTEXT, targetNode);
 
+			final Operation operation;
+
 			// Check if the handler will modify the create operation directly
 			if (AnnotationUtil.hasMethodWithAnnotation(BuildCreateOperation.class, handler)) {
-				eclipseCtx.set(Names.OPERATION, rootOpBuilder);
-				ContextInjectionFactory.invoke(handler,
+				operation = (Operation)ContextInjectionFactory.invoke(handler,
 						BuildCreateOperation.class,
 						eclipseCtx);
 			} else {
-				// Otherwise, create a single step based on other annotated methods
-				final DiagramNode ownerNode = getOwnerDiagramNode(targetNode);
-				final EObject boToModify = getBusinessObjectToModify(targetNode, ownerNode.getBusinessObject());
+				operation = Operation.create(opBuilder -> {
+					// Otherwise, create a single step based on other annotated methods
+					final DiagramNode ownerNode = getOwnerDiagramNode(targetNode);
+					final EObject boToModify = getBusinessObjectToModify(targetNode, ownerNode.getBusinessObject());
 
-				rootOpBuilder.modifyModel(boToModify, (tag, prevResult) -> tag, (tag, boToModify1, prevResult) -> {
-					eclipseCtx.set(Names.MODIFY_BO, boToModify1);
-					final Object newBo1 = ContextInjectionFactory.invoke(handler, Create.class, eclipseCtx);
-					return StepResultBuilder.create().showNewBusinessObject(ownerNode, newBo1).build();
+					opBuilder.modifyModel(boToModify, (tag, prevResult) -> tag, (tag, boToModify1, prevResult) -> {
+						eclipseCtx.set(Names.MODIFY_BO, boToModify1);
+						final Object newBo1 = ContextInjectionFactory.invoke(handler, Create.class, eclipseCtx);
+						return StepResultBuilder.create().showNewBusinessObject(ownerNode, newBo1).build();
+					});
 				});
 			}
 
-			final Step<?> firstStep = rootOpBuilder.build();
-			if (firstStep == null) {
+			if (operation == null) {
 				return null;
 			}
 
 			// Perform modification
 			final OperationExecutor opExecutor = new OperationExecutor(aadlModService);
-			opExecutor.execute(firstStep, new DefaultOperationResultsProcessor(diagramUpdater, refBuilder, targetNode,
+			opExecutor.execute(operation, new DefaultOperationResultsProcessor(diagramUpdater, refBuilder, targetNode,
 					new Point(context.getX(), context.getY())));
 			return EMPTY;
 		} finally {

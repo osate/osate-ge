@@ -39,7 +39,7 @@ import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.AadlSubcomponentUtil;
 import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.internal.util.StringUtil;
-import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.Operation;
 import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.services.QueryService;
 
@@ -141,22 +141,22 @@ public class SubcomponentHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(@Named(Names.OPERATION) final OperationBuilder<Object> createOp,
-			final @Named(Names.TARGET_BO) Element targetBo,
+	public Operation buildCreateOperation(final @Named(Names.TARGET_BO) Element targetBo,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass subcomponentType,
 			final QueryService queryService, final NamingService namingService) {
+		return Operation.create(createOp -> {
+			getClassifierOpBuilder(subcomponentType).buildOperation(createOp, targetBo)
+			.modifyPreviousResult(owner -> {
+				final String name = namingService.buildUniqueIdentifier(owner, "new_subcomponent");
+				final Subcomponent sc = AadlSubcomponentUtil.createSubcomponent(owner, subcomponentType);
+				sc.setName(name);
 
-		getClassifierOpBuilder(subcomponentType).buildOperation(createOp, targetBo)
-		.modifyPreviousResult(owner -> {
-			final String name = namingService.buildUniqueIdentifier(owner, "new_subcomponent");
-			final Subcomponent sc = AadlSubcomponentUtil.createSubcomponent(owner, subcomponentType);
-			sc.setName(name);
+				// Reset the no subcomponents flag
+				owner.setNoSubcomponents(false);
 
-			// Reset the no subcomponents flag
-			owner.setNoSubcomponents(false);
-
-			return StepResultBuilder.create().showNewBusinessObject(targetBoc, sc).build();
+				return StepResultBuilder.create().showNewBusinessObject(targetBoc, sc).build();
+			});
 		});
 	}
 

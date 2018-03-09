@@ -62,7 +62,7 @@ import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.AadlPrototypeUtil;
 import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.internal.util.StringUtil;
-import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.Operation;
 import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.services.QueryService;
 
@@ -106,38 +106,39 @@ public class FeatureHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(final @Named(Names.OPERATION) OperationBuilder<Object> createOp,
-			final @Named(Names.TARGET_BO) EObject targetBo,
+	public Operation buildCreateOperation(final @Named(Names.TARGET_BO) EObject targetBo,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass featureType,
 			final @Named(Names.DOCKING_POSITION) DockingPosition dockingPosition,
 			final @Named(InternalNames.PROJECT) IProject project,
 			final QueryService queryService, final NamingService namingService) {
-		// Create the feature
-		getClassifierOpBuilder(featureType).buildOperation(createOp, targetBo).modifyPreviousResult(owner -> {
-			final String newFeatureName = namingService.buildUniqueIdentifier(owner, "new_feature");
+		return Operation.create(createOp -> {
+			// Create the feature
+			getClassifierOpBuilder(featureType).buildOperation(createOp, targetBo).modifyPreviousResult(owner -> {
+				final String newFeatureName = namingService.buildUniqueIdentifier(owner, "new_feature");
 
-			final NamedElement newFeature = AadlFeatureUtil.createFeature(owner, featureType);
-			newFeature.setName(newFeatureName);
+				final NamedElement newFeature = AadlFeatureUtil.createFeature(owner, featureType);
+				newFeature.setName(newFeatureName);
 
-			// Set in or out based on target docking position
-			final boolean isRight = dockingPosition == DockingPosition.RIGHT;
-			if (newFeature instanceof DirectedFeature) {
-				if (!(newFeature instanceof FeatureGroup)) {
-					final DirectedFeature newDirectedFeature = (DirectedFeature) newFeature;
-					newDirectedFeature.setIn(!isRight);
-					newDirectedFeature.setOut(isRight);
+				// Set in or out based on target docking position
+				final boolean isRight = dockingPosition == DockingPosition.RIGHT;
+				if (newFeature instanceof DirectedFeature) {
+					if (!(newFeature instanceof FeatureGroup)) {
+						final DirectedFeature newDirectedFeature = (DirectedFeature) newFeature;
+						newDirectedFeature.setIn(!isRight);
+						newDirectedFeature.setOut(isRight);
+					}
+				} else if (newFeature instanceof Access) {
+					final Access access = (Access) newFeature;
+					access.setKind(isRight ? AccessType.PROVIDES : AccessType.REQUIRES);
 				}
-			} else if (newFeature instanceof Access) {
-				final Access access = (Access) newFeature;
-				access.setKind(isRight ? AccessType.PROVIDES : AccessType.REQUIRES);
-			}
 
-			if (owner instanceof ComponentType) {
-				((ComponentType) owner).setNoFeatures(false);
-			}
+				if (owner instanceof ComponentType) {
+					((ComponentType) owner).setNoFeatures(false);
+				}
 
-			return StepResultBuilder.create().showNewBusinessObject(targetBoc, newFeature).build();
+				return StepResultBuilder.create().showNewBusinessObject(targetBoc, newFeature).build();
+			});
 		});
 	}
 

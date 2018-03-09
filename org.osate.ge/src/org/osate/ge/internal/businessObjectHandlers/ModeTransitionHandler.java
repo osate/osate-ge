@@ -43,7 +43,7 @@ import org.osate.ge.internal.ui.dialogs.ModeTransitionTriggerSelectionDialog;
 import org.osate.ge.internal.ui.dialogs.ModeTransitionTriggerSelectionDialog.ModeTransitionTriggerInfo;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
-import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.Operation;
 import org.osate.ge.operations.StepResult;
 import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.query.StandaloneQuery;
@@ -129,7 +129,7 @@ public class ModeTransitionHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(@Named(Names.OPERATION) final OperationBuilder<Object> createOp,
+	public Operation buildCreateOperation(
 			@Named(Names.SOURCE_BO) final Mode srcMode,
 			final @Named(Names.SOURCE_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext srcBoc,
 			@Named(Names.DESTINATION_BO) final Mode dstMode,
@@ -138,14 +138,14 @@ public class ModeTransitionHandler {
 
 		final BusinessObjectContext container = getOwnerBoc(srcBoc, queryService);
 		if (container == null) {
-			return;
+			return null;
 		}
 
 		// Determine which classifier should own the new element
 		final ComponentClassifier selectedClassifier = (ComponentClassifier) ClassifierEditingUtil
 				.getClassifierToModify(getPotentialOwners(srcBoc, dstBoc, queryService));
 		if (selectedClassifier == null) {
-			return;
+			return null;
 		}
 
 		// Prompt for transition triggers
@@ -153,34 +153,36 @@ public class ModeTransitionHandler {
 				.promptForTriggers(selectedClassifier,
 						null);
 		if (selectedTriggers == null) {
-			return;
+			return null;
 		}
 
-		createOp.supply(() -> StepResult.forValue(selectedClassifier)).modifyPreviousResult(cc -> {
-			// Determine the name for the new mode transition
-			final String newElementName = namingService.buildUniqueIdentifier(cc, "new_transition");
+		return Operation.create(createOp -> {
+			createOp.supply(() -> StepResult.forValue(selectedClassifier)).modifyPreviousResult(cc -> {
+				// Determine the name for the new mode transition
+				final String newElementName = namingService.buildUniqueIdentifier(cc, "new_transition");
 
-			// Create the new mode transition
-			final ModeTransition newModeTransition = cc.createOwnedModeTransition();
+				// Create the new mode transition
+				final ModeTransition newModeTransition = cc.createOwnedModeTransition();
 
-			// Clear the no modes flag
-			cc.setNoModes(false);
+				// Clear the no modes flag
+				cc.setNoModes(false);
 
-			// Set the name
-			newModeTransition.setName(newElementName);
+				// Set the name
+				newModeTransition.setName(newElementName);
 
-			// Set the source and destination
-			newModeTransition.setSource(srcMode);
-			newModeTransition.setDestination(dstMode);
+				// Set the source and destination
+				newModeTransition.setSource(srcMode);
+				newModeTransition.setDestination(dstMode);
 
-			// Create Triggers
-			for (ModeTransitionTriggerInfo selectedPort : selectedTriggers) {
-				final ModeTransitionTrigger mtt = newModeTransition.createOwnedTrigger();
-				mtt.setTriggerPort(selectedPort.port);
-				mtt.setContext(selectedPort.context);
-			}
+				// Create Triggers
+				for (ModeTransitionTriggerInfo selectedPort : selectedTriggers) {
+					final ModeTransitionTrigger mtt = newModeTransition.createOwnedTrigger();
+					mtt.setTriggerPort(selectedPort.port);
+					mtt.setContext(selectedPort.context);
+				}
 
-			return StepResultBuilder.create().showNewBusinessObject(container, newModeTransition).build();
+				return StepResultBuilder.create().showNewBusinessObject(container, newModeTransition).build();
+			});
 		});
 	}
 

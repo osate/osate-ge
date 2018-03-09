@@ -28,7 +28,7 @@ import org.osate.ge.graphics.internal.OrthogonalLineBuilder;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
-import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.Operation;
 import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
@@ -127,39 +127,40 @@ public class FlowSourceSinkSpecificationHandler extends FlowSpecificationHandler
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(final @Named(Names.OPERATION) OperationBuilder<Object> createOp,
+	public Operation buildCreateOperation(
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext featureBoc,
 			final @Named(Names.TARGET_BO) Feature feature,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) FlowKind flowKind, final QueryService queryService,
 			final NamingService namingService) {
-
 		final BusinessObjectContext container = getFlowSpecificationOwnerBoc(featureBoc, queryService);
 		if (container == null) {
-			return;
+			return null;
 		}
 
-		ClassifierEditingUtil.selectClassifier(createOp, getPotentialOwnersByFeature(featureBoc, queryService))
-		.modifyPreviousResult(ct -> {
-			final FlowSpecification fs = ct.createOwnedFlowSpecification();
-			fs.setKind(flowKind);
-			fs.setName(getNewFlowSpecificationName(ct, namingService));
+		return Operation.create(createOp -> {
+			ClassifierEditingUtil.selectClassifier(createOp, getPotentialOwnersByFeature(featureBoc, queryService))
+					.modifyPreviousResult(ct -> {
+						final FlowSpecification fs = ct.createOwnedFlowSpecification();
+						fs.setKind(flowKind);
+						fs.setName(getNewFlowSpecificationName(ct, namingService));
 
-			// Create the appropriate flow end depending on the type being created
-			final FlowEnd flowEnd;
-			if (flowKind == FlowKind.SOURCE) {
-				flowEnd = fs.createOutEnd();
-			} else if (flowKind == FlowKind.SINK) {
-				flowEnd = fs.createInEnd();
-			} else {
-				throw new RuntimeException("Unexpected flow kind: " + flowKind);
-			}
-			flowEnd.setFeature(feature);
-			flowEnd.setContext(getContext(featureBoc, queryService));
+						// Create the appropriate flow end depending on the type being created
+						final FlowEnd flowEnd;
+						if (flowKind == FlowKind.SOURCE) {
+							flowEnd = fs.createOutEnd();
+						} else if (flowKind == FlowKind.SINK) {
+							flowEnd = fs.createInEnd();
+						} else {
+							throw new RuntimeException("Unexpected flow kind: " + flowKind);
+						}
+						flowEnd.setFeature(feature);
+						flowEnd.setContext(getContext(featureBoc, queryService));
 
-			// Clear the no flows flag
-			ct.setNoFlows(false);
+						// Clear the no flows flag
+						ct.setNoFlows(false);
 
-			return StepResultBuilder.create().showNewBusinessObject(container, fs).build();
+						return StepResultBuilder.create().showNewBusinessObject(container, fs).build();
+					});
 		});
 	}
 }

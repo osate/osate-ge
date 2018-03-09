@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 
 import org.eclipse.emf.ecore.EObject;
 import org.osate.ge.internal.services.AadlModificationService;
+import org.osate.ge.operations.Operation;
 import org.osate.ge.operations.OperationBuilder;
 import org.osate.ge.operations.StepResult;
 import org.osate.ge.operations.StepResultBuilder;
@@ -28,17 +29,21 @@ public class OperationExecutor {
 	 * @param step
 	 * @param resultsProcessor handles the results of the operation. Will not be called if any of the modifications fail.
 	 */
-	public void execute(final Step<?> step, final ResultsProcessor resultsProcessor) {
+	public void execute(final Operation op, final ResultsProcessor resultsProcessor) {
 		Objects.requireNonNull(resultsProcessor, "resultsProcessor must not be null");
 
-		if (step == null) {
+		if (op == null) {
 			return;
+		}
+
+		if (!(op instanceof Step)) {
+			throw new RuntimeException("Operation is not of type Step");
 		}
 
 		final LinkedHashSet<Supplier<? extends StepResult<?>>> pendingStepConsumers = new LinkedHashSet<>();
 		final List<AadlModificationService.Modification<?, ?>> modifications = new ArrayList<>();
 		final List<StepResult<?>> allResults = new ArrayList<>(); // Will only contain non-null results
-		prepareToExecute(step, () -> StepResultBuilder.create().build(), allResults, modifications,
+		prepareToExecute((Step<?>) op, () -> StepResultBuilder.create().build(), allResults, modifications,
 				pendingStepConsumers);
 
 		if (modifications.isEmpty()) {

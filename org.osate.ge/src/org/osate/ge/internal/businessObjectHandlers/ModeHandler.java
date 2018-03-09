@@ -38,7 +38,7 @@ import org.osate.ge.graphics.internal.ModeGraphicBuilder;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
-import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.Operation;
 import org.osate.ge.operations.StepResult;
 import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.services.QueryService;
@@ -93,13 +93,12 @@ public class ModeHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(@Named(Names.OPERATION) final OperationBuilder<Object> createOp,
-			final @Named(Names.TARGET_BO) EObject target,
+	public Operation buildCreateOperation(final @Named(Names.TARGET_BO) EObject target,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
 			final QueryService queryService, final NamingService namingService) {
 		if (ClassifierEditingUtil.showMessageIfSubcomponentOrFeatureGroupWithoutClassifier(target,
 				"Set a classifier before creating a mode.")) {
-			return;
+			return null;
 		}
 
 		final List<ComponentClassifier> potentialOwners = getPotentialOwners(target);
@@ -112,21 +111,22 @@ public class ModeHandler {
 				final ComponentClassifier selectedClassifier = (ComponentClassifier) ClassifierEditingUtil
 						.getClassifierToModify(potentialOwners, forcePrompt);
 				if (selectedClassifier == null) {
-					return;
+					return null;
 				}
 
-		createOp.supply(() -> StepResult.forValue(selectedClassifier))
-				.modifyPreviousResult(boToModify -> {
-					final String newModeName = namingService.buildUniqueIdentifier(boToModify, "new_mode");
+				return Operation.create(createOp -> {
+					createOp.supply(() -> StepResult.forValue(selectedClassifier)).modifyPreviousResult(boToModify -> {
+						final String newModeName = namingService.buildUniqueIdentifier(boToModify, "new_mode");
 
-					final Mode newMode = boToModify.createOwnedMode();
-					newMode.setInitial(false);
-					newMode.setName(newModeName);
+						final Mode newMode = boToModify.createOwnedMode();
+						newMode.setInitial(false);
+						newMode.setName(newModeName);
 
-					// Clear the no modes flag
-					boToModify.setNoModes(false);
+						// Clear the no modes flag
+						boToModify.setNoModes(false);
 
-					return StepResultBuilder.create().showNewBusinessObject(targetBoc, newMode).build();
+						return StepResultBuilder.create().showNewBusinessObject(targetBoc, newMode).build();
+					});
 				});
 	}
 
