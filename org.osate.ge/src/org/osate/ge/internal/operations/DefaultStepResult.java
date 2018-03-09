@@ -20,7 +20,6 @@ public class DefaultStepResult<UserResultType> implements StepResult<UserResultT
 		this.aborted = aborted;
 	}
 
-	@Override
 	public UserResultType getUserValue() {
 		return userValue;
 	}

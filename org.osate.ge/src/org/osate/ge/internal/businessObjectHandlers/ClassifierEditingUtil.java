@@ -19,37 +19,38 @@ import org.osate.aadl2.NamedElement;
 import org.osate.aadl2.Subcomponent;
 import org.osate.ge.internal.ui.dialogs.ElementSelectionDialog;
 import org.osate.ge.operations.OperationBuilder;
-import org.osate.ge.operations.StepResultBuilder;
+import org.osate.ge.operations.StepResult;
 
-public class InternalClassifierEditingUtil {
+public class ClassifierEditingUtil {
 	public static final <ClassifierType extends Classifier> OperationBuilder<ClassifierType> selectClassifier(
 			final OperationBuilder<?> operation, final List<ClassifierType> potentialClassifiers) {
 		return operation.supply(() -> {
 			// Determine which classifier should own the new element
-			final ClassifierType selectedClassifier = (ClassifierType) InternalClassifierEditingUtil
+			final ClassifierType selectedClassifier = (ClassifierType) ClassifierEditingUtil
 					.getClassifierToModify(potentialClassifiers);
 			if (selectedClassifier == null) {
-				return StepResultBuilder.buildAbort();
+				return StepResult.abort();
 			}
 
-			return StepResultBuilder.build(selectedClassifier);
+			return StepResult.forValue(selectedClassifier);
 		});
 	}
 
-	// TODO: Document behavior if the BO matches the filter, etc.. Need way to override?
-
 	/**
-	 * Returns a list of component classifiers for editing based on a specified business object.
-	 * If the specified object is a component classifier, only it is returned.
+	 * Returns a list of classifiers for editing based on a specified business object.
+	 * If the specified object is of the specified type and passes the filter, only it is returned.
 	 * @param bo
 	 * @return
 	 */
-	private static <ClassifierType extends Classifier> List<ClassifierType> getPotentialClassifiersForEditing(
-			final Object bo, final Class<ClassifierType> classifierClass, final Predicate<ClassifierType> filter) {
-		if (classifierClass.isInstance(bo)) {
-			final ClassifierType classifier = classifierClass.cast(bo);
-			if (filter.test(classifier)) {
-				return Collections.singletonList(classifier);
+	public static <ClassifierType extends Classifier> List<ClassifierType> getPotentialClassifiersForEditing(
+			final Object bo, final Class<ClassifierType> classifierClass, final Predicate<ClassifierType> filter,
+			final boolean includeAllWhenBoIsMatch) {
+		if (!includeAllWhenBoIsMatch) {
+			if (classifierClass.isInstance(bo)) {
+				final ClassifierType classifier = classifierClass.cast(bo);
+				if (filter.test(classifier)) {
+					return Collections.singletonList(classifier);
+				}
 			}
 		}
 
@@ -77,21 +78,11 @@ public class InternalClassifierEditingUtil {
 				.collect(Collectors.toList());
 	}
 
-	public static List<ComponentImplementation> getPotentialComponentImplementations(final Object bo) {
-		return getPotentialComponentImplementations(bo, ci -> true);
+	public static <ClassifierType extends Classifier> List<ClassifierType> getPotentialClassifiersForEditing(
+			final Object bo, final Class<ClassifierType> classifierClass, final Predicate<ClassifierType> filter) {
+		return getPotentialClassifiersForEditing(bo, classifierClass, filter, false);
 	}
 
-	public static List<ComponentImplementation> getPotentialComponentImplementations(final Object bo,
-			final Predicate<ComponentImplementation> filter) {
-		return getPotentialClassifiersForEditing(bo, ComponentImplementation.class, filter);
-	}
-
-	public static List<ComponentType> getPotentialComponentTypes(final Object bo,
-			final Predicate<ComponentType> filter) {
-		return getPotentialClassifiersForEditing(bo, ComponentType.class, filter);
-	}
-
-	// TODO: Any way to avoid additional filter check?
 	/**
 	 * Returns a list of component types and feature group types for editing based on a specified business object.
 	 * If the specified object is a classifier type, only it is returned.
@@ -100,8 +91,7 @@ public class InternalClassifierEditingUtil {
 	 */
 	public static List<Classifier> getPotentialClassifierTypesForEditing(final Object bo,
 			final Predicate<Classifier> filter) {
-		// TODO: Filter check
-		if (bo instanceof ComponentType || bo instanceof FeatureGroupType) {
+		if (bo instanceof ComponentType || bo instanceof FeatureGroupType && filter.test((Classifier) bo)) {
 			return Collections.singletonList((Classifier) bo);
 		}
 
@@ -198,7 +188,7 @@ public class InternalClassifierEditingUtil {
 	public static boolean showMessageIfSubcomponentOrFeatureGroupWithoutClassifier(final Object bo,
 			final String secondaryMsg) {
 		final boolean showMsg = isSubcomponentOrFeatureGroupWithoutClassifier(bo);
-		if (InternalClassifierEditingUtil.isSubcomponentOrFeatureGroupWithoutClassifier(bo)) {
+		if (ClassifierEditingUtil.isSubcomponentOrFeatureGroupWithoutClassifier(bo)) {
 			final String targetDescription = bo instanceof NamedElement
 					? ("The element '" + ((NamedElement) bo).getQualifiedName() + "'")
 							: "The target element";

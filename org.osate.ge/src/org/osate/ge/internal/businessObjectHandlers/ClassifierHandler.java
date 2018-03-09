@@ -35,6 +35,7 @@ import org.osate.ge.GraphicalConfiguration;
 import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.PaletteEntry;
 import org.osate.ge.PaletteEntryBuilder;
+import org.osate.ge.di.BuildCreateOperation;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.CanDelete;
 import org.osate.ge.di.CanRename;
@@ -45,7 +46,6 @@ import org.osate.ge.di.GetPaletteEntries;
 import org.osate.ge.di.IsApplicable;
 import org.osate.ge.di.Names;
 import org.osate.ge.di.ValidateName;
-import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.graphics.AadlGraphics;
 import org.osate.ge.internal.services.NamingService;
@@ -207,7 +207,7 @@ public class ClassifierHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(final @Named(InternalNames.OPERATION) OperationBuilder<Object> createOp,
+	public void buildCreateOperation(final @Named(Names.OPERATION) OperationBuilder<Object> createOp,
 			@Named(Names.TARGET_BO) final EObject targetBo,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) PaletteEntryContext paletteEntryContext,
 			final @Named(InternalNames.PROJECT) IProject project,

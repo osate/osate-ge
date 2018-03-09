@@ -1,9 +1,7 @@
 package org.osate.ge.internal.businessObjectHandlers;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import javax.inject.Named;
 
@@ -16,7 +14,6 @@ import org.osate.aadl2.AccessSpecification;
 import org.osate.aadl2.AccessType;
 import org.osate.aadl2.ArrayableElement;
 import org.osate.aadl2.Classifier;
-import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.ComponentType;
 import org.osate.aadl2.DirectedFeature;
 import org.osate.aadl2.DirectionType;
@@ -25,7 +22,6 @@ import org.osate.aadl2.EventDataSource;
 import org.osate.aadl2.EventSource;
 import org.osate.aadl2.Feature;
 import org.osate.aadl2.FeatureGroup;
-import org.osate.aadl2.FeatureGroupType;
 import org.osate.aadl2.FeaturePrototypeActual;
 import org.osate.aadl2.FeaturePrototypeBinding;
 import org.osate.aadl2.InternalFeature;
@@ -37,11 +33,13 @@ import org.osate.aadl2.SubprogramProxy;
 import org.osate.aadl2.modelsupport.util.ResolvePrototypeUtil;
 import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.Categories;
+import org.osate.ge.ClassifierSelectionOperationBuilder;
 import org.osate.ge.DockingPosition;
 import org.osate.ge.GraphicalConfiguration;
 import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.PaletteEntry;
 import org.osate.ge.PaletteEntryBuilder;
+import org.osate.ge.di.BuildCreateOperation;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.CanDelete;
 import org.osate.ge.di.CanRename;
@@ -55,7 +53,6 @@ import org.osate.ge.di.ValidateName;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.FeatureGraphic;
-import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.graphics.AadlGraphics;
 import org.osate.ge.internal.services.NamingService;
@@ -97,72 +94,51 @@ public class FeatureHandler {
 				.build();
 	}
 
+	private static ClassifierSelectionOperationBuilder<Classifier> getClassifierOpBuilder(final EClass featureType) {
+		return ClassifierSelectionOperationBuilder.classifiers()
+				.filter(c -> AadlFeatureUtil.canOwnFeatureType(c, featureType));
+	}
+
 	@CanCreate
 	public boolean canCreate(final @Named(Names.TARGET_BO) EObject targetBo,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass featureType) {
-		// Return true if there is a potential owner or if the target is a feature group or subcomponent without a classifier.
-		// The latter case is needed to allow displaying an error message.
-		return getPotentialOwners(targetBo, featureType).size() > 0
-				|| InternalClassifierEditingUtil.isSubcomponentOrFeatureGroupWithoutClassifier(targetBo);
+		return getClassifierOpBuilder(featureType).canBuildOperation(targetBo);
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(final @Named(InternalNames.OPERATION) OperationBuilder<Object> createOp,
+	public void buildCreateOperation(final @Named(Names.OPERATION) OperationBuilder<Object> createOp,
 			final @Named(Names.TARGET_BO) EObject targetBo,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass featureType,
 			final @Named(Names.DOCKING_POSITION) DockingPosition dockingPosition,
 			final @Named(InternalNames.PROJECT) IProject project,
 			final QueryService queryService, final NamingService namingService) {
+		// Create the feature
+		getClassifierOpBuilder(featureType).buildOperation(createOp, targetBo).modifyPreviousResult(owner -> {
+			final String newFeatureName = namingService.buildUniqueIdentifier(owner, "new_feature");
 
-		if (!InternalClassifierEditingUtil.showMessageIfSubcomponentOrFeatureGroupWithoutClassifier(targetBo,
-				"Set a classifier before creating a feature.")) {
-			// Create the feature
-			InternalClassifierEditingUtil.selectClassifier(createOp, getPotentialOwners(targetBo, featureType))
-			.modifyPreviousResult(owner -> {
-				final String newFeatureName = namingService.buildUniqueIdentifier(owner, "new_feature");
+			final NamedElement newFeature = AadlFeatureUtil.createFeature(owner, featureType);
+			newFeature.setName(newFeatureName);
 
-				final NamedElement newFeature = AadlFeatureUtil.createFeature(owner, featureType);
-				newFeature.setName(newFeatureName);
-
-				// Set in or out based on target docking position
-				final boolean isRight = dockingPosition == DockingPosition.RIGHT;
-				if (newFeature instanceof DirectedFeature) {
-					if (!(newFeature instanceof FeatureGroup)) {
-						final DirectedFeature newDirectedFeature = (DirectedFeature) newFeature;
-						newDirectedFeature.setIn(!isRight);
-						newDirectedFeature.setOut(isRight);
-					}
-				} else if (newFeature instanceof Access) {
-					final Access access = (Access) newFeature;
-					access.setKind(isRight ? AccessType.PROVIDES : AccessType.REQUIRES);
+			// Set in or out based on target docking position
+			final boolean isRight = dockingPosition == DockingPosition.RIGHT;
+			if (newFeature instanceof DirectedFeature) {
+				if (!(newFeature instanceof FeatureGroup)) {
+					final DirectedFeature newDirectedFeature = (DirectedFeature) newFeature;
+					newDirectedFeature.setIn(!isRight);
+					newDirectedFeature.setOut(isRight);
 				}
+			} else if (newFeature instanceof Access) {
+				final Access access = (Access) newFeature;
+				access.setKind(isRight ? AccessType.PROVIDES : AccessType.REQUIRES);
+			}
 
-				if (owner instanceof ComponentType) {
-					((ComponentType) owner).setNoFeatures(false);
-				}
+			if (owner instanceof ComponentType) {
+				((ComponentType) owner).setNoFeatures(false);
+			}
 
-				return StepResultBuilder.create().showNewBusinessObject(targetBoc, newFeature).build();
-			});
-		}
-	}
-
-	/**
-	 * Returns potential owners. If there are multiple potential owners, the first one is guaranteed to be the most specific and should be the default value.
-	 * @param targetBo
-	 * @param featureType
-	 * @return
-	 */
-	private static List<Classifier> getPotentialOwners(final EObject targetBo, final EClass featureType) {
-		// Check if the target can own the feature type
-		if ((targetBo instanceof FeatureGroupType || targetBo instanceof ComponentType
-				|| targetBo instanceof ComponentImplementation)
-				&& AadlFeatureUtil.canOwnFeatureType((Classifier) targetBo, featureType)) {
-			return Collections.singletonList((Classifier) targetBo);
-		}
-
-		return InternalClassifierEditingUtil.getPotentialClassifierTypesForEditing(targetBo).stream()
-				.filter(c -> AadlFeatureUtil.canOwnFeatureType(c, featureType)).collect(Collectors.toList());
+			return StepResultBuilder.create().showNewBusinessObject(targetBoc, newFeature).build();
+		});
 	}
 
 	@GetGraphicalConfiguration

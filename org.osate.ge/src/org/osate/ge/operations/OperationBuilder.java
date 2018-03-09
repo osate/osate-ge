@@ -6,23 +6,20 @@ import java.util.function.Supplier;
 import org.eclipse.emf.ecore.EObject;
 
 public interface OperationBuilder<PrevResultUserType> {
-	// TODO: Move outside of interface?
 	interface BusinessObjectProvider<TagType, BusinessObjectType, PrevResultUserType> {
 		BusinessObjectType getBusinessObject(TagType tag, PrevResultUserType previousUserValue);
 	}
 
-	// TODO: Should modifier have access to entire result or just the previous user data?
-
 	<TagType, BusinessObjectType extends EObject, ResultUserType> OperationBuilder<ResultUserType> modifyModel(
 			TagType obj, BusinessObjectProvider<TagType, BusinessObjectType, PrevResultUserType> boProvider,
-			Modifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modifier);
+			ModelModifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modifier);
 
-	@SuppressWarnings("unchecked")
 	/**
 	 *
 	 * @param modifier must not return null
 	 * @return
 	 */
+	@SuppressWarnings("unchecked")
 	default <TagType, ResultUserType> OperationBuilder<ResultUserType> modifyPreviousResult(
 			final Function<PrevResultUserType, StepResult<ResultUserType>> modifier) {
 
@@ -34,12 +31,16 @@ public interface OperationBuilder<PrevResultUserType> {
 		}, (tag, boToModify, prevResult) -> modifier.apply((PrevResultUserType) boToModify));
 	}
 
-	// TODO: Rename.
-	<ResultUserType> OperationBuilder<ResultUserType> transform(
-			Transformer<PrevResultUserType, ResultUserType> stepHandler);
+	<ResultUserType> OperationBuilder<ResultUserType> map(
+			Function<PrevResultUserType, StepResult<ResultUserType>> mapper);
 
+	/**
+	 * A map which ignores the previous result.
+	 * @param supplier
+	 * @return
+	 */
 	default <ResultUserType> OperationBuilder<ResultUserType> supply(
 			final Supplier<StepResult<ResultUserType>> supplier) {
-		return transform(prevResult -> supplier.get());
+		return map(prevResult -> supplier.get());
 	}
 }

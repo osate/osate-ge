@@ -2,8 +2,7 @@ package org.osate.ge.operations;
 
 import org.eclipse.emf.ecore.EObject;
 
-// TODO: Rename to ModelModifier?
-public interface Modifier<TagType, BusinessObjectType extends EObject, PrevResultUserType, ResultUserType> {
+public interface ModelModifier<TagType, BusinessObjectType extends EObject, PrevResultUserType, ResultUserType> {
 	/**
 	 *
 	 * @param tag

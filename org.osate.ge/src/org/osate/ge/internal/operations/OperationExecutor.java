@@ -91,11 +91,11 @@ public class OperationExecutor {
 				prepareToExecute(nextStep, prevResultSupplier, allResults, modifications, uncalledStepResultSuppliers);
 			}
 			stepResultSupplier = () -> null; // Split steps don't produce a result and shouldn't have next steps either.
-		} else if (step instanceof ModificationStep) {
+		} else if (step instanceof ModelModificationStep) {
 			@SuppressWarnings("unchecked")
-			final ModificationStep<?, ?, PrevResultUserType, ResultUserType> ms = (ModificationStep<?, ?, PrevResultUserType, ResultUserType>) step;
+			final ModelModificationStep<?, ?, PrevResultUserType, ResultUserType> ms = (ModelModificationStep<?, ?, PrevResultUserType, ResultUserType>) step;
 			stepResultSupplier = prepareToExecuteModification(ms, prevResultSupplier, allResults, modifications);
-		} else if (step instanceof TransformerStep) {
+		} else if (step instanceof MapStep) {
 			stepResultSupplier = new Supplier<StepResult<ResultUserType>>() {
 				private boolean resultIsValid = false;
 				private StepResult<ResultUserType> result;
@@ -104,13 +104,13 @@ public class OperationExecutor {
 				public StepResult<ResultUserType> get() {
 					if (!resultIsValid) {
 						@SuppressWarnings("unchecked")
-						final TransformerStep<PrevResultUserType, ResultUserType> ts = (TransformerStep<PrevResultUserType, ResultUserType>) step;
+						final MapStep<PrevResultUserType, ResultUserType> ts = (MapStep<PrevResultUserType, ResultUserType>) step;
 						final DefaultStepResult<PrevResultUserType> prevResult = (DefaultStepResult<PrevResultUserType>) prevResultSupplier
 								.get();
 						if (prevResult.aborted()) {
-							result = StepResultBuilder.buildAbort();
+							result = StepResult.abort();
 						} else {
-							result = ts.getHandler().apply(prevResult.getUserValue());
+							result = ts.getMapper().apply(prevResult.getUserValue());
 						}
 
 						resultIsValid = true;
@@ -143,7 +143,7 @@ public class OperationExecutor {
 	}
 
 	private static <TagType, BusinessObjectType extends EObject, PrevResultUserType, ResultUserType> Supplier<StepResult<ResultUserType>> prepareToExecuteModification(
-			ModificationStep<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modificationStep,
+			ModelModificationStep<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modificationStep,
 			final Supplier<StepResult<PrevResultUserType>> prevResultSupplier,
 			final Collection<StepResult<?>> allResults,
 			final List<AadlModificationService.Modification<?, ?>> modifications) {
@@ -153,7 +153,7 @@ public class OperationExecutor {
 			@Override
 			public void modify(final TagType tag, final BusinessObjectType boToModify) {
 				result = modificationStep.getModifier().modify(tag, boToModify,
-						prevResultSupplier.get().getUserValue());
+						((DefaultStepResult<PrevResultUserType>) prevResultSupplier.get()).getUserValue());
 				if (result != null) {
 					allResults.add(result);
 				}
@@ -179,9 +179,9 @@ public class OperationExecutor {
 	// TODO: Convert to unit test.
 	public static void main(String[] args) {
 		DefaultOperationBuilder rootOpBuilder = new DefaultOperationBuilder();
-		final OperationBuilder<Integer> b = rootOpBuilder.transform(arg -> StepResultBuilder.create(5).build());
+		final OperationBuilder<Integer> b = rootOpBuilder.map(arg -> StepResultBuilder.create(5).build());
 
-		b.transform(pr -> StepResultBuilder.create(pr + 5).build())
+		b.map(pr -> StepResultBuilder.create(pr + 5).build())
 		.modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
 			System.out.println("M1-A: " + prevResult);
 			return StepResultBuilder.create(prevResult + 5).build();
@@ -190,14 +190,14 @@ public class OperationExecutor {
 			return StepResultBuilder.create(prevResult + 5).build();
 		});
 
-		b.transform(pr -> StepResultBuilder.create(pr + 6).build())
+		b.map(pr -> StepResultBuilder.create(pr + 6).build())
 		.modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
 			System.out.println("M1-B: " + prevResult);
 			return StepResultBuilder.create(prevResult + 6).build();
 		}).modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
 			System.out.println("M2-B: " + prevResult);
 			return StepResultBuilder.create(prevResult + 6).build();
-		}).transform(pr -> {
+		}).map(pr -> {
 			System.out.println("T3-B: " + pr);
 			return null;
 		});

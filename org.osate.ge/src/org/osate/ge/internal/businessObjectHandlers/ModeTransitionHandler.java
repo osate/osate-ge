@@ -20,6 +20,7 @@ import org.osate.ge.GraphicalConfiguration;
 import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.PaletteEntry;
 import org.osate.ge.PaletteEntryBuilder;
+import org.osate.ge.di.BuildCreateOperation;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.CanDelete;
 import org.osate.ge.di.CanRename;
@@ -37,14 +38,13 @@ import org.osate.ge.graphics.ConnectionBuilder;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
-import org.osate.ge.internal.di.BuildCreateOperation;
-import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.ui.dialogs.ModeTransitionTriggerSelectionDialog;
 import org.osate.ge.internal.ui.dialogs.ModeTransitionTriggerSelectionDialog.ModeTransitionTriggerInfo;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.StepResult;
 import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
@@ -129,7 +129,7 @@ public class ModeTransitionHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(@Named(InternalNames.OPERATION) final OperationBuilder<Object> createOp,
+	public void buildCreateOperation(@Named(Names.OPERATION) final OperationBuilder<Object> createOp,
 			@Named(Names.SOURCE_BO) final Mode srcMode,
 			final @Named(Names.SOURCE_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext srcBoc,
 			@Named(Names.DESTINATION_BO) final Mode dstMode,
@@ -142,7 +142,7 @@ public class ModeTransitionHandler {
 		}
 
 		// Determine which classifier should own the new element
-		final ComponentClassifier selectedClassifier = (ComponentClassifier) InternalClassifierEditingUtil
+		final ComponentClassifier selectedClassifier = (ComponentClassifier) ClassifierEditingUtil
 				.getClassifierToModify(getPotentialOwners(srcBoc, dstBoc, queryService));
 		if (selectedClassifier == null) {
 			return;
@@ -156,7 +156,7 @@ public class ModeTransitionHandler {
 			return;
 		}
 
-		createOp.supply(() -> StepResultBuilder.build(selectedClassifier)).modifyPreviousResult(cc -> {
+		createOp.supply(() -> StepResult.forValue(selectedClassifier)).modifyPreviousResult(cc -> {
 			// Determine the name for the new mode transition
 			final String newElementName = namingService.buildUniqueIdentifier(cc, "new_transition");
 
@@ -212,7 +212,7 @@ public class ModeTransitionHandler {
 
 		final Element bo = (Element) containerBoc.getBusinessObject();
 
-		return InternalClassifierEditingUtil.getPotentialComponentClassifiers(bo).stream()
+		return ClassifierEditingUtil.getPotentialComponentClassifiers(bo).stream()
 				.filter(tmpBo -> tmpBo instanceof ComponentClassifier
 						&& !(((ComponentClassifier) tmpBo).isDerivedModes()))
 				.filter(cc -> hasModeWithName(cc, modeName)).collect(Collectors.toList());

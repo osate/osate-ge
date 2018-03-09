@@ -12,6 +12,7 @@ import org.eclipse.graphiti.features.context.ICreateContext;
 import org.eclipse.graphiti.features.impl.AbstractCreateFeature;
 import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.DockingPosition;
+import org.osate.ge.di.BuildCreateOperation;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.Create;
 import org.osate.ge.di.GetBusinessObjectToModify;
@@ -20,7 +21,6 @@ import org.osate.ge.di.Names;
 import org.osate.ge.graphics.Point;
 import org.osate.ge.internal.Categorized;
 import org.osate.ge.internal.SimplePaletteEntry;
-import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.diagram.runtime.AgeDiagramUtil;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
@@ -120,7 +120,7 @@ public class BoHandlerCreateFeature extends AbstractCreateFeature implements Cat
 
 			// Check if the handler will modify the create operation directly
 			if (AnnotationUtil.hasMethodWithAnnotation(BuildCreateOperation.class, handler)) {
-				eclipseCtx.set(InternalNames.OPERATION, rootOpBuilder);
+				eclipseCtx.set(Names.OPERATION, rootOpBuilder);
 				ContextInjectionFactory.invoke(handler,
 						BuildCreateOperation.class,
 						eclipseCtx);

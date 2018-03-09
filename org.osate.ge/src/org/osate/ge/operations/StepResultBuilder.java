@@ -18,7 +18,6 @@ public class StepResultBuilder<UserValueType> {
 		this.userValue = userValue;
 	}
 
-	// TODO: Rename
 	public StepResultBuilder<UserValueType> showNewBusinessObject(final BusinessObjectContext container,
 			final Object bo) {
 		Objects.requireNonNull(container, "container must not be null");
@@ -36,22 +35,11 @@ public class StepResultBuilder<UserValueType> {
 		return new StepResultBuilder<>(userValue);
 	}
 
-	public static StepResultBuilder<Void> create() {
+	public static StepResultBuilder<?> create() {
 		return new StepResultBuilder<>(null);
 	}
 
-	// TODO: Methods to provide hints to add to container. Support multiple values per step.
-
 	public StepResult<UserValueType> build() {
 		return new DefaultStepResult<>(userValue, ImmutableMultimap.copyOf(containerToBoToShowMap), aborted);
-	}
-
-	@SuppressWarnings("unchecked")
-	public static <UserValueType> StepResult<UserValueType> buildAbort() {
-		return (StepResult<UserValueType>) create().abort().build();
-	}
-
-	public static <UserValueType> StepResult<UserValueType> build(final UserValueType userValue) {
-		return create(userValue).build();
 	}
 }

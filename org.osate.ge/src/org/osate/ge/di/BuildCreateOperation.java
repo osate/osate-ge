@@ -1,4 +1,4 @@
-package org.osate.ge.internal.di;
+package org.osate.ge.di;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -6,13 +6,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.osate.ge.di.CanCreate;
-import org.osate.ge.di.GetPaletteEntries;
-
 /**
  * <p>
  * This annotation must not be applied to more than one method per class.
- * This is an alternative to the GetCreateOwner, GetBusinessObjectToModify, and Create annotations which are internal for internal use.
+ * This is an alternative to the GetCreateOwner, GetBusinessObjectToModify, and Create annotations
  * It is intended to be used in cases where the business object handler needs to modify multiple objects or when the modification may be canceled by the user or when there are multiple objects to modify.
  *
  * When a method with this annotation is executed, it should add steps to the specified operation.
@@ -30,7 +27,7 @@ import org.osate.ge.di.GetPaletteEntries;
  *    <tr><td>{@link org.osate.ge.di.Names#TARGET_BO}</td><td>Business Object handler ({@link org.osate.ge.PaletteEntryBuilder#creation()} entries only)</td><td>The business object of the target container. Must not be modified. Changes are not guaranteed to be persisted.</td></tr>
  *   <tr><td>{@link org.osate.ge.di.Names#SOURCE_BO}</td><td>Business Object handler ({@link org.osate.ge.PaletteEntryBuilder#connectionCreation()} entries only)</td><td>The business object of the source of the connection.</td></tr>
  *   <tr><td>{@link org.osate.ge.di.Names#DESTINATION_BO}</td><td>Business Object handler ({@link org.osate.ge.PaletteEntryBuilder#connectionCreation()} entries only)</td><td>The business object of the destination of the connection.</td></tr>
- *    <tr><td>{@link org.osate.ge.internal.di.Names#OPERATION}</td><td>CreateOperation({@link org.osate.ge.PaletteEntryBuilder#creation()} entries only)</td><td>The operation to populate.</td></tr>
+ *    <tr><td>{@link org.osate.ge.di.Names#OPERATION}</td><td>OperationBuilder</td><td>Operation builder used to build the operation.</td></tr>
  * </table>
  * @see CanCreate
  * @see GetPaletteEntries

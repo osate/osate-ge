@@ -2,29 +2,29 @@ package org.osate.ge.internal.operations;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.emf.ecore.EObject;
-import org.osate.ge.operations.Modifier;
+import org.osate.ge.operations.ModelModifier;
 import org.osate.ge.operations.OperationBuilder;
-import org.osate.ge.operations.Transformer;
+import org.osate.ge.operations.StepResult;
 
 import com.google.common.collect.ImmutableList;
 
-// TODO: Rename
 abstract class AbstractStepBuilder<PrevResultUserType> implements OperationBuilder<PrevResultUserType> {
 	private final List<AbstractStepBuilder<?>> nextStepBuilders = new ArrayList<>();
 
 	@Override
 	public <TagType, BusinessObjectType extends EObject, ResultUserType> OperationBuilder<ResultUserType> modifyModel(final TagType tag,
 			BusinessObjectProvider<TagType, BusinessObjectType, PrevResultUserType> boProvider,
-			final Modifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modifier) {
-		return addNextStepBuilder(new ModificationStepBuilder<>(tag, boProvider, modifier));
+			final ModelModifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modifier) {
+		return addNextStepBuilder(new ModelModificationStepBuilder<>(tag, boProvider, modifier));
 	}
 
 	@Override
-	public <ResultUserType> OperationBuilder<ResultUserType> transform(
-			final Transformer<PrevResultUserType, ResultUserType> stepHandler) {
-		return addNextStepBuilder(new TransformerStepBuilder<>(stepHandler));
+	public <ResultUserType> OperationBuilder<ResultUserType> map(
+			Function<PrevResultUserType, StepResult<ResultUserType>> mapper) {
+		return addNextStepBuilder(new MapStepBuilder<>(mapper));
 	}
 
 	private <ResultUserType> OperationBuilder<ResultUserType> addNextStepBuilder(
@@ -44,10 +44,8 @@ abstract class AbstractStepBuilder<PrevResultUserType> implements OperationBuild
 					nextStepBuilders.stream().map(b -> b.build()).collect(ImmutableList.toImmutableList()));
 		}
 
-		return buildThisStep(nextStep);
+		return buildStep(nextStep);
 	}
 
-	// TODO: Rename
-	// nextStep may be null
-	protected abstract Step<?> buildThisStep(final Step<?> nextStep);
+	protected abstract Step<?> buildStep(final Step<?> nextStep);
 }

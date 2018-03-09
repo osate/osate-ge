@@ -16,6 +16,7 @@ import org.osate.ge.GraphicalConfiguration;
 import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.PaletteEntry;
 import org.osate.ge.PaletteEntryBuilder;
+import org.osate.ge.di.BuildCreateOperation;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.CanStartConnection;
 import org.osate.ge.di.GetGraphicalConfiguration;
@@ -28,8 +29,6 @@ import org.osate.ge.graphics.ConnectionBuilder;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
-import org.osate.ge.internal.di.BuildCreateOperation;
-import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
@@ -133,7 +132,7 @@ public class FlowPathSpecificationHandler extends FlowSpecificationHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(final @Named(InternalNames.OPERATION) OperationBuilder<Object> createOp,
+	public void buildCreateOperation(final @Named(Names.OPERATION) OperationBuilder<Object> createOp,
 			final @Named(Names.SOURCE_BO) Feature srcFeature,
 			final @Named(Names.SOURCE_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext srcBoc,
 			final @Named(Names.DESTINATION_BO) Feature dstFeature,
@@ -146,7 +145,7 @@ public class FlowPathSpecificationHandler extends FlowSpecificationHandler {
 			return;
 		}
 
-		InternalClassifierEditingUtil.selectClassifier(createOp, getPotentialOwners(srcBoc, dstBoc, queryService))
+		ClassifierEditingUtil.selectClassifier(createOp, getPotentialOwners(srcBoc, dstBoc, queryService))
 		.modifyPreviousResult(ct -> {
 			final FlowSpecification fs = ct.createOwnedFlowSpecification();
 			fs.setKind(FlowKind.PATH);

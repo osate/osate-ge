@@ -13,6 +13,7 @@ import org.osate.ge.GraphicalConfiguration;
 import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.PaletteEntry;
 import org.osate.ge.PaletteEntryBuilder;
+import org.osate.ge.di.BuildCreateOperation;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.GetGraphicalConfiguration;
 import org.osate.ge.di.GetPaletteEntries;
@@ -24,8 +25,6 @@ import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.FlowIndicatorBuilder;
 import org.osate.ge.graphics.internal.OrthogonalLineBuilder;
-import org.osate.ge.internal.di.BuildCreateOperation;
-import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
@@ -128,7 +127,7 @@ public class FlowSourceSinkSpecificationHandler extends FlowSpecificationHandler
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(final @Named(InternalNames.OPERATION) OperationBuilder<Object> createOp,
+	public void buildCreateOperation(final @Named(Names.OPERATION) OperationBuilder<Object> createOp,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext featureBoc,
 			final @Named(Names.TARGET_BO) Feature feature,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) FlowKind flowKind, final QueryService queryService,
@@ -139,7 +138,7 @@ public class FlowSourceSinkSpecificationHandler extends FlowSpecificationHandler
 			return;
 		}
 
-		InternalClassifierEditingUtil.selectClassifier(createOp, getPotentialOwnersByFeature(featureBoc, queryService))
+		ClassifierEditingUtil.selectClassifier(createOp, getPotentialOwnersByFeature(featureBoc, queryService))
 		.modifyPreviousResult(ct -> {
 			final FlowSpecification fs = ct.createOwnedFlowSpecification();
 			fs.setKind(flowKind);

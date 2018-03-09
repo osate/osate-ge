@@ -12,6 +12,7 @@ import org.eclipse.graphiti.features.context.ICreateConnectionContext;
 import org.eclipse.graphiti.features.impl.AbstractCreateConnectionFeature;
 import org.eclipse.graphiti.mm.pictograms.Connection;
 import org.osate.ge.BusinessObjectContext;
+import org.osate.ge.di.BuildCreateOperation;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.CanStartConnection;
 import org.osate.ge.di.Create;
@@ -20,8 +21,6 @@ import org.osate.ge.di.GetCreateOwner;
 import org.osate.ge.di.Names;
 import org.osate.ge.internal.Categorized;
 import org.osate.ge.internal.SimplePaletteEntry;
-import org.osate.ge.internal.di.BuildCreateOperation;
-import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.updating.DiagramUpdater;
@@ -139,7 +138,7 @@ public class BoHandlerCreateConnectionFeature extends AbstractCreateConnectionFe
 
 			// Check if the handler will modify the create operation directly
 			if (AnnotationUtil.hasMethodWithAnnotation(BuildCreateOperation.class, handler)) {
-				eclipseCtx.set(InternalNames.OPERATION, rootOpBuilder);
+				eclipseCtx.set(Names.OPERATION, rootOpBuilder);
 				ContextInjectionFactory.invoke(handler, BuildCreateOperation.class, eclipseCtx);
 			} else {
 				final BusinessObjectContext ownerBoc = (BusinessObjectContext)ContextInjectionFactory.invoke(handler, GetCreateOwner.class, eclipseCtx);
@@ -156,10 +155,10 @@ public class BoHandlerCreateConnectionFeature extends AbstractCreateConnectionFe
 				final DiagramNode ownerNode = (DiagramNode) ownerBoc;
 				rootOpBuilder.modifyModel((EObject) boToModify, (tag, prevResult) -> tag,
 						(tag, ownerBo, prevResult) -> {
-					eclipseCtx.set(Names.MODIFY_BO, ownerBo);
-					final Object newBo = ContextInjectionFactory.invoke(handler, Create.class, eclipseCtx, null);
-					return StepResultBuilder.create().showNewBusinessObject(ownerNode, newBo).build();
-				});
+							eclipseCtx.set(Names.MODIFY_BO, ownerBo);
+							final Object newBo = ContextInjectionFactory.invoke(handler, Create.class, eclipseCtx, null);
+							return StepResultBuilder.create().showNewBusinessObject(ownerNode, newBo).build();
+						});
 			}
 
 			final Step<?> firstStep = rootOpBuilder.build();

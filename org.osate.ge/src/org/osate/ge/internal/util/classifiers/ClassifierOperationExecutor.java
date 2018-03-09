@@ -153,7 +153,7 @@ public class ClassifierOperationExecutor {
 			});
 
 		case NONE:
-			return operation.transform(prevResult -> StepResultBuilder.create((Classifier) null).build());
+			return operation.map(prevResult -> StepResultBuilder.create((Classifier) null).build());
 
 		default:
 			throw new RuntimeException("Unexpected operation: " + part.getType());

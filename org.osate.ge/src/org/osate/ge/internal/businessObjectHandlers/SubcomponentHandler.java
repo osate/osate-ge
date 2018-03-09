@@ -13,11 +13,12 @@ import org.osate.aadl2.Element;
 import org.osate.aadl2.Subcomponent;
 import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.Categories;
-import org.osate.ge.ClassifierEditingUtil;
+import org.osate.ge.ClassifierSelectionOperationBuilder;
 import org.osate.ge.GraphicalConfiguration;
 import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.PaletteEntry;
 import org.osate.ge.PaletteEntryBuilder;
+import org.osate.ge.di.BuildCreateOperation;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.CanDelete;
 import org.osate.ge.di.CanRename;
@@ -31,8 +32,6 @@ import org.osate.ge.di.ValidateName;
 import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
-import org.osate.ge.internal.di.BuildCreateOperation;
-import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.graphics.AadlGraphics;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.util.AadlArrayUtil;
@@ -129,23 +128,26 @@ public class SubcomponentHandler {
 		return paletteEntries.toArray(new PaletteEntry[paletteEntries.size()]);
 	}
 
+	private static ClassifierSelectionOperationBuilder<ComponentImplementation> getClassifierOpBuilder(
+			final EClass subcomponentType) {
+		return ClassifierSelectionOperationBuilder.componentImplementations()
+				.filter(ci -> AadlSubcomponentUtil.canContainSubcomponentType(ci, subcomponentType));
+	}
+
 	@CanCreate
 	public boolean canCreate(final @Named(Names.TARGET_BO) Element bo,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass subcomponentType) {
-		return ClassifierEditingUtil.canCreateInComponentImplementation(bo,
-				ci -> AadlSubcomponentUtil.canContainSubcomponentType(ci, subcomponentType));
+		return getClassifierOpBuilder(subcomponentType).canBuildOperation(bo);
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(@Named(InternalNames.OPERATION) final OperationBuilder<Object> createOp,
+	public void buildCreateOperation(@Named(Names.OPERATION) final OperationBuilder<Object> createOp,
 			final @Named(Names.TARGET_BO) Element targetBo,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
 			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass subcomponentType,
 			final QueryService queryService, final NamingService namingService) {
 
-		ClassifierEditingUtil
-		.selectComponentImplementation(createOp, targetBo,
-				ci -> AadlSubcomponentUtil.canContainSubcomponentType(ci, subcomponentType))
+		getClassifierOpBuilder(subcomponentType).buildOperation(createOp, targetBo)
 		.modifyPreviousResult(owner -> {
 			final String name = namingService.buildUniqueIdentifier(owner, "new_subcomponent");
 			final Subcomponent sc = AadlSubcomponentUtil.createSubcomponent(owner, subcomponentType);

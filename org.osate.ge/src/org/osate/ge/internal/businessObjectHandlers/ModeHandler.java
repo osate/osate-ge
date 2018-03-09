@@ -21,6 +21,7 @@ import org.osate.ge.GraphicalConfiguration;
 import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.PaletteEntry;
 import org.osate.ge.PaletteEntryBuilder;
+import org.osate.ge.di.BuildCreateOperation;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.CanDelete;
 import org.osate.ge.di.CanRename;
@@ -34,12 +35,11 @@ import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.Style;
 import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.graphics.internal.ModeGraphicBuilder;
-import org.osate.ge.internal.di.BuildCreateOperation;
-import org.osate.ge.internal.di.InternalNames;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.operations.OperationBuilder;
+import org.osate.ge.operations.StepResult;
 import org.osate.ge.operations.StepResultBuilder;
 import org.osate.ge.services.QueryService;
 
@@ -93,11 +93,11 @@ public class ModeHandler {
 	}
 
 	@BuildCreateOperation
-	public void buildCreateOperation(@Named(InternalNames.OPERATION) final OperationBuilder<Object> createOp,
+	public void buildCreateOperation(@Named(Names.OPERATION) final OperationBuilder<Object> createOp,
 			final @Named(Names.TARGET_BO) EObject target,
 			final @Named(Names.TARGET_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext targetBoc,
 			final QueryService queryService, final NamingService namingService) {
-		if (InternalClassifierEditingUtil.showMessageIfSubcomponentOrFeatureGroupWithoutClassifier(target,
+		if (ClassifierEditingUtil.showMessageIfSubcomponentOrFeatureGroupWithoutClassifier(target,
 				"Set a classifier before creating a mode.")) {
 			return;
 		}
@@ -109,13 +109,13 @@ public class ModeHandler {
 				&& ((Subcomponent) target).getClassifier() instanceof ComponentImplementation))
 				&& potentialOwners.size() > 0 && !(potentialOwners.get(0) instanceof ComponentImplementation);
 
-				final ComponentClassifier selectedClassifier = (ComponentClassifier) InternalClassifierEditingUtil
+				final ComponentClassifier selectedClassifier = (ComponentClassifier) ClassifierEditingUtil
 						.getClassifierToModify(potentialOwners, forcePrompt);
 				if (selectedClassifier == null) {
 					return;
 				}
 
-		createOp.supply(() -> StepResultBuilder.build(selectedClassifier))
+		createOp.supply(() -> StepResult.forValue(selectedClassifier))
 				.modifyPreviousResult(boToModify -> {
 					final String newModeName = namingService.buildUniqueIdentifier(boToModify, "new_mode");
 

@@ -107,7 +107,7 @@ class FlowSpecificationHandler {
 		}
 		final Element bo = (Element) containerBoc.getBusinessObject();
 
-		return InternalClassifierEditingUtil.getPotentialClassifierTypesForEditing(bo).stream()
+		return ClassifierEditingUtil.getPotentialClassifierTypesForEditing(bo).stream()
 				.filter(tmpBo -> canOwnFlowSpecification(tmpBo)).map(ComponentType.class::cast)
 				.filter(ct -> hasFeatureWithName(ct, childName))
 				.collect(Collectors.toList());
