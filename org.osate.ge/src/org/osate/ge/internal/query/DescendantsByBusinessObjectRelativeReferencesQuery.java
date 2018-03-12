@@ -65,12 +65,12 @@ public class DescendantsByBusinessObjectRelativeReferencesQuery extends DefaultQ
 	}
 
 	void findMatchingDescendants(final Deque<DefaultQuery> remainingQueries,
-			Queryable container,
+			final Queryable container,
 			final QueryExecutionState state,
 			final QueryResult result,
 			final RelativeBusinessObjectReference[] boRefs,
 			final Match bestMatch,
-			int currentDepth) {
+			final int currentDepth) {
 		if(currentDepth > bestMatch.depth) {
 			bestMatch.value = container;
 			bestMatch.depth = currentDepth;
