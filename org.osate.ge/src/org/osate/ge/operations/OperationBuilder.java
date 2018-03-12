@@ -15,7 +15,7 @@ public interface OperationBuilder<PrevResultUserType> {
 			ModelModifier<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modifier);
 
 	/**
-	 *
+	 * Modifies the previous result. The previous result is expected to be an EObject belonging to the AADL model.
 	 * @param modifier must not return null
 	 * @return
 	 */

@@ -26,6 +26,11 @@ public class StepResultBuilder<UserValueType> {
 		return this;
 	}
 
+	/**
+	 * Aborting a step will not revert previously made modifications. It is recommended to perform any prompting and potential aborting before
+	 * any modification steps.
+	 * @return
+	 */
 	public StepResultBuilder<UserValueType> abort() {
 		aborted = true;
 		return this;

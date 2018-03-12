@@ -1,7 +1,6 @@
 package org.osate.ge.internal.operations;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -10,7 +9,6 @@ import java.util.function.Supplier;
 import org.eclipse.emf.ecore.EObject;
 import org.osate.ge.internal.services.AadlModificationService;
 import org.osate.ge.operations.Operation;
-import org.osate.ge.operations.OperationBuilder;
 import org.osate.ge.operations.StepResult;
 import org.osate.ge.operations.StepResultBuilder;
 
@@ -23,6 +21,13 @@ public class OperationExecutor {
 
 	public OperationExecutor(final AadlModificationService modificationService) {
 		this.modificationService = Objects.requireNonNull(modificationService, "modificationService must not be null");
+	}
+
+	private static class ExecutionState {
+		final LinkedHashSet<Supplier<? extends StepResult<?>>> pendingStepConsumers = new LinkedHashSet<>();
+		final List<AadlModificationService.Modification<?, ?>> modifications = new ArrayList<>();
+		final List<StepResult<?>> allResults = new ArrayList<>(); // Will only contain non-null results
+		boolean aborted = false;
 	}
 
 	/**
@@ -40,18 +45,15 @@ public class OperationExecutor {
 			throw new RuntimeException("Operation is not of type Step");
 		}
 
-		final LinkedHashSet<Supplier<? extends StepResult<?>>> pendingStepConsumers = new LinkedHashSet<>();
-		final List<AadlModificationService.Modification<?, ?>> modifications = new ArrayList<>();
-		final List<StepResult<?>> allResults = new ArrayList<>(); // Will only contain non-null results
-		prepareToExecute((Step<?>) op, () -> StepResultBuilder.create().build(), allResults, modifications,
-				pendingStepConsumers);
+		final ExecutionState executionState = new ExecutionState();
+		prepareToExecute((Step<?>) op, () -> StepResultBuilder.create().build(), executionState);
 
-		if (modifications.isEmpty()) {
-			finishExecution(resultsProcessor, pendingStepConsumers, allResults);
+		if (executionState.modifications.isEmpty()) {
+			finishExecution(resultsProcessor, executionState.pendingStepConsumers, executionState.allResults);
 		} else {
-			modificationService.modify(modifications, allSuccessful -> {
+			modificationService.modify(executionState.modifications, allSuccessful -> {
 				if (allSuccessful) {
-					finishExecution(resultsProcessor, pendingStepConsumers, allResults);
+					finishExecution(resultsProcessor, executionState.pendingStepConsumers, executionState.allResults);
 				}
 			});
 		}
@@ -84,22 +86,20 @@ public class OperationExecutor {
 	 */
 	private <PrevResultUserType, ResultUserType> void prepareToExecute(final Step<ResultUserType> step,
 			final Supplier<StepResult<PrevResultUserType>> prevResultSupplier,
-			final Collection<StepResult<?>> allResults,
-			final List<AadlModificationService.Modification<?, ?>> modifications,
-			final Collection<Supplier<? extends StepResult<?>>> uncalledStepResultSuppliers) {
+			final ExecutionState executionState) {
 		Objects.requireNonNull(step, "step must not be null");
 
 		final Supplier<StepResult<ResultUserType>> stepResultSupplier;
 
 		if (step instanceof SplitStep) {
 			for (final Step<?> nextStep : ((SplitStep) step).getSteps()) {
-				prepareToExecute(nextStep, prevResultSupplier, allResults, modifications, uncalledStepResultSuppliers);
+				prepareToExecute(nextStep, prevResultSupplier, executionState);
 			}
 			stepResultSupplier = () -> null; // Split steps don't produce a result and shouldn't have next steps either.
 		} else if (step instanceof ModelModificationStep) {
 			@SuppressWarnings("unchecked")
 			final ModelModificationStep<?, ?, PrevResultUserType, ResultUserType> ms = (ModelModificationStep<?, ?, PrevResultUserType, ResultUserType>) step;
-			stepResultSupplier = prepareToExecuteModification(ms, prevResultSupplier, allResults, modifications);
+			stepResultSupplier = prepareToExecuteModification(ms, prevResultSupplier, executionState);
 		} else if (step instanceof MapStep) {
 			stepResultSupplier = new Supplier<StepResult<ResultUserType>>() {
 				private boolean resultIsValid = false;
@@ -112,18 +112,21 @@ public class OperationExecutor {
 						final MapStep<PrevResultUserType, ResultUserType> ts = (MapStep<PrevResultUserType, ResultUserType>) step;
 						final DefaultStepResult<PrevResultUserType> prevResult = (DefaultStepResult<PrevResultUserType>) prevResultSupplier
 								.get();
-						if (prevResult.aborted()) {
+						if (executionState.aborted) {
 							result = StepResult.abort();
 						} else {
 							result = ts.getMapper().apply(prevResult.getUserValue());
+							if (((DefaultStepResult<ResultUserType>) result).aborted()) {
+								executionState.aborted = true;
+							}
 						}
 
 						resultIsValid = true;
 
-						uncalledStepResultSuppliers.remove(this);
+						executionState.pendingStepConsumers.remove(this);
 
 						if (result != null) {
-							allResults.add(result);
+							executionState.allResults.add(result);
 						}
 					}
 
@@ -135,32 +138,33 @@ public class OperationExecutor {
 			// If there is a next step, the supplier will be called when that step is evaluated.
 			// Modification step result suppliers aren't added to the list because the result is produced when the modification is executed.
 			if (step.getNextStep() == null) {
-				uncalledStepResultSuppliers.add(stepResultSupplier);
+				executionState.pendingStepConsumers.add(stepResultSupplier);
 			}
 		} else {
 			throw new RuntimeException("Unexpected step: " + step);
 		}
 
 		if (step.getNextStep() != null) {
-			prepareToExecute(step.getNextStep(), stepResultSupplier, allResults, modifications,
-					uncalledStepResultSuppliers);
+			prepareToExecute(step.getNextStep(), stepResultSupplier, executionState);
 		}
 	}
 
 	private static <TagType, BusinessObjectType extends EObject, PrevResultUserType, ResultUserType> Supplier<StepResult<ResultUserType>> prepareToExecuteModification(
 			ModelModificationStep<TagType, BusinessObjectType, PrevResultUserType, ResultUserType> modificationStep,
 			final Supplier<StepResult<PrevResultUserType>> prevResultSupplier,
-			final Collection<StepResult<?>> allResults,
-			final List<AadlModificationService.Modification<?, ?>> modifications) {
+			final ExecutionState executionState) {
 		class ModificationStepModifier implements AadlModificationService.Modifier<TagType, BusinessObjectType> {
-			StepResult<ResultUserType> result;
+			DefaultStepResult<ResultUserType> result;
 
 			@Override
 			public void modify(final TagType tag, final BusinessObjectType boToModify) {
-				result = modificationStep.getModifier().modify(tag, boToModify,
+				result = (DefaultStepResult<ResultUserType>)modificationStep.getModifier().modify(tag, boToModify,
 						((DefaultStepResult<PrevResultUserType>) prevResultSupplier.get()).getUserValue());
 				if (result != null) {
-					allResults.add(result);
+					executionState.allResults.add(result);
+					if (result.aborted()) {
+						executionState.aborted = true;
+					}
 				}
 			}
 		}
@@ -172,69 +176,12 @@ public class OperationExecutor {
 						(tag) -> {
 							final DefaultStepResult<PrevResultUserType> prevResult = (DefaultStepResult<PrevResultUserType>) prevResultSupplier
 									.get();
-							return prevResult.aborted() ? null
+							return executionState.aborted ? null
 									: modificationStep.getBusinessObjectProvider().getBusinessObject(tag,
 											prevResult.getUserValue());
 						},
 						modifier);
-		modifications.add(modification);
+		executionState.modifications.add(modification);
 		return () -> modifier.result;
 	}
-
-	// TODO: Convert to unit test.
-	public static void main(String[] args) {
-		DefaultOperationBuilder rootOpBuilder = new DefaultOperationBuilder();
-		final OperationBuilder<Integer> b = rootOpBuilder.map(arg -> StepResultBuilder.create(5).build());
-
-		b.map(pr -> StepResultBuilder.create(pr + 5).build())
-		.modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
-			System.out.println("M1-A: " + prevResult);
-			return StepResultBuilder.create(prevResult + 5).build();
-		}).modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
-			System.out.println("M2-A: " + prevResult);
-			return StepResultBuilder.create(prevResult + 5).build();
-		});
-
-		b.map(pr -> StepResultBuilder.create(pr + 6).build())
-		.modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
-			System.out.println("M1-B: " + prevResult);
-			return StepResultBuilder.create(prevResult + 6).build();
-		}).modifyModel(5, (tag, prevResult) -> null, (tag, boToModify, prevResult) -> {
-			System.out.println("M2-B: " + prevResult);
-			return StepResultBuilder.create(prevResult + 6).build();
-		}).map(pr -> {
-			System.out.println("T3-B: " + pr);
-			return null;
-		});
-
-		final Step<?> firstStep = rootOpBuilder.build();
-
-		// Create a modification service for the test
-		final AadlModificationService modificationService = new AadlModificationService() {
-			@Override
-			public void modify(List<? extends Modification<?, ?>> modifications,
-					ModificationPostprocessor postProcessor) {
-				System.out.println("MODIFY");
-				for (final Modification<?, ?> m : modifications) {
-					executeModification(m);
-				}
-
-				postProcessor.modificationCompleted(true);
-			}
-
-			private <TagType, BusinessObjectType extends EObject> void executeModification(
-					final Modification<TagType, BusinessObjectType> m) {
-				final BusinessObjectType bo = m.getTagToBusinessObjectMapper().apply(m.getTag());
-				if (bo != null) {
-					m.getModifier().modify(m.getTag(), bo);
-				}
-			}
-		};
-
-		final OperationExecutor executor = new OperationExecutor(modificationService);
-		executor.execute(firstStep, (results) -> {
-		});
-
-	}
-
 }
