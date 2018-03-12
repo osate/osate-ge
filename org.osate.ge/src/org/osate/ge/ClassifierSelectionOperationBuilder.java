@@ -50,8 +50,8 @@ public class ClassifierSelectionOperationBuilder<ClassifierType extends Classifi
 				.filter(c -> c instanceof ComponentType || c instanceof FeatureGroupType);
 	}
 
-	public ClassifierSelectionOperationBuilder<ClassifierType> filter(Predicate<ClassifierType> filter) {
-		filter = filter.and(filter);
+	public ClassifierSelectionOperationBuilder<ClassifierType> filter(Predicate<ClassifierType> value) {
+		this.filter = this.filter.and(value);
 		return this;
 	}
 
