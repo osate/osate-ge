@@ -1,20 +1,42 @@
 package org.osate.ge.internal.graphiti.features;
 
-import org.eclipse.graphiti.mm.pictograms.PictogramElement;
-import org.osate.ge.internal.query.AncestorUtil;
-import org.osate.ge.internal.services.ConnectionService;
-import org.osate.ge.internal.services.PropertyService;
+import org.eclipse.graphiti.features.context.IContext;
+import org.osate.ge.internal.diagram.runtime.DiagramModification;
+import org.osate.ge.internal.graphiti.diagram.GraphitiAgeDiagram;
 
-class AgeFeatureUtil {
-	public static PictogramElement getLogicalPictogramElement(PictogramElement pe, final PropertyService propertyService, final ConnectionService connectionService){
-		if(pe == null) {
-			return null;
+public class AgeFeatureUtil {
+	private static final String PROPERTY_MODIFICATION = "org.osate.ge.mod";
+
+	/**
+	 * Stores a modification in a Graphiti context to allow for undo/redo
+	 * @param context
+	 * @param mod
+	 */
+	public static void storeModificationInContext(final IContext context, final DiagramModification mod) {
+		context.putProperty(PROPERTY_MODIFICATION, mod);
+	}
+
+	public static boolean canUndo(final IContext context) {
+		final DiagramModification previousModification = (DiagramModification)context.getProperty(PROPERTY_MODIFICATION);
+		return previousModification != null && previousModification.isUndoable();
+	}
+
+	public static void undoModification(final GraphitiAgeDiagram graphitiAgeDiagram, final IContext context) {
+		final DiagramModification previousModification = (DiagramModification)context.getProperty(PROPERTY_MODIFICATION);
+		if(previousModification != null) {
+			graphitiAgeDiagram.modify("Undo", m -> m.undoModification(previousModification), false);
 		}
-		
-		if(propertyService.isLogicalTreeNode(pe)) {
-			return pe;
+	}
+
+	public static boolean canRedo(final IContext context) {
+		final DiagramModification previousModification = (DiagramModification)context.getProperty(PROPERTY_MODIFICATION);
+		return previousModification != null && previousModification.isRedoable();
+	}
+
+	public static void redoModification(final GraphitiAgeDiagram graphitiAgeDiagram, final IContext context) {
+		final DiagramModification previousModification = (DiagramModification)context.getProperty(PROPERTY_MODIFICATION);
+		if(previousModification != null) {
+			graphitiAgeDiagram.modify("Redo", m -> m.redoModification(previousModification), false);
 		}
-		
-		return AncestorUtil.getParent(pe, propertyService, connectionService);
 	}
 }

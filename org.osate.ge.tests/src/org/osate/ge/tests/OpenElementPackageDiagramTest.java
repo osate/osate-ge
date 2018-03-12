@@ -3,7 +3,6 @@ package org.osate.ge.tests;
 import static org.junit.Assert.assertTrue;
 
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swtbot.eclipse.gef.finder.SWTGefBot;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Before;
@@ -11,30 +10,31 @@ import org.junit.Test;
 import org.osate.aadl2.impl.AbstractTypeImpl;
 
 public class OpenElementPackageDiagramTest {
-	private final SWTGefBot bot = new SWTGefBot();
-	private final Helper helper = new Helper(bot);
+	private final AgeGefBot bot = new AgeGefBot();
 
 	@Before
 	public void setUp() {
-		helper.createNewProjectAndPackage();
+		bot.maximize();
+		bot.createNewProjectAndPackage();
 	}
 
 	@After
 	public void tearDown() {
-		helper.deleteProject();
+		bot.deleteProject();
 	}
 
 	@Test
 	public void openElementPackageDiagram() {
-		helper.openDiagram(new String[] { ElementNames.projectName, "packages" }, ElementNames.packageName + ".aadl");
-		final SWTBotGefEditor editor = bot.gefEditor(ElementNames.packageName);
-		helper.createToolItem(editor, ToolTypes.abstractType, new Point(0, 0));
-		
-		RenameHelper.renameElement(bot.gefEditor(ElementNames.packageName), ElementNames.abstractTypeName, new Point(15, 15), AbstractTypeImpl.class);
-		editor.select(ElementNames.abstractTypeName).clickContextMenu("Open Associated Diagram");
+		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
+		final SWTBotGefEditor pkgDiagramEditor = bot.getEditor(ElementNames.packageName);
+		bot.createToolItem(pkgDiagramEditor, ElementNames.packageName, ToolTypes.abstractType, new Point(20, 20));
+		bot.waitUntilNewElementIsCreated(pkgDiagramEditor, AbstractTypeImpl.class);
+		RenameHelper.renameElement(pkgDiagramEditor, ElementNames.abstractTypeName, new Point(45, 15));
+		bot.openDiagramFromContextMenu(pkgDiagramEditor, ElementNames.abstractTypeName, AgeGefBot.associatedDiagram);
+		pkgDiagramEditor.saveAndClose();
 
-		final SWTBotGefEditor adEditor = bot.gefEditor(ElementNames.packageName + "::" + ElementNames.abstractTypeName);
-		adEditor.select(ElementNames.abstractTypeName).clickContextMenu("Go to Package Diagram");
-		assertTrue(bot.gefEditor(ElementNames.packageName) != null);
+		final SWTBotGefEditor associatedDiagramEditor = bot.getEditor(ElementNames.packageName + "_" + ElementNames.abstractTypeName);
+		associatedDiagramEditor.select(ElementNames.abstractTypeName).clickContextMenu("Package Diagram");
+		assertTrue(bot.isActiveEditor(ElementNames.packageName));
 	}
 }

@@ -38,7 +38,6 @@ import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.emf.common.util.URI;
-import org.eclipse.graphiti.dt.IDiagramTypeProvider;
 import org.osate.aadl2.instance.ComponentInstance;
 import org.osate.aadl2.instance.ConnectionInstance;
 import org.osate.aadl2.instance.ConnectionReference;
@@ -46,20 +45,15 @@ import org.osate.aadl2.instance.FeatureInstance;
 import org.osate.aadl2.instance.InstanceObject;
 import org.osate.aadl2.instance.SystemInstance;
 import org.osate.ge.di.Names;
-import org.osate.ge.di.ResolveReference;
-import org.osate.ge.internal.services.CachingService;
-import org.osate.ge.internal.services.GraphitiService;
+import org.osate.ge.di.ResolveCanonicalReference;
+import org.osate.ge.internal.services.ProjectProvider;
 import org.osate.ge.internal.services.SystemInstanceLoadingService;
-import org.osate.ge.internal.ui.util.SelectionHelper;
 
-public class InstanceReferenceResolver {	
-	private final IDiagramTypeProvider diagramTypeProvider;
-	private final CachingService cachingService;
+public class InstanceReferenceResolver {
+	private final ProjectProvider projectProvider;
 	private final SystemInstanceLoadingService systemInstanceLoader;
 	private final Map<String, SystemInstanceInfo> keyToSystemInstanceInfoMap = new HashMap<String, SystemInstanceInfo>();
-	private final IResourceChangeListener resourceChangeListener = new IResourceChangeListener() {
-		private boolean invalidateCache = false;
-		
+	private final IResourceChangeListener resourceChangeListener = new IResourceChangeListener() {		
 		private IResourceDeltaVisitor deltaVisitor = new IResourceDeltaVisitor() {
 			public boolean visit(final IResourceDelta delta) {
 				final IResource resource = delta.getResource();
@@ -78,7 +72,6 @@ public class InstanceReferenceResolver {
 						// Remove the entry from the map
 						if(systemInstanceKey != null) {
 							keyToSystemInstanceInfoMap.remove(systemInstanceKey);						
-							invalidateCache = true;
 							return false;
 						}
 					}
@@ -96,11 +89,6 @@ public class InstanceReferenceResolver {
 				try {
 					// Process the resource delta
 					delta.accept(deltaVisitor);
-					
-					// Invalidate the cache
-					if(invalidateCache) {
-						cachingService.invalidate();
-					}
 				} catch (final CoreException e) {
 					throw new RuntimeException(e);
 				}
@@ -148,11 +136,11 @@ public class InstanceReferenceResolver {
 	}
 	
 	@Inject
-	public InstanceReferenceResolver(final GraphitiService graphitiService, final SystemInstanceLoadingService systemInstanceLoader, final CachingService cachingService) {
-		this.diagramTypeProvider = Objects.requireNonNull(graphitiService, "graphitiService must not be null").getDiagramTypeProvider();
+	public InstanceReferenceResolver(final ProjectProvider projectProvider, 
+			final SystemInstanceLoadingService systemInstanceLoader) {
+		this.projectProvider = Objects.requireNonNull(projectProvider, "projectProvider must not be null");
 		this.systemInstanceLoader = Objects.requireNonNull(systemInstanceLoader, "systemInstanceLoader must not be null");
-		this.cachingService = Objects.requireNonNull(cachingService, "cachingService must not be null");
-		
+
 		ResourcesPlugin.getWorkspace().addResourceChangeListener(resourceChangeListener);
 	}
 	
@@ -167,7 +155,7 @@ public class InstanceReferenceResolver {
 		}
 	}
 	
-	@ResolveReference
+	@ResolveCanonicalReference
 	public Object getReferencedObject(final @Named(Names.REFERENCE) String[] refSegs) {
 		if(refSegs.length < 3) {
 			return null;
@@ -176,7 +164,7 @@ public class InstanceReferenceResolver {
 		if(!InstanceReferenceBuilder.ID.equals(refSegs[0])) {
 			return null;
 		}
-		
+
 		final String type = refSegs[1];
 		final String systemInstanceKey = refSegs[2];
 		final SystemInstanceInfo siInfo = getSystemInstanceInfo(systemInstanceKey);
@@ -199,7 +187,7 @@ public class InstanceReferenceResolver {
 			
 			// If it wasn't loaded previously, load the system instance
 			if(siInfo == null) {
-				final IProject project = SelectionHelper.getProject(diagramTypeProvider.getDiagram().eResource());
+				final IProject project = projectProvider.getProject();
 				final SystemInstance si = systemInstanceLoader.loadSystemInstance(project, key);
 				if(si != null) {
 					siInfo = new SystemInstanceInfo(si);

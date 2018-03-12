@@ -1,29 +1,31 @@
 package org.osate.ge.tests;
 
 
-import org.eclipse.swtbot.eclipse.gef.finder.SWTGefBot;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 public class CreateNewAADLPackageTest {
-	private final SWTGefBot bot = new SWTGefBot();
-	private final Helper helper = new Helper(bot);
-	
+	private final AgeGefBot bot = new AgeGefBot();
+
 	@Before
 	public void setUp() {
-		helper.createNewProjectAndPackage();
+		bot.maximize();
+		bot.createNewProjectAndPackage();
 	}
-	
+
 	@After
 	public void tearDown() {
-		helper.deleteProject();
+		bot.deleteProject();
 	}
 
 	@Test
 	public void createNewAADLPackage() {
 		// Node path to package
-		final String[] nodePath = new String[] { ElementNames.projectName, "packages" };
-		bot.tree().expandNode(nodePath).getNode(ElementNames.packageName + ".aadl").click();
+		final String[] nodePath = new String[] { ElementNames.projectName, "diagrams" };
+		// Make sure new package exists
+		Assert.assertTrue(
+				bot.getTree().expandNode(nodePath).getNodes().contains(ElementNames.packageName + ".aadl_diagram"));
 	}
 }

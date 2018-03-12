@@ -1,12 +1,15 @@
 package org.osate.ge.internal.businessObjectHandlers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Named;
 
 import org.osate.aadl2.AbstractFeature;
 import org.osate.aadl2.AbstractType;
+import org.osate.aadl2.ComponentClassifier;
 import org.osate.aadl2.ComponentType;
 import org.osate.aadl2.Context;
 import org.osate.aadl2.DataAccess;
@@ -14,6 +17,7 @@ import org.osate.aadl2.DataType;
 import org.osate.aadl2.DeviceType;
 import org.osate.aadl2.DirectedFeature;
 import org.osate.aadl2.DirectionType;
+import org.osate.aadl2.Element;
 import org.osate.aadl2.Feature;
 import org.osate.aadl2.FeatureGroup;
 import org.osate.aadl2.FlowEnd;
@@ -22,122 +26,145 @@ import org.osate.aadl2.Parameter;
 import org.osate.aadl2.Port;
 import org.osate.aadl2.ProcessType;
 import org.osate.aadl2.ProcessorType;
+import org.osate.aadl2.Subcomponent;
 import org.osate.aadl2.SubprogramGroupType;
 import org.osate.aadl2.SubprogramType;
 import org.osate.aadl2.SystemType;
 import org.osate.aadl2.ThreadGroupType;
 import org.osate.aadl2.ThreadType;
 import org.osate.aadl2.VirtualProcessorType;
+import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.di.CanDelete;
-import org.osate.ge.di.CreateParentQuery;
+import org.osate.ge.di.CanRename;
 import org.osate.ge.di.GetName;
 import org.osate.ge.di.Names;
-import org.osate.ge.di.SetName;
 import org.osate.ge.di.ValidateName;
-import org.osate.ge.internal.DiagramElementProxy;
-import org.osate.ge.internal.di.CanRename;
-import org.osate.ge.internal.di.InternalNames;
-import org.osate.ge.internal.query.StandaloneDiagramElementQuery;
-import org.osate.ge.internal.services.AadlFeatureService;
 import org.osate.ge.internal.services.NamingService;
-import org.osate.ge.internal.services.QueryService;
-import org.osate.ge.internal.services.RefactoringService;
-import org.osate.ge.query.DiagramElementQuery;
+import org.osate.ge.internal.util.AadlFeatureUtil;
+import org.osate.ge.query.StandaloneQuery;
+import org.osate.ge.services.QueryService;
 
 class FlowSpecificationHandler {
-	private static final StandaloneDiagramElementQuery componentTypeQuery = StandaloneDiagramElementQuery.create((root) -> root.ancestors().first(2).filter((fa) -> fa.getBusinessObject() instanceof ComponentType).first());
-	private static final StandaloneDiagramElementQuery contextQuery = StandaloneDiagramElementQuery.create((root) -> root.ancestors().filter((fa) -> fa.getBusinessObject() instanceof Context).first());
-		
+	private static final StandaloneQuery componentClassifierOrSubcomponentQuery = StandaloneQuery.create((root) -> root
+			.ancestors().first(2).filter((fa) -> fa.getBusinessObject() instanceof ComponentClassifier
+					|| fa.getBusinessObject() instanceof Subcomponent)
+			.first());
+	private static final StandaloneQuery contextQuery = StandaloneQuery
+			.create((root) -> root.ancestors().filter((fa) -> fa.getBusinessObject() instanceof FeatureGroup).first());
+
 	// Basics
 	@GetName
 	public String getName(final @Named(Names.BUSINESS_OBJECT) FlowSpecification fs) {
 		return fs.getName();
 	}
-	
-	// Rename and Editing
+
 	@CanRename
 	@CanDelete
-	public boolean canEdit(final @Named(Names.BUSINESS_OBJECT) FlowSpecification fs, final @Named(InternalNames.DIAGRAM_ELEMENT_PROXY) DiagramElementProxy diagramElement, final QueryService queryService) {
-		final Object containerBo = queryService.getFirstBusinessObject(componentTypeQuery, diagramElement);
-		return fs.getContainingClassifier() == containerBo;
+	public boolean canEdit(final @Named(Names.BUSINESS_OBJECT) FlowSpecification fs) {
+		return true;
 	}
-	
+
 	@ValidateName
 	public String validateName(final @Named(Names.BUSINESS_OBJECT) FlowSpecification fs, final @Named(Names.NAME) String value, final NamingService namingService) {
 		return namingService.checkNameValidity(fs, value);
 	}
-	
-	@SetName
-	public void setName(final @Named(Names.BUSINESS_OBJECT) FlowSpecification fs, final @Named(Names.NAME) String value, final RefactoringService refactoringService) {
-		refactoringService.renameElement(fs, value);
-	}
-	
+
 	// Helper functions
-	protected static boolean canOwnFlowSpecification(final Object diagramBo) {
-		return diagramBo instanceof ThreadGroupType || 
-				diagramBo instanceof ThreadType || 
-				diagramBo instanceof VirtualProcessorType || 
-				diagramBo instanceof ProcessType ||
-				diagramBo instanceof DeviceType ||
-				diagramBo instanceof AbstractType ||
-				diagramBo instanceof ProcessorType ||
-				diagramBo instanceof DataType ||
-				diagramBo instanceof SystemType ||
-				diagramBo instanceof SubprogramType ||
-				diagramBo instanceof SubprogramGroupType;
+	protected static boolean canOwnFlowSpecification(final Object bo) {
+		return bo instanceof ThreadGroupType ||
+				bo instanceof ThreadType ||
+				bo instanceof VirtualProcessorType ||
+				bo instanceof ProcessType ||
+				bo instanceof DeviceType ||
+				bo instanceof AbstractType ||
+				bo instanceof ProcessorType ||
+				bo instanceof DataType ||
+				bo instanceof SystemType ||
+				bo instanceof SubprogramType ||
+				bo instanceof SubprogramGroupType;
 	}
-	
+
 	protected static String getNewFlowSpecificationName(final ComponentType ct, final NamingService namingService) {
-		return namingService.buildUniqueIdentifier(ct, "new_flow_spec");		
+		return namingService.buildUniqueIdentifier(ct, "new_flow_spec");
 	}
-	
-	protected static Context getContext(final DiagramElementProxy featureDiagramElement, final QueryService queryService) {
-		return (Context)queryService.getFirstBusinessObject(contextQuery, featureDiagramElement);
+
+	protected static Context getContext(final BusinessObjectContext featureBoc, final QueryService queryService) {
+		return (Context)queryService.getFirstBusinessObject(contextQuery, featureBoc);
 	}
-	
-	protected static ComponentType getComponentType(final @Named(InternalNames.TARGET_DIAGRAM_ELEMENT_PROXY) DiagramElementProxy targetDiagramElement,
+
+	protected static List<ComponentType> getPotentialOwnersByFeature(BusinessObjectContext featureBoc,
 			final QueryService queryService) {
-		return (ComponentType)queryService.getFirstBusinessObject(componentTypeQuery, targetDiagramElement);
-	}	
+		final Context context = getContext(featureBoc, queryService);
+		final Feature feature = (Feature) featureBoc.getBusinessObject();
+		final String childName = context == null ? feature.getName() : context.getName();
+		if (childName == null) {
+			return Collections.emptyList();
+		}
+
+		final BusinessObjectContext containerBoc = getFlowSpecificationOwnerBoc(featureBoc, queryService);
+		if (containerBoc == null) {
+			return Collections.emptyList();
+		}
+		final Element bo = (Element) containerBoc.getBusinessObject();
+
+		return ClassifierEditingUtil.getPotentialClassifierTypesForEditing(bo).stream()
+				.filter(tmpBo -> canOwnFlowSpecification(tmpBo)).map(ComponentType.class::cast)
+				.filter(ct -> hasFeatureWithName(ct, childName))
+				.collect(Collectors.toList());
+	}
+
+	private static boolean hasFeatureWithName(final ComponentType ct, final String nameToCheck) {
+		return ct.getAllFeatures().stream().map(f -> f.getName()).anyMatch(n -> nameToCheck.equalsIgnoreCase(n));
+	}
+
+	/**
+	 * Get the business object context for the container/owner of a flow specification involving the specified feature
+	 * @param featureBoc
+	 * @param queryService
+	 * @return
+	 */
+	protected static BusinessObjectContext getFlowSpecificationOwnerBoc(BusinessObjectContext featureBoc,
+			final QueryService queryService) {
+		return queryService.getFirstResult(componentClassifierOrSubcomponentQuery, featureBoc);
+	}
 
 	/**
 	 * Returns whether a specified feature diagram element may be used as a flow end for a flow specification.
 	 * feature, its direction must be IN OUT or match the specified direction
 	 */
 	protected static boolean isValidFlowEnd(final Feature feature,
-			final DiagramElementProxy featureDiagramElement, 
-			final DirectionType requiredDirection, 
-			final AadlFeatureService featureService,
+			final BusinessObjectContext featureBoc,
+			final DirectionType requiredDirection,
 			final QueryService queryService) {
 		// Ensure that the feature is contained in a component type
-		if(getComponentType(featureDiagramElement, queryService) == null) {
+		if (getPotentialOwnersByFeature(featureBoc, queryService).size() == 0) {
 			return false;
 		}
-		
+
 		// Check that the feature is of the appropriate type
 		if(!(feature instanceof Port || feature instanceof Parameter || feature instanceof DataAccess || feature instanceof FeatureGroup || feature instanceof AbstractFeature)) {
 			return false;
-		}		
-		
+		}
+
 		// If it is a direct feature, it must have the specified direction or be an in out feature. Take into account feature group, inverse, etc..
 		if(feature instanceof DirectedFeature) {
 			// Determine the actual direction of the feature. Since it could effected by things like inverse feature groups, etc
 			final DirectedFeature df = (DirectedFeature)feature;
 			DirectionType direction = df.getDirection();
-	 		if(direction == DirectionType.IN || direction == DirectionType.OUT) {
-	 			if(featureService.isFeatureInverted(featureDiagramElement)) {
-	 				direction = (direction == DirectionType.IN) ? DirectionType.OUT : DirectionType.IN;
-	 			}
-	 		}	
-	 		
- 			if(direction != requiredDirection && direction != DirectionType.IN_OUT) {
- 				return false;
- 			}
+			if(direction == DirectionType.IN || direction == DirectionType.OUT) {
+				if(AadlFeatureUtil.isFeatureInverted(featureBoc)) {
+					direction = (direction == DirectionType.IN) ? DirectionType.OUT : DirectionType.IN;
+				}
+			}
+
+			if(direction != requiredDirection && direction != DirectionType.IN_OUT) {
+				return false;
+			}
 		}
-		
+
 		return true;
 	}
-	
+
 	/**
 	 * Gets an array of business objects which describes the logical diagram element path to the flow end.
 	 * @param ctx
@@ -148,12 +175,12 @@ class FlowSpecificationHandler {
 		if(flowEnd == null || flowEnd.getFeature() == null) {
 			return null;
 		}
-		
+
 		final List<Object> path = new ArrayList<>(2);
 		if(flowEnd.getContext() != null) {
 			path.add(flowEnd.getContext());
 		}
-		
+
 		path.add(flowEnd.getFeature());
 
 		return path.toArray();

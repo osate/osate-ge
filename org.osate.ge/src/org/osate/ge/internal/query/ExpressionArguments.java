@@ -1,28 +1,27 @@
 package org.osate.ge.internal.query;
 
-import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.osate.ge.query.FilterArguments;
 
 /**
  * Simple implementation of ConditionArguments and FilterArguments
- * @param <A> is the type of the query argument
+ * @param  is the type of the query argument
  */
-public class ExpressionArguments<A> implements ConditionArguments<A>, FilterArguments<A> {
-	private QueryExecutionState<A> state;
-	private PictogramElement pe;
+public class ExpressionArguments implements ConditionArguments, FilterArguments {
+	private QueryExecutionState state;
+	private Queryable container;
 
-	void update(final QueryExecutionState<A> state, final PictogramElement pe) {
+	void update(final QueryExecutionState state, final Queryable container) {
 		this.state = state;
-		this.pe = pe;			
+		this.container = container;
 	}		
 	
 	@Override
 	public Object getBusinessObject() {
-		return state.bor.getBusinessObjectForPictogramElement(pe);
+		return container.getBusinessObject();
 	}
 
 	@Override
-	public A getQueryArgument() {
+	public Object getQueryArgument() {
 		return state.arg;
 	}	
 }

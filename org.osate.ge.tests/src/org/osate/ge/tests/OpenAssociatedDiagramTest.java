@@ -1,41 +1,42 @@
 package org.osate.ge.tests;
 
-import static org.junit.Assert.assertTrue;
-
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swtbot.eclipse.gef.finder.SWTGefBot;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
-import org.eclipse.swtbot.swt.finder.SWTBot;
-import org.eclipse.swtbot.swt.finder.exceptions.WidgetNotFoundException;
-import org.eclipse.swtbot.swt.finder.waits.ICondition;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.osate.aadl2.impl.AbstractTypeImpl;
 
 public class OpenAssociatedDiagramTest {
-	private final SWTGefBot bot = new SWTGefBot();
-	private final Helper helper = new Helper(bot);
+	private final AgeGefBot bot = new AgeGefBot();
 
 	@Before
 	public void setUp() {
-		helper.createNewProjectAndPackage();
+		bot.maximize();
+		bot.createNewProjectAndPackage();
+		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
+
+		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		bot.resize(editor, ElementNames.packageName, new Point(600, 600));
+		bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(25, 25));
+		bot.waitUntilNewElementIsCreated(editor, AbstractTypeImpl.class);
+		bot.renameElement(editor, ElementNames.abstractTypeName);
 	}
+
 
 	@After
 	public void tearDown() {
-		helper.deleteProject();
+		bot.deleteProject();
 	}
 
 	@Test
 	public void openAssociatedDiagram() {
-		helper.openDiagram(new String[] { ElementNames.projectName, "packages" }, ElementNames.packageName + ".aadl");
-		
-		final SWTBotGefEditor editor = bot.gefEditor(ElementNames.packageName);
-		helper.createToolItem(editor, ToolTypes.abstractType, new Point(0, 0));
-		RenameHelper.renameElement(editor, ElementNames.abstractTypeName, new Point(15, 15), AbstractTypeImpl.class);
-		editor.select(ElementNames.abstractTypeName).clickContextMenu("Open Associated Diagram");
-		
-		assertTrue(bot.gefEditor(ElementNames.packageName + "::" + ElementNames.abstractTypeName) != null);
+		bot.getEditor(ElementNames.packageName).select(ElementNames.abstractTypeName)
+				.clickContextMenu(AgeGefBot.associatedDiagram);
+		bot.clickButton("Yes");
+		bot.clickButton("OK");
+
+		Assert.assertTrue(bot.getEditor(ElementNames.packageName + "_" + ElementNames.abstractTypeName) != null);
 	}
 }

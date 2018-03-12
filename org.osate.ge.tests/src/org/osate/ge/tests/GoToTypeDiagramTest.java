@@ -2,54 +2,46 @@ package org.osate.ge.tests;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.List;
-
-import org.eclipse.gef.EditPart;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swtbot.eclipse.finder.waits.Conditions;
-import org.eclipse.swtbot.eclipse.gef.finder.SWTGefBot;
-import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditPart;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
-import org.eclipse.swtbot.swt.finder.SWTBot;
 import org.eclipse.swtbot.swt.finder.exceptions.WidgetNotFoundException;
-import org.eclipse.swtbot.swt.finder.waits.ICondition;
-import org.eclipse.swtbot.swt.finder.widgets.SWTBotShell;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.osate.aadl2.impl.AbstractImplementationImpl;
 import org.osate.aadl2.impl.AbstractTypeImpl;
 
 public class GoToTypeDiagramTest {
-	private final SWTGefBot bot = new SWTGefBot();
-	private final Helper helper = new Helper(bot);
+	private final AgeGefBot bot = new AgeGefBot();
 
 	@Before
 	public void setUp() {
-		helper.createNewProjectAndPackage();
-		helper.openDiagram(new String[] { ElementNames.projectName, "packages" }, ElementNames.packageName + ".aadl");
+		bot.maximize();
+		bot.createNewProjectAndPackage();
+		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 	}
 
 	@After
 	public void tearDown() {
-		helper.deleteProject();
+		bot.deleteProject();
 	}
-	
+
 	@Test
 	public void goToTypeDiagram() throws WidgetNotFoundException, ClassNotFoundException {
-			final SWTBotGefEditor editor = bot.gefEditor(ElementNames.packageName);
-			helper.createToolItem(editor, ToolTypes.abstractType, new Point(0, 0));
-	
-			RenameHelper.renameElement(editor, ElementNames.abstractTypeName, new Point(15, 15), AbstractTypeImpl.class);
-			
-			helper.createToolItem(editor, ToolTypes.abstractImplementation, new Point(100, 100));
-			bot.waitUntil(Conditions.shellIsActive("Select a Classifier"));
-			final SWTBotShell shell = bot.activeShell();
-			bot.button("OK").click();
-			bot.waitUntil(Conditions.shellCloses(shell));
+		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		bot.resize(editor, ElementNames.packageName, new Point(600, 600));
 
-			editor.select(ElementNames.abstractTypeName + ".impl").clickContextMenu("Go to Type Diagram");
+		bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(25, 25));
+		bot.waitUntilNewElementIsCreated(editor, AbstractTypeImpl.class);
+		bot.renameElement(editor, ElementNames.abstractTypeName);
+		bot.waitUntilElementExists(editor, ElementNames.abstractTypeName);
 
-			assertTrue(bot.gefEditor(ElementNames.packageName + "::" + ElementNames.abstractTypeName) != null);
+		bot.createImplementation(editor, ElementNames.packageName, ToolTypes.abstractImplementation,
+				ElementNames.abstractTypeName, "impl", new Point(100, 100));
+
+		bot.openDiagramFromContextMenu(editor,
+				ElementNames.abstractTypeName + "." + "impl"/* ElementNames.abstractTypeName */,
+				"Type Diagram");
+
+		assertTrue(bot.isActiveEditor(ElementNames.packageName + "_" + ElementNames.abstractTypeName));
 	}
 }

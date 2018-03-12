@@ -13,4 +13,5 @@ public class ElementNames {
 	public static final String mode = "mode_name";
 	public static final String mode2 = "mode_name2";
 	public static final String modeTransition = "mode_transition_name";
+	public static final String featureConnection = "feature_connection_name";
 }

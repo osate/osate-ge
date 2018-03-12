@@ -2,43 +2,56 @@ package org.osate.ge.internal.businessObjectHandlers;
 
 import javax.inject.Named;
 
-import org.osate.ge.di.CreateDestinationQuery;
-import org.osate.ge.di.CreateParentQuery;
-import org.osate.ge.di.CreateSourceQuery;
-import org.osate.ge.di.GetGraphic;
+import org.osate.ge.BusinessObjectContext;
+import org.osate.ge.GraphicalConfiguration;
+import org.osate.ge.GraphicalConfigurationBuilder;
+import org.osate.ge.di.GetGraphicalConfiguration;
 import org.osate.ge.di.IsApplicable;
 import org.osate.ge.di.Names;
 import org.osate.ge.graphics.ArrowBuilder;
+import org.osate.ge.graphics.Color;
 import org.osate.ge.graphics.ConnectionBuilder;
 import org.osate.ge.graphics.Graphic;
+import org.osate.ge.graphics.Style;
+import org.osate.ge.graphics.StyleBuilder;
 import org.osate.ge.internal.model.SubprogramCallOrder;
-import org.osate.ge.query.DiagramElementQuery;
+import org.osate.ge.query.StandaloneQuery;
+import org.osate.ge.services.QueryService;
 
 public class SubprogramCallOrderHandler {
 	private static final Graphic graphic = ConnectionBuilder.create().destinationTerminator(ArrowBuilder.create().line().build()).build();
-	
-	@IsApplicable	
+	private static final Style style = StyleBuilder.create().backgroundColor(Color.BLACK).build();
+	private static StandaloneQuery srcQuery = StandaloneQuery.create((rootQuery) -> rootQuery.parent().children().filterByBusinessObjectRelativeReference(sco->((SubprogramCallOrder)sco).previousSubprogramCall));
+	private static StandaloneQuery dstQuery = StandaloneQuery.create((rootQuery) -> rootQuery.parent().children().filterByBusinessObjectRelativeReference(sco->((SubprogramCallOrder)sco).subprogramCall));
+
+	@IsApplicable
 	public boolean isApplicable(final @Named(Names.BUSINESS_OBJECT) SubprogramCallOrder bo) {
 		return true;
 	}
-	
-	@GetGraphic
-	public Graphic getGraphicalRepresentation(final @Named(Names.BUSINESS_OBJECT) SubprogramCallOrder bo) {
+
+	@GetGraphicalConfiguration
+	public GraphicalConfiguration getGraphicalConfiguration(final @Named(Names.BUSINESS_OBJECT) SubprogramCallOrder bo,
+			final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc,
+			final QueryService queryService) {
+		return GraphicalConfigurationBuilder.create().
+				graphic(getGraphicalRepresentation(bo)).
+				style(style).
+				source(getSource(boc, queryService)).
+				destination(getDestination(boc, queryService)).
+				build();
+	}
+
+	private Graphic getGraphicalRepresentation(final SubprogramCallOrder bo) {
 		return graphic;
 	}
-	
-	@CreateParentQuery
-	public DiagramElementQuery<?> createOwnerDiagramElementQuery(final @Named(Names.SOURCE_ROOT_QUERY) DiagramElementQuery<?> srcRootQuery) {
-		return srcRootQuery.ancestor(1);
+
+	private BusinessObjectContext getSource(final BusinessObjectContext boc,
+			final QueryService queryService) {
+		return queryService.getFirstResult(srcQuery, boc);
 	}
-	
-	@CreateSourceQuery
-	public DiagramElementQuery<?> createSourceQuery(final @Named(Names.ROOT_QUERY) DiagramElementQuery<?> rootQuery) {
-		return rootQuery.children().filterByBusinessObject(sco->((SubprogramCallOrder)sco).previousSubprogramCall);
-	}
-	
-	@CreateDestinationQuery
-	public DiagramElementQuery<?> createDestination(final @Named(Names.ROOT_QUERY) DiagramElementQuery<?> rootQuery) {
-		return rootQuery.children().filterByBusinessObject(sco->((SubprogramCallOrder)sco).subprogramCall);
+
+	private BusinessObjectContext getDestination(final BusinessObjectContext boc,
+			final QueryService queryService) {
+		return queryService.getFirstResult(dstQuery, boc);
 	}
 }

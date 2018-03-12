@@ -9,4 +9,7 @@ public class ToolTypes {
 	public static final String featureGroupType = "Feature Group Type";
 	public static final String mode = "Mode";
 	public static final String modeTransition = "Mode Transition";
+	public static final String processorType = "Processor Type";
+	public static final String deviceType = "Device Type";
+	public static final String busType = "Bus Type";
 }

@@ -1,56 +1,44 @@
 package org.osate.ge.tests;
 
-import static org.junit.Assert.assertTrue;
-
-import java.util.List;
-
-import org.eclipse.gef.EditPart;
+import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.ui.platform.GraphitiShapeEditPart;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swtbot.eclipse.finder.waits.Conditions;
-import org.eclipse.swtbot.eclipse.gef.finder.SWTGefBot;
-import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditPart;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
-import org.eclipse.swtbot.swt.finder.SWTBot;
-import org.eclipse.swtbot.swt.finder.waits.ICondition;
-import org.eclipse.swtbot.swt.finder.widgets.SWTBotShell;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.osate.aadl2.impl.AbstractImplementationImpl;
-import org.osate.aadl2.impl.AbstractTypeImpl;
+import org.osate.aadl2.AadlPackage;
+import org.osate.ge.internal.graphiti.AgeFeatureProvider;
 
 public class SelectingDiagramElementContainerTest {
-	private final SWTGefBot bot = new SWTGefBot();
-	private final Helper helper = new Helper(bot);
+	private final AgeGefBot bot = new AgeGefBot();
 
 	@Before
 	public void setUp() {
-		helper.createNewProjectAndPackage();
-		helper.openDiagram(new String[] { ElementNames.projectName, "packages" }, ElementNames.packageName + ".aadl");
+		bot.maximize();
+		bot.createNewProjectAndPackage();
+		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
+		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(20, 20));
+		bot.renameElement(editor, ElementNames.abstractTypeName);
 	}
 
 	@After
 	public void tearDown() {
-		helper.deleteProject();
+		bot.deleteProject();
 	}
 
 	@Test
 	public void selectDiagramElementContainer() {
-		final SWTBotGefEditor editor = bot.gefEditor(ElementNames.packageName);
-		helper.createToolItem(editor, ToolTypes.abstractType, new Point(0, 0));
-		RenameHelper.renameElement(editor, ElementNames.abstractTypeName, new Point(15, 15), AbstractTypeImpl.class);
-
-		helper.createToolItem(editor, ToolTypes.abstractImplementation, new Point(100, 100));
-		bot.waitUntil(Conditions.shellIsActive("Select a Classifier"));
-		
-		final SWTBotShell shell = bot.activeShell();
-		bot.button("OK").click();
-		bot.waitUntil(Conditions.shellCloses(shell));
-		
+		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
 		editor.select(ElementNames.abstractTypeName).clickContextMenu("Select Container");
-		final GraphitiShapeEditPart editPart = (GraphitiShapeEditPart)editor.getEditPart(ElementNames.abstractTypeName).part();
 		final GraphitiShapeEditPart diagram = (GraphitiShapeEditPart)editor.mainEditPart().part();
-		assertTrue(((GraphitiShapeEditPart)editPart.getParent()).getPictogramElement() == diagram.getFeatureProvider().getDiagramTypeProvider().getDiagramBehavior().getDiagramContainer().getSelectedPictogramElements()[0]);
+		final AgeFeatureProvider featureProvider = (AgeFeatureProvider) diagram.getFeatureProvider();
+		final PictogramElement selectedPictogramElement = diagram.getFeatureProvider().getDiagramTypeProvider()
+				.getDiagramBehavior().getDiagramContainer().getSelectedPictogramElements()[0];
+		Assert.assertTrue(
+				featureProvider
+				.getBusinessObjectForPictogramElement(selectedPictogramElement) instanceof AadlPackage);
 	}
 }

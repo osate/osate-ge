@@ -20,6 +20,7 @@
          <choice minOccurs="0" maxOccurs="unbounded">
             <element ref="referenceBuilder"/>
             <element ref="referenceResolver"/>
+            <element ref="referenceLabelProvider"/>
          </choice>
          <attribute name="point" type="string" use="required">
             <annotation>
@@ -65,7 +66,22 @@
 
    <element name="referenceResolver">
       <complexType>
-         <attribute name="class" type="string">
+         <attribute name="class" type="string" use="required">
+            <annotation>
+               <documentation>
+                  
+               </documentation>
+               <appinfo>
+                  <meta.attribute kind="java"/>
+               </appinfo>
+            </annotation>
+         </attribute>
+      </complexType>
+   </element>
+
+   <element name="referenceLabelProvider">
+      <complexType>
+         <attribute name="class" type="string" use="required">
             <annotation>
                <documentation>
                   

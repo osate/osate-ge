@@ -1,7 +1,10 @@
 package org.osate.ge.internal.businessObjectHandlers;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Named;
 
@@ -9,377 +12,456 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.osate.aadl2.Aadl2Factory;
 import org.osate.aadl2.Aadl2Package;
+import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.AccessCategory;
 import org.osate.aadl2.AccessConnection;
 import org.osate.aadl2.AccessConnectionEnd;
 import org.osate.aadl2.BusAccess;
-import org.osate.aadl2.ComponentClassifier;
 import org.osate.aadl2.ComponentImplementation;
 import org.osate.aadl2.ConnectedElement;
 import org.osate.aadl2.Connection;
 import org.osate.aadl2.ConnectionEnd;
 import org.osate.aadl2.Context;
 import org.osate.aadl2.DataAccess;
-import org.osate.aadl2.DirectedFeature;
-import org.osate.aadl2.DirectionType;
-import org.osate.aadl2.EnumerationLiteral;
+import org.osate.aadl2.Feature;
 import org.osate.aadl2.FeatureConnectionEnd;
 import org.osate.aadl2.FeatureGroupConnectionEnd;
-import org.osate.aadl2.ListValue;
-import org.osate.aadl2.NamedValue;
 import org.osate.aadl2.ParameterConnectionEnd;
-import org.osate.aadl2.PortConnection;
 import org.osate.aadl2.PortConnectionEnd;
-import org.osate.aadl2.Property;
-import org.osate.aadl2.PropertyExpression;
 import org.osate.aadl2.Subcomponent;
 import org.osate.aadl2.SubprogramAccess;
 import org.osate.aadl2.SubprogramCall;
 import org.osate.aadl2.SubprogramGroupAccess;
-import org.osate.aadl2.properties.PropertyNotPresentException;
+import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.Categories;
+import org.osate.ge.GraphicalConfiguration;
+import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.PaletteEntry;
 import org.osate.ge.PaletteEntryBuilder;
 import org.osate.ge.di.CanCreate;
 import org.osate.ge.di.CanDelete;
+import org.osate.ge.di.CanRename;
 import org.osate.ge.di.CanStartConnection;
-import org.osate.ge.di.Create;
-import org.osate.ge.di.CreateDestinationQuery;
-import org.osate.ge.di.CreateParentQuery;
-import org.osate.ge.di.CreateSourceQuery;
-import org.osate.ge.di.GetCreateOwner;
-import org.osate.ge.di.GetGraphic;
+import org.osate.ge.di.GetGraphicalConfiguration;
 import org.osate.ge.di.GetName;
 import org.osate.ge.di.GetPaletteEntries;
 import org.osate.ge.di.IsApplicable;
 import org.osate.ge.di.Names;
-import org.osate.ge.di.SetName;
 import org.osate.ge.di.ValidateName;
+import org.osate.ge.graphics.Color;
 import org.osate.ge.graphics.ConnectionBuilder;
 import org.osate.ge.graphics.Graphic;
-import org.osate.ge.internal.DiagramElementProxy;
-import org.osate.ge.internal.annotations.Annotation;
-import org.osate.ge.internal.annotations.AnnotationBuilder;
-import org.osate.ge.internal.decorations.Decoration;
-import org.osate.ge.internal.decorations.DelayedDecorationBuilder;
-import org.osate.ge.internal.decorations.DirectionDecorationBuilder;
-import org.osate.ge.internal.decorations.ImmediateDecorationBuilder;
-import org.osate.ge.internal.di.CanRename;
-import org.osate.ge.internal.di.GetAnnotations;
-import org.osate.ge.internal.di.GetDecorations;
+import org.osate.ge.graphics.Style;
+import org.osate.ge.graphics.StyleBuilder;
+import org.osate.ge.internal.CreateOperation;
+import org.osate.ge.internal.CreateOperation.CreateStepResult;
+import org.osate.ge.internal.di.BuildCreateOperation;
 import org.osate.ge.internal.di.InternalNames;
-import org.osate.ge.internal.query.PictogramQuery;
-import org.osate.ge.internal.query.StandaloneDiagramElementQuery;
 import org.osate.ge.internal.services.NamingService;
-import org.osate.ge.internal.services.QueryService;
-import org.osate.ge.internal.services.RefactoringService;
 import org.osate.ge.internal.util.AadlConnectionUtil;
+import org.osate.ge.internal.util.AadlInheritanceUtil;
 import org.osate.ge.internal.util.ImageHelper;
 import org.osate.ge.internal.util.StringUtil;
-import org.osate.ge.query.DiagramElementQuery;
-import org.osate.xtext.aadl2.properties.util.CommunicationProperties;
-import org.osate.xtext.aadl2.properties.util.GetProperties;
-import org.osate.xtext.aadl2.properties.util.PropertyUtils;
+import org.osate.ge.query.StandaloneQuery;
+import org.osate.ge.services.QueryService;
 
 public class ConnectionHandler {
-	private static final StandaloneDiagramElementQuery componentImplementationQuery = StandaloneDiagramElementQuery.create((root) -> root.ancestors().filter((fa) -> fa.getBusinessObject() instanceof ComponentImplementation).first());
 	private static final Graphic graphic = ConnectionBuilder.create().build();
-	private static final Decoration delayedDecoration = DelayedDecorationBuilder.create().build();
-	private static final Decoration immediateDecoration = ImmediateDecorationBuilder.create().build();
-	private static final Decoration directionDecoration = DirectionDecorationBuilder.create().build();
-	private static final StandaloneDiagramElementQuery selfQuery = StandaloneDiagramElementQuery.create((root) -> root);
-	private static final StandaloneDiagramElementQuery parentQuery = StandaloneDiagramElementQuery.create((root) -> root.ancestor(1));
-	private static final StandaloneDiagramElementQuery grandparentQuery = StandaloneDiagramElementQuery.create((root) -> root.ancestor(2));
-	
+	private static StandaloneQuery srcQuery = StandaloneQuery
+			.create((rootQuery) -> rootQuery.parent()
+					.descendantsByBusinessObjectsRelativeReference(
+							(Connection c) -> getBusinessObjectsPathToConnectedElement(c.getAllSourceContext(),
+									c.getRootConnection().getSource()))
+					.first());
+	private static StandaloneQuery partialSrcQuery = StandaloneQuery
+			.create((rootQuery) -> rootQuery.parent()
+					.descendantsByBusinessObjectsRelativeReference(
+							(Connection c) -> getBusinessObjectsPathToConnectedElement(c.getAllSourceContext(),
+									c.getRootConnection().getSource()),
+							1)
+					.first());
+	private static StandaloneQuery dstQuery = StandaloneQuery
+			.create((rootQuery) -> rootQuery.parent()
+					.descendantsByBusinessObjectsRelativeReference(
+							(Connection c) -> getBusinessObjectsPathToConnectedElement(c.getAllDestinationContext(),
+									c.getRootConnection().getDestination()))
+					.first());
+	private static StandaloneQuery partialDstQuery = StandaloneQuery
+			.create((rootQuery) -> rootQuery.parent()
+					.descendantsByBusinessObjectsRelativeReference(
+							(Connection c) -> getBusinessObjectsPathToConnectedElement(c.getAllDestinationContext(),
+									c.getRootConnection().getDestination()),
+							1)
+					.first());
+
 	@IsApplicable
+	@CanRename
+	@CanDelete
 	public boolean isApplicable(final @Named(Names.BUSINESS_OBJECT) Connection c) {
 		return true;
 	}
-	
-	@GetGraphic
-	public Graphic getGraphicalRepresentation() {
-		return graphic;
+
+	@GetGraphicalConfiguration
+	public GraphicalConfiguration getGraphicalConfiguration(final @Named(Names.BUSINESS_OBJECT) Connection c,
+			final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc, final QueryService queryService) {
+		BusinessObjectContext src = queryService.getFirstResult(srcQuery, boc);
+		BusinessObjectContext dst = queryService.getFirstResult(dstQuery, boc);
+		boolean partial = false;
+
+		if (src == null) {
+			src = queryService.getFirstResult(partialSrcQuery, boc);
+			partial = true;
+		}
+
+		if (dst == null) {
+			dst = queryService.getFirstResult(partialDstQuery, boc);
+			partial = true;
+		}
+
+		final StyleBuilder sb = StyleBuilder
+				.create(AadlInheritanceUtil.isInherited(boc) ? Styles.INHERITED_ELEMENT : Style.EMPTY)
+				.backgroundColor(Color.BLACK);
+		if (partial) {
+			sb.dotted();
+		}
+
+		return GraphicalConfigurationBuilder.create().graphic(graphic).style(sb.build()).source(src).destination(dst)
+				.build();
 	}
 
-	@CreateSourceQuery
-	public DiagramElementQuery<Connection> createSourceQuery(final @Named(Names.ROOT_QUERY) PictogramQuery<Connection> rootQuery) {
-		return rootQuery.descendantsByBusinessObjects((c) -> getBusinessObjectsPathToConnectionEnd(c.getAllSourceContext(), c.getAllSource())).first();
-	}	
-				
-	@CreateDestinationQuery
-	public DiagramElementQuery<Connection> createDestination(final @Named(Names.ROOT_QUERY) PictogramQuery<Connection> rootQuery) {
-		return rootQuery.descendantsByBusinessObjects((c) -> getBusinessObjectsPathToConnectionEnd(c.getAllDestinationContext(), c.getAllDestination())).first();
-	}
-	
-	@CreateParentQuery
-	public DiagramElementQuery<Connection> createParentDiagramElementQuery(final @Named(Names.SOURCE_ROOT_QUERY) PictogramQuery<Connection> srcRootQuery, 
-			final @Named(Names.DESTINATION_ROOT_QUERY) PictogramQuery<Connection> dstRootQuery) {
-		return srcRootQuery.commonAncestors(dstRootQuery).filter((fa) -> fa.getBusinessObject() instanceof Subcomponent || fa.getBusinessObject() instanceof ComponentClassifier);
-	}
-	
 	/**
 	 * Gets an array of business objects which describes the logical diagram element path to the connection end.
 	 * @param ctx
 	 * @param connectionEnd
 	 * @return
 	 */
-	private static Object[] getBusinessObjectsPathToConnectionEnd(final Context ctx, final Object connectionEnd) {
-		if(connectionEnd == null) {
+	private static Object[] getBusinessObjectsPathToConnectedElement(final Context ctx,
+			final ConnectedElement connectedElement) {
+		if (connectedElement == null) {
 			return null;
 		}
-		
-		final List<Object> path = new ArrayList<>(3);
-		if(ctx instanceof SubprogramCall) {
+
+		final List<Object> path = new ArrayList<>(6);
+		if (ctx instanceof SubprogramCall) {
 			path.add(ctx.eContainer());
 		}
-		
-		if(ctx != null) {
+
+		if (ctx != null) {
 			path.add(ctx);
 		}
-		
-		path.add(connectionEnd);
+
+		for (ConnectedElement tmp = connectedElement; tmp != null; tmp = tmp.getNext()) {
+			path.add(tmp.getConnectionEnd());
+		}
 
 		return path.toArray();
 	}
-	
-	// Decorations
-	@GetDecorations
-	public Decoration[] getDecorations(final @Named(Names.BUSINESS_OBJECT) Connection c) {
-		final ArrayList<Decoration> decorations = new ArrayList<Decoration>(3);
-		
-		// Determine which indicators should be shown
-		final boolean showImmediateDecoration;
-		final boolean showDelayedDecoration;
-		if(c instanceof PortConnection) {
-			final PortConnection pc = (PortConnection)c;
-			final EnumerationLiteral connectionTiming = GetProperties.getConnectionTiming(pc);
-			final String connectionTimingName = connectionTiming == null ? null : connectionTiming.getName();
-			if(CommunicationProperties.DELAYED.equals(connectionTimingName)) {
-				showDelayedDecoration = true;
-				showImmediateDecoration = false;
-			} else if(CommunicationProperties.IMMEDIATE.equals(connectionTimingName)) {
-				showDelayedDecoration = false;
-				showImmediateDecoration = true;
-			} else {
-			
-				showImmediateDecoration = showDelayedDecoration = false;
-			}
-		} else {
-			showImmediateDecoration = showDelayedDecoration = false;
-		}
-				
-		// Create decorations
-		if(showDelayedDecoration) {
-			decorations.add(delayedDecoration);
-		} else if(showImmediateDecoration) {
-			decorations.add(immediateDecoration);
-		}
 
-		final boolean showDirectionDecoration;
-		if(!showImmediateDecoration && !c.isBidirectional()) {
-			final ConnectionEnd src = c.getAllSource();
-			final ConnectionEnd dst = c.getAllDestination();
-			if((src != null && src instanceof DirectedFeature && (((DirectedFeature)src).getDirection() == null || ((DirectedFeature)src).getDirection() == DirectionType.IN_OUT)) ||
-			 (dst != null && dst instanceof DirectedFeature && (((DirectedFeature)dst).getDirection() == null || ((DirectedFeature)dst).getDirection() == DirectionType.IN_OUT))) {
-				showDirectionDecoration = true;
-			} else {
-				showDirectionDecoration = false;
-			}
-		} else {
-			showDirectionDecoration = false;
-		}		
-		
-		if(showDirectionDecoration) {
-			decorations.add(directionDecoration);
-		}
-		
-		return decorations.toArray(new Decoration[decorations.size()]);
-	}
-	
 	// Labels
 	@GetName
 	public String getName(final @Named(Names.BUSINESS_OBJECT) Connection c) {
-		return c.getName(); 
+		return c.getName();
 	}
-	
-	@GetAnnotations
-	public Annotation[] getAnnotations(final @Named(Names.BUSINESS_OBJECT) Connection c) {
-		final String connectionPatterns = getConnectionPatterns(c);
-		return connectionPatterns == null ? null : new Annotation[] {AnnotationBuilder.create().text(connectionPatterns).name("connection_pattern").build()};
-	}	
-	
-	/**
-	 * Returns a string representation of the connection's connection patterns
-	 * @param aadlConnection
-	 * @return
-	 */
-	private String getConnectionPatterns(final org.osate.aadl2.Connection aadlConnection) {
-		final Property cpProperty = GetProperties.lookupPropertyDefinition(aadlConnection, CommunicationProperties._NAME, "Connection_Pattern");
-		String patterns = "";
-		try {
-			final ListValue cpValues = (ListValue)PropertyUtils.getSimplePropertyListValue(aadlConnection, cpProperty);
-			patterns = StringUtil.join(cpValues.getOwnedListElements(), ",", new StringUtil.Converter<PropertyExpression, String>() {
-				private final StringUtil.Converter<PropertyExpression, String> innerListConverter = new StringUtil.Converter<PropertyExpression, String>() {
-					@Override
-					public String convert(PropertyExpression input) {
-						if(input instanceof NamedValue) {
-							final Object v = ((NamedValue) input).getNamedValue();
-							if(v instanceof EnumerationLiteral) {
-								return ((EnumerationLiteral) v).getName();
-							}
-						}
-						
-						return "";
-					}					
-				};
-				
-				@Override
-				public String convert(PropertyExpression input) {
-					return "(" + StringUtil.join(((ListValue)input).getOwnedListElements(), ",", innerListConverter) + ")";
-				}				
-			});
-		} catch (PropertyNotPresentException e) {
-		}
 
-		return patterns;
-	}
-	
 	// Creating
 	@GetPaletteEntries
-	public PaletteEntry[] getPaletteEntries(final @Named(Names.DIAGRAM_BO) ComponentImplementation ci) {
-		final List<PaletteEntry> paletteEntries = new ArrayList<>();
-		
-		// Create palette entries for each connection type
-		for(final EClass connectionType : AadlConnectionUtil.getConnectionTypes()) {
-			paletteEntries.add(PaletteEntryBuilder.create().
-					connectionCreation().
-					label(StringUtil.camelCaseToUser(connectionType.getName())).
-					icon(ImageHelper.getImage(connectionType)).
-					category(Categories.CONNECTIONS).context(connectionType).
-					build());
+	public PaletteEntry[] getPaletteEntries(final @Named(Names.DIAGRAM_BO) Object diagramBo) {
+		final boolean applicable = diagramBo == null || diagramBo instanceof AadlPackage
+				|| diagramBo instanceof ComponentImplementation;
+		if (!applicable) {
+			return null;
 		}
 
-		return paletteEntries.toArray(new PaletteEntry[paletteEntries.size()]);		
+		final List<PaletteEntry> paletteEntries = new ArrayList<>();
+
+		// Create palette entries for each connection type
+		for (final EClass connectionType : AadlConnectionUtil.getConnectionTypes()) {
+			paletteEntries.add(PaletteEntryBuilder.create().connectionCreation()
+					.label(StringUtil.camelCaseToUser(connectionType.getName()))
+					.icon(ImageHelper.getImage(connectionType)).category(Categories.CONNECTIONS).context(connectionType)
+					.build());
+		}
+
+		return paletteEntries.toArray(new PaletteEntry[paletteEntries.size()]);
 	}
-	
-	@GetCreateOwner
-	public ComponentClassifier getCreateConnectionOwner(@Named(InternalNames.SOURCE_DIAGRAM_ELEMENT_PROXY) final DiagramElementProxy srcDiagramElement, 
-			final QueryService queryService) {
-		return (ComponentImplementation)queryService.getFirstBusinessObject(componentImplementationQuery, srcDiagramElement);
-	}
-	
+
 	@CanStartConnection
-	public boolean canStartConnection(@Named(InternalNames.SOURCE_DIAGRAM_ELEMENT_PROXY) final DiagramElementProxy srcDiagramElement, 
-			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass connectionType,
-			final QueryService queryService) {
-		final ConnectedElement srcConnectedElement = getConnectedElementForDiagramElement(srcDiagramElement, queryService);
-		if(srcConnectedElement == null) {
+	public boolean canStartConnection(@Named(Names.SOURCE_BUSINESS_OBJECT_CONTEXT) final BusinessObjectContext srcBoc,
+			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass connectionType, final QueryService queryService) {
+		if (!(srcBoc.getBusinessObject() instanceof ConnectionEnd)) {
 			return false;
 		}
-		
+
+		final ConnectionEnd srcConnectionEnd = (ConnectionEnd)srcBoc.getBusinessObject();
+
 		// Perform type specific connection start connection validity check
 		final Class<?> connectionEndType = getConnectionEndType(connectionType);
-		if(connectionEndType == null || !connectionEndType.isInstance(srcConnectedElement.getConnectionEnd())) {
+		if (connectionEndType == null || !connectionEndType.isInstance(srcConnectionEnd)) {
 			return false;
 		}
-		
+
 		return true;
-		
-	}	
-	
+	}
+
 	@CanCreate
-	public boolean canCreate(@Named(InternalNames.SOURCE_DIAGRAM_ELEMENT_PROXY) final DiagramElementProxy srcDiagramElement, 
-			@Named(InternalNames.DESTINATION_DIAGRAM_ELEMENT_PROXY) final DiagramElementProxy dstDiagramElement, 
-			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass connectionType,
-			final QueryService queryService) {		
+	public boolean canCreate(@Named(Names.SOURCE_BUSINESS_OBJECT_CONTEXT) final BusinessObjectContext srcBoc,
+			@Named(Names.DESTINATION_BUSINESS_OBJECT_CONTEXT) final BusinessObjectContext dstBoc,
+			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass connectionType, final QueryService queryService) {
+
+		final BusinessObjectContext ownerBoc = getOwnerBoc(srcBoc, dstBoc);
+		if (ownerBoc == null) {
+			return false;
+		}
 
 		// Get the connection elements for the source and destination
-		final ConnectedElement srcConnectedElement = getConnectedElementForDiagramElement(srcDiagramElement, queryService);
-		final ConnectedElement dstConnectedElement = getConnectedElementForDiagramElement(dstDiagramElement, queryService);
+		final ConnectedElement srcConnectedElement = getConnectedElementForBusinessObjectContext(srcBoc, connectionType,
+				false, ownerBoc);
+		final ConnectedElement dstConnectedElement = getConnectedElementForBusinessObjectContext(dstBoc, connectionType,
+				!(srcConnectedElement.getContext() instanceof Subcomponent), ownerBoc);
 
 		// Ensure they are valid and are not the same
-		if(dstConnectedElement == null || EcoreUtil.equals(srcConnectedElement, dstConnectedElement)) {
+		if (dstConnectedElement == null || EcoreUtil.equals(srcConnectedElement, dstConnectedElement)) {
+			return false;
+		}
+
+		// Can't connect two features that belong to the same classifier
+		if (!(srcConnectedElement.getContext() instanceof Subcomponent)
+				&& srcConnectedElement.getConnectionEnd() instanceof Feature
+				&& !(dstConnectedElement.getContext() instanceof Subcomponent)
+				&& srcConnectedElement.getConnectionEnd() instanceof Feature) {
 			return false;
 		}
 
 		final Class<?> connectionEndType = getConnectionEndType(connectionType);
-		if(connectionEndType == null || !connectionEndType.isInstance(dstConnectedElement.getConnectionEnd())) {
+		if (connectionEndType == null || !connectionEndType.isInstance(dstConnectedElement.getConnectionEnd())) {
 			return false;
 		}
-		
-		return true;
+
+		return getPotentialOwners(ownerBoc).size() > 0;
 	}
 
-	@Create
-	public Connection createBusinessObject(@Named(Names.OWNER_BO) final ComponentImplementation ci, 
-			@Named(InternalNames.SOURCE_DIAGRAM_ELEMENT_PROXY) final DiagramElementProxy srcDiagramElement, 
-			@Named(InternalNames.DESTINATION_DIAGRAM_ELEMENT_PROXY) final DiagramElementProxy dstDiagramElement, 
-			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass connectionType,
-			final QueryService queryService,
+	@BuildCreateOperation
+	public void buildCreateOperation(final @Named(InternalNames.OPERATION) CreateOperation createOp,
+			final @Named(Names.SOURCE_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext srcBoc,
+			final @Named(Names.DESTINATION_BUSINESS_OBJECT_CONTEXT) BusinessObjectContext dstBoc,
+			final @Named(Names.PALETTE_ENTRY_CONTEXT) EClass connectionType, final QueryService queryService,
 			final NamingService namingService) {
-		
-		// Determine the name for the new connection
-		final String newConnectionName = namingService.buildUniqueIdentifier(ci, "new_connection");
-		
-		// Create the appropriate type of connection object
-		final org.osate.aadl2.Connection newAadlConnection = AadlConnectionUtil.createConnection(ci, connectionType);
-		if(newAadlConnection == null) {
-			return null;
-		}
-		
-		// Reset the no connections flag
-		ci.setNoConnections(false);
 
-		// Set the name
-		newAadlConnection.setName(newConnectionName);
-		
-		// Set the source and destination
-		final ConnectedElement src = getConnectedElementForDiagramElement(srcDiagramElement, queryService);
-		newAadlConnection.setSource(src);
-		final ConnectedElement dst = getConnectedElementForDiagramElement(dstDiagramElement, queryService);
-		newAadlConnection.setDestination(dst);
-		
-		// Set type of access connection
-		if(newAadlConnection instanceof AccessConnection) {
-			final AccessConnection ac = (AccessConnection)newAadlConnection;
-			if(src.getConnectionEnd() instanceof SubprogramAccess || dst.getConnectionEnd() instanceof SubprogramAccess) {
-				ac.setAccessCategory(AccessCategory.SUBPROGRAM);
-			} else if(src.getConnectionEnd() instanceof SubprogramGroupAccess || dst.getConnectionEnd() instanceof SubprogramGroupAccess) {
-				ac.setAccessCategory(AccessCategory.SUBPROGRAM_GROUP);
-			} else if(src.getConnectionEnd() instanceof BusAccess || dst.getConnectionEnd() instanceof BusAccess) {
-				ac.setAccessCategory(AccessCategory.BUS);
-			} else if(src.getConnectionEnd() instanceof DataAccess || dst.getConnectionEnd() instanceof DataAccess) {
-				ac.setAccessCategory(AccessCategory.DATA);
-			}
+		// Find the common ancestor which will be the BOC which will own the new connection.
+		final BusinessObjectContext container = getOwnerBoc(srcBoc, dstBoc);
+		if (container == null) {
+			return;
 		}
-		
-		return newAadlConnection;
-	}
-	
-	private ConnectedElement getConnectedElementForDiagramElement(final DiagramElementProxy element, final QueryService queryService) {
-		final ConnectedElement ce = Aadl2Factory.eINSTANCE.createConnectedElement();
-		final Object bo = queryService.getFirstBusinessObject(selfQuery, element);
-		if(!(bo instanceof ConnectionEnd)) {
-			return null;
-		} 
-		
-		ce.setConnectionEnd((ConnectionEnd)bo);
 
-		final Object parentBo = queryService.getFirstBusinessObject(parentQuery, element);
-		if(parentBo instanceof Context) {
-			ce.setContext((Context)parentBo);
-			// Grandparent must be the root of the feature specification path. Arbitrary length feature specifications aren't supported at this time.
-			final Object grandparentBo = queryService.getFirstBusinessObject(grandparentQuery, element);
-			if(!(grandparentBo instanceof Subcomponent || grandparentBo instanceof ComponentImplementation)) {
+		// Determine which classifier should own the new element
+		final ComponentImplementation selectedClassifier = (ComponentImplementation) ClassifierEditingUtil
+				.getClassifierToModify(getPotentialOwners(container));
+		if (selectedClassifier == null) {
+			return;
+		}
+
+		// Create the subcomponent
+		createOp.addStep(selectedClassifier, (resource, owner) -> {
+			// Create the appropriate type of connection object
+			final org.osate.aadl2.Connection newAadlConnection = AadlConnectionUtil.createConnection(owner,
+					connectionType);
+			if (newAadlConnection == null) {
 				return null;
 			}
-		} else if(!(parentBo instanceof Subcomponent || parentBo instanceof ComponentImplementation)) {
+
+			// Reset the no connections flag
+			owner.setNoConnections(false);
+
+			// Set the source and destination
+			final ConnectedElement src = getConnectedElementForBusinessObjectContext(srcBoc, connectionType, false,
+					container);
+			newAadlConnection.setSource(src);
+			final ConnectedElement dst = getConnectedElementForBusinessObjectContext(dstBoc, connectionType,
+					!(src.getContext() instanceof Subcomponent), container);
+			newAadlConnection.setDestination(dst);
+
+			// Determine the name for the new connection
+			final String newConnectionName = namingService.buildUniqueIdentifier(owner, "new_connection");
+			newAadlConnection.setName(newConnectionName);
+
+			// Set type of access connection
+			if (newAadlConnection instanceof AccessConnection) {
+				final AccessConnection ac = (AccessConnection) newAadlConnection;
+				if (src.getConnectionEnd() instanceof SubprogramAccess
+						|| dst.getConnectionEnd() instanceof SubprogramAccess) {
+					ac.setAccessCategory(AccessCategory.SUBPROGRAM);
+				} else if (src.getConnectionEnd() instanceof SubprogramGroupAccess
+						|| dst.getConnectionEnd() instanceof SubprogramGroupAccess) {
+					ac.setAccessCategory(AccessCategory.SUBPROGRAM_GROUP);
+				} else if (src.getConnectionEnd() instanceof BusAccess || dst.getConnectionEnd() instanceof BusAccess) {
+					ac.setAccessCategory(AccessCategory.BUS);
+				} else if (src.getConnectionEnd() instanceof DataAccess
+						|| dst.getConnectionEnd() instanceof DataAccess) {
+					ac.setAccessCategory(AccessCategory.DATA);
+				}
+			}
+
+			return new CreateStepResult(container, newAadlConnection);
+		});
+
+	}
+
+	private static BusinessObjectContext getOwnerBoc(final BusinessObjectContext srcBoc,
+			final BusinessObjectContext dstBoc) {
+
+		// Search for an appropriate owner. To be appropriate the owner BOC must be a component implementation or a subcomponent which is reachable from both the source and destination BOC.
+		int subcomponentsChecked1 = 0;
+		BusinessObjectContext temp1 = srcBoc.getParent();
+		while (temp1 != null) {
+			final Object bo1 = temp1.getBusinessObject();
+			if (bo1 instanceof Subcomponent || bo1 instanceof ComponentImplementation) {
+				BusinessObjectContext temp2 = dstBoc.getParent();
+				int subcomponentsChecked2 = 0;
+				while (temp2 != null) {
+					final Object bo2 = temp2.getBusinessObject();
+					if (bo2 instanceof Subcomponent || bo2 instanceof ComponentImplementation) {
+						if (temp1 == temp2) {
+							return temp1;
+						}
+
+						if (bo2 instanceof Subcomponent) {
+							subcomponentsChecked2++;
+
+							// Stop checking at second subcomponent
+							if (subcomponentsChecked2 >= 2) {
+								break;
+							}
+						} else if (bo2 instanceof ComponentImplementation) {
+							// Stop checking at component implementations
+							break;
+						}
+					}
+					temp2 = temp2.getParent();
+				}
+
+				if (temp1.getBusinessObject() instanceof Subcomponent) {
+					subcomponentsChecked1++;
+
+					// Stop checking at second subcomponent
+					if (subcomponentsChecked1 >= 2) {
+						break;
+					}
+				} else if (bo1 instanceof ComponentImplementation) {
+					// Stop checking at component implementations
+					break;
+				}
+			}
+
+			temp1 = temp1.getParent();
+		}
+
+		return null;
+	}
+
+	private static List<ComponentImplementation> getPotentialOwners(final BusinessObjectContext ownerBoc) {
+		if (ownerBoc == null) {
+			return Collections.emptyList();
+		}
+
+		final Object ownerBo = ownerBoc.getBusinessObject();
+		if (ownerBo instanceof ComponentImplementation) {
+			return Collections.singletonList((ComponentImplementation) ownerBo);
+		} else if (ownerBo instanceof Subcomponent) {
+			final ComponentImplementation ci = ((Subcomponent) ownerBo).getComponentImplementation();
+			if (ci == null) {
+				return Collections.emptyList();
+			} else {
+				return ci.getSelfPlusAllExtended().stream().filter(tmp -> tmp instanceof ComponentImplementation)
+						.map(ComponentImplementation.class::cast).collect(Collectors.toList());
+			}
+		} else {
+			return Collections.emptyList();
+		}
+	}
+
+	/**
+	 * Builds a ConnectedElement for hte specific business object.
+	 * @param boc
+	 * @param connectionType
+	 * @param disableNesting
+	 * @param limitBoc is an optional business object context which limits the path of the connected element
+	 * @return
+	 */
+	private ConnectedElement getConnectedElementForBusinessObjectContext(final BusinessObjectContext boc,
+			final EClass connectionType, final boolean disableNesting, final BusinessObjectContext limitBoc) {
+		final Object bo = boc.getBusinessObject();
+		if (!(bo instanceof ConnectionEnd)) {
 			return null;
 		}
-		
+
+		// Build a list of business objects which make up the path to the connection end.
+		boolean pathIncludesSubcomponent = false;
+		final LinkedList<Object> path = new LinkedList<>();
+		for (BusinessObjectContext tmp = boc; tmp != null && tmp != limitBoc
+				&& tmp.getBusinessObject() != null; tmp = tmp.getParent()) {
+			if (tmp.getBusinessObject() instanceof ComponentImplementation) {
+				break;
+			} else if (tmp.getBusinessObject() instanceof Subcomponent) {
+				if (pathIncludesSubcomponent) {
+					break;
+				}
+
+				pathIncludesSubcomponent = true;
+			}
+
+			path.add(0, tmp.getBusinessObject());
+		}
+
+		if (path.size() == 0) {
+			return null;
+		}
+
+		final Object[] pathObjects = path.toArray();
+
+		final Object firstBo = pathObjects[0];
+		final boolean allowNested = !disableNesting
+				&& connectionType == Aadl2Factory.eINSTANCE.getAadl2Package().getFeatureConnection();
+
+		// If nesting is not allowed, then the number of objects must be at most 2.
+		if (!allowNested && pathObjects.length > 2) {
+			return null;
+		}
+
+		final ConnectedElement ce = Aadl2Factory.eINSTANCE.createConnectedElement();
+
+		// Add the context
+		int i = 0;
+		if (pathObjects.length > 1) {
+			if (!(firstBo instanceof Context)) {
+				return null;
+			}
+
+			ce.setContext((Context) firstBo);
+			i++;
+		}
+
+		// Add the first connection end
+		if (!(pathObjects[i] instanceof ConnectionEnd)) {
+			return null;
+		}
+
+		ce.setConnectionEnd((ConnectionEnd) pathObjects[i]);
+		i++;
+
+		// Add other segments
+		ConnectedElement tmp = ce;
+		for (; i < pathObjects.length; i++) {
+			tmp = tmp.createNext();
+			if (!(pathObjects[i] instanceof ConnectionEnd)) {
+				return null;
+			}
+
+			tmp.setConnectionEnd((ConnectionEnd) pathObjects[i]);
+		}
+
 		return ce;
 	}
-	
+
 	/**
 	 * Retrieves the appropriate interface for connection ends for the current connection type
 	 * @return
@@ -387,44 +469,27 @@ public class ConnectionHandler {
 	private Class<?> getConnectionEndType(final EClass connectionType) {
 		final Class<?> connectionEndType;
 		final Aadl2Package p = Aadl2Factory.eINSTANCE.getAadl2Package();
-		if(connectionType == p.getAccessConnection()) {
+		if (connectionType == p.getAccessConnection()) {
 			connectionEndType = AccessConnectionEnd.class;
-		} else if(connectionType == p.getFeatureConnection()) {
+		} else if (connectionType == p.getFeatureConnection()) {
 			connectionEndType = FeatureConnectionEnd.class;
-		} else if(connectionType == p.getFeatureGroupConnection()) {
+		} else if (connectionType == p.getFeatureGroupConnection()) {
 			connectionEndType = FeatureGroupConnectionEnd.class;
-		} else if(connectionType == p.getParameterConnection()) {
+		} else if (connectionType == p.getParameterConnection()) {
 			connectionEndType = ParameterConnectionEnd.class;
-		} else if(connectionType == p.getPortConnection()) {
+		} else if (connectionType == p.getPortConnection()) {
 			connectionEndType = PortConnectionEnd.class;
 		} else {
 			connectionEndType = null;
 		}
-		
+
 		return connectionEndType;
 	}
-	
-	// Renaming
-	@CanRename
-    public boolean canRename(final @Named(Names.BUSINESS_OBJECT) Connection c, final @Named(InternalNames.DIAGRAM_ELEMENT_PROXY) DiagramElementProxy diagramElement, final QueryService queryService) {
-		final ComponentImplementation ci = (ComponentImplementation)queryService.getFirstBusinessObject(componentImplementationQuery, diagramElement);
-		return c.getContainingClassifier() == ci && c.getRefined() == null;
-    }
-	
+
+// Renaming
 	@ValidateName
-	public String validateName(final @Named(Names.BUSINESS_OBJECT) Connection c, final @Named(Names.NAME) String value, final NamingService namingService) {
+	public String validateName(final @Named(Names.BUSINESS_OBJECT) Connection c, final @Named(Names.NAME) String value,
+			final NamingService namingService) {
 		return namingService.checkNameValidity(c, value);
 	}
-	
-	@SetName
-	public void setName(final @Named(Names.BUSINESS_OBJECT) Connection c, final @Named(Names.NAME) String value, final RefactoringService refactoringService) {
-		refactoringService.renameElement(c, value);
-	}
-	
-	// Deleting
-	@CanDelete
-    public boolean canDelete(final @Named(Names.BUSINESS_OBJECT) Connection c, final @Named(InternalNames.DIAGRAM_ELEMENT_PROXY) DiagramElementProxy diagramElement, final QueryService queryService) {
-		final ComponentImplementation ci = (ComponentImplementation)queryService.getFirstBusinessObject(componentImplementationQuery, diagramElement);
-		return c.getContainingClassifier() == ci;
-    }
 }

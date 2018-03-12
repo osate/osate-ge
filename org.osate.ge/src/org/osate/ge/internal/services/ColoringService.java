@@ -1,38 +1,45 @@
-/*******************************************************************************
- * Copyright (C) 2013 University of Alabama in Huntsville (UAH)
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- * The US Government has unlimited rights in this work in accordance with W31P4Q-10-D-0092 DO 0073.
- *******************************************************************************/
 package org.osate.ge.internal.services;
 
-import java.awt.Color;
+import java.util.Map;
 
-import org.eclipse.graphiti.mm.pictograms.PictogramElement;
+import org.osate.aadl2.NamedElement;
+import org.osate.ge.graphics.Color;
+import org.osate.ge.internal.diagram.runtime.DiagramElement;
+import org.osate.ge.internal.query.Queryable;
 
 /**
  * Contains methods to handle highlighting objects based on editor state
  *
  */
 public interface ColoringService {
+	// TODO: Should have a way to batch these changes before making API.
 	interface Coloring {
 		void dispose();
-		void setForeground(PictogramElement pe, Color color);
+
+		/**
+		 *
+		 * @param de
+		 * @param color setting color to null returns the element to its default color.
+		 */
+		void setForeground(DiagramElement de, Color color);
+
+		void clear();
 	}
-	
+
 	/**
 	 * Allows the caller to configure the colors of specific pictograms. The returned Coloring object is used to configure colors.
 	 * The Colorings object must be disposed() when coloring is no longer desired. Overrides default highlighting.
 	 * @return
 	 */
 	Coloring adjustColors();
-	
+
 	/**
-	 * Applies custom colors to a pictogram element based on the current state of the coloring service
-	 * Coloring can be customized with the is coloring container and is coloring child properties.
-	 * @param pe the pictogram to color. If it is a shape it should be the root shape for a business object. 
+	 * Returns a map of override foreground colors for elements.
 	 */
-	void applyColoring(PictogramElement pe);
+	Map<DiagramElement, Color> buildForegroundColorMap();
+
+	// TODO: Rework. Should be split out from the service.
+	void setHighlightedMode(NamedElement ne, Queryable boc);
+
+	void setHighlightedFlow(NamedElement ne, Queryable boc);
 }

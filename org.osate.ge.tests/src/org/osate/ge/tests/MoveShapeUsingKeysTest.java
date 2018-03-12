@@ -7,43 +7,43 @@ import java.awt.Robot;
 import java.awt.event.KeyEvent;
 
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
+import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.ui.platform.GraphitiShapeEditPart;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swtbot.eclipse.gef.finder.SWTGefBot;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.osate.aadl2.impl.AbstractTypeImpl;
 
 public class MoveShapeUsingKeysTest {
-	private final SWTGefBot bot = new SWTGefBot();
-	private final Helper helper = new Helper(bot);
+	private final AgeGefBot bot = new AgeGefBot();
 
 	@Before
 	public void setUp() {
-		helper.createNewProjectAndPackage();
-		helper.openDiagram(new String[] { ElementNames.projectName, "packages" }, ElementNames.packageName + ".aadl");
+		bot.maximize();
+		bot.createNewProjectAndPackage();
+		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 	}
 
 	@After
 	public void tearDown() {
-		helper.deleteProject();
+		bot.deleteProject();
 	}
 
 	@Test
 	public void setFeatureDirection() {
-		final SWTBotGefEditor editor = bot.gefEditor(ElementNames.packageName);
-		helper.maximize(editor);
-		helper.createToolItem(editor, ToolTypes.abstractType, new Point(0, 0));
-		RenameHelper.renameElement(editor, ElementNames.abstractTypeName, new Point(15, 15), AbstractTypeImpl.class);
-		
+		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		bot.resize(editor, ElementNames.packageName, new Point(600, 600));
+
+		bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(25, 25));
+		bot.renameElement(editor, ElementNames.abstractTypeName);
+		bot.resize(editor, ElementNames.abstractTypeName, new Point(300, 300));
+
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart)editor.getSWTBotGefViewer().getEditPart(ElementNames.abstractTypeName).part();
-		final GraphicsAlgorithm ga = gsep.getPictogramElement().getGraphicsAlgorithm();
-		
-		final int beforeX = ga.getX();
-		final int beforeY = ga.getY();
-		
+		final PictogramElement pe = gsep.getPictogramElement();
+		final GraphicsAlgorithm gaBefore = pe.getGraphicsAlgorithm();
+		final int beforeX = gaBefore.getX();
+		final int beforeY = gaBefore.getY();
 		editor.getSWTBotGefViewer().select(ElementNames.abstractTypeName);
 
 		try {
@@ -57,11 +57,12 @@ public class MoveShapeUsingKeysTest {
 			}
 
 			robot.keyPress(KeyEvent.VK_ENTER);
-			robot.keyRelease(KeyEvent.VK_ENTER);		
+			robot.keyRelease(KeyEvent.VK_ENTER);
 		} catch (AWTException e) {
 			e.printStackTrace();
 		}
 
-		assertTrue(beforeX != ga.getX() || beforeY != ga.getY());
+		final GraphicsAlgorithm gaAfter = pe.getGraphicsAlgorithm();
+		assertTrue(beforeX != gaAfter.getX() || beforeY != gaAfter.getY());
 	}
 }
