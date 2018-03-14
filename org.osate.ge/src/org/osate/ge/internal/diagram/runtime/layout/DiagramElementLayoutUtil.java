@@ -114,7 +114,8 @@ public class DiagramElementLayoutUtil {
 		// Layout the nodes
 		final IGraphLayoutEngine layoutEngine = new RecursiveGraphLayoutEngine();
 		for (final DiagramNode dn : nodesToLayout) {
-			final LayoutMapping mapping = ElkGraphBuilder.buildLayoutGraph(dn, styleProvider, layoutInfoProvider);
+			final LayoutMapping mapping = ElkGraphBuilder.buildLayoutGraph(dn, styleProvider, layoutInfoProvider,
+					options);
 			final ElkNode layoutGraph = mapping.getLayoutGraph();
 
 			layoutGraph.setProperty(CoreOptions.ALGORITHM, layoutAlgorithm);
@@ -154,14 +155,15 @@ public class DiagramElementLayoutUtil {
 			return;
 		}
 
+		final LayoutOptions layoutOptions = LayoutOptions.createFromPreferences();
 		if (currentLayoutMode == IncrementalLayoutMode.LAYOUT_DIAGRAM) {
 			layout(incrementalLayoutLabel, diagram, layoutInfoProvider,
-					new LayoutOptionsBuilder().build());
+					layoutOptions);
 		} else {
 			layout(mod, nodesToLayout,
 					new StyleCalculator(diagram.getConfiguration(), StyleProvider.EMPTY),
 					layoutInfoProvider,
-					new LayoutOptionsBuilder().build());
+					layoutOptions);
 
 			// Set Positions of elements which do not have a position set.
 			for (final DiagramNode dn : nodesToLayout) {

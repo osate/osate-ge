@@ -1,5 +1,6 @@
 package org.osate.ge.internal.ui;
 
+import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.ComboFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.ui.IWorkbench;
@@ -18,6 +19,8 @@ public class AgePreferencePage extends FieldEditorPreferencePage implements IWor
 	protected void createFieldEditors() {
 		addField(new ComboFieldEditor(Preferences.INCREMENTAL_LAYOUT_MODE, "Incremental Layout Mode",
 				getIncrementalUpdateModeNamesAndLabels(),
+				getFieldEditorParent()));
+		addField(new BooleanFieldEditor(Preferences.LAYOUT_FORCE_PORTS_TO_DEFAULT_SIDES, "Force Ports to Default Sides",
 				getFieldEditorParent()));
 	}
 
