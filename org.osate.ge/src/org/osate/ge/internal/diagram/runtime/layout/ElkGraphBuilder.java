@@ -45,6 +45,7 @@ import org.osate.ge.internal.diagram.runtime.DockArea;
 import org.osate.ge.internal.diagram.runtime.styling.StyleProvider;
 
 class ElkGraphBuilder {
+	// Filter for diagram elements for which ELK ports will be created.
 	private final Predicate<DiagramElement> dockedShapeFilter = de -> de.getGraphic() instanceof AgeShape
 			&& !(de.getGraphic() instanceof Label) && de.getDockArea() != null;
 
@@ -54,25 +55,42 @@ class ElkGraphBuilder {
 	private final StyleProvider styleProvider;
 	private final LayoutInfoProvider layoutInfoProvider;
 	private final LayoutOptions options;
-	private final boolean ignoreNestedPorts;
-	private final PortPlacementInfoProvider portPlacementInfoProvider;
+	private final boolean omitNestedPorts;
+	private final FixedPortPositionProvider fixedPortPositionProvider;
 
-	// TODO: Rename. Only for non-nested ports;
-	public static interface PortPlacementInfoProvider {
+	/**
+	 * Provides information used to position ports when fixed port positions are being used. If null is returned, the graph builder will assign a default position.
+	 * Fixed port positions are used when nested ports are included in the graph. If the position of a port is provided, then the provider must provide the position for all
+	 * sibling ports.
+	 */
+	public static interface FixedPortPositionProvider {
 		PortSide getPortSide(final DiagramElement de);
 
 		Double getPortPosition(final DiagramElement de); // Gets position along axis
+
+		// Implementation that returns null for all values
+		public static final FixedPortPositionProvider NO_OP = new FixedPortPositionProvider() {
+			@Override
+			public PortSide getPortSide(DiagramElement de) {
+				return null;
+			}
+
+			@Override
+			public Double getPortPosition(DiagramElement de) {
+				return null;
+			}
+		};
 	}
 
 	private ElkGraphBuilder(final StyleProvider styleProvider, final LayoutInfoProvider layoutInfoProvider,
-			final LayoutOptions options, final boolean ignoreNestedPorts,
-			final PortPlacementInfoProvider portPlacementInfoProvider) {
+			final LayoutOptions options, final boolean omitNestedPorts,
+			final FixedPortPositionProvider fixedPortPositionProvider) {
 		this.styleProvider = Objects.requireNonNull(styleProvider, "styleProvider must not be null");
 		this.layoutInfoProvider = Objects.requireNonNull(layoutInfoProvider, "layoutInfoProvider must not be null");
 		this.options = Objects.requireNonNull(options, "options must not be null");
-		this.ignoreNestedPorts = ignoreNestedPorts;
-		this.portPlacementInfoProvider = Objects.requireNonNull(portPlacementInfoProvider,
-				"portPlacementInfoProvider must not be null");
+		this.omitNestedPorts = omitNestedPorts;
+		this.fixedPortPositionProvider = Objects.requireNonNull(fixedPortPositionProvider,
+				"fixedPortPositionProvider must not be null");
 	}
 
 	/**
@@ -84,7 +102,7 @@ class ElkGraphBuilder {
 	 */
 	static LayoutMapping buildLayoutGraph(final DiagramNode rootDiagramNode, final StyleProvider styleProvider,
 			final LayoutInfoProvider layoutInfoProvider, final LayoutOptions options, final boolean ignoreNestedPorts,
-			final PortPlacementInfoProvider portPlacementInfoProvider) {
+			final FixedPortPositionProvider portPlacementInfoProvider) {
 		final ElkGraphBuilder graphBuilder = new ElkGraphBuilder(styleProvider, layoutInfoProvider, options,
 				ignoreNestedPorts, portPlacementInfoProvider);
 		return graphBuilder.buildLayoutGraph(rootDiagramNode);
@@ -149,29 +167,39 @@ class ElkGraphBuilder {
 				// Group children by the port side to which they should be assigned.
 				final List<DiagramElement> dockedShapes = elements.stream().filter(dockedShapeFilter)
 						.collect(Collectors.toList());
-				final Map<PortSide, List<DiagramElement>> groupedDockedElements = dockedShapes.stream().collect(
-						Collectors.groupingBy(de -> getPortSide(de), HashMap::new, Collectors.toCollection(ArrayList::new)));
+				final boolean diagramElementIncludesNestedPorts = dockedShapes.stream()
+						.flatMap(de -> de.getDiagramElements().stream()).anyMatch(dockedShapeFilter);
 
-				// Set the port constraints for the parent
-				PortConstraints portConstraints = PortConstraints.FIXED_POS;
-				if (groupedDockedElements.size() == 0) {
+				// Set the flag to indicate that there are nested ports which will not be included in the final layout graph
+				if (omitNestedPorts && diagramElementIncludesNestedPorts) {
+					mapping.getLayoutGraph().setProperty(AgeLayoutOptions.NESTED_PORTS_WERE_OMITTED, true);
+				}
+
+				// Set port constraints and graph hierarchy handling of the parent based on whether the diagram element actually has nested ports.
+				final boolean hasNestedPorts = !omitNestedPorts && diagramElementIncludesNestedPorts;
+				PortConstraints portConstraints;
+				if (dockedShapes.size() == 0) {
 					// Don't constrain ports if there aren't any. As of 2017-10-11, some other values can affect the layout even if the node does not contain ports.
 					portConstraints = PortConstraints.FREE;
-				}
-
-				final boolean hasNestedPorts = !ignoreNestedPorts
-						&& dockedShapes.stream().flatMap(de -> de.getDiagramElements().stream()).anyMatch(dockedShapeFilter);
-				if (hasNestedPorts) {
-					mapping.getLayoutGraph().setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.SEPARATE_CHILDREN);
 				} else {
-					if (options.assignPortsToDefaultSides) {
-						portConstraints = PortConstraints.FIXED_SIDE;
+					if (hasNestedPorts) {
+						portConstraints = PortConstraints.FIXED_POS;
+						// If using fixed port positions, adjust the hierarchy handling so that ELK will not throw an exception due to missing dummy ports.
+						mapping.getLayoutGraph().setProperty(CoreOptions.HIERARCHY_HANDLING,
+								HierarchyHandling.SEPARATE_CHILDREN);
 					} else {
-						portConstraints = PortConstraints.FREE;
+						if (options.layoutPortsOnDefaultSides) {
+							portConstraints = PortConstraints.FIXED_SIDE;
+						} else {
+							portConstraints = PortConstraints.FREE;
+						}
 					}
 				}
-
 				parent.setProperty(CoreOptions.PORT_CONSTRAINTS, portConstraints);
+
+				final Map<PortSide, List<DiagramElement>> groupedDockedElements = dockedShapes.stream()
+						.collect(Collectors.groupingBy(de -> getPortSide(de, hasNestedPorts), HashMap::new,
+								Collectors.toCollection(ArrayList::new)));
 
 				// Determine padding
 				final ElkPadding parentPadding = new ElkPadding(portAndContentsPadding);
@@ -231,28 +259,34 @@ class ElkGraphBuilder {
 			final boolean parentHasNestedPorts) {
 		// Create and position ports
 		double position = paddingSize + additionalPadding;
+		double maxPosition = position;
 		for (final DiagramElement dockedElement : dockedDiagramElements) {
 			final ElkPort newPort = createPort(parentNode, side, dockedElement, 0, mapping, parentHasNestedPorts);
 
-			// TODO: Cleanup
-			final Double overridePosition = portPlacementInfoProvider.getPortPosition(dockedElement);
-			if (overridePosition != null) {
-				position = overridePosition;
+			// Determine if the position has been provided by the fixed port position provider
+			if (parentHasNestedPorts) {
+				final Double overridePosition = fixedPortPositionProvider.getPortPosition(dockedElement);
+				if (overridePosition != null) {
+					position = overridePosition;
+				}
 			}
 
 			setPositionAlongSide(newPort, side, position);
 			addPositionOffsets((DiagramElement) mapping.getGraphMap().get(newPort), 0.0, side, mapping);
 
 			position += getSize(newPort, side) + paddingSize;
+
+			// The max position may not always be increasing because the fixed port position provider may override the position.
+			maxPosition = Math.max(maxPosition, position);
 		}
 
-		position += 5; // Additional padding
+		maxPosition += 5; // Additional padding
 
 		if (parentHasNestedPorts) {
 			// Create a dummy port so that the last port on the side will have the minimum padding
 			final ElkPort newPort = ElkGraphUtil.createPort(parentNode);
 			newPort.setProperty(CoreOptions.PORT_SIDE, side);
-			newPort.setY(position);
+			newPort.setY(maxPosition);
 			newPort.setWidth(0);
 			newPort.setHeight(0);
 		}
@@ -341,8 +375,9 @@ class ElkGraphBuilder {
 					transformedLabelsSize.height + untransformedGraphicSize.height);
 		}
 
-		// If nested ports are being ignored, remove any child ports. They still need to be created as part of the sizing process.
-		if (ignoreNestedPorts) {
+		// If omitting nested ports, remove any child ports. They still need to be created as part of the sizing process, but are not supported for the
+		// final graph.
+		if (omitNestedPorts) {
 			for (final ElkPort childPort : childPorts) {
 				mapping.getGraphMap().remove(childPort);
 				EcoreUtil.remove(childPort);
@@ -369,11 +404,13 @@ class ElkGraphBuilder {
 		return newPort;
 	}
 
-	private PortSide getPortSide(final DiagramElement de) {
-		// TODO: Cleanup. Rename
-		PortSide portSide = portPlacementInfoProvider.getPortSide(de);
-		if (portSide != null) {
-			return portSide;
+	private PortSide getPortSide(final DiagramElement de, final boolean usingFixedPortPositions) {
+		// If the container has nested ports, attempt to determine the port position from the fixed port position provider
+		if (usingFixedPortPositions) {
+			PortSide portSide = fixedPortPositionProvider.getPortSide(de);
+			if (portSide != null) {
+				return portSide;
+			}
 		}
 
 		final DockingPosition defaultDockingPosition = de.getGraphicalConfiguration().defaultDockingPosition;
@@ -516,7 +553,8 @@ class ElkGraphBuilder {
 
 		final double newPosition = addPositionOffset(childPort, side, offset);
 
-		if (!ignoreNestedPorts) {
+		// Only attempt to update child ports if nested ports are not being omitted.
+		if (!omitNestedPorts) {
 			de.getDiagramElements().stream()
 			.filter(child -> child.getGraphic() instanceof AgeShape && !(child.getGraphic() instanceof Label)
 					&& child.getDockArea() != null)
@@ -614,9 +652,9 @@ class ElkGraphBuilder {
 			return (ElkConnectableShape) elkElement;
 		}
 
-		// If nested ports aren't being included, then use the first non-nested port for connection edges.
-		// This is intended to provide info to ELK to position ports on appropriate sides.
-		if (ignoreNestedPorts) {
+		// If omitting nested ports, use the first non-nested port for connection edges.
+		// This is intended to encourage ELK to position ports on a more appropriate location.
+		if (omitNestedPorts) {
 			if (de.getDockArea() == DockArea.GROUP && de.getParent() instanceof DiagramElement) {
 				return getConnectableShape((DiagramElement) de.getParent(), mapping);
 			}
@@ -625,7 +663,7 @@ class ElkGraphBuilder {
 		return null;
 	}
 
-// These helper function are useful for working with the size and position of an element with respect to a single axis as determined by a port side.
+	// These helper function are useful for working with the size and position of an element with respect to a single axis as determined by a port side.
 
 	/**
 	 * Returns the size orthogonal to the specified side. For example for a WEST side, this method would return the width of the element.

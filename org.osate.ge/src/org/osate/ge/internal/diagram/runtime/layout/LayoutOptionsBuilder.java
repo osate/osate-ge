@@ -5,14 +5,14 @@ package org.osate.ge.internal.diagram.runtime.layout;
  *
  */
 public class LayoutOptionsBuilder {
-	private boolean assignPortsToDefaultSides = false;
+	private boolean layoutPortsOnDefaultSides = false;
 
-	public LayoutOptionsBuilder assignPortsToDefaultSides(final boolean value) {
-		assignPortsToDefaultSides = value;
+	public LayoutOptionsBuilder layoutPortsOnDefaultSides(final boolean value) {
+		layoutPortsOnDefaultSides = value;
 		return this;
 	}
 
 	public final LayoutOptions build() {
-		return new LayoutOptions(assignPortsToDefaultSides);
+		return new LayoutOptions(layoutPortsOnDefaultSides);
 	}
 }

@@ -110,52 +110,32 @@ public class DiagramElementLayoutUtil {
 		// Layout the nodes
 		final IGraphLayoutEngine layoutEngine = new RecursiveGraphLayoutEngine();
 		for (final DiagramNode dn : nodesToLayout) {
-			// TODO: Layout everything with free. Don't include any nested features.
-			// If the diagram doesn't include nested feature groups, then use that.
-			// However, if it does.. Then do another layout using fixed positions for any containers which have nested feature groups.
-			// TODO: Also create connections to the containing feature group..
 			LayoutMapping mapping;
 			ElkNode layoutGraph;
 
-			// TODO: Cleanup. Share code between the two passes as appropriate. Need suffixes for the debugging files..
-			// TODO: Cleanup arguments to buildLayoutGraph
-
+			// Perform the first layout. This layout will not include nested ports. This will allow ELK additional flexibility when determining port placement.
 			mapping = ElkGraphBuilder.buildLayoutGraph(dn, styleProvider, layoutInfoProvider, options, true,
-					new ElkGraphBuilder.PortPlacementInfoProvider() {
-
-				@Override
-				public PortSide getPortSide(DiagramElement de) {
-					// TODO Auto-generated method stub
-					return null;
-				}
-
-				@Override
-				public Double getPortPosition(DiagramElement de) {
-					return null;
-				}
-			});
+					ElkGraphBuilder.FixedPortPositionProvider.NO_OP);
 			layoutGraph = mapping.getLayoutGraph();
-
 			layoutGraph.setProperty(CoreOptions.ALGORITHM, layoutAlgorithm);
-
-			// Apply properties for the initial layout
 			applyProperties(dn, mapping, layoutInfoProvider, options);
-
-			LayoutDebugUtil.saveElkGraphToDebugProject(layoutGraph);
-
-			// Perform the layout
+			LayoutDebugUtil.saveElkGraphToDebugProject(layoutGraph, "pass1");
 			layoutEngine.layout(layoutGraph, new BasicProgressMonitor());
 
-			// TODO: Check if there were any nested features. If so, do another layout
-			if (true) {
-				final LayoutMapping pass1Mapping = mapping; // TODO: Rename
-
+			// If the layout omitted any nested ports, then perform a second layout which will include nested ports. Since nested ports are not supported by
+			// ELK, fixed port positions will be used for nodes which contain nested ports. Provide the results from the previous layout to the graph builder so
+			// that it can assign the position of the top level ports of such nodes based on the results of the previous layout.
+			//
+			// Doing a second layout is usually better than assigning all port positions. Ideally, the second pass would just include assigning positions to the
+			// nested ports and performing edge routing.
+			if (layoutGraph.getProperty(AgeLayoutOptions.NESTED_PORTS_WERE_OMITTED)) {
+				final LayoutMapping initialLayoutMapping = mapping;
 				mapping = ElkGraphBuilder.buildLayoutGraph(dn, styleProvider, layoutInfoProvider, options, false,
-						new ElkGraphBuilder.PortPlacementInfoProvider() {
+						new ElkGraphBuilder.FixedPortPositionProvider() {
 
 					@Override
 					public PortSide getPortSide(final DiagramElement de) {
-						final ElkGraphElement ge = pass1Mapping.getGraphMap().inverse().get(de);
+						final ElkGraphElement ge = initialLayoutMapping.getGraphMap().inverse().get(de);
 						if (ge instanceof ElkPort) {
 							return ge.getProperty(CoreOptions.PORT_SIDE);
 						}
@@ -164,25 +144,24 @@ public class DiagramElementLayoutUtil {
 
 					@Override
 					public Double getPortPosition(final DiagramElement de) {
-								final ElkGraphElement ge = pass1Mapping.getGraphMap().inverse().get(de);
-								if (ge instanceof ElkPort) {
-									final PortSide ps = ge.getProperty(CoreOptions.PORT_SIDE);
-									return ((ElkPort) ge).getY();
-								}
+						final ElkGraphElement ge = initialLayoutMapping.getGraphMap().inverse().get(de);
+						if (ge instanceof ElkPort) {
+							final ElkPort port = (ElkPort) ge;
+							final PortSide ps = port.getProperty(CoreOptions.PORT_SIDE);
+							if (PortSide.SIDES_EAST_WEST.contains(ps)) {
+								return port.getY();
+							} else {
+								return port.getX();
+							}
+						}
 
 						return null;
 					}
 				});
 				layoutGraph = mapping.getLayoutGraph();
-
 				layoutGraph.setProperty(CoreOptions.ALGORITHM, layoutAlgorithm);
-
-				// Apply properties for the initial layout
 				applyProperties(dn, mapping, layoutInfoProvider, options);
-
-				LayoutDebugUtil.saveElkGraphToDebugProject(layoutGraph);
-
-				// Perform the layout
+				LayoutDebugUtil.saveElkGraphToDebugProject(layoutGraph, "pass2");
 				layoutEngine.layout(layoutGraph, new BasicProgressMonitor());
 			}
 

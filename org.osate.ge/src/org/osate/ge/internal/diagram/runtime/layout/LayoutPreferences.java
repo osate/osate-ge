@@ -10,7 +10,7 @@ public class LayoutPreferences {
 				.orElse(IncrementalLayoutMode.LAYOUT_CONTENTS);
 	}
 
-	public static boolean getForcePortsToDefaultSides() {
-		return Activator.getDefault().getPreferenceStore().getBoolean(Preferences.LAYOUT_FORCE_PORTS_TO_DEFAULT_SIDES);
+	public static boolean getLayoutPortsOnDefaultSides() {
+		return Activator.getDefault().getPreferenceStore().getBoolean(Preferences.LAYOUT_PORTS_ON_DEFAULT_SIDES);
 	}
 }

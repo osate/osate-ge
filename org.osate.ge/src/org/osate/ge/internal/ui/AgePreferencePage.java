@@ -20,7 +20,8 @@ public class AgePreferencePage extends FieldEditorPreferencePage implements IWor
 		addField(new ComboFieldEditor(Preferences.INCREMENTAL_LAYOUT_MODE, "Incremental Layout Mode",
 				getIncrementalUpdateModeNamesAndLabels(),
 				getFieldEditorParent()));
-		addField(new BooleanFieldEditor(Preferences.LAYOUT_FORCE_PORTS_TO_DEFAULT_SIDES, "Force Ports to Default Sides",
+		addField(new BooleanFieldEditor(Preferences.LAYOUT_PORTS_ON_DEFAULT_SIDES,
+				"Layout Features Based on Direction",
 				getFieldEditorParent()));
 	}
 
