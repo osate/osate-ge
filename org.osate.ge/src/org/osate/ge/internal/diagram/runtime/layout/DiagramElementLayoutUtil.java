@@ -62,8 +62,7 @@ public class DiagramElementLayoutUtil {
 	private static final double flowIndicatorSpacing = 70.0; // Size allocated for flow indicators
 
 	public static void layout(final String label, final IEditorPart editor,
-			final Collection<? extends DiagramNode> diagramNodes,
-			final LayoutOptions options) {
+			final Collection<? extends DiagramNode> diagramNodes, final LayoutOptions options) {
 		if (!(editor instanceof AgeDiagramEditor)) {
 			throw new RuntimeException("Editor must be an " + AgeDiagramEditor.class.getName());
 		}
@@ -73,15 +72,13 @@ public class DiagramElementLayoutUtil {
 		layout(label, ageDiagramEditor.getAgeDiagram(), diagramNodes, layoutInfoProvider, options);
 	}
 
-	public static void layout(final String label, final AgeDiagram diagram,
-			final LayoutInfoProvider layoutInfoProvider,
+	public static void layout(final String label, final AgeDiagram diagram, final LayoutInfoProvider layoutInfoProvider,
 			final LayoutOptions options) {
 		layout(label, diagram, null, layoutInfoProvider, options);
 	}
 
 	public static void layout(final String label, final AgeDiagram diagram,
-			final Collection<? extends DiagramNode> diagramNodes,
-			final LayoutInfoProvider layoutInfoProvider,
+			final Collection<? extends DiagramNode> diagramNodes, final LayoutInfoProvider layoutInfoProvider,
 			final LayoutOptions options) {
 		Objects.requireNonNull(label, "label must not be null");
 		Objects.requireNonNull(diagram, "diagram must not be null");
@@ -105,18 +102,39 @@ public class DiagramElementLayoutUtil {
 				new StyleCalculator(diagram.getConfiguration(), StyleProvider.EMPTY), layoutInfoProvider, options));
 	}
 
-	private static void layout(final DiagramModification m,
-			final Collection<? extends DiagramNode> nodesToLayout, final StyleProvider styleProvider,
-			final LayoutInfoProvider layoutInfoProvider,
+	private static void layout(final DiagramModification m, final Collection<? extends DiagramNode> nodesToLayout,
+			final StyleProvider styleProvider, final LayoutInfoProvider layoutInfoProvider,
 			final LayoutOptions options) {
 		Objects.requireNonNull(nodesToLayout, "nodesToLayout must not be null");
 
 		// Layout the nodes
 		final IGraphLayoutEngine layoutEngine = new RecursiveGraphLayoutEngine();
 		for (final DiagramNode dn : nodesToLayout) {
-			final LayoutMapping mapping = ElkGraphBuilder.buildLayoutGraph(dn, styleProvider, layoutInfoProvider,
-					options);
-			final ElkNode layoutGraph = mapping.getLayoutGraph();
+			// TODO: Layout everything with free. Don't include any nested features.
+			// If the diagram doesn't include nested feature groups, then use that.
+			// However, if it does.. Then do another layout using fixed positions for any containers which have nested feature groups.
+			// TODO: Also create connections to the containing feature group..
+			LayoutMapping mapping;
+			ElkNode layoutGraph;
+
+			// TODO: Cleanup. Share code between the two passes as appropriate. Need suffixes for the debugging files..
+			// TODO: Cleanup arguments to buildLayoutGraph
+
+			mapping = ElkGraphBuilder.buildLayoutGraph(dn, styleProvider, layoutInfoProvider, options, true,
+					new ElkGraphBuilder.PortPlacementInfoProvider() {
+
+				@Override
+				public PortSide getPortSide(DiagramElement de) {
+					// TODO Auto-generated method stub
+					return null;
+				}
+
+				@Override
+				public Double getPortPosition(DiagramElement de) {
+					return null;
+				}
+			});
+			layoutGraph = mapping.getLayoutGraph();
 
 			layoutGraph.setProperty(CoreOptions.ALGORITHM, layoutAlgorithm);
 
@@ -127,6 +145,46 @@ public class DiagramElementLayoutUtil {
 
 			// Perform the layout
 			layoutEngine.layout(layoutGraph, new BasicProgressMonitor());
+
+			// TODO: Check if there were any nested features. If so, do another layout
+			if (true) {
+				final LayoutMapping pass1Mapping = mapping; // TODO: Rename
+
+				mapping = ElkGraphBuilder.buildLayoutGraph(dn, styleProvider, layoutInfoProvider, options, false,
+						new ElkGraphBuilder.PortPlacementInfoProvider() {
+
+					@Override
+					public PortSide getPortSide(final DiagramElement de) {
+						final ElkGraphElement ge = pass1Mapping.getGraphMap().inverse().get(de);
+						if (ge instanceof ElkPort) {
+							return ge.getProperty(CoreOptions.PORT_SIDE);
+						}
+						return null;
+					}
+
+					@Override
+					public Double getPortPosition(final DiagramElement de) {
+								final ElkGraphElement ge = pass1Mapping.getGraphMap().inverse().get(de);
+								if (ge instanceof ElkPort) {
+									final PortSide ps = ge.getProperty(CoreOptions.PORT_SIDE);
+									return ((ElkPort) ge).getY();
+								}
+
+						return null;
+					}
+				});
+				layoutGraph = mapping.getLayoutGraph();
+
+				layoutGraph.setProperty(CoreOptions.ALGORITHM, layoutAlgorithm);
+
+				// Apply properties for the initial layout
+				applyProperties(dn, mapping, layoutInfoProvider, options);
+
+				LayoutDebugUtil.saveElkGraphToDebugProject(layoutGraph);
+
+				// Perform the layout
+				layoutEngine.layout(layoutGraph, new BasicProgressMonitor());
+			}
 
 			applyShapeLayout(mapping, m);
 			applyConnectionLayout(mapping, m);
@@ -148,22 +206,19 @@ public class DiagramElementLayoutUtil {
 
 		final IncrementalLayoutMode currentLayoutMode = LayoutPreferences.getCurrentLayoutMode();
 
-		final Collection<DiagramNode> nodesToLayout = DiagramElementLayoutUtil
-				.filterUnnecessaryNodes(getNodesToLayoutIncrementally(diagram, currentLayoutMode, new HashSet<>()),
-						currentLayoutMode == IncrementalLayoutMode.LAYOUT_DIAGRAM);
+		final Collection<DiagramNode> nodesToLayout = DiagramElementLayoutUtil.filterUnnecessaryNodes(
+				getNodesToLayoutIncrementally(diagram, currentLayoutMode, new HashSet<>()),
+				currentLayoutMode == IncrementalLayoutMode.LAYOUT_DIAGRAM);
 		if (nodesToLayout.size() == 0) {
 			return;
 		}
 
 		final LayoutOptions layoutOptions = LayoutOptions.createFromPreferences();
 		if (currentLayoutMode == IncrementalLayoutMode.LAYOUT_DIAGRAM) {
-			layout(incrementalLayoutLabel, diagram, layoutInfoProvider,
-					layoutOptions);
+			layout(incrementalLayoutLabel, diagram, layoutInfoProvider, layoutOptions);
 		} else {
-			layout(mod, nodesToLayout,
-					new StyleCalculator(diagram.getConfiguration(), StyleProvider.EMPTY),
-					layoutInfoProvider,
-					layoutOptions);
+			layout(mod, nodesToLayout, new StyleCalculator(diagram.getConfiguration(), StyleProvider.EMPTY),
+					layoutInfoProvider, layoutOptions);
 
 			// Set Positions of elements which do not have a position set.
 			for (final DiagramNode dn : nodesToLayout) {
@@ -176,21 +231,23 @@ public class DiagramElementLayoutUtil {
 							final DiagramElement parent = (DiagramElement) de.getParent();
 							final DockingPosition defaultDockingPosition = de
 									.getGraphicalConfiguration().defaultDockingPosition;
-							final DockArea defaultDockArea = defaultDockingPosition
-									.getDefaultDockArea();
+							final DockArea defaultDockArea = defaultDockingPosition.getDefaultDockArea();
 
 							if (parent.hasSize()) {
-								final Stream<DiagramElement> otherElementsAlongSide = parent.getDiagramElements().stream().filter(
-										c -> c.hasPosition() && c.hasSize() && c.getDockArea() == defaultDockArea);
+								final Stream<DiagramElement> otherElementsAlongSide = parent.getDiagramElements()
+										.stream().filter(c -> c.hasPosition() && c.hasSize()
+												&& c.getDockArea() == defaultDockArea);
 
 								// Determine the position of the new element along it's preferred docking position.
 								double locationAlongSide;
 								if (defaultDockingPosition == DockingPosition.TOP
 										|| defaultDockingPosition == DockingPosition.BOTTOM) {
-									locationAlongSide = otherElementsAlongSide.max(Comparator.comparingDouble(c -> c.getY()))
+									locationAlongSide = otherElementsAlongSide
+											.max(Comparator.comparingDouble(c -> c.getY()))
 											.map(c -> c.getX() + c.getWidth()).orElse(0.0);
 								} else {
-									locationAlongSide = otherElementsAlongSide.max(Comparator.comparingDouble(c -> c.getY()))
+									locationAlongSide = otherElementsAlongSide
+											.max(Comparator.comparingDouble(c -> c.getY()))
 											.map(c -> c.getY() + c.getHeight()).orElse(0.0);
 								}
 
@@ -270,11 +327,10 @@ public class DiagramElementLayoutUtil {
 		return diagramElements.stream().anyMatch(de -> {
 			final boolean moveable = DiagramElementPredicates.isMoveable(de);
 			final boolean resizable = DiagramElementPredicates.isResizeable(de);
-			return ((de.hasPosition() && moveable) || !moveable)
-					&& ((de.hasSize() && resizable) || !resizable) && (moveable || resizable);
+			return ((de.hasPosition() && moveable) || !moveable) && ((de.hasSize() && resizable) || !resizable)
+					&& (moveable || resizable);
 		});
 	}
-
 
 	/**
 	 * Sets the ELK properties of elements in the specified layout mapping based on the layout options.
@@ -282,8 +338,7 @@ public class DiagramElementLayoutUtil {
 	 * @param options
 	 */
 	private static void applyProperties(final DiagramNode rootDiagramNode, final LayoutMapping layoutMapping,
-			final LayoutInfoProvider layoutInfoProvider,
-			final LayoutOptions options) {
+			final LayoutInfoProvider layoutInfoProvider, final LayoutOptions options) {
 		// Set the minimum node size based on the ports and their assigned sides.
 		final IGraphElementVisitor minNodeSizeVisitor = element -> {
 			if (element instanceof ElkNode) {
@@ -315,8 +370,7 @@ public class DiagramElementLayoutUtil {
 									portSidesWithFlowIndicators.put(portSide,
 											Math.max(portSidesWithFlowIndicators.getOrDefault(portSide, 0.0),
 													flowIndicatorSpacing));
-									portSidesWithFlowIndicators
-									.put(portSide,
+									portSidesWithFlowIndicators.put(portSide,
 											Math.max(portSidesWithFlowIndicators.getOrDefault(portSide, 0.0),
 													20 + layoutInfoProvider.getPrimaryLabelSize(child).width));
 								}
@@ -388,10 +442,10 @@ public class DiagramElementLayoutUtil {
 	}
 
 	private static boolean isTopLevel(final ElkGraphElement ge) {
-		if(ge instanceof ElkPort) {
+		if (ge instanceof ElkPort) {
 			final ElkPort p = (ElkPort) ge;
 			return p.getParent() == null || p.getParent().getParent() == null;
-		} else if(ge instanceof ElkNode) {
+		} else if (ge instanceof ElkNode) {
 			final ElkNode n = (ElkNode) ge;
 			return n.getParent() == null || n.getParent().getParent() == null;
 		} else {
@@ -409,9 +463,8 @@ public class DiagramElementLayoutUtil {
 	 * @param diagramNodes
 	 * @return
 	 */
-	static Collection<DiagramNode> filterUnnecessaryNodes(final
-			Collection<? extends DiagramNode> diagramNodes, final boolean includeGroupChildren)
-	{
+	static Collection<DiagramNode> filterUnnecessaryNodes(final Collection<? extends DiagramNode> diagramNodes,
+			final boolean includeGroupChildren) {
 		return diagramNodes.stream().filter(dn -> dn instanceof AgeDiagram || (dn instanceof DiagramElement
 				&& DiagramElementPredicates.isShape((DiagramElement) dn) && !containsAnyAncestor(diagramNodes, dn)
 				&& (includeGroupChildren || ((DiagramElement) dn).getDockArea() != DockArea.GROUP)))
