@@ -3,6 +3,7 @@ package org.osate.ge.tests;
 import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.util.List;
 
 import org.eclipse.draw2d.Connection;
@@ -28,7 +29,6 @@ import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.eclipse.swtbot.swt.finder.waits.Conditions;
 import org.eclipse.swtbot.swt.finder.waits.DefaultCondition;
 import org.eclipse.swtbot.swt.finder.waits.ICondition;
-import org.eclipse.swtbot.swt.finder.widgets.SWTBotMenu;
 import org.eclipse.swtbot.swt.finder.widgets.SWTBotShell;
 import org.eclipse.swtbot.swt.finder.widgets.SWTBotTree;
 import org.eclipse.ui.PlatformUI;
@@ -41,6 +41,7 @@ import org.osate.aadl2.impl.NamedElementImpl;
 import org.osate.ge.internal.graphiti.AgeFeatureProvider;
 import org.osate.ge.internal.graphiti.ShapeNames;
 import org.osate.ge.internal.graphiti.diagram.PropertyUtil;
+import org.osate.ge.internal.ui.dialogs.ClassifierOperationDialog;
 
 public class AgeGefBot {
 	final SWTGefBot bot = new SWTGefBot();
@@ -48,9 +49,39 @@ public class AgeGefBot {
 	final public static String associatedDiagram = "Associated Diagram";
 	final public static String allFilters = "All Filters";
 
+//	public void createNewProjectAndPackage(final String projectName, final String packageName) {
+//		closeWelcomePage();
+//		final SWTBotMenu newMenu = bot.menu("Other...", true).click();
+//		bot.tree().getTreeItem("AADL").expand().getNode("AADL Project").click();
+//		bot.button("Next >").click();
+//		bot.text().setText(projectName);
+//		bot.button("Finish").click();
+//
+//		if (!bot.activePerspective().getLabel().equals("AADL")) {
+//			// Open AADL Perspective Dialog
+//			bot.button("Open Perspective").click();
+//		}
+//
+//		// Create AADL Package
+//		newMenu.click();
+//		bot.tree().getTreeItem("AADL").expand().getNode("AADL Package").click();
+//		bot.button("Next >").click();
+//		bot.text().setText(packageName);
+//		bot.radio("Graphical Editor").click();
+//		bot.button("Finish").click();
+//		bot.button("OK").click();
+//
+//		// Close editor for open test
+//		bot.gefEditor(packageName + ".aadl_diagram").close();
+//
+//		bot.tree().expandNode(new String[] { projectName }).getNode(packageName + ".aadl")
+//				.click();
+//		bot.tree().contextMenu("Open").click();
+//	}
+
 	public void createNewProjectAndPackage(final String projectName, final String packageName) {
 		closeWelcomePage();
-		final SWTBotMenu newMenu = bot.menu("Other...", true).click();
+		bot.menu("Other...", true).click();
 		bot.tree().getTreeItem("AADL").expand().getNode("AADL Project").click();
 		bot.button("Next >").click();
 		bot.text().setText(projectName);
@@ -62,13 +93,7 @@ public class AgeGefBot {
 		}
 
 		// Create AADL Package
-		newMenu.click();
-		bot.tree().getTreeItem("AADL").expand().getNode("AADL Package").click();
-		bot.button("Next >").click();
-		bot.text().setText(packageName);
-		bot.radio("Graphical Editor").click();
-		bot.button("Finish").click();
-		bot.button("OK").click();
+		createAADLPackage(projectName, packageName);
 
 		// Close editor for open test
 		bot.gefEditor(packageName + ".aadl_diagram").close();
@@ -76,6 +101,19 @@ public class AgeGefBot {
 		bot.tree().expandNode(new String[] { projectName }).getNode(packageName + ".aadl")
 				.click();
 		bot.tree().contextMenu("Open").click();
+	}
+
+
+	public void createAADLPackage(final String projectName, final String packageName) {
+		bot.tree().select(projectName).contextMenu("AADL Package").click();
+
+		// bot.tree().getTreeItem("AADL").expand().getNode("AADL Package").click();
+		// bot.menu("AADL Package").click();
+		// bot.button("Next >").click();
+		bot.text().setText(packageName);
+		bot.radio("Graphical Editor").click();
+		bot.button("Finish").click();
+		bot.button("OK").click();
 	}
 
 	public void closeWelcomePage() {
@@ -123,8 +161,8 @@ public class AgeGefBot {
 		bot.waitUntil(condition, timeout);
 	}
 
-	public void deleteProject() {
-		bot.tree().select(ElementNames.projectName).contextMenu("Delete").click();
+	public void deleteProject(final String projectName) {
+		bot.tree().select(projectName).contextMenu("Delete").click();
 		bot.checkBox("Delete project contents on disk (cannot be undone)").click();
 		final SWTBotShell shell = bot.activeShell();
 		bot.button("OK").click();
@@ -256,12 +294,10 @@ public class AgeGefBot {
 
 	// TODO cmd needed? click buttons probably different for other diagram opening types.
 	// hard code "Associated Diagram" and change method name
-	public void openDiagramFromContextMenu(final SWTBotGefEditor editor, final String elementName,
-			final String contextMenuCmd) {
+	public void openAssociatedDiagramFromContextMenu(final SWTBotGefEditor editor, final String elementName) {
 		final List<SWTBotGefEditPart> editPart = editor
 				.editParts(new FindEditPart(elementName, getAgeFeatureProvider(editor)));
-
-		editor.select(editPart.get(0)).clickContextMenu(contextMenuCmd);
+		editor.select(editPart.get(0)).clickContextMenu("Associated Diagram");
 		clickButton("Yes");
 		clickButton("OK");
 	}
@@ -269,10 +305,10 @@ public class AgeGefBot {
 	public void executeContextMenuCommand(final SWTBotGefEditor editor, final String elementName,
 			final String contextMenuCmd) {
 		// Set focus for properties filters
-		editor.setFocus();
 		final AgeFeatureProvider ageFeatureProvider = (AgeFeatureProvider) ((GraphitiShapeEditPart) editor
 				.mainEditPart().part()).getFeatureProvider();
 		final List<SWTBotGefEditPart> list = editor.editParts(new FindEditPart(elementName, ageFeatureProvider));
+		editor.setFocus();
 		editor.select(list.get(0)).clickContextMenu(contextMenuCmd);
 	}
 
@@ -402,7 +438,9 @@ public class AgeGefBot {
 						.getBusinessObjectForPictogramElement(gsep.getPictogramElement());
 				if (element instanceof NamedElementImpl) {
 					final NamedElementImpl namedElement = (NamedElementImpl) element;
-					editPartName.equalsIgnoreCase(namedElement.getName());
+					System.err.println(namedElement.getName() + " namedElement");
+					System.err.println(editPartName + " editPartname");
+					System.err.println(editPartName.equalsIgnoreCase(namedElement.getName()));
 					return editPartName.equalsIgnoreCase(namedElement.getName());
 				}
 			}
@@ -427,6 +465,7 @@ public class AgeGefBot {
 	}
 
 	public void resize(final SWTBotGefEditor editor, final String elementName, final Point newSize) {
+		editor.setFocus();
 		final SWTBotGefEditPart swtBotGefEditPart = getEditPart(editor, elementName);
 		final Rectangle bounds = ((GraphitiShapeEditPart) swtBotGefEditPart.part()).getFigure().getBounds();
 		editor.click(swtBotGefEditPart);
@@ -596,4 +635,80 @@ public class AgeGefBot {
 				ElementNames.abstractTypeName, "impl", new Point(100, 200));
 	}
 
+	public void createTypeAndImplementation(final SWTBotGefEditor editor, final Point point, final String packageName,
+			final String implName, final String typeName, final String impl) {
+		createToolItem(editor, packageName, impl, point);
+		waitUntilShellIsActive("Create Component Implementation");
+		setTextWithId(ClassifierOperationDialog.primaryPartIdentifier, implName);
+		clickRadio("New Component Type");
+		setTextWithId(ClassifierOperationDialog.baseValueIdentifier, typeName);
+		clickButton("OK");
+		waitUntilElementExists(editor, typeName + "." + implName);
+	}
+
+	public void clickElement(final SWTBotGefEditor editor, final String elementName) {
+
+//		editor.editParts(new BaseMatcher<EditPart>() {
+//			@Override
+//			public boolean matches(Object item) {
+//				System.err.println(item + " item");
+//				if (item instanceof GraphitiShapeEditPart) {
+//					final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) item;
+//					if (getAgeFeatureProvider(editor)
+//							.getBusinessObjectForPictogramElement(gsep.getPictogramElement()) instanceof NamedElement) {
+//						final NamedElement ne = (NamedElement) getAgeFeatureProvider(editor)
+//								.getBusinessObjectForPictogramElement(gsep.getPictogramElement());
+//						System.err.println(ne.getName() + " GETNAME");
+//					}
+//					System.err.println(getAgeFeatureProvider(editor)
+//							.getBusinessObjectForPictogramElement(gsep.getPictogramElement()));
+//				}
+//				// TODO Auto-generated method stub
+//				return false;
+//			}
+//
+//			@Override
+//			public void describeTo(Description description) {
+//				// TODO Auto-generated method stub
+//
+//			}
+//		});
+
+		final List<SWTBotGefEditPart> list = editor
+				.editParts(new FindEditPart(elementName, getAgeFeatureProvider(editor)));
+
+		System.err.println(list.size() + " size");
+		System.err.println(list.get(0) + " get0");
+		System.err.println(list.get(0).part() + " editPart");
+		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) list.get(0).part();
+
+//		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) editor
+//				.editParts(new FindEditPart(elementName, getAgeFeatureProvider(editor))).get(0).part();
+		// final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) editor.getEditPart(elementName).part();
+		try {
+			final Robot robot = new Robot();
+			robot.setAutoDelay(50);
+
+			editor.getWidget().getDisplay().asyncExec(() -> {
+				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
+				final Rectangle bounds = gsep.getFigure().getBounds();
+				final Point point = PlatformUI.getWorkbench().getDisplay()
+						.map(editor.getWidget().getDisplay().getFocusControl(), null, bounds.x, bounds.y);
+				robot.keyPress(KeyEvent.VK_ENTER);
+				robot.keyRelease(KeyEvent.VK_ENTER);
+				robot.mouseMove(point.x - canvas.getHorizontalBar().getSelection() + 5,
+						point.y - canvas.getVerticalBar().getSelection() + 5);
+				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+			});
+
+			robot.mouseMove(300, 300);
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static String qualifiedName(final String projectName, final String classifierName) {
+		return projectName + "::" + classifierName;
+	}
 }

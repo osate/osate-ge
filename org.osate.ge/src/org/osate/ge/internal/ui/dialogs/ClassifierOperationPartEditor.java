@@ -185,7 +185,6 @@ class ClassifierOperationPartEditor extends Composite {
 		});
 
 		identifierLabel = new Label(this, SWT.NONE);
-		System.err.println("identifier");
 		identifierLabel.setText("Identifier:");
 		identifierLabel.setLayoutData(GridDataFactory.fillDefaults().align(SWT.BEGINNING, SWT.CENTER).create());
 		identifierField = new Text(this, SWT.SINGLE | SWT.BORDER);
