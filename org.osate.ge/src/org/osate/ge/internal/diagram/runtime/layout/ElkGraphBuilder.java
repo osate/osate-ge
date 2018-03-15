@@ -98,13 +98,22 @@ class ElkGraphBuilder {
 	 * @param rootDiagramNode
 	 * @param styleProvider is a style provider which provides the style for the diagram elements. The style provider is expected to return a final style. The style must not contain null values.
 	 * @param layoutInfoProvider is the layout info provider which is used to determine label sizes.
+	 * @param options
+	 * @param ignoreNestedPorts must be false if layout ports on default sides is true.
+	 * @param portPlacementInfoProvider
 	 * @return
 	 */
 	static LayoutMapping buildLayoutGraph(final DiagramNode rootDiagramNode, final StyleProvider styleProvider,
-			final LayoutInfoProvider layoutInfoProvider, final LayoutOptions options, final boolean ignoreNestedPorts,
+			final LayoutInfoProvider layoutInfoProvider, final LayoutOptions options, final boolean omitNestedPorts,
 			final FixedPortPositionProvider portPlacementInfoProvider) {
+		// This case would indicate that we are using a multi-pass layout even though fixed position ports are being used.
+		// Fixed side port positioning is not reliable because exceptions can be thrown in cases involving edges between nodes.
+		if(omitNestedPorts && options.layoutPortsOnDefaultSides) {
+			throw new IllegalArgumentException("Omitting nested ports while position ports on default sides is not supported");
+		}
+
 		final ElkGraphBuilder graphBuilder = new ElkGraphBuilder(styleProvider, layoutInfoProvider, options,
-				ignoreNestedPorts, portPlacementInfoProvider);
+				omitNestedPorts, portPlacementInfoProvider);
 		return graphBuilder.buildLayoutGraph(rootDiagramNode);
 	}
 
@@ -182,17 +191,13 @@ class ElkGraphBuilder {
 					// Don't constrain ports if there aren't any. As of 2017-10-11, some other values can affect the layout even if the node does not contain ports.
 					portConstraints = PortConstraints.FREE;
 				} else {
-					if (hasNestedPorts) {
+					if (hasNestedPorts || options.layoutPortsOnDefaultSides) {
 						portConstraints = PortConstraints.FIXED_POS;
 						// If using fixed port positions, adjust the hierarchy handling so that ELK will not throw an exception due to missing dummy ports.
 						mapping.getLayoutGraph().setProperty(CoreOptions.HIERARCHY_HANDLING,
 								HierarchyHandling.SEPARATE_CHILDREN);
 					} else {
-						if (options.layoutPortsOnDefaultSides) {
-							portConstraints = PortConstraints.FIXED_SIDE;
-						} else {
-							portConstraints = PortConstraints.FREE;
-						}
+						portConstraints = PortConstraints.FREE;
 					}
 				}
 				parent.setProperty(CoreOptions.PORT_CONSTRAINTS, portConstraints);

@@ -114,7 +114,8 @@ public class DiagramElementLayoutUtil {
 			ElkNode layoutGraph;
 
 			// Perform the first layout. This layout will not include nested ports. This will allow ELK additional flexibility when determining port placement.
-			mapping = ElkGraphBuilder.buildLayoutGraph(dn, styleProvider, layoutInfoProvider, options, true,
+			mapping = ElkGraphBuilder.buildLayoutGraph(dn, styleProvider, layoutInfoProvider, options,
+					!options.layoutPortsOnDefaultSides,
 					ElkGraphBuilder.FixedPortPositionProvider.NO_OP);
 			layoutGraph = mapping.getLayoutGraph();
 			layoutGraph.setProperty(CoreOptions.ALGORITHM, layoutAlgorithm);
