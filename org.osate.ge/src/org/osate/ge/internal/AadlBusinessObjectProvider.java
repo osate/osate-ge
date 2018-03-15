@@ -7,9 +7,12 @@ import java.util.stream.Stream;
 
 import javax.inject.Named;
 
+import org.eclipse.core.resources.IProject;
 import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.xtext.resource.IEObjectDescription;
+import org.osate.aadl2.Aadl2Factory;
 import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.AnnexLibrary;
 import org.osate.aadl2.AnnexSubclause;
@@ -52,33 +55,48 @@ import org.osate.ge.internal.businessObjectHandlers.ModeTransitionTriggerHandler
 import org.osate.ge.internal.model.SubprogramCallOrder;
 import org.osate.ge.internal.model.Tag;
 import org.osate.ge.internal.services.ExtensionRegistryService;
+import org.osate.ge.internal.services.ProjectReferenceService;
+import org.osate.ge.internal.services.ReferenceService;
+import org.osate.ge.internal.services.impl.DeclarativeReferenceBuilder;
 import org.osate.ge.internal.util.AadlFeatureUtil;
 import org.osate.ge.internal.util.AadlHelper;
 import org.osate.ge.internal.util.AadlSubcomponentUtil;
 import org.osate.ge.internal.util.AadlSubprogramCallUtil;
+import org.osate.ge.internal.util.ScopedEMFIndexRetrieval;
 
 public class AadlBusinessObjectProvider {
 	private final ModeTransitionTriggerHandler mttHandler = new ModeTransitionTriggerHandler();
 
 	@Activate
 	public Stream<?> getBusinessObjects(final @Named(Names.BUSINESS_OBJECT_CONTEXT) BusinessObjectContext boc,
-			final ExtensionRegistryService extRegistryService) {
+			final ExtensionRegistryService extRegistryService, final ReferenceService refService) {
+
 		final Object bo = boc.getBusinessObject();
 		// Disabled for now. A null business object is not supported. Retrieving packages will need to be reworked because Business Object Providers
 		// only have access to global services and not diagram specific services.
-		/*
-		if(bo == null) { // Special handling for project
+		if (bo instanceof IProject) { // Special handling for project
+			final IProject project = (IProject) bo;
+			System.err.println(bo);
+
 			Stream.Builder<Object> packages = Stream.builder();
-			for(final IEObjectDescription desc : ScopedEMFIndexRetrieval.getAllEObjectsByType(projectProvider.getProject(), Aadl2Factory.eINSTANCE.getAadl2Package().getAadlPackage())) {
+
+			final ProjectReferenceService projectReferenceService = refService.getProjectReferenceService(project);
+
+			for (final IEObjectDescription desc : ScopedEMFIndexRetrieval.getAllEObjectsByType(
+					project, Aadl2Factory.eINSTANCE.getAadl2Package().getAadlPackage())) {
+				System.err.println("TEST: " + desc);
 				final String pkgQualifiedName = desc.getQualifiedName().toString("::");
-				final Object resolvedPackage = refService.resolve(DeclarativeReferenceBuilder.buildPackageCanonicalReference(pkgQualifiedName));
-				if(resolvedPackage != null) {
+				final Object resolvedPackage = projectReferenceService
+						.resolve(DeclarativeReferenceBuilder.buildPackageCanonicalReference(pkgQualifiedName));
+				System.err.println("MORE: " + pkgQualifiedName + " : " + resolvedPackage);
+				// TODO: Need to work with contributed packages?
+				if (resolvedPackage != null) {
 					packages.add(resolvedPackage);
 				}
 			}
 
 			return packages.build();
-		} else */if(bo instanceof AadlPackage) {
+		} else if (bo instanceof AadlPackage) {
 			return getChildren((AadlPackage)bo, extRegistryService);
 		} else if(bo instanceof Classifier) {
 			return getChildren((Classifier)bo, true, extRegistryService);

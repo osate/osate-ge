@@ -633,19 +633,7 @@ public class DiagramConfigurationDialog {
 		@Override
 		public Object[] getChildren(final Object parentElement) {
 			final BusinessObjectNode node = (BusinessObjectNode) parentElement;
-			return node.getChildren().stream().filter(n -> model.shouldShowBusinessObject(n.getBusinessObject()))
-					.toArray();
-		}
 
-		@Override
-		public Object getParent(final Object element) {
-			final BusinessObjectNode node = (BusinessObjectNode) element;
-			return node.getParent();
-		}
-
-		@Override
-		public boolean hasChildren(final Object element) {
-			final BusinessObjectNode node = (BusinessObjectNode) element;
 			if (!populatedNodes.contains(node)) {
 				// Create new business object nodes as needed
 				for (final Object childBo : model.getChildBusinessObjects(node)) {
@@ -659,6 +647,19 @@ public class DiagramConfigurationDialog {
 				populatedNodes.add(node);
 			}
 
+			return node.getChildren().stream().filter(n -> model.shouldShowBusinessObject(n.getBusinessObject()))
+					.toArray();
+		}
+
+		@Override
+		public Object getParent(final Object element) {
+			final BusinessObjectNode node = (BusinessObjectNode) element;
+			return node.getParent();
+		}
+
+		@Override
+		public boolean hasChildren(final Object element) {
+			final BusinessObjectNode node = (BusinessObjectNode) element;
 			return getChildren(node).length != 0;
 		}
 	}
