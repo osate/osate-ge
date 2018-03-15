@@ -126,7 +126,11 @@ class ElkGraphBuilder {
 
 		// As of 2017-11-28, INCLUDE_CHILDREN causes an exception with hierarchical connections with fixed position ports
 		// If fixed position ports are used, the hierarchy handling will be adjusted accordingly.
-		rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.INCLUDE_CHILDREN);
+		// rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.INCLUDE_CHILDREN);
+
+		// As of 20180-03-15, INCLUDE_CHILDREN causes ports to be positioned incorrectly and nodes to be sized incorrectly under certain conditions.
+		// https://github.com/eclipse/elk/issues/316
+		rootNode.setProperty(CoreOptions.HIERARCHY_HANDLING, HierarchyHandling.SEPARATE_CHILDREN);
 
 		if (rootDiagramNode instanceof AgeDiagram) {
 			final ElkNode diagramElkNode = ElkGraphUtil.createNode(rootNode);

@@ -288,7 +288,7 @@ Table: Incremental Layout Modes {#tbl:incremental_layout_modes}
 When the *Layout Features Based on Direction* preference is enabled, the graphical editor will position ports based on the feature's direction. Input features will be placed on the left side and output features will be placed on the right side. If the preference is disabled, the layout algorithm will decide the side on which to place the feature.
 
 ### Known Layout Issues and Limitations
-* Connections between multiple levels of the diagram hierarchy are not routed when the diagram contains features contained inside of feature groups. Such connections usually represent property values such as bindings. Such connections must be routed manually.
+* Connections between multiple levels of the diagram hierarchy are not routed. Such connections usually represent property values such as bindings. Such connections must be routed manually.
 * Mode transition triggers are not routed. The recommended workaround is to show the mode transition triggers as text labels.
 * Flow source and sinks are not consider when laying out the diagram.
 * The automatic layout for flow path may produce unexpected routing and label placement for the flow path. To workaround this issue, it is recommended to disable labels for flow paths.	
