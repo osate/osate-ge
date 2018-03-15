@@ -4,7 +4,6 @@ import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.util.List;
 import java.util.PrimitiveIterator.OfInt;
 
 import org.eclipse.draw2d.Connection;
@@ -15,16 +14,14 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditPart;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.eclipse.ui.PlatformUI;
-import org.osate.ge.tests.AgeGefBot.NewElementMatcher;
 
 public class RenameHelper {
 	static void renameElement(final SWTBotGefEditor editor, final String newName, final Point offsetPoint) {
-		final List<SWTBotGefEditPart> list = editor.getSWTBotGefViewer()
-				.editParts(new NewElementMatcher(editor));
-		editor.getSWTBotGefViewer().select(list);
+		final SWTBotGefEditPart editPart = editor
+				.editParts(new AgeGefBot.NewElementMatcher(editor)).get(0);
+		editor.select(editPart);
+		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) editPart.part();
 
-		final List<SWTBotGefEditPart> selectedEditParts = editor.getSWTBotGefViewer().selectedEditParts();
-		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart)selectedEditParts.get(0).part();
 		try {
 			final Robot robot = new Robot();
 			robot.setAutoDelay(50);

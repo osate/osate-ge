@@ -4,6 +4,7 @@ import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.draw2d.Connection;
@@ -35,6 +36,8 @@ import org.eclipse.ui.PlatformUI;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.junit.Assert;
+import org.osate.aadl2.AbstractImplementation;
+import org.osate.aadl2.AbstractType;
 import org.osate.aadl2.NamedElement;
 import org.osate.aadl2.impl.AbstractTypeImpl;
 import org.osate.aadl2.impl.NamedElementImpl;
@@ -196,17 +199,17 @@ public class AgeGefBot {
 	public void createToolItem(final SWTBotGefEditor editor, final String parentName, final String toolItem,
 			final Point p) {
 		final GraphitiShapeEditPart parent = (GraphitiShapeEditPart) editor
-				.editParts(new FindEditPart(parentName, getAgeFeatureProvider(editor))).get(0)
+				.editParts(new FindEditPart(getAgeFeatureProvider(editor), parentName)).get(0)
 				.part();
-		final GraphicsAlgorithm containerGA = parent.getPictogramElement().getGraphicsAlgorithm();
 		editor.setFocus();
 		editor.activateTool(toolItem);
-		editor.click(containerGA.getX() + p.x, containerGA.getY() + p.y);
+		final Rectangle rect = parent.getFigure().getBounds();
+		editor.click(rect.x + p.x, rect.y + p.y);
 	}
 
-	public void createToolItemAndRename(final SWTBotGefEditor editor, final String parentName, final String toolItem,
-			final Point p, final Class<?> clazz, final String newName) {
-		createToolItem(editor, parentName, toolItem, p);
+	public void createToolItemAndRename(final SWTBotGefEditor editor, final String parentName, final Class<?> clazz,
+			final Point p, final String newName) {
+		createToolItem(editor, parentName, ToolTypes.getToolItem(clazz), p);
 		waitUntilNewElementIsCreated(editor, clazz);
 		renameElement(editor, newName);
 	}
@@ -235,7 +238,7 @@ public class AgeGefBot {
 
 			@Override
 			public boolean test() throws Exception {
-				return !editor.editParts(new FindEditPart(elementName, ageFeatureProvider)).isEmpty();
+				return !editor.editParts(new FindEditPart(ageFeatureProvider, elementName)).isEmpty();
 			};
 		}, 5000);
 	}
@@ -288,15 +291,15 @@ public class AgeGefBot {
 		}
 	}
 
-	public void selectElement(final SWTBotGefEditor editor, final String elementName) {
-		editor.select(editor.editParts(new FindEditPart(elementName, getAgeFeatureProvider(editor))));
+	public void selectElement(final SWTBotGefEditor editor, final String... elementName) {
+		editor.select(editor.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName)));
 	}
 
 	// TODO cmd needed? click buttons probably different for other diagram opening types.
 	// hard code "Associated Diagram" and change method name
 	public void openAssociatedDiagramFromContextMenu(final SWTBotGefEditor editor, final String elementName) {
 		final List<SWTBotGefEditPart> editPart = editor
-				.editParts(new FindEditPart(elementName, getAgeFeatureProvider(editor)));
+				.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName));
 		editor.select(editPart.get(0)).clickContextMenu("Associated Diagram");
 		clickButton("Yes");
 		clickButton("OK");
@@ -307,7 +310,7 @@ public class AgeGefBot {
 		// Set focus for properties filters
 		final AgeFeatureProvider ageFeatureProvider = (AgeFeatureProvider) ((GraphitiShapeEditPart) editor
 				.mainEditPart().part()).getFeatureProvider();
-		final List<SWTBotGefEditPart> list = editor.editParts(new FindEditPart(elementName, ageFeatureProvider));
+		final List<SWTBotGefEditPart> list = editor.editParts(new FindEditPart(ageFeatureProvider, elementName));
 		editor.setFocus();
 		editor.select(list.get(0)).clickContextMenu(contextMenuCmd);
 	}
@@ -343,11 +346,13 @@ public class AgeGefBot {
 		try {
 			final Robot robot = new Robot();
 			robot.setAutoDelay(25);
-			getActiveEditor().getWidget().getDisplay().syncExec(() -> {
+			final Display display = PlatformUI.getWorkbench().getDisplay();
+			display.syncExec(() -> {
 				final Control c = widget;
-				final Point point = PlatformUI.getWorkbench().getDisplay().map(c.getParent(), null, c.getLocation().x,
+				final Point point = display.map(c.getParent(), null, c.getLocation().x,
 						c.getLocation().y);
 				robot.mouseMove(point.x, point.y);
+				robot.delay(2000);
 				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
 				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 			});
@@ -364,7 +369,12 @@ public class AgeGefBot {
 		}
 		@Override
 		public boolean matches(final Object item) {
-			return item.toString().equalsIgnoreCase(controlName);
+			final Widget widget = (Widget) item;
+			if (!widget.isDisposed()) {
+				return widget.toString().equalsIgnoreCase(controlName);
+			}
+
+			return false;
 		};
 
 		@Override
@@ -372,10 +382,10 @@ public class AgeGefBot {
 		};
 	}
 
-	public void setElementOptionRadioInPropertiesView(final SWTBotGefEditor editor, final String elementName,
+	public void setElementOptionRadioInPropertiesView(final SWTBotGefEditor editor,
 			final String viewTitle,
-			final String tabTitle, final String option) {
-		doubleClickElement(editor, elementName);
+			final String tabTitle, final String option, final String... elementName) {
+		doubleClickElement(editor, elementName[0]);
 		bot.waitUntil(new DefaultCondition() {
 			@Override
 			public boolean test() throws Exception {
@@ -392,15 +402,16 @@ public class AgeGefBot {
 		clickRadio(option);
 	}
 
-	public void setElementOptionButtonInPropertiesView(final SWTBotGefEditor editor, final String elementName, final String viewTitle,
-			final String tabTitle, final String option) {
-		openPropertiesView(editor, elementName, viewTitle);
+	public void setElementOptionButtonInPropertiesView(final SWTBotGefEditor editor, final String viewTitle,
+			final String tabTitle, final String option, final String... elementName) {
+		openPropertiesView(editor, viewTitle, elementName);
+		selectElement(editor, elementName);
 		selectTabbedPropertySection(tabTitle);
 		clickButton(option);
 	}
 
-	public void openPropertiesView(final SWTBotGefEditor editor, final String elementName, final String viewTitle) {
-		doubleClickElement(editor, elementName);
+	public void openPropertiesView(final SWTBotGefEditor editor, final String viewTitle, final String... elementName) {
+		doubleClickElement(editor, elementName[0]);
 		bot.waitUntil(new DefaultCondition() {
 			@Override
 			public boolean test() throws Exception {
@@ -419,11 +430,11 @@ public class AgeGefBot {
 	}
 
 	public static class FindEditPart extends BaseMatcher<EditPart> {
-		final String editPartName;
+		private final List<String> editPartName;
 		final AgeFeatureProvider ageFeatureProvider;
 
-		public FindEditPart(final String editPartName, final AgeFeatureProvider ageFeatureProvider) {
-			this.editPartName = editPartName;
+		public FindEditPart(final AgeFeatureProvider ageFeatureProvider, final String... editPartName) {
+			this.editPartName = Arrays.asList(editPartName);
 			this.ageFeatureProvider = ageFeatureProvider;
 		}
 		@Override
@@ -438,10 +449,7 @@ public class AgeGefBot {
 						.getBusinessObjectForPictogramElement(gsep.getPictogramElement());
 				if (element instanceof NamedElementImpl) {
 					final NamedElementImpl namedElement = (NamedElementImpl) element;
-					System.err.println(namedElement.getName() + " namedElement");
-					System.err.println(editPartName + " editPartname");
-					System.err.println(editPartName.equalsIgnoreCase(namedElement.getName()));
-					return editPartName.equalsIgnoreCase(namedElement.getName());
+					return editPartName.contains(namedElement.getName());
 				}
 			}
 
@@ -494,12 +502,12 @@ public class AgeGefBot {
 	}
 
 	public SWTBotGefEditPart getEditPart(final SWTBotGefEditor editor, final String elementName) {
-		return editor.editParts(new FindEditPart(elementName, getAgeFeatureProvider(editor))).get(0);
+		return editor.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName)).get(0);
 	}
 
 	public List<SWTBotGefEditPart> findChild(final SWTBotGefEditor editor, final SWTBotGefEditPart parent,
 			final String childName) {
-		return parent.descendants(new FindEditPart(childName, getAgeFeatureProvider(editor)));
+		return parent.descendants(new FindEditPart(getAgeFeatureProvider(editor), childName));
 	}
 
 	public static Object getBusinessObject(final SWTBotGefEditor editor, final PictogramElement pe) {
@@ -509,7 +517,7 @@ public class AgeGefBot {
 	private void doubleClickElement(final SWTBotGefEditor editor, final String elementName) {
 		editor.setFocus();
 		final SWTBotGefEditPart element = editor
-				.editParts(new FindEditPart(elementName, AgeGefBot.getAgeFeatureProvider(editor))).get(0);
+				.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName)).get(0);
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) element.part();
 		try {
 			final Robot robot = new Robot();
@@ -627,11 +635,11 @@ public class AgeGefBot {
 		editor.setFocus();
 		resize(editor, ElementNames.packageName, new Point(600, 600));
 
-		createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(25, 25));
+		createToolItem(editor, ElementNames.packageName, ToolTypes.getToolItem(AbstractType.class), new Point(25, 25));
 		waitUntilNewElementIsCreated(editor, AbstractTypeImpl.class);
 		renameElement(editor, ElementNames.abstractTypeName);
 		waitUntilElementExists(editor, ElementNames.abstractTypeName);
-		createImplementation(editor, ElementNames.packageName, ToolTypes.abstractImplementation,
+		createImplementation(editor, ElementNames.packageName, ToolTypes.getToolItem(AbstractImplementation.class),
 				ElementNames.abstractTypeName, "impl", new Point(100, 200));
 	}
 
@@ -647,44 +655,10 @@ public class AgeGefBot {
 	}
 
 	public void clickElement(final SWTBotGefEditor editor, final String elementName) {
-
-//		editor.editParts(new BaseMatcher<EditPart>() {
-//			@Override
-//			public boolean matches(Object item) {
-//				System.err.println(item + " item");
-//				if (item instanceof GraphitiShapeEditPart) {
-//					final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) item;
-//					if (getAgeFeatureProvider(editor)
-//							.getBusinessObjectForPictogramElement(gsep.getPictogramElement()) instanceof NamedElement) {
-//						final NamedElement ne = (NamedElement) getAgeFeatureProvider(editor)
-//								.getBusinessObjectForPictogramElement(gsep.getPictogramElement());
-//						System.err.println(ne.getName() + " GETNAME");
-//					}
-//					System.err.println(getAgeFeatureProvider(editor)
-//							.getBusinessObjectForPictogramElement(gsep.getPictogramElement()));
-//				}
-//				// TODO Auto-generated method stub
-//				return false;
-//			}
-//
-//			@Override
-//			public void describeTo(Description description) {
-//				// TODO Auto-generated method stub
-//
-//			}
-//		});
-
 		final List<SWTBotGefEditPart> list = editor
-				.editParts(new FindEditPart(elementName, getAgeFeatureProvider(editor)));
-
-		System.err.println(list.size() + " size");
-		System.err.println(list.get(0) + " get0");
-		System.err.println(list.get(0).part() + " editPart");
+				.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName));
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) list.get(0).part();
 
-//		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) editor
-//				.editParts(new FindEditPart(elementName, getAgeFeatureProvider(editor))).get(0).part();
-		// final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) editor.getEditPart(elementName).part();
 		try {
 			final Robot robot = new Robot();
 			robot.setAutoDelay(50);
