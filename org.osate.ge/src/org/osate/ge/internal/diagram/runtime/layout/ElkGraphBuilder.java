@@ -270,7 +270,7 @@ class ElkGraphBuilder {
 		double position = paddingSize + additionalPadding;
 		double maxPosition = position;
 		for (final DiagramElement dockedElement : dockedDiagramElements) {
-			final ElkPort newPort = createPort(parentNode, side, dockedElement, 0, mapping, parentHasNestedPorts);
+			final ElkPort newPort = createPort(parentNode, side, dockedElement, 0, mapping);
 
 			// Determine if the position has been provided by the fixed port position provider
 			if (parentHasNestedPorts) {
@@ -311,7 +311,7 @@ class ElkGraphBuilder {
 	 * @return
 	 */
 	private ElkPort createPort(final ElkNode parent, final PortSide side, final DiagramElement dockedElement,
-			final double portBorderOffset, final LayoutMapping mapping, final boolean parentHasNestedPorts) {
+			final double portBorderOffset, final LayoutMapping mapping) {
 		final List<DiagramElement> dockedChildren = getDockedChildren(dockedElement);
 
 		final Dimension untransformedGraphicSize = layoutInfoProvider.getPortGraphicSize(dockedElement);
@@ -322,13 +322,12 @@ class ElkGraphBuilder {
 
 		// Create child ports and sort them by the size of the dimension parallel to the docked side
 		final List<ElkPort> childPorts = dockedChildren.stream()
-				.map(ce -> createPort(parent, side, ce, getOrthogonalSize(transformedGraphicSize, side), mapping,
-						parentHasNestedPorts))
+				.map(ce -> createPort(parent, side, ce, getOrthogonalSize(transformedGraphicSize, side), mapping))
 				.sorted((p1, p2) -> Double.compare(getSize(p1, side), getSize(p1, side)))
 				.collect(Collectors.toCollection(ArrayList::new));
 
 		// If the port has child ports, then we assume it is a feature group.
-		// The child ports are split into two bins and are positions such that they do not overlap the center of the feature group.
+		// The child ports are split into two bins and positioned such that they do not overlap the center of the feature group.
 		// The parent port will be sized accordingly.
 		final double maxChildBinSize;
 		if (childPorts.size() > 0) {
@@ -347,7 +346,7 @@ class ElkGraphBuilder {
 			// Determine the total size of the feature
 			maxChildBinSize = Math.max(binSize[0], binSize[1]);
 
-			// Set the position of the port relative to its parent because. The size and position of the parent will be selected after its children are sized.
+			// Set the position of the port relative to its parent because the size and position of the parent will be selected after its children are sized.
 			for (int i = 0; i < 2; i++) {
 				double childPosition = transformedLabelsSize.height
 						+ i * (maxChildBinSize + transformedGraphicSize.height);
@@ -672,7 +671,7 @@ class ElkGraphBuilder {
 		return null;
 	}
 
-	// These helper function are useful for working with the size and position of an element with respect to a single axis as determined by a port side.
+	// These helper functions are useful for working with the size and position of an element with respect to a single axis as determined by a port side.
 
 	/**
 	 * Returns the size orthogonal to the specified side. For example for a WEST side, this method would return the width of the element.
