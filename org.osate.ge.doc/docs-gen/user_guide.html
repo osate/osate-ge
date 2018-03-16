@@ -456,8 +456,8 @@
 <p>The preferences dialog contains preferences which affect the layout behavior of the graphical editor. To edit layout preferences:</p>
 <ol type="1">
 <li><p>Select <em>Window-&gt;Preferences</em></p></li>
-<li><p>Select to <em>OSATE Preferences-&gt;Diagram</em></p></li>
-<li><p>Modify the preferenecs as desired.</p></li>
+<li><p>Select <em>OSATE Preferences-&gt;Diagrams</em></p></li>
+<li><p>Modify the preferences as desired.</p></li>
 </ol>
 <figure>
 <img src="../images/preferences.png" />
@@ -497,7 +497,7 @@
 <p>When the <em>Layout Features Based on Direction</em> preference is enabled, the graphical editor will position ports based on the feature's direction. Input features will be placed on the left side and output features will be placed on the right side. If the preference is disabled, the layout algorithm will decide the side on which to place the feature.</p>
 <h3 id="known-layout-issues-and-limitations"><span class="header-section-number">3.2.3</span> Known Layout Issues and Limitations</h3>
 <ul>
-<li>Connections between multiple levels of the diagram hierarchy are not routed. Such connections usually represent property values such as bindings. Such connections must be routed manually.</li>
+<li>Connections between multiple levels of the diagram hierarchy are not automatically routed and must be routed manually. Such connections usually represent property values such as bindings.</li>
 <li>Mode transition triggers are not routed. The recommended workaround is to show the mode transition triggers as text labels.</li>
 <li>Flow source and sinks are not consider when laying out the diagram.</li>
 <li>The automatic layout for flow path may produce unexpected routing and label placement for the flow path. To workaround this issue, it is recommended to disable labels for flow paths.<br />
