@@ -217,6 +217,7 @@ public class DefaultAadlModificationService implements AadlModificationService {
 							public ModifySafelyResults<R> exec(final XtextResource res) throws Exception {
 								final EObject objectToModify = res.getResourceSet().getEObject(modificationObjectUri,
 										true);
+
 								if (objectToModify == null) {
 									return new ModifySafelyResults<R>(false, null);
 								}

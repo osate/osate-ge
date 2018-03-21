@@ -4,7 +4,9 @@ import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.draw2d.Connection;
@@ -27,10 +29,12 @@ import org.eclipse.swtbot.eclipse.finder.widgets.SWTBotView;
 import org.eclipse.swtbot.eclipse.gef.finder.SWTGefBot;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditPart;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
+import org.eclipse.swtbot.swt.finder.utils.SWTBotPreferences;
 import org.eclipse.swtbot.swt.finder.waits.Conditions;
 import org.eclipse.swtbot.swt.finder.waits.DefaultCondition;
 import org.eclipse.swtbot.swt.finder.waits.ICondition;
 import org.eclipse.swtbot.swt.finder.widgets.SWTBotShell;
+import org.eclipse.swtbot.swt.finder.widgets.SWTBotToolbarButton;
 import org.eclipse.swtbot.swt.finder.widgets.SWTBotTree;
 import org.eclipse.ui.PlatformUI;
 import org.hamcrest.BaseMatcher;
@@ -83,6 +87,7 @@ public class AgeGefBot {
 //	}
 
 	public void createNewProjectAndPackage(final String projectName, final String packageName) {
+		SWTBotPreferences.TIMEOUT = 10000;
 		closeWelcomePage();
 		bot.menu("Other...", true).click();
 		bot.tree().getTreeItem("AADL").expand().getNode("AADL Project").click();
@@ -144,12 +149,12 @@ public class AgeGefBot {
 		bot.radio(text).click();
 	}
 
-	public void createImplementation(final SWTBotGefEditor editor, final String parentName, final String toolType,
+	public void createImplementation(final SWTBotGefEditor editor, final String toolType,
 			final String typeName,
 			final String elementName,
-			final Point point) {
+			final Point point, final String... parentName) {
 		editor.setFocus();
-		createToolItem(editor, parentName, toolType, point);
+		createToolItem(editor, toolType, point, parentName);
 		waitUntilShellIsActive("Create Component Implementation");
 		setText(elementName);
 		clickRadio("Existing");
@@ -196,20 +201,21 @@ public class AgeGefBot {
 		bot.waitUntil(org.eclipse.swtbot.swt.finder.waits.Conditions.shellCloses(shell));
 	}
 
-	public void createToolItem(final SWTBotGefEditor editor, final String parentName, final String toolItem,
-			final Point p) {
-		final GraphitiShapeEditPart parent = (GraphitiShapeEditPart) editor
-				.editParts(new FindEditPart(getAgeFeatureProvider(editor), parentName)).get(0)
-				.part();
+	public void createToolItem(final SWTBotGefEditor editor, final String toolItem, final Point p,
+			final String... editPartPath) {
+//		final GraphitiShapeEditPart parent = (GraphitiShapeEditPart) editor
+//				.editParts(new FindEditPart(getAgeFeatureProvider(editor), parentName)).get(0)
+//				.part();
+		final GraphitiShapeEditPart parent = (GraphitiShapeEditPart) findEditPart(editor, editPartPath).part();
 		editor.setFocus();
 		editor.activateTool(toolItem);
 		final Rectangle rect = parent.getFigure().getBounds();
 		editor.click(rect.x + p.x, rect.y + p.y);
 	}
 
-	public void createToolItemAndRename(final SWTBotGefEditor editor, final String parentName, final Class<?> clazz,
-			final Point p, final String newName) {
-		createToolItem(editor, parentName, ToolTypes.getToolItem(clazz), p);
+	public void createToolItemAndRename(final SWTBotGefEditor editor, final Class<?> clazz, final Point p,
+			final String newName, final String... editPathPath) {
+		createToolItem(editor, ToolTypes.getToolItem(clazz), p, editPathPath);
 		waitUntilNewElementIsCreated(editor, clazz);
 		renameElement(editor, newName);
 	}
@@ -383,13 +389,13 @@ public class AgeGefBot {
 	}
 
 	public void setElementOptionRadioInPropertiesView(final SWTBotGefEditor editor,
-			final String viewTitle,
 			final String tabTitle, final String option, final String... elementName) {
-		doubleClickElement(editor, elementName[0]);
+		doubleClickElement(editor, elementName);
+
 		bot.waitUntil(new DefaultCondition() {
 			@Override
 			public boolean test() throws Exception {
-				return getActiveView().getTitle().equalsIgnoreCase(viewTitle);
+				return getActiveView().getTitle().equalsIgnoreCase("Properties");
 			};
 
 			@Override
@@ -402,20 +408,21 @@ public class AgeGefBot {
 		clickRadio(option);
 	}
 
-	public void setElementOptionButtonInPropertiesView(final SWTBotGefEditor editor, final String viewTitle,
-			final String tabTitle, final String option, final String... elementName) {
-		openPropertiesView(editor, viewTitle, elementName);
+	public void setElementOptionButtonInPropertiesView(final SWTBotGefEditor editor, final String tabTitle,
+			final String option, final String... elementName) {
+		openPropertiesView(editor, elementName);
 		selectElement(editor, elementName);
 		selectTabbedPropertySection(tabTitle);
+		clickElements(editor, elementName);
 		clickButton(option);
 	}
 
-	public void openPropertiesView(final SWTBotGefEditor editor, final String viewTitle, final String... elementName) {
+	public void openPropertiesView(final SWTBotGefEditor editor, final String... elementName) {
 		doubleClickElement(editor, elementName[0]);
 		bot.waitUntil(new DefaultCondition() {
 			@Override
 			public boolean test() throws Exception {
-				return getActiveView().getTitle().equalsIgnoreCase(viewTitle);
+				return getActiveView().getTitle().equalsIgnoreCase("Properties");
 			};
 
 			@Override
@@ -472,9 +479,10 @@ public class AgeGefBot {
 		}, 10000);
 	}
 
-	public void resize(final SWTBotGefEditor editor, final String elementName, final Point newSize) {
+	public void resize(final SWTBotGefEditor editor, final Point newSize, final String... editPartPath) {
 		editor.setFocus();
-		final SWTBotGefEditPart swtBotGefEditPart = getEditPart(editor, elementName);
+		// final SWTBotGefEditPart swtBotGefEditPart = getEditPart(editor, elementName);
+		final SWTBotGefEditPart swtBotGefEditPart = findEditPart(editor, editPartPath);
 		final Rectangle bounds = ((GraphitiShapeEditPart) swtBotGefEditPart.part()).getFigure().getBounds();
 		editor.click(swtBotGefEditPart);
 
@@ -482,7 +490,7 @@ public class AgeGefBot {
 			final Robot robot = new Robot();
 			final Display display = editor.getWidget().getDisplay();
 			display.syncExec(() -> {
-				final Point point = PlatformUI.getWorkbench().getDisplay()
+				final Point point = display
 						.map(display.getFocusControl(), null, bounds.x, bounds.y);
 				robot.setAutoDelay(25);
 				robot.mouseMove(point.x, point.y);
@@ -514,10 +522,11 @@ public class AgeGefBot {
 		return getAgeFeatureProvider(editor).getBusinessObjectForPictogramElement(pe);
 	}
 
-	private void doubleClickElement(final SWTBotGefEditor editor, final String elementName) {
+	private void doubleClickElement(final SWTBotGefEditor editor, final String... elementName) {
 		editor.setFocus();
-		final SWTBotGefEditPart element = editor
-				.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName)).get(0);
+//		final SWTBotGefEditPart element = editor
+//				.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName)).get(0);
+		final SWTBotGefEditPart element = findEditPart(editor, elementName);
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) element.part();
 		try {
 			final Robot robot = new Robot();
@@ -540,6 +549,19 @@ public class AgeGefBot {
 		} catch (final AWTException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	public SWTBotGefEditPart findEditPart(final SWTBotGefEditor editor, final String... editPartPath) {
+		final AgeFeatureProvider ageFeatureProvider = getAgeFeatureProvider(editor);
+		final Iterator<String> it = Arrays.asList(editPartPath).iterator();
+		SWTBotGefEditPart editPartFound = editor.editParts(new FindEditPart(ageFeatureProvider, it.next()))
+				.get(0);
+		while (it.hasNext()) {
+			editPartFound = editPartFound.descendants(new FindEditPart(ageFeatureProvider, it.next()))
+				.get(0);
+		}
+
+		return editPartFound;
 	}
 
 	public void clickConnection(final SWTBotGefEditor editor, final Connection connection) {
@@ -633,19 +655,19 @@ public class AgeGefBot {
 	public void createAbstractTypeAndImplementation(final String packageName) {
 		final SWTBotGefEditor editor = getEditor(packageName);
 		editor.setFocus();
-		resize(editor, ElementNames.packageName, new Point(600, 600));
+		resize(editor, new Point(600, 600), packageName);
 
-		createToolItem(editor, ElementNames.packageName, ToolTypes.getToolItem(AbstractType.class), new Point(25, 25));
+		createToolItem(editor, ToolTypes.getToolItem(AbstractType.class), new Point(25, 25), ElementNames.packageName);
 		waitUntilNewElementIsCreated(editor, AbstractTypeImpl.class);
 		renameElement(editor, ElementNames.abstractTypeName);
 		waitUntilElementExists(editor, ElementNames.abstractTypeName);
-		createImplementation(editor, ElementNames.packageName, ToolTypes.getToolItem(AbstractImplementation.class),
-				ElementNames.abstractTypeName, "impl", new Point(100, 200));
+		createImplementation(editor, ToolTypes.getToolItem(AbstractImplementation.class), ElementNames.abstractTypeName,
+				"impl", new Point(100, 200), packageName);
 	}
 
-	public void createTypeAndImplementation(final SWTBotGefEditor editor, final Point point, final String packageName,
-			final String implName, final String typeName, final String impl) {
-		createToolItem(editor, packageName, impl, point);
+	public void createTypeAndImplementation(final SWTBotGefEditor editor, final Point point,
+			final String implName, final String typeName, final String impl, final String packageName) {
+		createToolItem(editor, impl, point, packageName);
 		waitUntilShellIsActive("Create Component Implementation");
 		setTextWithId(ClassifierOperationDialog.primaryPartIdentifier, implName);
 		clickRadio("New Component Type");
@@ -654,10 +676,12 @@ public class AgeGefBot {
 		waitUntilElementExists(editor, typeName + "." + implName);
 	}
 
-	public void clickElement(final SWTBotGefEditor editor, final String elementName) {
-		final List<SWTBotGefEditPart> list = editor
-				.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName));
-		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) list.get(0).part();
+	public void clickElements(final SWTBotGefEditor editor, final String[]... elementPaths) {
+
+		final List<GraphitiShapeEditPart> gseps = new ArrayList<>();
+		for (final String[] elementPath : elementPaths) {
+			gseps.add((GraphitiShapeEditPart) findEditPart(editor, elementPath).part());
+		}
 
 		try {
 			final Robot robot = new Robot();
@@ -665,15 +689,28 @@ public class AgeGefBot {
 
 			editor.getWidget().getDisplay().asyncExec(() -> {
 				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
-				final Rectangle bounds = gsep.getFigure().getBounds();
-				final Point point = PlatformUI.getWorkbench().getDisplay()
+				final Iterator<GraphitiShapeEditPart> it = gseps.iterator();
+				Rectangle bounds = it.next().getFigure().getBounds();
+				Point point = PlatformUI.getWorkbench().getDisplay()
 						.map(editor.getWidget().getDisplay().getFocusControl(), null, bounds.x, bounds.y);
+				// TODO enter needed?
 				robot.keyPress(KeyEvent.VK_ENTER);
 				robot.keyRelease(KeyEvent.VK_ENTER);
 				robot.mouseMove(point.x - canvas.getHorizontalBar().getSelection() + 5,
 						point.y - canvas.getVerticalBar().getSelection() + 5);
 				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
 				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+				while (it.hasNext()) {
+					bounds = it.next().getFigure().getBounds();
+					point = PlatformUI.getWorkbench().getDisplay()
+							.map(editor.getWidget().getDisplay().getFocusControl(), null, bounds.x, bounds.y);
+					robot.keyPress(KeyEvent.VK_CONTROL);
+					robot.mouseMove(point.x - canvas.getHorizontalBar().getSelection() + 5,
+							point.y - canvas.getVerticalBar().getSelection() + 5);
+					robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+					robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+					robot.keyRelease(KeyEvent.VK_CONTROL);
+				}
 			});
 
 			robot.mouseMove(300, 300);
@@ -684,5 +721,9 @@ public class AgeGefBot {
 
 	public static String qualifiedName(final String projectName, final String classifierName) {
 		return projectName + "::" + classifierName;
+	}
+
+	public SWTBotToolbarButton getToolbarButtonWithTooltip(final String tooltip) {
+		return bot.toolbarButtonWithTooltip(tooltip);
 	}
 }
