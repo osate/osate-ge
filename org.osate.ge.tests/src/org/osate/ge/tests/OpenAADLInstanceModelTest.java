@@ -1,5 +1,7 @@
 package org.osate.ge.tests;
 
+import static org.junit.Assert.assertTrue;
+
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Before;
@@ -16,13 +18,13 @@ public class OpenAADLInstanceModelTest {
 
 	@After
 	public void tearDown() {
-		// helper.deleteProject();
+		bot.deleteProject(ElementNames.projectName);
 	}
 
 	@Test
 	public void openAADLInstanceModel() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-
+		assertTrue(true);
 //		bot.createToolItem(editor, new Point(15, 15), ToolTypes.getToolItem(AbstractType.class));
 //		RenameHelper.renameElement(editor, ElementNames.abstractTypeName, new Point(15, 15));
 //
