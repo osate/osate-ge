@@ -7,7 +7,8 @@ import org.junit.runners.Suite.SuiteClasses;
 // TODO fix assert statements
 @RunWith(Suite.class)
 @SuiteClasses({
-		InstantiateAndOpenImplTest.class
+		CreateConnectionTest.class
+		// InstantiateAndOpenImplTest.class
 //		CreateNewAADLPackageTest.class, OpenExistingAADLModelTest.class, RenameClassifierTest.class,
 //		OpenAssociatedDiagramTest.class, OpenElementPackageDiagramTest.class, InstantiateAndOpenImplTest.class,
 //		GoToTypeDiagramTest.class, DeletingClassifierTest.class, SelectingDiagramElementContainerTest.class,
