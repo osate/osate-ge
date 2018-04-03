@@ -17,20 +17,20 @@ public class ElementAppearanceTest {
 	@Before
 	public void setUp() {
 		bot.maximize();
-		bot.createNewProjectAndPackage();
+		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 		bot.createAbstractTypeAndImplementation(ElementNames.packageName);
 	}
 
 	@After
 	public void tearDown() {
-		bot.deleteProject();
+		bot.deleteProject(ElementNames.projectName);
 	}
 
 	@Test
-	public void renameClassifer() {
+	public void editAppearance() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.openPropertiesView(editor, ElementNames.abstractTypeName, "Properties");
+		bot.openPropertiesView(editor, ElementNames.abstractTypeName);
 		bot.selectTabbedPropertySection("Appearance");
 
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) editor.getEditPart(ElementNames.abstractTypeName)

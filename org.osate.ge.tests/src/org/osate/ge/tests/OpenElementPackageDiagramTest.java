@@ -7,6 +7,7 @@ import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.osate.aadl2.AbstractType;
 import org.osate.aadl2.impl.AbstractTypeImpl;
 
 public class OpenElementPackageDiagramTest {
@@ -15,22 +16,23 @@ public class OpenElementPackageDiagramTest {
 	@Before
 	public void setUp() {
 		bot.maximize();
-		bot.createNewProjectAndPackage();
+		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 	}
 
 	@After
 	public void tearDown() {
-		bot.deleteProject();
+		bot.deleteProject(ElementNames.projectName);
 	}
 
 	@Test
 	public void openElementPackageDiagram() {
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 		final SWTBotGefEditor pkgDiagramEditor = bot.getEditor(ElementNames.packageName);
-		bot.createToolItem(pkgDiagramEditor, ElementNames.packageName, ToolTypes.abstractType, new Point(20, 20));
+		bot.createToolItem(pkgDiagramEditor, ToolTypes.getToolItem(AbstractType.class), new Point(20, 20),
+				ElementNames.packageName);
 		bot.waitUntilNewElementIsCreated(pkgDiagramEditor, AbstractTypeImpl.class);
 		RenameHelper.renameElement(pkgDiagramEditor, ElementNames.abstractTypeName, new Point(45, 15));
-		bot.openDiagramFromContextMenu(pkgDiagramEditor, ElementNames.abstractTypeName, AgeGefBot.associatedDiagram);
+		bot.openAssociatedDiagramFromContextMenu(pkgDiagramEditor, ElementNames.abstractTypeName);
 		pkgDiagramEditor.saveAndClose();
 
 		final SWTBotGefEditor associatedDiagramEditor = bot.getEditor(ElementNames.packageName + "_" + ElementNames.abstractTypeName);

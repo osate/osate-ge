@@ -6,29 +6,38 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.eclipse.draw2d.Connection;
 import org.eclipse.draw2d.FigureCanvas;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.EditPart;
+import org.eclipse.gef.editparts.AbstractGraphicalEditPart;
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.pictograms.ConnectionDecorator;
 import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.FreeFormConnection;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.mm.pictograms.Shape;
+import org.eclipse.graphiti.ui.platform.GraphitiConnectionEditPart;
 import org.eclipse.graphiti.ui.platform.GraphitiShapeEditPart;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Widget;
+import org.eclipse.swtbot.eclipse.finder.SWTWorkbenchBot;
 import org.eclipse.swtbot.eclipse.finder.widgets.SWTBotEditor;
 import org.eclipse.swtbot.eclipse.finder.widgets.SWTBotView;
 import org.eclipse.swtbot.eclipse.gef.finder.SWTGefBot;
+import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefConnectionEditPart;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditPart;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
+import org.eclipse.swtbot.swt.finder.exceptions.WidgetNotFoundException;
 import org.eclipse.swtbot.swt.finder.utils.SWTBotPreferences;
 import org.eclipse.swtbot.swt.finder.waits.Conditions;
 import org.eclipse.swtbot.swt.finder.waits.DefaultCondition;
@@ -36,6 +45,7 @@ import org.eclipse.swtbot.swt.finder.waits.ICondition;
 import org.eclipse.swtbot.swt.finder.widgets.SWTBotShell;
 import org.eclipse.swtbot.swt.finder.widgets.SWTBotToolbarButton;
 import org.eclipse.swtbot.swt.finder.widgets.SWTBotTree;
+import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.PlatformUI;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
@@ -51,7 +61,66 @@ import org.osate.ge.internal.graphiti.diagram.PropertyUtil;
 import org.osate.ge.internal.ui.dialogs.ClassifierOperationDialog;
 
 public class AgeGefBot {
-	final SWTGefBot bot = new SWTGefBot();
+	public static class AgeSWTBotGefEditor extends SWTBotGefEditor {
+		final Set<SWTBotGefConnectionEditPart> connectionEditParts = new HashSet<>();
+
+		public AgeSWTBotGefEditor(final IEditorReference reference, final SWTWorkbenchBot bot)
+				throws WidgetNotFoundException {
+			super(reference, bot);
+		}
+
+		public List<SWTBotGefConnectionEditPart> allConnections() {
+			connectionEditParts.clear();
+			findConnectionEditParts(this.rootEditPart());
+			return connectionEditParts.stream().collect(Collectors.toList());
+		}
+
+		public List<SWTBotGefConnectionEditPart> childConnections(final SWTBotGefEditPart editPart) {
+			connectionEditParts.clear();
+			findConnectionEditParts(editPart);
+			return connectionEditParts.stream().collect(Collectors.toList());
+		}
+
+		private void findConnectionEditParts(final SWTBotGefEditPart swtBotGefEditPart) {
+			for (final SWTBotGefEditPart editPart : swtBotGefEditPart.children()) {
+				findConnectionEditParts(editPart);
+			}
+
+			addConnectionEditPart.accept(swtBotGefEditPart);
+		}
+
+		final Consumer<SWTBotGefEditPart> addConnectionEditPart = swtBotGefEditPart -> {
+			if (swtBotGefEditPart.part() instanceof AbstractGraphicalEditPart) {
+				final AbstractGraphicalEditPart agep = (AbstractGraphicalEditPart) swtBotGefEditPart.part();
+				for (final Object ob : agep.getTargetConnections()) {
+					if (ob instanceof GraphitiConnectionEditPart) {
+						connectionEditParts.add(createEditPart((GraphitiConnectionEditPart) ob));
+					}
+				}
+
+				for (final Object ob : agep.getSourceConnections()) {
+					if (ob instanceof GraphitiConnectionEditPart) {
+						connectionEditParts.add(createEditPart((GraphitiConnectionEditPart) ob));
+					}
+				}
+			}
+		};
+	}
+
+	private static class AgeSWTGefBot extends SWTGefBot {
+		@Override
+		protected SWTBotGefEditor createEditor(final IEditorReference reference, final SWTWorkbenchBot bot) {
+			return new AgeSWTBotGefEditor(reference, bot);
+		}
+
+		@Override
+		public AgeSWTBotGefEditor gefEditor(String fileName) throws WidgetNotFoundException {
+			return (AgeSWTBotGefEditor) super.gefEditor(fileName);
+		}
+	}
+
+	final private AgeSWTGefBot bot = new AgeSWTGefBot();
+
 	// Context menu options
 	final public static String associatedDiagram = "Associated Diagram";
 	final public static String allFilters = "All Filters";
@@ -111,13 +180,8 @@ public class AgeGefBot {
 		bot.tree().contextMenu("Open").click();
 	}
 
-
 	public void createAADLPackage(final String projectName, final String packageName) {
 		bot.tree().select(projectName).contextMenu("AADL Package").click();
-
-		// bot.tree().getTreeItem("AADL").expand().getNode("AADL Package").click();
-		// bot.menu("AADL Package").click();
-		// bot.button("Next >").click();
 		bot.text().setText(packageName);
 		bot.radio("Graphical Editor").click();
 		bot.button("Finish").click();
@@ -203,9 +267,6 @@ public class AgeGefBot {
 
 	public void createToolItem(final SWTBotGefEditor editor, final String toolItem, final Point p,
 			final String... editPartPath) {
-//		final GraphitiShapeEditPart parent = (GraphitiShapeEditPart) editor
-//				.editParts(new FindEditPart(getAgeFeatureProvider(editor), parentName)).get(0)
-//				.part();
 		final GraphitiShapeEditPart parent = (GraphitiShapeEditPart) findEditPart(editor, editPartPath).part();
 		editor.setFocus();
 		editor.activateTool(toolItem);
@@ -253,7 +314,7 @@ public class AgeGefBot {
 		return bot.tree();
 	}
 
-	public SWTBotGefEditor getEditor(final String editor) {
+	public AgeSWTBotGefEditor getEditor(final String editor) {
 		return bot.gefEditor(editor + ".aadl_diagram");
 	}
 
@@ -307,6 +368,14 @@ public class AgeGefBot {
 		final List<SWTBotGefEditPart> editPart = editor
 				.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName));
 		editor.select(editPart.get(0)).clickContextMenu("Associated Diagram");
+		clickButton("Yes");
+		clickButton("OK");
+	}
+
+	public void openTypeDiagramFromContextMenu(final SWTBotGefEditor editor, final String elementName) {
+		final List<SWTBotGefEditPart> editPart = editor
+				.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName));
+		editor.select(editPart.get(0)).clickContextMenu("Type Diagram");
 		clickButton("Yes");
 		clickButton("OK");
 	}
@@ -390,21 +459,10 @@ public class AgeGefBot {
 
 	public void setElementOptionRadioInPropertiesView(final SWTBotGefEditor editor,
 			final String tabTitle, final String option, final String... elementName) {
-		doubleClickElement(editor, elementName);
-
-		bot.waitUntil(new DefaultCondition() {
-			@Override
-			public boolean test() throws Exception {
-				return getActiveView().getTitle().equalsIgnoreCase("Properties");
-			};
-
-			@Override
-			public String getFailureMessage() {
-				return "view not opened";
-			};
-		}, 5000);
-
+		openPropertiesView(editor, elementName);
+		selectElement(editor, elementName);
 		selectTabbedPropertySection(tabTitle);
+		clickElements(editor, elementName);
 		clickRadio(option);
 	}
 
@@ -432,7 +490,7 @@ public class AgeGefBot {
 		}, 5000);
 	}
 
-	/* private */public static AgeFeatureProvider getAgeFeatureProvider(final SWTBotGefEditor editor) {
+	public static AgeFeatureProvider getAgeFeatureProvider(final SWTBotGefEditor editor) {
 		return (AgeFeatureProvider) ((GraphitiShapeEditPart) editor.mainEditPart().part()).getFeatureProvider();
 	}
 
@@ -444,6 +502,7 @@ public class AgeGefBot {
 			this.editPartName = Arrays.asList(editPartName);
 			this.ageFeatureProvider = ageFeatureProvider;
 		}
+
 		@Override
 		public void describeTo(final Description description) {
 		}
@@ -458,6 +517,32 @@ public class AgeGefBot {
 					final NamedElementImpl namedElement = (NamedElementImpl) element;
 					return editPartName.contains(namedElement.getName());
 				}
+			} else if (item instanceof AbstractGraphicalEditPart) {
+				final AbstractGraphicalEditPart agep = (AbstractGraphicalEditPart) item;
+				for (final Object ob : agep.getTargetConnections()) {
+					if (ob instanceof GraphitiConnectionEditPart) {
+						final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) ob;
+						final Object element = ageFeatureProvider
+								.getBusinessObjectForPictogramElement(gcep.getPictogramElement());
+						if (element instanceof NamedElementImpl) {
+							final NamedElementImpl namedElement = (NamedElementImpl) element;
+							return editPartName.contains(namedElement.getName());
+						}
+					}
+				}
+
+				for (final Object ob : agep.getSourceConnections()) {
+					if (ob instanceof GraphitiConnectionEditPart) {
+						final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) ob;
+						final Object element = ageFeatureProvider
+								.getBusinessObjectForPictogramElement(gcep.getPictogramElement());
+						if (element instanceof NamedElementImpl) {
+							final NamedElementImpl namedElement = (NamedElementImpl) element;
+							return editPartName.contains(namedElement.getName());
+						}
+					}
+				}
+
 			}
 
 			return false;
@@ -524,8 +609,6 @@ public class AgeGefBot {
 
 	private void doubleClickElement(final SWTBotGefEditor editor, final String... elementName) {
 		editor.setFocus();
-//		final SWTBotGefEditPart element = editor
-//				.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName)).get(0);
 		final SWTBotGefEditPart element = findEditPart(editor, elementName);
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) element.part();
 		try {
@@ -622,12 +705,12 @@ public class AgeGefBot {
 		editor.select(gsep);
 	}
 
-	public void renameConnection(final SWTBotGefEditor editor, final PictogramElement pe, final Connection connection,
+	public void renameConnection(final SWTBotGefEditor editor, final GraphitiConnectionEditPart gcep,
 			final String newName) {
-		final ConnectionDecorator cd = getLabelShape((FreeFormConnection) pe);
+		final ConnectionDecorator cd = getLabelShape((FreeFormConnection) gcep.getPictogramElement());
 		final GraphicsAlgorithm labelGA = cd.getGraphicsAlgorithm();
 
-		RenameHelper.renameConnection(editor, newName, connection,
+		RenameHelper.renameConnection(editor, newName, gcep.getConnectionFigure(),
 				new Point(labelGA.getX() + labelGA.getWidth() / 2, labelGA.getY() + labelGA.getHeight() / 2));
 		waitUntilElementExists(editor, newName);
 	}

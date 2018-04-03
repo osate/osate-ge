@@ -6,6 +6,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.osate.aadl2.AbstractType;
 import org.osate.aadl2.impl.AbstractTypeImpl;
 
 public class OpenAssociatedDiagramTest {
@@ -14,12 +15,13 @@ public class OpenAssociatedDiagramTest {
 	@Before
 	public void setUp() {
 		bot.maximize();
-		bot.createNewProjectAndPackage();
+		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.resize(editor, ElementNames.packageName, new Point(600, 600));
-		bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(25, 25));
+		bot.resize(editor, new Point(600, 600), ElementNames.packageName);
+		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractType.class), new Point(25, 25),
+				ElementNames.packageName);
 		bot.waitUntilNewElementIsCreated(editor, AbstractTypeImpl.class);
 		bot.renameElement(editor, ElementNames.abstractTypeName);
 	}
@@ -27,7 +29,7 @@ public class OpenAssociatedDiagramTest {
 
 	@After
 	public void tearDown() {
-		bot.deleteProject();
+		bot.deleteProject(ElementNames.projectName);
 	}
 
 	@Test

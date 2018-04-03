@@ -6,6 +6,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.osate.aadl2.AbstractType;
 import org.osate.aadl2.impl.AbstractTypeImpl;
 
 public class RenameClassifierTest {
@@ -14,19 +15,20 @@ public class RenameClassifierTest {
 	@Before
 	public void setUp() {
 		bot.maximize();
-		bot.createNewProjectAndPackage();
+		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 	}
 
 	@After
 	public void tearDown() {
-		bot.deleteProject();
+		bot.deleteProject(ElementNames.projectName);
 	}
 
 	@Test
 	public void renameClassifer() {
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(20, 20));
+		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractType.class), new Point(20, 20),
+				ElementNames.packageName);
 		bot.waitUntilNewElementIsCreated(editor, AbstractTypeImpl.class);
 
 		final String newName = ElementNames.abstractTypeName;

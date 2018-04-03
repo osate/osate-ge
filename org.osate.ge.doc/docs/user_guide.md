@@ -47,15 +47,24 @@ An existing AADL model can be opened in the graphical editor. Changes made to ei
 	
 4. You can also use the keyboard shortcut *Ctrl+Shift+V* to switch between the selected element in the
    diagram and the selected element in the source file.
-   
+  
+## Creating a New Diagram
+AADL model elements may be represented by multiple diagrams. To create a new diagram from the AADL text editor, right-click on an AADL package or classifier and select *Create Diagram...*. To create a new diagram from the diagram editor, right-click on an AADL package or classifier and select *Open->New Diagram...*.
+
 # Navigating Between Diagrams
-The graphical editor supports navigating between related diagrams in several ways.
+The graphical editor supports several methods for navigating between diagrams.
+
+## Using the AADL Diagrams View
+The *AADL Diagrams* view shows the diagrams contained in the workspace. To open the *AADL Diagrams* view:
+
+1. Select *Windows->Show View->Other...* from the top-level menu. The *Show View* window will appear.
+2. Select *AADL/AADL Diagrams*.
+3. Select *Open*. The *AADL Diagrams* view will be opened.
+
+By default, the *AADL Diagrams* view will group diagrams by the diagram type and the diagram's context. Grouping can be customized using the *Group By Type* and *Group by Context* options in the view menu (![View Menu](../images/ui_view_menu_icon.png)) for the *AADL Diagrams* view. Selecting *Show Decorations* from the view menu will toggle display of the context and type for diagrams which are not grouped.
 
 ## Opening an Associated Diagram
 Diagrams associated with a particular element can be opened by right-clicking on the element and selecting *Open->Associated Diagram* from the context menu. 
-
-## Creating a New Diagram
-AADL model elements may be represented by multiple diagrams. To create a new diagram from the AADL text editor, right-click on an AADL package or classifier and select *Create Diagram...*. To create a new diagram from the diagram editor, right-click on an AADL package or classifier and select *Open->New Diagram...*.
 
 ## Opening an Element's Package Diagram
 The package diagram associated with an element can be opened by right-clicking an element and selecting *Open->Package Diagram* from the context menu.
@@ -206,6 +215,7 @@ An element's appearance can be changed using the following steps.
 	- The *Label Visibility* option allows hiding or showing the diagram element's label.
 	- Font size can be edited by selecting the font size drop-down menu.
 	- Line width can be edited by selecting the line width drop-down menu.
+	- Elements can be displayed as an image by selecting the set image button, selecting *Select...*, and then selecting the desired image. Only images contained in referenced projects may be selected. To reference other projects, edit the project's properties. Whether an element is displayed as an image or using standard notation can be toggled by selecting the *Show as Image* check box.  The editor supports the following image file types: bmp, png, jpg, gif.
 	- Outline color can be edited by clicking the outline button and selecting the desired color.
 	- Font color can be edited by clicking the font color button and selecting the desired color.
 	- Background color can be edited by clicking the background color button and selecting the desired color.
@@ -252,16 +262,19 @@ Layout menu items are available from the *Edit->Layout* menu or by right clickin
 
 Table: Layout Menu Items {#tbl:layout_menu_items}
 
-### Incremental Layout
-When an element has been added to the diagram and needs to be positioned or sized, an incremental layout is performed. The behavior of the incremental layout can be configured by selecting a mode from the preferences dialog.
+### Layout Preferences
+The preferences dialog contains preferences which affect the layout behavior of the graphical editor. To edit layout preferences:
 
 1. Select *Window->Preferences*
 
-2. Select to *OSATE Preferences->Diagram*
+2. Select *OSATE Preferences->Diagrams*
+
+3. Modify the preferences as desired.
 
 ![](../images/preferences.png)
 
-3. Select the desired *Incremental Layout Mode*. The modes are described in @tbl:incremental_layout_modes.
+#### Incremental Layout
+When an element has been added to the diagram and needs to be positioned or sized, an incremental layout is performed. The behavior of the incremental layout can be configured by selecting a mode from the preferences dialog. From the preferences dialog select the desired *Incremental Layout Mode*. The modes are described in @tbl:incremental_layout_modes.
 
 |Mode| Description|
 |-------|--------------------------------------------------|
@@ -271,12 +284,15 @@ When an element has been added to the diagram and needs to be positioned or size
 
 Table: Incremental Layout Modes {#tbl:incremental_layout_modes}
 
-### Known Layout Issues and Limitations
+#### Layout Feature Based on Direction
+When the *Layout Features Based on Direction* preference is enabled, the graphical editor will position ports based on the feature's direction. Input features will be placed on the left side and output features will be placed on the right side. If the preference is disabled, the layout algorithm will decide the side on which to place the feature.
 
-* Connections between multiple levels of the diagram hierarchy are not routed out. Such connections usually represent property values such as bindings. Such connections must be routed manually.
+### Known Layout Issues and Limitations
+* Connections between multiple levels of the diagram hierarchy are not automatically routed and must be routed manually. Such connections usually represent property values such as bindings.
 * Mode transition triggers are not routed. The recommended workaround is to show the mode transition triggers as text labels.
 * Flow source and sinks are not consider when laying out the diagram.
 * The automatic layout for flow path may produce unexpected routing and label placement for the flow path. To workaround this issue, it is recommended to disable labels for flow paths.	
+* Flow paths other than those which include a feature on the left side and a feature on the right side of the container will not layout correctly. To workaround this issue, it is recommended to adjust the location of the features.
 	
 ## Connections
 The graphical editor allows editing AADL connections such as access, feature, feature group, parameter, and port.

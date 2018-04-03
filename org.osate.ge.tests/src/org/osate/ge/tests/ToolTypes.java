@@ -24,6 +24,7 @@ import org.osate.aadl2.ProcessorSubcomponent;
 import org.osate.aadl2.ProcessorType;
 import org.osate.aadl2.SystemImplementation;
 import org.osate.aadl2.SystemSubcomponent;
+import org.osate.ge.internal.util.StringUtil;
 
 public class ToolTypes {
 	private final static Map<Class<?>, String> toolTypes = createToolTypes();
@@ -65,6 +66,7 @@ public class ToolTypes {
 	}
 
 	public static String getToolItem(final Class<?> clazz) {
-		return Objects.requireNonNull(toolTypes.get(clazz), "Unsupported tool item: " + clazz);
+		return Objects.requireNonNull(StringUtil.camelCaseToUser(clazz.getSimpleName()),
+				"Unsupported tool item: " + clazz);
 	}
 }

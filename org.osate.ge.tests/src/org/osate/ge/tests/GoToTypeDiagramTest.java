@@ -8,6 +8,8 @@ import org.eclipse.swtbot.swt.finder.exceptions.WidgetNotFoundException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.osate.aadl2.AbstractImplementation;
+import org.osate.aadl2.AbstractType;
 import org.osate.aadl2.impl.AbstractTypeImpl;
 
 public class GoToTypeDiagramTest {
@@ -16,31 +18,30 @@ public class GoToTypeDiagramTest {
 	@Before
 	public void setUp() {
 		bot.maximize();
-		bot.createNewProjectAndPackage();
+		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 	}
 
 	@After
 	public void tearDown() {
-		bot.deleteProject();
+		bot.deleteProject(ElementNames.projectName);
 	}
 
 	@Test
 	public void goToTypeDiagram() throws WidgetNotFoundException, ClassNotFoundException {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.resize(editor, ElementNames.packageName, new Point(600, 600));
+		bot.resize(editor, new Point(600, 600), ElementNames.packageName);
 
-		bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(25, 25));
+		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractType.class), new Point(25, 25),
+				ElementNames.packageName);
 		bot.waitUntilNewElementIsCreated(editor, AbstractTypeImpl.class);
 		bot.renameElement(editor, ElementNames.abstractTypeName);
 		bot.waitUntilElementExists(editor, ElementNames.abstractTypeName);
 
-		bot.createImplementation(editor, ElementNames.packageName, ToolTypes.abstractImplementation,
-				ElementNames.abstractTypeName, "impl", new Point(100, 100));
+		bot.createImplementation(editor, ToolTypes.getToolItem(AbstractImplementation.class),
+				ElementNames.abstractTypeName, "impl", new Point(100, 100), ElementNames.packageName);
 
-		bot.openDiagramFromContextMenu(editor,
-				ElementNames.abstractTypeName + "." + "impl"/* ElementNames.abstractTypeName */,
-				"Type Diagram");
+		bot.openTypeDiagramFromContextMenu(editor, ElementNames.abstractTypeName + "." + "impl");
 
 		assertTrue(bot.isActiveEditor(ElementNames.packageName + "_" + ElementNames.abstractTypeName));
 	}

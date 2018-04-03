@@ -9,6 +9,9 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.osate.aadl2.AbstractFeature;
+import org.osate.aadl2.AbstractType;
+import org.osate.aadl2.Mode;
 import org.osate.aadl2.ModeTransition;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 import org.osate.ge.query.StandaloneQuery;
@@ -21,34 +24,33 @@ public class ModesTransitionTest {
 	@Before
 	public void setUp() {
 		bot.maximize();
-		bot.createNewProjectAndPackage();
+		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 	}
 
 	@After
 	public void tearDown() {
-		bot.deleteProject();
+		bot.deleteProject(ElementNames.projectName);
 	}
 
 	@Test
 	public void createModes() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.maximize();
-		bot.resize(editor, ElementNames.packageName, new Point(600, 600));
+		bot.resize(editor, new Point(600, 600), ElementNames.packageName);
 		editor.setFocus();
 
-		bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(40, 40));
-		bot.renameElement(editor, ElementNames.abstractTypeName);
-		bot.resize(editor, ElementNames.abstractTypeName, new Point(300, 300));
+		bot.createToolItemAndRename(editor, AbstractType.class, new Point(40, 40), ElementNames.abstractTypeName,
+				ElementNames.packageName);
+		bot.resize(editor, new Point(300, 300), ElementNames.abstractTypeName);
 
-		bot.createToolItem(editor, ElementNames.abstractTypeName, ToolTypes.abstractFeature, new Point(15, 15));
-		bot.renameElement(editor, ElementNames.abstractFeatureNewName);
+		bot.createToolItemAndRename(editor, AbstractFeature.class, new Point(15, 15), ElementNames.abstractFeatureNewName,
+				ElementNames.abstractTypeName);
 
-		bot.createToolItem(editor, ElementNames.abstractTypeName, ToolTypes.mode, new Point(80, 90));
-		bot.renameElement(editor, ElementNames.mode);
+		bot.createToolItemAndRename(editor, Mode.class, new Point(80, 90), ElementNames.mode,
+				ElementNames.abstractTypeName);
 
-		bot.createToolItem(editor, ElementNames.abstractTypeName, ToolTypes.mode, new Point(80, 200));
-		bot.renameElement(editor, ElementNames.mode2);
+		bot.createToolItemAndRename(editor, Mode.class, new Point(80, 200), ElementNames.mode2,
+				ElementNames.abstractTypeName);
 
 		final SWTBotGefEditPart abstractType = editor.getEditPart(ElementNames.abstractTypeName);
 		// Find in feature
@@ -59,7 +61,7 @@ public class ModesTransitionTest {
 		final List<SWTBotGefEditPart> mode2 = bot.findChild(editor, abstractType, ElementNames.mode2);
 
 		// Create connection
-		editor.activateTool(ToolTypes.modeTransition);
+		editor.activateTool(ToolTypes.getToolItem(ModeTransition.class));
 		editor.click(mode2.get(0));
 		editor.click(mode.get(0));
 		bot.clickButton("OK");

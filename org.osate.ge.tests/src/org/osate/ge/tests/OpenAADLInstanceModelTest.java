@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.eclipse.gef.EditPart;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swtbot.eclipse.gef.finder.SWTGefBot;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditPart;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.eclipse.swtbot.swt.finder.SWTBot;
@@ -14,16 +13,16 @@ import org.eclipse.swtbot.swt.finder.widgets.SWTBotTreeItem;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.osate.aadl2.AbstractType;
 import org.osate.aadl2.impl.AbstractImplementationImpl;
 
 public class OpenAADLInstanceModelTest {
-	private final SWTGefBot bot = new SWTGefBot();
-	private final Helper helper = new Helper(bot);
+	private final AgeGefBot bot = new AgeGefBot();
 
 	@Before
 	public void setUp() {
-		helper.createNewProjectAndPackage();
-		helper.openDiagram(new String[] { ElementNames.projectName, "packages" }, ElementNames.packageName + ".aadl");
+		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
+		ageBot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 	}
 
 	@After
@@ -33,11 +32,12 @@ public class OpenAADLInstanceModelTest {
 
 	@Test
 	public void openAADLInstanceModel() {
-		final SWTBotGefEditor editor = bot.gefEditor(ElementNames.packageName);
-		helper.createToolItem(editor, ToolTypes.abstractType, new Point(0, 0));
+		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+
+		bot.createToolItem(editor, new Point(15, 15), ToolTypes.getToolItem(AbstractType.class));
 		RenameHelper.renameElement(editor, ElementNames.abstractTypeName, new Point(15, 15));
 
-		helper.createToolItem(editor, ToolTypes.abstractImplementation, new Point(100, 100));
+		helper.createToolItem(editor, new Point(100, 100), ToolTypes.getToolItem(clazz));
 		bot.waitUntil(org.eclipse.swtbot.swt.finder.waits.Conditions.shellIsActive("Select a Classifier"));
 		final SWTBotShell shell = bot.activeShell();
 		bot.button("OK").click();

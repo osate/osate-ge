@@ -5,11 +5,13 @@
 		</topic>
 		<topic label="Opening an Existing AADL Model" href="docs-gen/user_guide.html#opening-an-existing-aadl-model">
 		</topic>
+		<topic label="Creating a New Diagram" href="docs-gen/user_guide.html#creating-a-new-diagram">
+		</topic>
 	</topic>
 	<topic label="Navigating Between Diagrams" href="docs-gen/user_guide.html#navigating-between-diagrams">
-		<topic label="Opening an Associated Diagram" href="docs-gen/user_guide.html#opening-an-associated-diagram">
+		<topic label="Using the AADL Diagrams View" href="docs-gen/user_guide.html#using-the-aadl-diagrams-view">
 		</topic>
-		<topic label="Creating a New Diagram" href="docs-gen/user_guide.html#creating-a-new-diagram">
+		<topic label="Opening an Associated Diagram" href="docs-gen/user_guide.html#opening-an-associated-diagram">
 		</topic>
 		<topic label="Opening an Element&#39;s Package Diagram" href="docs-gen/user_guide.html#opening-an-elements-package-diagram">
 		</topic>
@@ -60,7 +62,11 @@
 		<topic label="Diagram Layout" href="docs-gen/user_guide.html#diagram-layout">
 			<topic label="Layout Commands" href="docs-gen/user_guide.html#layout-commands">
 			</topic>
-			<topic label="Incremental Layout" href="docs-gen/user_guide.html#incremental-layout">
+			<topic label="Layout Preferences" href="docs-gen/user_guide.html#layout-preferences">
+				<topic label="Incremental Layout" href="docs-gen/user_guide.html#incremental-layout">
+				</topic>
+				<topic label="Layout Feature Based on Direction" href="docs-gen/user_guide.html#layout-feature-based-on-direction">
+				</topic>
 			</topic>
 			<topic label="Known Layout Issues and Limitations" href="docs-gen/user_guide.html#known-layout-issues-and-limitations">
 			</topic>

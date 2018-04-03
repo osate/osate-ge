@@ -5,6 +5,8 @@ import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.osate.aadl2.AbstractImplementation;
+import org.osate.aadl2.AbstractType;
 
 public class SetExtendedClassifierTest {
 	private final AgeGefBot bot = new AgeGefBot();
@@ -12,32 +14,35 @@ public class SetExtendedClassifierTest {
 	@Before
 	public void setUp() {
 		bot.maximize();
-		bot.createNewProjectAndPackage();
+		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 	}
 
 	@After
 	public void tearDown() {
-		bot.deleteProject();
+		bot.deleteProject(ElementNames.projectName);
 	}
 
 	@Test
 	public void setExtendedClassifier() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.maximize();
-		bot.resize(editor, ElementNames.packageName, new Point(600, 600));
+		bot.resize(editor, new Point(600, 600), ElementNames.packageName);
 
-		bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(40, 40));
-		bot.renameElement(editor, ElementNames.abstractTypeName);
+		bot.createToolItemAndRename(editor, AbstractType.class, new Point(40, 40), ElementNames.abstractTypeName,
+				ElementNames.packageName);
 
-		bot.createImplementation(editor, ElementNames.packageName, ToolTypes.abstractImplementation,
-				ElementNames.abstractTypeName, ElementNames.abstractTypeName, new Point(350, 350));
-		bot.createImplementation(editor, ElementNames.packageName, ToolTypes.abstractImplementation,
-				ElementNames.abstractTypeName, ElementNames.abstractTypeName + 2, new Point(150, 150));
+		bot.createImplementation(editor, ToolTypes.getToolItem(AbstractImplementation.class),
+				ElementNames.abstractTypeName, ElementNames.abstractTypeName, new Point(350, 350),
+				ElementNames.packageName);
+		bot.createImplementation(editor, ToolTypes.getToolItem(AbstractImplementation.class),
+				ElementNames.abstractTypeName, ElementNames.abstractTypeName + 2, new Point(150, 150),
+				ElementNames.packageName);
 
 		final String implName = ElementNames.abstractTypeName + "." + ElementNames.abstractTypeName + 2;
-		bot.setElementOptionButtonInPropertiesView(editor, implName,
-				"Properties", "AADL", "Choose...");
+		bot.openPropertiesView(editor, ElementNames.packageName);
+		bot.clickElements(editor, new String[] { implName });
+		bot.selectTabbedPropertySection("AADL");
+		bot.clickButton("Choose...");
 		bot.clickButton("OK");
 	}
 }

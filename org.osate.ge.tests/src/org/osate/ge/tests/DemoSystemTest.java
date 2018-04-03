@@ -157,6 +157,7 @@ public class DemoSystemTest {
 		bot.clickButton("OK");
 
 		demoSysImplEditor.activateTool(ToolTypes.getToolItem(FeatureConnection.class));
+
 		// Create Connection 1
 		bot.clickElements(demoSysImplEditor, new String[] { "actuator_data", "sd1" }, new String[] { "cpu1", "ba" });
 
@@ -182,7 +183,5 @@ public class DemoSystemTest {
 		bot.clickButton("OK");
 
 		assertTrue(!si.getOwnedPropertyAssociations().isEmpty());
-
-		bot.executeContextMenuCommand(demoSysImplEditor, demoSysImpl, "Layout Diagram");
 	}
 }

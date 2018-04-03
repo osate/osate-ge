@@ -5,6 +5,7 @@ import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.osate.aadl2.SystemImplementation;
 import org.osate.aadl2.impl.BusTypeImpl;
 import org.osate.aadl2.impl.DeviceTypeImpl;
 import org.osate.aadl2.impl.FeatureGroupTypeImpl;
@@ -25,15 +26,15 @@ public class DemoTest {
 
 	@After
 	public void tearDown() {
-		bot.deleteProject();
+		bot.deleteProject(ElementNames.projectName);
 	}
 
 	@Test
 	public void runDemoTest() {
 		final SWTBotGefEditor editor = bot.getEditor(packageName);
-		bot.resize(editor, packageName, new Point(600, 600));
+		bot.resize(editor, new Point(600, 600), packageName);
 
-		bot.createToolItem(editor, packageName, "System Implementation", new Point(50, 50));
+		bot.createToolItem(editor, ToolTypes.getToolItem(SystemImplementation.class), new Point(50, 50), packageName);
 		bot.waitUntilShellIsActive("Create Component Implementation");
 		bot.setTextWithId(ClassifierOperationDialog.primaryPartIdentifier, implName);
 		bot.clickRadio("New Component Type");

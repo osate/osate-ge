@@ -13,14 +13,14 @@ public class InstantiateAndOpenImplTest {
 	@Before
 	public void setUp() {
 		ageBot.maximize();
-		ageBot.createNewProjectAndPackage();
+		ageBot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		ageBot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 		ageBot.createAbstractTypeAndImplementation(ElementNames.packageName);
 	}
 
 	@After
 	public void tearDown() {
-		ageBot.deleteProject();
+		ageBot.deleteProject(ElementNames.projectName);
 	}
 
 	@Test

@@ -1,66 +1,62 @@
 package org.osate.ge.tests;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-import org.eclipse.draw2d.Connection;
-import org.eclipse.graphiti.mm.pictograms.PictogramElement;
+import org.eclipse.graphiti.ui.platform.GraphitiConnectionEditPart;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.widgets.Display;
+import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefConnectionEditPart;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditPart;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.osate.aadl2.AbstractFeature;
+import org.osate.aadl2.AbstractSubcomponent;
 import org.osate.aadl2.FeatureConnection;
-import org.osate.ge.internal.diagram.runtime.DiagramNode;
-import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
+import org.osate.ge.internal.graphiti.AgeFeatureProvider;
 import org.osate.ge.internal.ui.properties.AppearancePropertySection;
-import org.osate.ge.query.StandaloneQuery;
-import org.osate.ge.services.QueryService;
+import org.osate.ge.tests.AgeGefBot.AgeSWTBotGefEditor;
 
 public class CreateConnectionTest {
 	private final AgeGefBot bot = new AgeGefBot();
-	final StandaloneQuery connectionQuery = StandaloneQuery.create(
-			(rootQuery) -> rootQuery.descendants().filter((fc) -> fc.getBusinessObject() instanceof FeatureConnection));
-	final StandaloneQuery newConnectionQuery = StandaloneQuery.create(
-			(rootQuery) -> rootQuery.descendants().filter((fc) -> fc.getBusinessObject() instanceof FeatureConnection
-					&& ((FeatureConnection) fc.getBusinessObject()).getName().contains("new_")));
 
 	@Before
 	public void setUp() {
 		bot.maximize();
-		bot.createNewProjectAndPackage();
+		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 		bot.createAbstractTypeAndImplementation(ElementNames.packageName);
 	}
 
 	@After
 	public void tearDown() {
-		bot.deleteProject();
+		bot.deleteProject(ElementNames.projectName);
 	}
 
 	@Test
 	public void createConnection() {
-		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.resize(editor, ElementNames.abstractTypeName, new Point(100, 100));
-		bot.createToolItem(editor, ElementNames.abstractTypeName, ToolTypes.abstractFeature, new Point(15, 15));
+		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		bot.resize(editor, new Point(100, 100), ElementNames.abstractTypeName);
+		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractFeature.class), new Point(15, 15),
+				ElementNames.abstractTypeName);
 		bot.renameElement(editor, ElementNames.abstractFeatureNewName);
+		bot.openPropertiesView(editor, ElementNames.abstractTypeName);
 
-		bot.createToolItem(editor, ElementNames.abstractTypeName, ToolTypes.abstractFeature, new Point(15, 70));
+		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractFeature.class), new Point(15, 70),
+				ElementNames.abstractTypeName);
 		bot.renameElement(editor, ElementNames.abstractFeatureNewName2);
 
 		final String abstractImplName = ElementNames.abstractTypeName + ".impl";
-		bot.resize(editor, abstractImplName, new Point(500, 500));
+		bot.resize(editor, new Point(400, 400), abstractImplName);
 
-		bot.selectElement(editor, ElementNames.abstractFeatureNewName2);
-		bot.setElementOptionRadioInPropertiesView(editor, ElementNames.abstractFeatureNewName2, "Properties", "AADL",
-				"Output");
+		bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Output", ElementNames.abstractTypeName,
+				ElementNames.abstractFeatureNewName2);
 		bot.executeContextMenuCommand(editor, abstractImplName,
 				AgeGefBot.allFilters);
 
-		createSubcomponents(editor, abstractImplName,
-				ToolTypes.abstractSubcomponent);
+		createSubcomponents(editor, AbstractSubcomponent.class, abstractImplName);
 
 		bot.executeContextMenuCommand(editor, ElementNames.abstractSubcomponentName, AgeGefBot.allFilters);
 		bot.executeContextMenuCommand(editor, ElementNames.abstractSubcomponentName2, AgeGefBot.allFilters);
@@ -81,45 +77,46 @@ public class CreateConnectionTest {
 		editor.click(featureIn.get(0));
 		editor.activateDefaultTool();
 
-		final AgeDiagramEditor ageDiagramEditor = (AgeDiagramEditor) AgeGefBot.getAgeFeatureProvider(editor)
-				.getDiagramTypeProvider().getDiagramBehavior().getDiagramContainer();
-		final QueryService queryService = (QueryService) ageDiagramEditor.getAdapter(QueryService.class);
-		final DiagramNode dn = (DiagramNode) queryService.getFirstResult(newConnectionQuery,
-				ageDiagramEditor.getAgeDiagram());
-		final PictogramElement pe = ageDiagramEditor.getGraphitiAgeDiagram().getPictogramElement(dn);
+		final AgeFeatureProvider ageFeatureProvider = AgeGefBot.getAgeFeatureProvider(editor);
+		final SWTBotGefConnectionEditPart connectionEditPart = editor.allConnections().stream().filter(editPart -> {
+			final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) editPart.part();
+			final Object bo = ageFeatureProvider.getBusinessObjectForPictogramElement(gcep.getPictogramElement());
+			if (bo instanceof FeatureConnection) {
+				return ((FeatureConnection) bo).getName().contains("new_");
+			}
 
-		Display.getDefault().syncExec(() -> {
-			ageDiagramEditor.selectPictogramElements(new PictogramElement[] { pe });
-			bot.clickConnection(editor,
-					(Connection) ageDiagramEditor.getDiagramBehavior().getFigureForPictogramElement(pe));
-		});
+			return false;
+		}).collect(Collectors.toList()).get(0);
 
-		// TODO print edit parts
+		editor.select(connectionEditPart);
+		final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) connectionEditPart.part();
+		bot.clickConnection(editor, gcep.getConnectionFigure());
+
 		bot.selectTabbedPropertySection("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
-		// TODO print edit parts
 
-		// HIDE LABEL and print edit parts
-		bot.renameConnection(editor, ageDiagramEditor.getGraphitiAgeDiagram().getPictogramElement(dn),
-				(Connection) ageDiagramEditor.getDiagramBehavior().getFigureForPictogramElement(pe),
-				ElementNames.featureConnection);
+		bot.renameConnection(editor, gcep, ElementNames.featureConnection);
 
-		Assert.assertTrue(editor.getEditPart(ElementNames.featureConnection) != null);
+		editor.select(ElementNames.featureConnection);
+		bot.selectTabbedPropertySection("Appearance");
+		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Hide");
+
+		final FeatureConnection fc = (FeatureConnection) ageFeatureProvider
+				.getBusinessObjectForPictogramElement(gcep.getPictogramElement());
+		Assert.assertTrue(fc.getName().equalsIgnoreCase(ElementNames.featureConnection));
 	}
 
-	private void createSubcomponents(final SWTBotGefEditor editor, final String parent, final String toolType) {
-		bot.createToolItem(editor, parent, toolType, new Point(120, 110));
-		bot.renameElement(editor, ElementNames.abstractSubcomponentName);
+	private void createSubcomponents(final SWTBotGefEditor editor, final Class<?> clazz, final String parent) {
+		bot.createToolItemAndRename(editor, clazz, new Point(200, 100),
+				ElementNames.abstractSubcomponentName, parent);
+		bot.createToolItemAndRename(editor, clazz, new Point(120, 250), ElementNames.abstractSubcomponentName2, parent);
 
-		bot.setElementOptionButtonInPropertiesView(editor, ElementNames.abstractSubcomponentName, "Properties", "AADL", "Choose...");
-		bot.clickTableOption(ElementNames.packageName + "::" + ElementNames.abstractTypeName);
-		bot.clickButton("OK");
-
-		bot.createToolItem(editor, parent, toolType, new Point(120, 200));
-		bot.renameElement(editor, ElementNames.abstractSubcomponentName2);
-
-		bot.setElementOptionButtonInPropertiesView(editor, ElementNames.abstractSubcomponentName2, "Properties", "AADL", "Choose...");
-		bot.clickTableOption(ElementNames.packageName + "::" + ElementNames.abstractTypeName);
+		bot.openPropertiesView(editor, ElementNames.abstractSubcomponentName);
+		bot.selectTabbedPropertySection("AADL");
+		bot.clickElements(editor, new String[] { ElementNames.abstractSubcomponentName },
+				new String[] { ElementNames.abstractSubcomponentName2 });
+		bot.clickButton("Choose...");
+		bot.clickTableOption(AgeGefBot.qualifiedName(ElementNames.packageName, ElementNames.abstractTypeName));
 		bot.clickButton("OK");
 	}
 }

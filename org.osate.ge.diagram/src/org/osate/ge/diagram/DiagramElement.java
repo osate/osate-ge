@@ -6,7 +6,6 @@ import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
-
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 
 /**
@@ -33,6 +32,8 @@ import org.eclipse.emf.ecore.impl.ENotificationImpl;
  *   <li>{@link org.osate.ge.diagram.DiagramElement#getFontSize <em>Font Size</em>}</li>
  *   <li>{@link org.osate.ge.diagram.DiagramElement#getLineWidth <em>Line Width</em>}</li>
  *   <li>{@link org.osate.ge.diagram.DiagramElement#getPrimaryLabelVisible <em>Primary Label Visible</em>}</li>
+ *   <li>{@link org.osate.ge.diagram.DiagramElement#getImage <em>Image</em>}</li>
+ *   <li>{@link org.osate.ge.diagram.DiagramElement#getShowAsImage <em>Show As Image</em>}</li>
  *   <li>{@link org.osate.ge.diagram.DiagramElement#getContentFilters <em>Content Filters</em>}</li>
  * </ul>
  *
@@ -292,6 +293,46 @@ public class DiagramElement extends DiagramNode {
 	protected Boolean primaryLabelVisible = PRIMARY_LABEL_VISIBLE_EDEFAULT;
 
 	/**
+	 * The default value of the '{@link #getImage() <em>Image</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getImage()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final String IMAGE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getImage() <em>Image</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getImage()
+	 * @generated
+	 * @ordered
+	 */
+	protected String image = IMAGE_EDEFAULT;
+
+	/**
+	 * The default value of the '{@link #getShowAsImage() <em>Show As Image</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getShowAsImage()
+	 * @generated
+	 * @ordered
+	 */
+	protected static final Boolean SHOW_AS_IMAGE_EDEFAULT = null;
+
+	/**
+	 * The cached value of the '{@link #getShowAsImage() <em>Show As Image</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see #getShowAsImage()
+	 * @generated
+	 * @ordered
+	 */
+	protected Boolean showAsImage = SHOW_AS_IMAGE_EDEFAULT;
+
+	/**
 	 * The cached value of the '{@link #getContentFilters() <em>Content Filters</em>}' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -318,6 +359,40 @@ public class DiagramElement extends DiagramNode {
 	@Override
 	protected EClass eStaticClass() {
 		return DiagramPackage.Literals.DIAGRAM_ELEMENT;
+	}
+
+	/**
+	 * Returns the value of the '<em><b>Id</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <p>
+	 * If the meaning of the '<em>Id</em>' attribute isn't clear,
+	 * there really should be more of a description here...
+	 * </p>
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Id</em>' attribute.
+	 * @see #setId(Long)
+	 * @see org.osate.ge.diagram.DiagramPackage#getDiagramElement_Id()
+	 * @model id="true" dataType="org.eclipse.emf.ecore.xml.type.LongObject"
+	 * @generated
+	 */
+	public Long getId() {
+		return id;
+	}
+
+	/**
+	 * Sets the value of the '{@link org.osate.ge.diagram.DiagramElement#getId <em>Id</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Id</em>' attribute.
+	 * @see #getId()
+	 * @generated
+	 */
+	public void setId(Long newId) {
+		Long oldId = id;
+		id = newId;
+		if (eNotificationRequired()) {
+			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__ID, oldId, id));
+		}
 	}
 
 	/**
@@ -348,7 +423,11 @@ public class DiagramElement extends DiagramNode {
 		bo = newBo;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__BO, oldBo, newBo);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
+			if (msgs == null) {
+				msgs = notification;
+			} else {
+				msgs.add(notification);
+			}
 		}
 		return msgs;
 	}
@@ -364,15 +443,20 @@ public class DiagramElement extends DiagramNode {
 	public void setBo(RelativeBusinessObjectReference newBo) {
 		if (newBo != bo) {
 			NotificationChain msgs = null;
-			if (bo != null)
+			if (bo != null) {
 				msgs = ((InternalEObject)bo).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__BO, null, msgs);
-			if (newBo != null)
+			}
+			if (newBo != null) {
 				msgs = ((InternalEObject)newBo).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__BO, null, msgs);
+			}
 			msgs = basicSetBo(newBo, msgs);
-			if (msgs != null) msgs.dispatch();
+			if (msgs != null) {
+				msgs.dispatch();
+			}
 		}
-		else if (eNotificationRequired())
+		else if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__BO, newBo, newBo));
+		}
 	}
 
 	/**
@@ -405,17 +489,14 @@ public class DiagramElement extends DiagramNode {
 	public void setManual(boolean newManual) {
 		boolean oldManual = manual;
 		manual = newManual;
-		if (eNotificationRequired())
+		if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__MANUAL, oldManual, manual));
+		}
 	}
 
 	/**
 	 * Returns the value of the '<em><b>Auto Contents Filter</b></em>' attribute.
 	 * <!-- begin-user-doc -->
-	 * <p>
-	 * If the meaning of the '<em>Auto Contents Filter</em>' attribute isn't clear,
-	 * there really should be more of a description here...
-	 * </p>
 	 * <!-- end-user-doc -->
 	 * <!-- begin-model-doc -->
 	 * Deprecated
@@ -441,8 +522,9 @@ public class DiagramElement extends DiagramNode {
 	public void setAutoContentsFilter(String newAutoContentsFilter) {
 		String oldAutoContentsFilter = autoContentsFilter;
 		autoContentsFilter = newAutoContentsFilter;
-		if (eNotificationRequired())
+		if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__AUTO_CONTENTS_FILTER, oldAutoContentsFilter, autoContentsFilter));
+		}
 	}
 
 	/**
@@ -473,7 +555,11 @@ public class DiagramElement extends DiagramNode {
 		position = newPosition;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__POSITION, oldPosition, newPosition);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
+			if (msgs == null) {
+				msgs = notification;
+			} else {
+				msgs.add(notification);
+			}
 		}
 		return msgs;
 	}
@@ -489,15 +575,20 @@ public class DiagramElement extends DiagramNode {
 	public void setPosition(Point newPosition) {
 		if (newPosition != position) {
 			NotificationChain msgs = null;
-			if (position != null)
+			if (position != null) {
 				msgs = ((InternalEObject)position).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__POSITION, null, msgs);
-			if (newPosition != null)
+			}
+			if (newPosition != null) {
 				msgs = ((InternalEObject)newPosition).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__POSITION, null, msgs);
+			}
 			msgs = basicSetPosition(newPosition, msgs);
-			if (msgs != null) msgs.dispatch();
+			if (msgs != null) {
+				msgs.dispatch();
+			}
 		}
-		else if (eNotificationRequired())
+		else if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__POSITION, newPosition, newPosition));
+		}
 	}
 
 	/**
@@ -528,7 +619,11 @@ public class DiagramElement extends DiagramNode {
 		size = newSize;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__SIZE, oldSize, newSize);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
+			if (msgs == null) {
+				msgs = notification;
+			} else {
+				msgs.add(notification);
+			}
 		}
 		return msgs;
 	}
@@ -544,15 +639,20 @@ public class DiagramElement extends DiagramNode {
 	public void setSize(Dimension newSize) {
 		if (newSize != size) {
 			NotificationChain msgs = null;
-			if (size != null)
+			if (size != null) {
 				msgs = ((InternalEObject)size).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__SIZE, null, msgs);
-			if (newSize != null)
+			}
+			if (newSize != null) {
 				msgs = ((InternalEObject)newSize).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__SIZE, null, msgs);
+			}
 			msgs = basicSetSize(newSize, msgs);
-			if (msgs != null) msgs.dispatch();
+			if (msgs != null) {
+				msgs.dispatch();
+			}
 		}
-		else if (eNotificationRequired())
+		else if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__SIZE, newSize, newSize));
+		}
 	}
 
 	/**
@@ -584,8 +684,9 @@ public class DiagramElement extends DiagramNode {
 	public void setDockArea(String newDockArea) {
 		String oldDockArea = dockArea;
 		dockArea = newDockArea;
-		if (eNotificationRequired())
+		if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__DOCK_AREA, oldDockArea, dockArea));
+		}
 	}
 
 	/**
@@ -616,7 +717,11 @@ public class DiagramElement extends DiagramNode {
 		bendpoints = newBendpoints;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__BENDPOINTS, oldBendpoints, newBendpoints);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
+			if (msgs == null) {
+				msgs = notification;
+			} else {
+				msgs.add(notification);
+			}
 		}
 		return msgs;
 	}
@@ -632,15 +737,20 @@ public class DiagramElement extends DiagramNode {
 	public void setBendpoints(BendpointList newBendpoints) {
 		if (newBendpoints != bendpoints) {
 			NotificationChain msgs = null;
-			if (bendpoints != null)
+			if (bendpoints != null) {
 				msgs = ((InternalEObject)bendpoints).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__BENDPOINTS, null, msgs);
-			if (newBendpoints != null)
+			}
+			if (newBendpoints != null) {
 				msgs = ((InternalEObject)newBendpoints).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__BENDPOINTS, null, msgs);
+			}
 			msgs = basicSetBendpoints(newBendpoints, msgs);
-			if (msgs != null) msgs.dispatch();
+			if (msgs != null) {
+				msgs.dispatch();
+			}
 		}
-		else if (eNotificationRequired())
+		else if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__BENDPOINTS, newBendpoints, newBendpoints));
+		}
 	}
 
 	/**
@@ -670,7 +780,11 @@ public class DiagramElement extends DiagramNode {
 		primaryLabelPosition = newPrimaryLabelPosition;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_POSITION, oldPrimaryLabelPosition, newPrimaryLabelPosition);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
+			if (msgs == null) {
+				msgs = notification;
+			} else {
+				msgs.add(notification);
+			}
 		}
 		return msgs;
 	}
@@ -686,15 +800,20 @@ public class DiagramElement extends DiagramNode {
 	public void setPrimaryLabelPosition(Point newPrimaryLabelPosition) {
 		if (newPrimaryLabelPosition != primaryLabelPosition) {
 			NotificationChain msgs = null;
-			if (primaryLabelPosition != null)
+			if (primaryLabelPosition != null) {
 				msgs = ((InternalEObject)primaryLabelPosition).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_POSITION, null, msgs);
-			if (newPrimaryLabelPosition != null)
+			}
+			if (newPrimaryLabelPosition != null) {
 				msgs = ((InternalEObject)newPrimaryLabelPosition).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_POSITION, null, msgs);
+			}
 			msgs = basicSetPrimaryLabelPosition(newPrimaryLabelPosition, msgs);
-			if (msgs != null) msgs.dispatch();
+			if (msgs != null) {
+				msgs.dispatch();
+			}
 		}
-		else if (eNotificationRequired())
+		else if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_POSITION, newPrimaryLabelPosition, newPrimaryLabelPosition));
+		}
 	}
 
 	/**
@@ -726,8 +845,9 @@ public class DiagramElement extends DiagramNode {
 	public void setBackground(String newBackground) {
 		String oldBackground = background;
 		background = newBackground;
-		if (eNotificationRequired())
+		if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__BACKGROUND, oldBackground, background));
+		}
 	}
 
 	/**
@@ -759,8 +879,9 @@ public class DiagramElement extends DiagramNode {
 	public void setOutline(String newOutline) {
 		String oldOutline = outline;
 		outline = newOutline;
-		if (eNotificationRequired())
+		if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__OUTLINE, oldOutline, outline));
+		}
 	}
 
 	/**
@@ -792,8 +913,9 @@ public class DiagramElement extends DiagramNode {
 	public void setFontColor(String newFontColor) {
 		String oldFontColor = fontColor;
 		fontColor = newFontColor;
-		if (eNotificationRequired())
+		if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__FONT_COLOR, oldFontColor, fontColor));
+		}
 	}
 
 	/**
@@ -825,8 +947,9 @@ public class DiagramElement extends DiagramNode {
 	public void setFontSize(Double newFontSize) {
 		Double oldFontSize = fontSize;
 		fontSize = newFontSize;
-		if (eNotificationRequired())
+		if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__FONT_SIZE, oldFontSize, fontSize));
+		}
 	}
 
 	/**
@@ -858,8 +981,9 @@ public class DiagramElement extends DiagramNode {
 	public void setLineWidth(Double newLineWidth) {
 		Double oldLineWidth = lineWidth;
 		lineWidth = newLineWidth;
-		if (eNotificationRequired())
+		if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__LINE_WIDTH, oldLineWidth, lineWidth));
+		}
 	}
 
 	/**
@@ -891,15 +1015,84 @@ public class DiagramElement extends DiagramNode {
 	public void setPrimaryLabelVisible(Boolean newPrimaryLabelVisible) {
 		Boolean oldPrimaryLabelVisible = primaryLabelVisible;
 		primaryLabelVisible = newPrimaryLabelVisible;
-		if (eNotificationRequired())
+		if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE, oldPrimaryLabelVisible, primaryLabelVisible));
+		}
+	}
+
+	/**
+	 * Returns the value of the '<em><b>Image</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <p>
+	 * If the meaning of the '<em>Image</em>' attribute isn't clear,
+	 * there really should be more of a description here...
+	 * </p>
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Image</em>' attribute.
+	 * @see #setImage(String)
+	 * @see org.osate.ge.diagram.DiagramPackage#getDiagramElement_Image()
+	 * @model dataType="org.eclipse.emf.ecore.xml.type.String"
+	 * @generated
+	 */
+	public String getImage() {
+		return image;
+	}
+
+	/**
+	 * Sets the value of the '{@link org.osate.ge.diagram.DiagramElement#getImage <em>Image</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Image</em>' attribute.
+	 * @see #getImage()
+	 * @generated
+	 */
+	public void setImage(String newImage) {
+		String oldImage = image;
+		image = newImage;
+		if (eNotificationRequired()) {
+			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__IMAGE, oldImage, image));
+		}
+	}
+
+	/**
+	 * Returns the value of the '<em><b>Show As Image</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <p>
+	 * If the meaning of the '<em>Show As Image</em>' attribute isn't clear,
+	 * there really should be more of a description here...
+	 * </p>
+	 * <!-- end-user-doc -->
+	 * @return the value of the '<em>Show As Image</em>' attribute.
+	 * @see #setShowAsImage(Boolean)
+	 * @see org.osate.ge.diagram.DiagramPackage#getDiagramElement_ShowAsImage()
+	 * @model
+	 * @generated
+	 */
+	public Boolean getShowAsImage() {
+		return showAsImage;
+	}
+
+	/**
+	 * Sets the value of the '{@link org.osate.ge.diagram.DiagramElement#getShowAsImage <em>Show As Image</em>}' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @param value the new value of the '<em>Show As Image</em>' attribute.
+	 * @see #getShowAsImage()
+	 * @generated
+	 */
+	public void setShowAsImage(Boolean newShowAsImage) {
+		Boolean oldShowAsImage = showAsImage;
+		showAsImage = newShowAsImage;
+		if (eNotificationRequired()) {
+			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__SHOW_AS_IMAGE, oldShowAsImage, showAsImage));
+		}
 	}
 
 	/**
 	 * Returns the value of the '<em><b>Content Filters</b></em>' containment reference.
 	 * <!-- begin-user-doc -->
 	 * <p>
-	 * If the meaning of the '<em>Content Filters</em>' attribute list isn't clear,
+	 * If the meaning of the '<em>Content Filters</em>' containment reference isn't clear,
 	 * there really should be more of a description here...
 	 * </p>
 	 * <!-- end-user-doc -->
@@ -923,7 +1116,11 @@ public class DiagramElement extends DiagramNode {
 		contentFilters = newContentFilters;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, oldContentFilters, newContentFilters);
-			if (msgs == null) msgs = notification; else msgs.add(notification);
+			if (msgs == null) {
+				msgs = notification;
+			} else {
+				msgs.add(notification);
+			}
 		}
 		return msgs;
 	}
@@ -939,48 +1136,20 @@ public class DiagramElement extends DiagramNode {
 	public void setContentFilters(ContentFilters newContentFilters) {
 		if (newContentFilters != contentFilters) {
 			NotificationChain msgs = null;
-			if (contentFilters != null)
+			if (contentFilters != null) {
 				msgs = ((InternalEObject)contentFilters).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, null, msgs);
-			if (newContentFilters != null)
+			}
+			if (newContentFilters != null) {
 				msgs = ((InternalEObject)newContentFilters).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, null, msgs);
+			}
 			msgs = basicSetContentFilters(newContentFilters, msgs);
-			if (msgs != null) msgs.dispatch();
+			if (msgs != null) {
+				msgs.dispatch();
+			}
 		}
-		else if (eNotificationRequired())
+		else if (eNotificationRequired()) {
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, newContentFilters, newContentFilters));
-	}
-
-	/**
-	 * Returns the value of the '<em><b>Id</b></em>' attribute.
-	 * <!-- begin-user-doc -->
-	 * <p>
-	 * If the meaning of the '<em>Id</em>' attribute isn't clear,
-	 * there really should be more of a description here...
-	 * </p>
-	 * <!-- end-user-doc -->
-	 * @return the value of the '<em>Id</em>' attribute.
-	 * @see #setId(Long)
-	 * @see org.osate.ge.diagram.DiagramPackage#getDiagramElement_Id()
-	 * @model id="true" dataType="org.eclipse.emf.ecore.xml.type.LongObject"
-	 * @generated
-	 */
-	public Long getId() {
-		return id;
-	}
-
-	/**
-	 * Sets the value of the '{@link org.osate.ge.diagram.DiagramElement#getId <em>Id</em>}' attribute.
-	 * <!-- begin-user-doc -->
-	 * <!-- end-user-doc -->
-	 * @param value the new value of the '<em>Id</em>' attribute.
-	 * @see #getId()
-	 * @generated
-	 */
-	public void setId(Long newId) {
-		Long oldId = id;
-		id = newId;
-		if (eNotificationRequired())
-			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__ID, oldId, id));
+		}
 	}
 
 	/**
@@ -1045,6 +1214,10 @@ public class DiagramElement extends DiagramNode {
 				return getLineWidth();
 			case DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE:
 				return getPrimaryLabelVisible();
+			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE:
+				return getImage();
+			case DiagramPackage.DIAGRAM_ELEMENT__SHOW_AS_IMAGE:
+				return getShowAsImage();
 			case DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS:
 				return getContentFilters();
 		}
@@ -1056,7 +1229,6 @@ public class DiagramElement extends DiagramNode {
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
 	public void eSet(int featureID, Object newValue) {
 		switch (featureID) {
@@ -1104,6 +1276,12 @@ public class DiagramElement extends DiagramNode {
 				return;
 			case DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE:
 				setPrimaryLabelVisible((Boolean)newValue);
+				return;
+			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE:
+				setImage((String)newValue);
+				return;
+			case DiagramPackage.DIAGRAM_ELEMENT__SHOW_AS_IMAGE:
+				setShowAsImage((Boolean)newValue);
 				return;
 			case DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS:
 				setContentFilters((ContentFilters)newValue);
@@ -1165,6 +1343,12 @@ public class DiagramElement extends DiagramNode {
 			case DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE:
 				setPrimaryLabelVisible(PRIMARY_LABEL_VISIBLE_EDEFAULT);
 				return;
+			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE:
+				setImage(IMAGE_EDEFAULT);
+				return;
+			case DiagramPackage.DIAGRAM_ELEMENT__SHOW_AS_IMAGE:
+				setShowAsImage(SHOW_AS_IMAGE_EDEFAULT);
+				return;
 			case DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS:
 				setContentFilters((ContentFilters)null);
 				return;
@@ -1210,6 +1394,10 @@ public class DiagramElement extends DiagramNode {
 				return LINE_WIDTH_EDEFAULT == null ? lineWidth != null : !LINE_WIDTH_EDEFAULT.equals(lineWidth);
 			case DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE:
 				return PRIMARY_LABEL_VISIBLE_EDEFAULT == null ? primaryLabelVisible != null : !PRIMARY_LABEL_VISIBLE_EDEFAULT.equals(primaryLabelVisible);
+			case DiagramPackage.DIAGRAM_ELEMENT__IMAGE:
+				return IMAGE_EDEFAULT == null ? image != null : !IMAGE_EDEFAULT.equals(image);
+			case DiagramPackage.DIAGRAM_ELEMENT__SHOW_AS_IMAGE:
+				return SHOW_AS_IMAGE_EDEFAULT == null ? showAsImage != null : !SHOW_AS_IMAGE_EDEFAULT.equals(showAsImage);
 			case DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS:
 				return contentFilters != null;
 		}
@@ -1223,7 +1411,9 @@ public class DiagramElement extends DiagramNode {
 	 */
 	@Override
 	public String toString() {
-		if (eIsProxy()) return super.toString();
+		if (eIsProxy()) {
+			return super.toString();
+		}
 
 		StringBuffer result = new StringBuffer(super.toString());
 		result.append(" (id: ");
@@ -1246,6 +1436,10 @@ public class DiagramElement extends DiagramNode {
 		result.append(lineWidth);
 		result.append(", primaryLabelVisible: ");
 		result.append(primaryLabelVisible);
+		result.append(", image: ");
+		result.append(image);
+		result.append(", showAsImage: ");
+		result.append(showAsImage);
 		result.append(')');
 		return result.toString();
 	}

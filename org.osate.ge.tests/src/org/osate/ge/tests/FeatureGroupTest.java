@@ -9,6 +9,7 @@ import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.osate.aadl2.AbstractType;
 import org.osate.aadl2.DirectionType;
 import org.osate.aadl2.FeatureGroup;
 import org.osate.aadl2.FeatureGroupType;
@@ -20,37 +21,36 @@ public class FeatureGroupTest {
 	@Before
 	public void setUp() {
 		bot.maximize();
-		bot.createNewProjectAndPackage();
+		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 	}
 
 	@After
 	public void tearDown() {
-		bot.deleteProject();
+		bot.deleteProject(ElementNames.projectName);
 	}
 
 	@Test
 	public void setFeatureClassifier() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.resize(editor, ElementNames.packageName, new Point(600, 600));
+		bot.resize(editor, new Point(600, 600), ElementNames.packageName);
 
-		bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(40, 40));
-		bot.renameElement(editor, ElementNames.abstractTypeName);
+		bot.createToolItemAndRename(editor, AbstractType.class, new Point(40, 40), ElementNames.abstractTypeName,
+				ElementNames.packageName);
 
-		bot.openDiagramFromContextMenu(editor, ElementNames.abstractTypeName, "Associated Diagram");
-		bot.resize(editor, ElementNames.abstractTypeName, new Point(200, 200));
+		bot.openAssociatedDiagramFromContextMenu(editor, ElementNames.abstractTypeName);
 
-		bot.createToolItem(editor, ElementNames.abstractTypeName, ToolTypes.featureGroup, new Point(30, 30));
-		bot.renameElement(editor, ElementNames.featureGroupName);
+		bot.resize(editor, new Point(200, 200), ElementNames.abstractTypeName);
 
-		bot.createToolItem(editor, ElementNames.packageName, ToolTypes.featureGroupType, new Point(25, 250));
-		bot.renameElement(editor, ElementNames.featureGroupTypeName);
+		bot.createToolItemAndRename(editor, FeatureGroup.class, new Point(30, 30), ElementNames.featureGroupName,
+				ElementNames.abstractTypeName);
+		bot.createToolItemAndRename(editor, FeatureGroupType.class, new Point(25, 250),
+				ElementNames.featureGroupTypeName, ElementNames.packageName);
 
-		bot.setElementOptionButtonInPropertiesView(editor, ElementNames.featureGroupName, "Properties", "AADL",
-				"Choose...");
+		bot.setElementOptionButtonInPropertiesView(editor, "AADL", "Choose...", ElementNames.featureGroupName);
+
 		final GraphitiShapeEditPart fgtGsep = (GraphitiShapeEditPart) bot
-				.findChild(editor, editor.getEditPart(ElementNames.packageName), ElementNames.featureGroupTypeName)
-				.get(0).part();
+				.findEditPart(editor, ElementNames.featureGroupTypeName).part();
 		final FeatureGroupType fgt = (FeatureGroupType) AgeGefBot.getBusinessObject(editor,
 				fgtGsep.getPictogramElement());
 		bot.clickTableOption(fgt.getQualifiedName());
@@ -72,8 +72,7 @@ public class FeatureGroupTest {
 	}
 
 	public boolean setFeatureDirection(final SWTBotGefEditor editor, final PictogramElement pe) {
-		bot.setElementOptionRadioInPropertiesView(editor, ElementNames.featureGroupName, "Properties", "AADL",
-				"Input");
+		bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Input", ElementNames.featureGroupName);
 		final FeatureGroup fg = (FeatureGroup) AgeGefBot.getBusinessObject(editor, pe);
 		return fg.getDirection() == DirectionType.IN;
 	}

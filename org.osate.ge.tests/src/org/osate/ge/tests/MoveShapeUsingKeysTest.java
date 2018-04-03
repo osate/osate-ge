@@ -14,6 +14,7 @@ import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.osate.aadl2.AbstractType;
 
 public class MoveShapeUsingKeysTest {
 	private final AgeGefBot bot = new AgeGefBot();
@@ -21,23 +22,25 @@ public class MoveShapeUsingKeysTest {
 	@Before
 	public void setUp() {
 		bot.maximize();
-		bot.createNewProjectAndPackage();
+		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 	}
 
 	@After
 	public void tearDown() {
-		bot.deleteProject();
+		bot.deleteProject(ElementNames.projectName);
 	}
 
 	@Test
 	public void setFeatureDirection() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.resize(editor, ElementNames.packageName, new Point(600, 600));
+		bot.resize(editor, new Point(600, 600), ElementNames.packageName);
 
-		bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(25, 25));
-		bot.renameElement(editor, ElementNames.abstractTypeName);
-		bot.resize(editor, ElementNames.abstractTypeName, new Point(300, 300));
+		// bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(25, 25));
+		// bot.renameElement(editor, ElementNames.abstractTypeName);
+		bot.createToolItemAndRename(editor, AbstractType.class, new Point(25, 25), ElementNames.abstractTypeName,
+				ElementNames.packageName);
+		bot.resize(editor, new Point(300, 300), ElementNames.abstractTypeName);
 
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart)editor.getSWTBotGefViewer().getEditPart(ElementNames.abstractTypeName).part();
 		final PictogramElement pe = gsep.getPictogramElement();
