@@ -200,9 +200,8 @@ public class AgeGefBot {
 				// TODO Auto-generated method stub
 
 			}
-
 		});
-		bot.radio("Graphical Editor").click();
+		bot.radio("Diagram Editor").click();
 		bot.button("Finish").click();
 		bot.button("OK").click();
 	}
