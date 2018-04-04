@@ -170,14 +170,14 @@ public class AgeGefBot {
 		}
 
 		// Create AADL Package
-		createAADLPackage(projectName, packageName);
+		//createAADLPackage(projectName, packageName);
 
 		// Close editor for open test
-		bot.gefEditor(packageName + ".aadl_diagram").close();
+	//	bot.gefEditor(packageName + ".aadl_diagram").close();
 
-		bot.tree().expandNode(new String[] { projectName }).getNode(packageName + ".aadl")
-				.click();
-		bot.tree().contextMenu("Open").click();
+	//	bot.tree().expandNode(new String[] { projectName }).getNode(packageName + ".aadl")
+		// .click();
+	//	bot.tree().contextMenu("Open").click();
 	}
 
 	public void createAADLPackage(final String projectName, final String packageName) {
