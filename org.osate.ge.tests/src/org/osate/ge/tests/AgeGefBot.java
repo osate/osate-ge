@@ -61,6 +61,11 @@ import org.osate.ge.internal.graphiti.diagram.PropertyUtil;
 import org.osate.ge.internal.ui.dialogs.ClassifierOperationDialog;
 
 public class AgeGefBot {
+
+	public AgeGefBot() {
+		SWTBotPreferences.TIMEOUT = 10000;
+	}
+
 	public static class AgeSWTBotGefEditor extends SWTBotGefEditor {
 		final Set<SWTBotGefConnectionEditPart> connectionEditParts = new HashSet<>();
 
@@ -156,7 +161,6 @@ public class AgeGefBot {
 //	}
 
 	public void createNewProjectAndPackage(final String projectName, final String packageName) {
-		SWTBotPreferences.TIMEOUT = 10000;
 		closeWelcomePage();
 		bot.menu("Other...", true).click();
 		bot.tree().getTreeItem("AADL").expand().getNode("AADL Project").click();
@@ -170,7 +174,7 @@ public class AgeGefBot {
 		}
 
 		// Create AADL Package
-		//createAADLPackage(projectName, packageName);
+		createAADLPackage(projectName, packageName);
 
 		// Close editor for open test
 	//	bot.gefEditor(packageName + ".aadl_diagram").close();
@@ -183,6 +187,21 @@ public class AgeGefBot {
 	public void createAADLPackage(final String projectName, final String packageName) {
 		bot.tree().select(projectName).contextMenu("AADL Package").click();
 		bot.text().setText(packageName);
+		bot.widget(new BaseMatcher<Widget>() {
+
+			@Override
+			public boolean matches(Object item) {
+				System.err.println(item + " item");
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				// TODO Auto-generated method stub
+
+			}
+
+		});
 		bot.radio("Graphical Editor").click();
 		bot.button("Finish").click();
 		bot.button("OK").click();
