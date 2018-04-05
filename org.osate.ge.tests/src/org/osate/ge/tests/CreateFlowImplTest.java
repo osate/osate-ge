@@ -32,18 +32,6 @@ public class CreateFlowImplTest {
 		bot.deleteProject(ElementNames.projectName);
 	}
 
-//	@Test
-//	public void test() {
-//		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-//		// bot.clickElements(editor, new String[] { ElementNames.packageName });
-//
-//		bot.createAbstractTypeAndImplementation(ElementNames.packageName);
-//		bot.clickElements(editor, new String[] { ElementNames.abstractTypeName + ".impl" });
-//		bot.clickToolbarButtonWithTooltip("Create Flow Implementation");
-//		// Drag dialog so it is not covering diagram for element selection
-//		bot.dragShellAwayFromEditor(editor, "Create Flow Implementation");
-//	}
-
 	@Test
 	public void createFlowImpl() {
 		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
@@ -170,10 +158,6 @@ public class CreateFlowImplTest {
 
 		bot.setFocusShell("Create Flow Implementation");
 		bot.clickButton("OK");
-
-		bot.clickToolbarComboWithId(FlowContributionItem.highlightFlow);
-
-		bot.clickToolbarComboWithId(FlowContributionItem.highlightFlow);
 
 		bot.clickCombo(FlowContributionItem.highlightFlow, "sys.impl2::fsrc");
 	}
