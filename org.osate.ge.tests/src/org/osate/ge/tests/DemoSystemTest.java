@@ -176,7 +176,7 @@ public class DemoSystemTest {
 
 		// Add binding
 		demoSysImplEditor.select(demoSysImpl);
-		bot.getToolbarButtonWithTooltip("Bind...").click();
+		bot.clickToolbarButtonWithTooltip("Bind...");
 		bot.waitUntilShellIsActive("Bind");
 		bot.clickCombo(SetBindingTool.setBindingIdentifier, "Actual_Connection_Binding");
 		demoSysImplEditor.select(bot.findEditPart(demoSysImplEditor, "cpu2"));

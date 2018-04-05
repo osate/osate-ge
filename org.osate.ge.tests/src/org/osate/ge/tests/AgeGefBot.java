@@ -29,6 +29,7 @@ import org.eclipse.graphiti.ui.platform.GraphitiShapeEditPart;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 import org.eclipse.swtbot.eclipse.finder.SWTWorkbenchBot;
 import org.eclipse.swtbot.eclipse.finder.widgets.SWTBotEditor;
@@ -43,7 +44,6 @@ import org.eclipse.swtbot.swt.finder.waits.Conditions;
 import org.eclipse.swtbot.swt.finder.waits.DefaultCondition;
 import org.eclipse.swtbot.swt.finder.waits.ICondition;
 import org.eclipse.swtbot.swt.finder.widgets.SWTBotShell;
-import org.eclipse.swtbot.swt.finder.widgets.SWTBotToolbarButton;
 import org.eclipse.swtbot.swt.finder.widgets.SWTBotTree;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.PlatformUI;
@@ -80,15 +80,20 @@ public class AgeGefBot {
 			return connectionEditParts.stream().collect(Collectors.toList());
 		}
 
-		public List<SWTBotGefConnectionEditPart> childConnections(final SWTBotGefEditPart editPart) {
+		public List<SWTBotGefConnectionEditPart> childConnections(final SWTBotGefEditPart editPartParent) {
 			connectionEditParts.clear();
-			findConnectionEditParts(editPart);
+			for (final SWTBotGefEditPart editPart : editPartParent.children()) {
+				System.err.println(editPart + " editPart");
+				addConnectionEditPart.accept(editPart);
+			}
 			return connectionEditParts.stream().collect(Collectors.toList());
 		}
 
 		private void findConnectionEditParts(final SWTBotGefEditPart swtBotGefEditPart) {
-			for (final SWTBotGefEditPart editPart : swtBotGefEditPart.children()) {
-				findConnectionEditParts(editPart);
+			final List<SWTBotGefEditPart> children = swtBotGefEditPart.children();
+			final Iterator<SWTBotGefEditPart> it = children.iterator();
+			while (it.hasNext()) {
+				findConnectionEditParts(it.next());
 			}
 
 			addConnectionEditPart.accept(swtBotGefEditPart);
@@ -687,6 +692,8 @@ public class AgeGefBot {
 		} catch (final AWTException e) {
 			throw new RuntimeException(e);
 		}
+
+		bot.sleep(1000);
 	}
 
 	public void clickButtonWithId(final String id) {
@@ -778,7 +785,6 @@ public class AgeGefBot {
 	}
 
 	public void clickElements(final SWTBotGefEditor editor, final String[]... elementPaths) {
-
 		final List<GraphitiShapeEditPart> gseps = new ArrayList<>();
 		for (final String[] elementPath : elementPaths) {
 			gseps.add((GraphitiShapeEditPart) findEditPart(editor, elementPath).part());
@@ -790,6 +796,7 @@ public class AgeGefBot {
 
 			editor.getWidget().getDisplay().asyncExec(() -> {
 				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
+
 				final Iterator<GraphitiShapeEditPart> it = gseps.iterator();
 				Rectangle bounds = it.next().getFigure().getBounds();
 				Point point = PlatformUI.getWorkbench().getDisplay()
@@ -818,13 +825,72 @@ public class AgeGefBot {
 		} catch (AWTException e) {
 			e.printStackTrace();
 		}
+
+		bot.sleep(1000);
 	}
 
 	public static String qualifiedName(final String projectName, final String classifierName) {
 		return projectName + "::" + classifierName;
 	}
 
-	public SWTBotToolbarButton getToolbarButtonWithTooltip(final String tooltip) {
-		return bot.toolbarButtonWithTooltip(tooltip);
+	public void clickToolbarButtonWithTooltip(final String tooltip) {
+		bot.toolbarButtonWithTooltip(tooltip).click();
+	}
+
+	// Drag dialog down and to the left
+	public void dragShellAwayFromEditor(final AgeSWTBotGefEditor implEditor, final String shellTitle) {
+		try {
+			final Robot robot = new Robot();
+			robot.setAutoDelay(50);
+			final Display display = Display.getDefault();
+			display.syncExec(() -> {
+				final int y = implEditor.getWidget().getDisplay().getActiveShell().getBounds().height;
+				final Shell shell = bot.shell(shellTitle).widget;
+				shell.setFocus();
+				final org.eclipse.swt.graphics.Rectangle outer = shell.getBounds();
+				final org.eclipse.swt.graphics.Rectangle inner = shell.getClientArea();
+				robot.mouseMove(outer.x + outer.width / 2, outer.y + (outer.height - inner.height) / 2);
+				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+				robot.mouseMove(outer.width / 2, y / 2 - outer.height / 2);
+				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+			});
+
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public List<SWTBotGefConnectionEditPart> getNewConnectionEditPart(final AgeSWTBotGefEditor editor,
+			final Class<?> clazz) {
+		final AgeFeatureProvider ageFeatureProvider = getAgeFeatureProvider(editor);
+		return editor.allConnections().stream().filter(editPart -> {
+			final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) editPart.part();
+			final Object bo = ageFeatureProvider.getBusinessObjectForPictogramElement(gcep.getPictogramElement());
+			if (bo.getClass() == clazz) {
+				return ((NamedElement) bo).getName().contains("new_");
+			}
+
+			return false;
+		}).collect(Collectors.toList());
+	}
+
+	public List<SWTBotGefConnectionEditPart> getConnectionEditParts(final AgeSWTBotGefEditor editor,
+			final String connectionName, final String... editPartPath) {
+		final AgeFeatureProvider ageFeatureProvider = getAgeFeatureProvider(editor);
+		final SWTBotGefEditPart parent = findEditPart(editor, editPartPath);
+
+		return editor.childConnections(parent).stream().filter(editPart -> {
+			final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) editPart.part();
+			final Object bo = ageFeatureProvider.getBusinessObjectForPictogramElement(gcep.getPictogramElement());
+			if (bo instanceof NamedElement) {
+				return ((NamedElement) bo).getName().equalsIgnoreCase(connectionName);
+			}
+
+			return false;
+		}).collect(Collectors.toList());
+	}
+
+	public void setFocusShell(final String string) {
+		bot.shell(string).setFocus();
 	}
 }

@@ -88,6 +88,8 @@ public class CreateConnectionTest {
 			return false;
 		}).collect(Collectors.toList()).get(0);
 
+		bot.selectTabbedPropertySection("Appearance");
+
 		editor.select(connectionEditPart);
 		final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) connectionEditPart.part();
 		bot.clickConnection(editor, gcep.getConnectionFigure());
@@ -98,7 +100,6 @@ public class CreateConnectionTest {
 		bot.renameConnection(editor, gcep, ElementNames.featureConnection);
 
 		editor.select(ElementNames.featureConnection);
-		bot.selectTabbedPropertySection("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Hide");
 
 		final FeatureConnection fc = (FeatureConnection) ageFeatureProvider

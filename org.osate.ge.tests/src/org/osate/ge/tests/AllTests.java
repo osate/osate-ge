@@ -7,7 +7,7 @@ import org.junit.runners.Suite.SuiteClasses;
 // TODO fix assert statements
 @RunWith(Suite.class)
 @SuiteClasses({
-		OpenAADLInstanceModelTest.class
+		CreateFlowImplTest.class
 		// CreateConnectionTest.class
 		// InstantiateAndOpenImplTest.class
 //		CreateNewAADLPackageTest.class, OpenExistingAADLModelTest.class, RenameClassifierTest.class,
