@@ -30,6 +30,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Widget;
 import org.eclipse.swtbot.eclipse.finder.SWTWorkbenchBot;
 import org.eclipse.swtbot.eclipse.finder.widgets.SWTBotEditor;
@@ -83,7 +84,6 @@ public class AgeGefBot {
 		public List<SWTBotGefConnectionEditPart> childConnections(final SWTBotGefEditPart editPartParent) {
 			connectionEditParts.clear();
 			for (final SWTBotGefEditPart editPart : editPartParent.children()) {
-				System.err.println(editPart + " editPart");
 				addConnectionEditPart.accept(editPart);
 			}
 			return connectionEditParts.stream().collect(Collectors.toList());
@@ -192,20 +192,6 @@ public class AgeGefBot {
 	public void createAADLPackage(final String projectName, final String packageName) {
 		bot.tree().select(projectName).contextMenu("AADL Package").click();
 		bot.text().setText(packageName);
-		bot.widget(new BaseMatcher<Widget>() {
-
-			@Override
-			public boolean matches(Object item) {
-				System.err.println(item + " item");
-				return true;
-			}
-
-			@Override
-			public void describeTo(Description description) {
-				// TODO Auto-generated method stub
-
-			}
-		});
 		bot.radio("Diagram Editor").click();
 		bot.button("Finish").click();
 		bot.button("OK").click();
@@ -777,6 +763,27 @@ public class AgeGefBot {
 			final String implName, final String typeName, final String impl, final String packageName) {
 		createToolItem(editor, impl, point, packageName);
 		waitUntilShellIsActive("Create Component Implementation");
+
+		bot.widget(new BaseMatcher<Widget>() {
+
+			@Override
+			public boolean matches(Object item) {
+				System.err.println(item + " item");
+				if (item instanceof Text) {
+					final Text text = (Text) item;
+					System.err.println(text.getData() + " getData");
+					System.err.println(text.getData("org.eclipse.swtbot.widget.key") + " AA");
+				}
+				return true;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				// TODO Auto-generated method stub
+
+			}
+		});
+
 		setTextWithId(ClassifierOperationDialog.primaryPartIdentifier, implName);
 		clickRadio("New Component Type");
 		setTextWithId(ClassifierOperationDialog.baseValueIdentifier, typeName);
