@@ -763,7 +763,7 @@ public class AgeGefBot {
 			final String implName, final String typeName, final String impl, final String packageName) {
 		createToolItem(editor, impl, point, packageName);
 		waitUntilShellIsActive("Create Component Implementation");
-
+		bot.shell("Create Component Implementation").setFocus();
 		bot.widget(new BaseMatcher<Widget>() {
 
 			@Override
