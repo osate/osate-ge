@@ -2351,9 +2351,13 @@
          point="org.eclipse.ui.newWizards">
       <wizard
             category="org.osate.Wizard.category.ID"
-            class="org.osate.ge.internal.ui.wizards.NewDiagramWizard"
+            class="org.osate.ge.internal.ui.wizards.NewDiagramWizardFactory"
+            icon="icons/tango/x-office-drawing.png"
             id="org.osate.ge.newDiagramWizard"
             name="AADL Diagram">
+         <description>
+            Create a new AADL diagram
+         </description>
          <selection
                class="org.eclipse.core.resources.IResource">
          </selection>

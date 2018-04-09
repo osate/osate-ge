@@ -36,10 +36,6 @@ import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.ListDialog;
-import org.osate.aadl2.AadlPackage;
-import org.osate.aadl2.Classifier;
-import org.osate.aadl2.NamedElement;
-import org.osate.aadl2.instance.SystemInstance;
 import org.osate.ge.DiagramType;
 import org.osate.ge.EmfContainerProvider;
 import org.osate.ge.internal.AgeDiagramProvider;
@@ -51,8 +47,6 @@ import org.osate.ge.internal.diagram.runtime.DiagramModification;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
 import org.osate.ge.internal.diagram.runtime.DiagramSerialization;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
-import org.osate.ge.internal.diagram.runtime.types.PackageDiagramType;
-import org.osate.ge.internal.diagram.runtime.types.StructureDiagramType;
 import org.osate.ge.internal.diagram.runtime.types.UnrecognizedDiagramType;
 import org.osate.ge.internal.indexing.SavedDiagramIndex;
 import org.osate.ge.internal.indexing.SavedDiagramIndexInvalidator;
@@ -60,6 +54,7 @@ import org.osate.ge.internal.services.DiagramService;
 import org.osate.ge.internal.services.ExtensionRegistryService;
 import org.osate.ge.internal.services.ReferenceService;
 import org.osate.ge.internal.ui.dialogs.CreateDiagramDialog;
+import org.osate.ge.internal.ui.dialogs.DefaultCreateDiagramModel;
 import org.osate.ge.internal.ui.editor.AgeDiagramBehavior;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 import org.osate.ge.internal.ui.util.EditorUtil;
@@ -67,8 +62,6 @@ import org.osate.ge.internal.ui.util.SelectionUtil;
 import org.osate.ge.internal.util.BusinessObjectProviderHelper;
 import org.osate.ge.internal.util.Log;
 import org.osate.ge.internal.util.NonUndoableToolCommand;
-
-import com.google.common.collect.ImmutableCollection;
 
 public class DefaultDiagramService implements DiagramService {
 	private static final QualifiedName LEGACY_PROPERTY_NAME_MODIFICATION_TIMESTAMP = new QualifiedName("org.osate.ge", "diagram_name_modification_stamp");
@@ -264,89 +257,62 @@ public class DefaultDiagramService implements DiagramService {
 
 	@Override
 	public IFile createDiagram(final Object contextBo) {
-		final IProject project = Objects.requireNonNull(getProject(contextBo), "Unable to get project for business object: " + contextBo);
+		final IProject project = Objects.requireNonNull(getProject(contextBo),
+				"Unable to get project for business object: " + contextBo);
 
 		// Prompt to determine the filepath and diagram type.
-		final CreateDiagramDialog.Model<DiagramType> createDiagramModel = new CreateDiagramDialog.Model<DiagramType>() {
-			@Override
-			public ImmutableCollection<DiagramType> getDiagramTypes() {
-				return extRegistry.getApplicableDiagramTypes(contextBo);
-			}
-
-			@Override
-			public String getDiagramTypeName(DiagramType diagramType) {
-				return diagramType.getName();
-			}
-
-			@Override
-			public IProject getProject() {
-				return project;
-			}
-
-			@Override
-			public String getDefaultName() {
-				if(contextBo instanceof NamedElement) {
-					return ((NamedElement) contextBo).getQualifiedName().replaceAll("::|:|\\.", "_");
-				} else {
-					return null;
-				}
-			}
-
-			@Override
-			public DiagramType getDefaultDiagramType() {
-				if (contextBo instanceof AadlPackage) {
-					return extRegistry.getDiagramTypeById(PackageDiagramType.ID).orElse(null);
-				} else if (contextBo instanceof Classifier || contextBo instanceof SystemInstance) {
-					return extRegistry.getDiagramTypeById(StructureDiagramType.ID).orElse(null);
-				} else {
-					return null;
-				}
-			}
-		};
-
+		final CreateDiagramDialog.Model<DiagramType> createDiagramModel = new DefaultCreateDiagramModel(extRegistry,
+				project, contextBo);
 		final CreateDiagramDialog.Result<DiagramType> result = CreateDiagramDialog.show(null, createDiagramModel);
 		if (result == null) {
 			return null;
 		}
 
+		createDiagram(result.getDiagramFile(), result.getDiagramType(), contextBo);
+
+		return result.getDiagramFile();
+	}
+
+	@Override
+	public void createDiagram(final IFile diagramFile, final DiagramType diagramType, final Object contextBo) {
 		// Create an AgeDiagram object. This object doesn't have to be completely valid. It just needs to be able to be written.
 		final AgeDiagram diagram = new AgeDiagram(0);
 
 		// Build diagram configuration
-		final CanonicalBusinessObjectReference contextBoCanonicalRef = Objects.requireNonNull(referenceService.getCanonicalReference(contextBo), "Unable to build canonical reference for business object: " + contextBo);
+		final CanonicalBusinessObjectReference contextBoCanonicalRef = contextBo == null ? null
+				: Objects.requireNonNull(
+						referenceService.getCanonicalReference(contextBo),
+						"Unable to build canonical reference for business object: " + contextBo);
 		diagram.modify("Configure Diagram", m -> {
-			m.setDiagramConfiguration(
-					new DiagramConfigurationBuilder(result.getDiagramType(), true)
-					.setContextBoReference(contextBoCanonicalRef).connectionPrimaryLabelsVisible(false)
-					.build());
+			m.setDiagramConfiguration(new DiagramConfigurationBuilder(diagramType, true)
+					.setContextBoReference(contextBoCanonicalRef).connectionPrimaryLabelsVisible(false).build());
 
 		});
 
+		if(contextBo != null) {
+			// Create a root diagram element for the context which will be set to manual.
+			// This has the benefit that the root element will be checked when the user configures the diagram.
+			final RelativeBusinessObjectReference contextBoRelRef = Objects.requireNonNull(
+					referenceService.getRelativeReference(contextBo),
+					"Unable to build relative reference for business object: " + contextBo);
+			diagram.modify("Set Context as Manual", m -> {
+				final DiagramElement contextElement = new DiagramElement(diagram, contextBo, null, contextBoRelRef);
+				m.setManual(contextElement, true);
+				m.addElement(contextElement);
+				m.setContentFilters(contextElement,
+						diagramType.getApplicableDefaultContentFilters(contextBo, extRegistry));
+			});
+		}
 
-		// Create a root diagram element for the context which will be set to manual.
-		// This has the benefit that the root element will be checked when the user configures the diagram.
-		final RelativeBusinessObjectReference contextBoRelRef = Objects.requireNonNull(referenceService.getRelativeReference(contextBo), "Unable to build relative reference for business object: " + contextBo);
-		diagram.modify("Set Context as Manual", m -> {
-			final DiagramElement contextElement = new DiagramElement(diagram, contextBo, null, contextBoRelRef);
-			m.setManual(contextElement, true);
-			m.addElement(contextElement);
-			m.setContentFilters(contextElement,
-					result.getDiagramType().getApplicableDefaultContentFilters(contextBo, extRegistry));
-		});
 
-		// Determine the filename to use for the new diagram
-		final IFile newDiagramFile = result.getDiagramFile();
-
-		final URI newDiagramUri = URI.createPlatformResourceURI(newDiagramFile.getFullPath().toString(), true);
-		DiagramSerialization.write(project, diagram, newDiagramUri);
+		final URI newDiagramUri = URI.createPlatformResourceURI(diagramFile.getFullPath().toString(), true);
+		DiagramSerialization.write(diagramFile.getProject(), diagram, newDiagramUri);
 
 		try {
-			newDiagramFile.refreshLocal(IResource.DEPTH_INFINITE, null);
+			diagramFile.refreshLocal(IResource.DEPTH_INFINITE, null);
 		} catch (final CoreException e) {
 			throw new RuntimeException(e);
 		}
-
-		return newDiagramFile;
 	}
 
 	/**

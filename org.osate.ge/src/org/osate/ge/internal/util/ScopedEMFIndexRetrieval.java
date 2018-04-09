@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IPath;
@@ -114,4 +116,13 @@ public class ScopedEMFIndexRetrieval {
 		return resourceDescriptions;
 	}
 
+	/**
+	 * Returns the EObject of the specified type which are contained in the specified project
+	 */
+	public static Collection<IEObjectDescription> getContainedEObjectsByType(final IProject project,
+			final EClass type) {
+		return calculateResourceDescriptions(Collections.singleton(project)).stream()
+				.flatMap(rd -> StreamSupport.stream(rd.getExportedObjectsByType(type).spliterator(), false))
+				.collect(Collectors.toList());
+	}
 }
