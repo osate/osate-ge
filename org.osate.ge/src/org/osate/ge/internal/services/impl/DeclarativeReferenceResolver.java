@@ -82,15 +82,32 @@ public class DeclarativeReferenceResolver {
 		public AadlPackage getAadlPackage(final String packageName) {
 			final String lowerCasePackageName = packageName.toLowerCase();
 			AadlPackageReference pkgRef = packageNameToPackageMap.get(lowerCasePackageName);
+			final AadlPackage pkg;
 			if(pkgRef == null) {
 				pkgRef = findAadlPackage(lowerCasePackageName, getCachedResourceDescriptions(), aadlResourceService);
-				if (pkgRef != null) {
+				if (pkgRef == null) {
+					return null;
+				}
+
+				pkg = pkgRef.getAadlPackage();
+
+				// If the package is valid. Store the reference
+				if (pkg != null) {
 					// Store a reference to the package in the cache if the reference was valid
 					packageNameToPackageMap.put(lowerCasePackageName, pkgRef);
 				}
+
+			} else {
+				pkg = pkgRef.getAadlPackage();
+
+				// Remove the package reference if the package is not valid.
+				if (pkg == null) {
+					packageNameToPackageMap.remove(lowerCasePackageName);
+				}
 			}
 
-			return pkgRef == null ? null : pkgRef.getAadlPackage();
+			return pkg;
+
 		}
 
 		/**

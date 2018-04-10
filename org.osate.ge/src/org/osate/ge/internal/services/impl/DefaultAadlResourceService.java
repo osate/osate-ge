@@ -52,10 +52,19 @@ public class DefaultAadlResourceService implements AadlResourceService {
 		public AadlPackage getAadlPackage() {
 			if (pkg == null) {
 				final WeakPackageReference weakRef = getWeakReference();
-				final EObject eobj = resourceSet.getEObject(elementUri, true);
+				EObject eobj = null;
+				try {
+					eobj = resourceSet.getEObject(elementUri, true);
+				} catch (final RuntimeException ex) {
+					// Unable to load resource
+					// Ignore the exception. The null EObject will reset the resource.
+				}
+
 				if (eobj instanceof AadlPackage) {
 					pkg = (AadlPackage) eobj;
 					weakRef.resource = pkg.eResource();
+				} else {
+					weakRef.resource = null;
 				}
 			}
 
