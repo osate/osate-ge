@@ -144,7 +144,7 @@ public class DiagramConfigurationDialog {
 			final Label contextBoLabel = new Label(container, SWT.NONE);
 			final String contextBoDesc;
 			if (diagramConfigBuilder.getContextBoReference() == null) {
-				contextBoDesc = "<none>";
+				contextBoDesc = "<None>";
 			} else {
 				final Object contextBo = model.getBusinessObject(diagramConfigBuilder.getContextBoReference());
 				if (contextBo == null) {

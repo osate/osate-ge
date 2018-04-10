@@ -262,10 +262,7 @@ public class DefaultReferenceService implements ReferenceService {
 
 	@Override
 	public String getLabel(final CanonicalBusinessObjectReference ref, final IProject project) {
-		if (ref == null) {
-			return "<None>";
-		}
-
+		Objects.requireNonNull(ref, "ref must not be null");
 		Objects.requireNonNull(project, "project must not be null");
 
 		try {
