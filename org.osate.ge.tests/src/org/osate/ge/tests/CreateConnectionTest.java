@@ -38,28 +38,29 @@ public class CreateConnectionTest {
 	@Test
 	public void createConnection() {
 		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.resize(editor, new Point(100, 100), ElementNames.abstractTypeName);
+		bot.resizeEditPart(editor, new Point(150, 150), ElementNames.abstractTypeName);
 		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractFeature.class), new Point(15, 15),
 				ElementNames.abstractTypeName);
 		bot.renameElement(editor, ElementNames.abstractFeatureNewName);
 		bot.openPropertiesView(editor, ElementNames.abstractTypeName);
 
-		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractFeature.class), new Point(15, 70),
+		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractFeature.class), new Point(100, 100),
 				ElementNames.abstractTypeName);
 		bot.renameElement(editor, ElementNames.abstractFeatureNewName2);
 
 		final String abstractImplName = ElementNames.abstractTypeName + ".impl";
-		bot.resize(editor, new Point(400, 400), abstractImplName);
+		bot.resizeEditPart(editor, new Point(400, 400), abstractImplName);
 
 		bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Output", ElementNames.abstractTypeName,
 				ElementNames.abstractFeatureNewName2);
-		bot.executeContextMenuCommand(editor, abstractImplName,
-				AgeGefBot.allFilters);
+		bot.executeContextMenuCommand(editor, abstractImplName, AgeGefBot.allFilters);
 
 		createSubcomponents(editor, AbstractSubcomponent.class, abstractImplName);
 
-		bot.executeContextMenuCommand(editor, ElementNames.abstractSubcomponentName, AgeGefBot.allFilters);
-		bot.executeContextMenuCommand(editor, ElementNames.abstractSubcomponentName2, AgeGefBot.allFilters);
+		// Show children of subcomponents
+		bot.clickElements(editor, new String[] { abstractImplName, ElementNames.abstractSubcomponentName },
+				new String[] { abstractImplName, ElementNames.abstractSubcomponentName2 });
+		editor.clickContextMenu(AgeGefBot.allFilters);
 
 		final SWTBotGefEditPart subcomponent = editor.getEditPart(ElementNames.abstractSubcomponentName);
 		// Find in feature
@@ -88,28 +89,27 @@ public class CreateConnectionTest {
 			return false;
 		}).collect(Collectors.toList()).get(0);
 
-		bot.selectTabbedPropertySection("Appearance");
-
+		// Show connection label for renaming
 		editor.select(connectionEditPart);
-		final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) connectionEditPart.part();
-		bot.clickConnection(editor, gcep.getConnectionFigure());
-
 		bot.selectTabbedPropertySection("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
-		bot.renameConnection(editor, gcep, ElementNames.featureConnection);
+		// Rename
+		bot.renameConnection(editor, connectionEditPart, ElementNames.featureConnection);
 
+		// Hide label
 		editor.select(ElementNames.featureConnection);
+		bot.selectTabbedPropertySection("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Hide");
 
-		final FeatureConnection fc = (FeatureConnection) ageFeatureProvider
-				.getBusinessObjectForPictogramElement(gcep.getPictogramElement());
+		// Assert
+		final FeatureConnection fc = (FeatureConnection) ageFeatureProvider.getBusinessObjectForPictogramElement(
+				((GraphitiConnectionEditPart) connectionEditPart.part()).getPictogramElement());
 		Assert.assertTrue(fc.getName().equalsIgnoreCase(ElementNames.featureConnection));
 	}
 
 	private void createSubcomponents(final SWTBotGefEditor editor, final Class<?> clazz, final String parent) {
-		bot.createToolItemAndRename(editor, clazz, new Point(200, 100),
-				ElementNames.abstractSubcomponentName, parent);
+		bot.createToolItemAndRename(editor, clazz, new Point(200, 100), ElementNames.abstractSubcomponentName, parent);
 		bot.createToolItemAndRename(editor, clazz, new Point(120, 250), ElementNames.abstractSubcomponentName2, parent);
 
 		bot.openPropertiesView(editor, ElementNames.abstractSubcomponentName);
