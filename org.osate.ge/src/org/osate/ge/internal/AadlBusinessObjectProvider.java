@@ -76,19 +76,17 @@ public class AadlBusinessObjectProvider {
 		// only have access to global services and not diagram specific services.
 		if (bo instanceof IProject) { // Special handling for project
 			final IProject project = (IProject) bo;
-			System.err.println(bo);
-
 			Stream.Builder<Object> packages = Stream.builder();
 
 			final ProjectReferenceService projectReferenceService = refService.getProjectReferenceService(project);
 
 			for (final IEObjectDescription desc : ScopedEMFIndexRetrieval.getAllEObjectsByType(
 					project, Aadl2Factory.eINSTANCE.getAadl2Package().getAadlPackage())) {
-				System.err.println("TEST: " + desc);
+				// System.err.println("TEST: " + desc);
 				final String pkgQualifiedName = desc.getQualifiedName().toString("::");
 				final Object resolvedPackage = projectReferenceService
 						.resolve(DeclarativeReferenceBuilder.buildPackageCanonicalReference(pkgQualifiedName));
-				System.err.println("MORE: " + pkgQualifiedName + " : " + resolvedPackage);
+				// System.err.println("MORE: " + pkgQualifiedName + " : " + resolvedPackage);
 				// TODO: Need to work with contributed packages?
 				if (resolvedPackage != null) {
 					packages.add(resolvedPackage);
