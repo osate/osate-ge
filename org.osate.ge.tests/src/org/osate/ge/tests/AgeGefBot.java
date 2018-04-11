@@ -221,6 +221,7 @@ public class AgeGefBot {
 		editor.setFocus();
 		createToolItem(editor, toolType, point, parentName);
 		waitUntilShellIsActive("Create Component Implementation");
+		bot.shell("Create Component Implementation").setFocus();
 		setText(elementName);
 		printWidgets();
 		clickRadio("Existing");
