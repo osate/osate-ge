@@ -30,6 +30,7 @@ import org.eclipse.graphiti.ui.platform.GraphitiShapeEditPart;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 import org.eclipse.swtbot.eclipse.finder.SWTWorkbenchBot;
 import org.eclipse.swtbot.eclipse.finder.widgets.SWTBotEditor;
@@ -294,6 +295,36 @@ public class AgeGefBot {
 				return !editor.editParts(new NewElementMatcher(editor)).isEmpty();
 			};
 		}, 5000);
+	}
+
+	public List<SWTBotGefConnectionEditPart> getNewConnectionEditPart(final AgeSWTBotGefEditor editor,
+			final Class<?> clazz) {
+		final AgeFeatureProvider ageFeatureProvider = getAgeFeatureProvider(editor);
+		return editor.allConnections().stream().filter(editPart -> {
+			final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) editPart.part();
+			final Object bo = ageFeatureProvider.getBusinessObjectForPictogramElement(gcep.getPictogramElement());
+			if (bo.getClass() == clazz) {
+				return ((NamedElement) bo).getName().contains("new_");
+			}
+
+			return false;
+		}).collect(Collectors.toList());
+	}
+
+	public List<SWTBotGefConnectionEditPart> getConnectionEditParts(final AgeSWTBotGefEditor editor,
+			final String connectionName, final String... editPartPath) {
+		final AgeFeatureProvider ageFeatureProvider = getAgeFeatureProvider(editor);
+		final SWTBotGefEditPart parent = findEditPart(editor, editPartPath);
+
+		return editor.childConnections(parent).stream().filter(editPart -> {
+			final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) editPart.part();
+			final Object bo = ageFeatureProvider.getBusinessObjectForPictogramElement(gcep.getPictogramElement());
+			if (bo instanceof NamedElement) {
+				return ((NamedElement) bo).getName().equalsIgnoreCase(connectionName);
+			}
+
+			return false;
+		}).collect(Collectors.toList());
 	}
 
 	public void waitUntilElementExists(final SWTBotGefEditor editor, final String elementName) {
@@ -896,5 +927,36 @@ public class AgeGefBot {
 
 	public SWTBotToolbarButton getToolbarButtonWithTooltip(final String tooltip) {
 		return bot.toolbarButtonWithTooltip(tooltip);
+	}
+
+	public void clickToolbarButtonWithTooltip(final String tooltip) {
+		bot.toolbarButtonWithTooltip(tooltip).click();
+	}
+
+	// Drag dialog down and to the left
+	public void dragShellAwayFromEditor(final AgeSWTBotGefEditor implEditor, final String shellTitle) {
+		try {
+			final Robot robot = new Robot();
+			robot.setAutoDelay(50);
+			final Display display = Display.getDefault();
+			display.syncExec(() -> {
+				final int y = implEditor.getWidget().getDisplay().getActiveShell().getBounds().height;
+				final Shell shell = bot.shell(shellTitle).widget;
+				shell.setFocus();
+				final org.eclipse.swt.graphics.Rectangle outer = shell.getBounds();
+				final org.eclipse.swt.graphics.Rectangle inner = shell.getClientArea();
+				robot.mouseMove(outer.x + outer.width / 2, outer.y + (outer.height - inner.height) / 2);
+				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+				robot.mouseMove(outer.width / 2, y / 2 - outer.height / 2);
+				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+			});
+
+		} catch (AWTException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void setFocusShell(final String string) {
+		bot.shell(string).setFocus();
 	}
 }

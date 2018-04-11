@@ -49,6 +49,7 @@ public class CreateFlowImplTest {
 		final String flowSinkToolItem = "Flow Sink Specification";
 		bot.createToolItem(editor, flowSinkToolItem, new Point(5, 5), "sys", "dp_in");
 
+
 		final SWTBotGefConnectionEditPart flowSink = bot.getNewConnectionEditPart(editor,
 				FlowSpecificationImpl.class).get(0);
 		editor.select(flowSink);
@@ -58,7 +59,7 @@ public class CreateFlowImplTest {
 		bot.selectTabbedPropertySection("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
-		bot.renameConnection(editor, gcepSink, "fsink");
+		bot.renameConnection(editor, flowSink, "fsink");
 
 		final String flowSourceToolItem = "Flow Source Specification";
 		bot.createToolItem(editor, flowSourceToolItem, new Point(5, 5), "sys", "dp_out");
@@ -72,7 +73,7 @@ public class CreateFlowImplTest {
 		bot.selectTabbedPropertySection("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
-		bot.renameConnection(editor, gcepSrc, "fsrc");
+		bot.renameConnection(editor, flowSrc, "fsrc");
 
 		bot.createImplementation(editor, StringUtil.camelCaseToUser(SystemImplementation.class.getSimpleName()), "sys",
 				"impl",
@@ -106,7 +107,7 @@ public class CreateFlowImplTest {
 		bot.clickConnection(implEditor, gcep.getConnectionFigure());
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
-		bot.renameConnection(implEditor, gcep, ElementNames.featureConnection);
+		bot.renameConnection(implEditor, connectionEditPart, ElementNames.featureConnection);
 
 		// Create Connection 2
 		implEditor.activateTool(ToolTypes.getToolItem(FeatureConnection.class));
@@ -120,7 +121,7 @@ public class CreateFlowImplTest {
 		bot.clickConnection(implEditor, gcep2.getConnectionFigure());
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
-		bot.renameConnection(implEditor, gcep2, ElementNames.featureConnection + "2");
+		bot.renameConnection(implEditor, connectionEditPart2, ElementNames.featureConnection + "2");
 
 		// Create Connection 3
 		implEditor.activateTool(ToolTypes.getToolItem(FeatureConnection.class));
@@ -136,7 +137,7 @@ public class CreateFlowImplTest {
 		bot.selectTabbedPropertySection("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
-		bot.renameConnection(implEditor, gcep3, ElementNames.featureConnection + "3");
+		bot.renameConnection(implEditor, connectionEditPart3, ElementNames.featureConnection + "3");
 
 		bot.clickElements(implEditor, new String[] { "sys.impl2" });
 
