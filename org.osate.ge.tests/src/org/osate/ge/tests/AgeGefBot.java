@@ -236,7 +236,7 @@ public class AgeGefBot {
 			@Override
 			public boolean matches(Object item) {
 				System.err.println(item + " item");
-				return false;
+				return true;
 			}
 
 			@Override
