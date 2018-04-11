@@ -222,12 +222,29 @@ public class AgeGefBot {
 		createToolItem(editor, toolType, point, parentName);
 		waitUntilShellIsActive("Create Component Implementation");
 		setText(elementName);
+		printWidgets();
 		clickRadio("Existing");
 		clickButton("...");
 		clickButton("OK");
 		clickButton("OK");
 
 		waitUntilElementExists(editor, typeName + "." + elementName);
+	}
+
+	private void printWidgets() {
+		bot.widget(new BaseMatcher<Widget>() {
+			@Override
+			public boolean matches(Object item) {
+				System.err.println(item + " item");
+				return false;
+			}
+
+			@Override
+			public void describeTo(Description description) {
+				// TODO Auto-generated method stub
+
+			}
+		});
 	}
 
 	public void waitUntil(final ICondition condition, final long timeout) {
