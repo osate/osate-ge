@@ -498,8 +498,10 @@ public class DiagramConfigurationDialog {
 			// Set the input for the tree
 			boTreeViewer.setInput(businessObjectTree);
 
-			// Expand the root element
-			boTreeViewer.expandToLevel(2);
+			// Expand the root element if there is only one child
+			if (businessObjectTree.getChildren().size() == 1) {
+				boTreeViewer.expandToLevel(2);
+			}
 
 			// Show Connection Primary Labels
 			final Composite connectionPrimaryLabelsVisibleContainer = new Composite(container, SWT.NONE);
