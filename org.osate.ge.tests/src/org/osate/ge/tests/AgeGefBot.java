@@ -159,7 +159,7 @@ public class AgeGefBot {
 //    }
 
 	public void createNewProjectAndPackage(final String projectName, final String packageName) {
-		SWTBotPreferences.TIMEOUT = 5000;
+		SWTBotPreferences.TIMEOUT = 15000;
 		closeWelcomePage();
 		bot.menu("Other...", true).click();
 		bot.tree().getTreeItem("AADL").expand().getNode("AADL Project").click();
@@ -509,12 +509,12 @@ public class AgeGefBot {
 		printWidgets();
 		openPropertiesView(editor, elementName);
 		printWidgets();
-		selectElement(editor, elementName);
+		clickElement(editor, elementName);
 		printWidgets();
 		selectTabbedPropertySection(tabTitle);
 		editor.setFocus();
 		printWidgets();
-		// clickElementsMouse(editor, elementName);
+		clickElementsMouse(editor, elementName);
 		clickRadio(option);
 	}
 
@@ -789,6 +789,7 @@ public class AgeGefBot {
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) swtGefEditPart.part();
 		final ContainerShape cs = (ContainerShape) gsep.getPictogramElement();
 		final Shape labelShape = getLabelShape(cs);
+		editor.click(swtGefEditPart);
 
 		final GraphicsAlgorithm labelGA = labelShape.getGraphicsAlgorithm();
 		try {
@@ -805,11 +806,10 @@ public class AgeGefBot {
 		} catch (AWTException e) {
 		}
 
-		editor.select(swtGefEditPart);
+		sleep(1);
 		swtGefEditPart.activateDirectEdit(BoHandlerDirectEditFeature.class);
 		editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
-		editor.select(findEditPart(editor, newName));
 		// swtGefEditPart.activateDirectEdit();
 	}
 
