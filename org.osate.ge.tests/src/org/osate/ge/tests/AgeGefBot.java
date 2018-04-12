@@ -159,7 +159,7 @@ public class AgeGefBot {
 //    }
 
 	public void createNewProjectAndPackage(final String projectName, final String packageName) {
-		SWTBotPreferences.TIMEOUT = 30000;
+		SWTBotPreferences.TIMEOUT = 5000;
 		closeWelcomePage();
 		bot.menu("Other...", true).click();
 		bot.tree().getTreeItem("AADL").expand().getNode("AADL Project").click();
@@ -291,6 +291,7 @@ public class AgeGefBot {
 		editor.activateTool(toolItem);
 		final Rectangle rect = parent.getFigure().getBounds();
 		editor.click(rect.x + p.x, rect.y + p.y);
+		editor.activateDefaultTool();
 	}
 
 	public void createToolItemAndRename(final SWTBotGefEditor editor, final Class<?> clazz, final Point p,
@@ -408,10 +409,6 @@ public class AgeGefBot {
 		}
 	}
 
-	public void selectElement(final SWTBotGefEditor editor, final String... elementName) {
-		editor.select(editor.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName)));
-	}
-
 	// TODO cmd needed? click buttons probably different for other diagram opening types.
 	// hard code "Associated Diagram" and change method name
 	public void openAssociatedDiagramFromContextMenu(final SWTBotGefEditor editor, final String elementName) {
@@ -511,7 +508,7 @@ public class AgeGefBot {
 		openPropertiesView(editor, elementName);
 		selectElement(editor, elementName);
 		selectTabbedPropertySection(tabTitle);
-		clickElements(editor, elementName);
+		clickElementsMouse(editor, elementName);
 		clickRadio(option);
 	}
 
@@ -520,13 +517,15 @@ public class AgeGefBot {
 		openPropertiesView(editor, elementName);
 		selectElement(editor, elementName);
 		selectTabbedPropertySection(tabTitle);
-		clickElements(editor, elementName);
+		clickElementsMouse(editor, elementName);
 		clickButton(option);
 	}
 
 	public void openPropertiesView(final SWTBotGefEditor editor, final String... elementName) {
 		editor.setFocus();
 		// doubleClickElement(editor, elementName[0]);
+		final SWTBotGefEditPart part = findEditPart(editor, elementName);
+		editor.click(part);
 		editor.doubleClick(findEditPart(editor, elementName));
 //        bot.sleep(3000);
 //        bot.waitUntil(new DefaultCondition() {
@@ -540,6 +539,10 @@ public class AgeGefBot {
 //                return "view not opened";
 //            };
 //        }, 5000);
+	}
+
+	public void openProperties() {
+		bot.viewByTitle("Properties").setFocus();
 	}
 
 	public static AgeFeatureProvider getAgeFeatureProvider(final SWTBotGefEditor editor) {
@@ -742,8 +745,8 @@ public class AgeGefBot {
 						point.y - canvas.getVerticalBar().getSelection());
 
 				// Click
-				// robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-				// robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 			});
 
 			robot.mouseMove(300, 300);
@@ -793,6 +796,7 @@ public class AgeGefBot {
 		swtGefEditPart.activateDirectEdit(BoHandlerDirectEditFeature.class);
 		editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
+		editor.select(findEditPart(editor, newName));
 		// swtGefEditPart.activateDirectEdit();
 	}
 
@@ -821,21 +825,22 @@ public class AgeGefBot {
 	}
 
 	public void renameConnection(final SWTBotGefEditor editor, final SWTBotGefConnectionEditPart conEditPart,
+			final ConnectionPoint connectionPoint,
 			final String newName) {
 		editor.setFocus();
 		editor.select(conEditPart);
 		final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) conEditPart.part();
-		final org.eclipse.draw2d.geometry.Point midpoint = gcep.getConnectionFigure().getPoints().getMidpoint();
+
 		final ConnectionDecorator cd = getLabelShape((FreeFormConnection) gcep.getPictogramElement());
 		final GraphicsAlgorithm labelGA = cd.getGraphicsAlgorithm();
-
 		// Select connection label for rename
 		try {
 			final Robot robot = new Robot();
 			editor.getWidget().getDisplay().asyncExec(() -> {
 				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
+				final org.eclipse.draw2d.geometry.Point refPoint = connectionPoint.getValue(gcep);
 				final Point point = PlatformUI.getWorkbench().getDisplay()
-						.map(editor.getWidget().getDisplay().getFocusControl(), null, midpoint.x, midpoint.y);
+						.map(editor.getWidget().getDisplay().getFocusControl(), null, refPoint.x, refPoint.y);
 				robot.mouseMove(
 						point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX() + labelGA.getWidth() / 2,
 						point.y - canvas.getVerticalBar().getSelection() + labelGA.getY() + labelGA.getHeight() / 2);
@@ -877,7 +882,7 @@ public class AgeGefBot {
 		editor.setFocus();
 		editor.click(packageName);
 		resizeEditPart(editor, new Point(600, 600), packageName);
-		clickElements(editor, new String[] { packageName });
+		clickElementsMouse(editor, new String[] { packageName });
 		createToolItem(editor, ToolTypes.getToolItem(AbstractType.class), new Point(25, 25), ElementNames.packageName);
 		waitUntilNewElementIsCreated(editor, AbstractTypeImpl.class);
 		renameElement(editor, ElementNames.abstractTypeName);
@@ -897,7 +902,26 @@ public class AgeGefBot {
 		waitUntilElementExists(editor, typeName + "." + implName);
 	}
 
-	public void clickElements(final SWTBotGefEditor editor, final String[]... elementPaths) {
+	public void clickElement(final SWTBotGefEditor editor, final String[] elementPath) {
+		editor.click(findEditPart(editor, elementPath));
+	}
+
+	public void selectElement(final SWTBotGefEditor editor, final String[] elementPath) {
+		editor.select(findEditPart(editor, elementPath));
+	}
+
+	public void selectElements(final SWTBotGefEditor editor, final String[]... elementPaths) {
+		editor.setFocus();
+		final List<SWTBotGefEditPart> editParts = new ArrayList<>();
+		for (final String[] elementPath : elementPaths) {
+			editParts.add(findEditPart(editor, elementPath));
+		}
+
+		editor.select(editParts);
+	}
+
+	public void clickElementsMouse(final SWTBotGefEditor editor, final String[]... elementPaths) {
+		editor.setFocus();
 		final List<GraphitiShapeEditPart> gseps = new ArrayList<>();
 		for (final String[] elementPath : elementPaths) {
 			gseps.add((GraphitiShapeEditPart) findEditPart(editor, elementPath).part());
@@ -976,5 +1000,28 @@ public class AgeGefBot {
 
 	public void setFocusShell(final String string) {
 		bot.shell(string).setFocus();
+	}
+
+	public enum ConnectionPoint {
+		FIRST {
+			@Override
+			public org.eclipse.draw2d.geometry.Point getValue(final GraphitiConnectionEditPart gcep) {
+				return gcep.getConnectionFigure().getPoints().getFirstPoint();
+			}
+		},
+		MIDDLE {
+			@Override
+			public org.eclipse.draw2d.geometry.Point getValue(final GraphitiConnectionEditPart gcep) {
+				return gcep.getConnectionFigure().getPoints().getMidpoint();
+			}
+		},
+		LAST {
+			@Override
+			public org.eclipse.draw2d.geometry.Point getValue(final GraphitiConnectionEditPart gcep) {
+				return gcep.getConnectionFigure().getPoints().getLastPoint();
+			}
+		};
+
+		public abstract org.eclipse.draw2d.geometry.Point getValue(final GraphitiConnectionEditPart gcep);
 	}
 }

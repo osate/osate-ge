@@ -77,7 +77,7 @@ public class DemoSystemTest {
 		bot.openAssociatedDiagramFromContextMenu(demoTestEditor, demoSysImpl);
 
 		final SWTBotGefEditor demoSysImplEditor = bot.getEditor(demo_system + "_" + demo_system + "_" + implName);
-		bot.clickElements(demoSysImplEditor, new String[] { demo_system + "." + implName });
+		bot.clickElementsMouse(demoSysImplEditor, new String[] { demo_system + "." + implName });
 		bot.executeContextMenuCommand(demoSysImplEditor, demoSysImpl, "All Filters");
 		bot.resize(demoSysImplEditor, new Point(600, 600), demoSysImpl);
 
@@ -94,7 +94,7 @@ public class DemoSystemTest {
 		bot.clickButton("OK");
 
 		demoTestEditor.click(demo_system);
-		bot.clickElements(demoSysImplEditor, new String[] { hwSc });
+		bot.clickElementsMouse(demoSysImplEditor, new String[] { hwSc });
 		bot.executeContextMenuCommand(demoSysImplEditor, hwSc, "All Filters");
 		bot.resize(demoSysImplEditor, new Point(350, 350), hwSc);
 
@@ -125,7 +125,7 @@ public class DemoSystemTest {
 
 		bot.openPropertiesView(demoSysImplEditor, "cpu1");
 		bot.selectTabbedPropertySection("AADL");
-		bot.clickElements(demoSysImplEditor, new String[] { "cpu1" }, new String[] { "cpu2" });
+		bot.clickElementsMouse(demoSysImplEditor, new String[] { "cpu1" }, new String[] { "cpu2" });
 		bot.clickButton("Choose...");
 		bot.clickTableOption(AgeGefBot.qualifiedName(hw, cpu));
 		bot.clickButton("OK");
@@ -159,13 +159,13 @@ public class DemoSystemTest {
 		demoSysImplEditor.activateTool(ToolTypes.getToolItem(FeatureConnection.class));
 
 		// Create Connection 1
-		bot.clickElements(demoSysImplEditor, new String[] { "actuator_data", "sd1" }, new String[] { "cpu1", "ba" });
+		bot.clickElementsMouse(demoSysImplEditor, new String[] { "actuator_data", "sd1" }, new String[] { "cpu1", "ba" });
 
 		// Create Connection 2
-		bot.clickElements(demoSysImplEditor, new String[] { "cpu1", "ba" }, new String[] { "cpu2", "ba" });
+		bot.clickElementsMouse(demoSysImplEditor, new String[] { "cpu1", "ba" }, new String[] { "cpu2", "ba" });
 
 		// Create Connection 3
-		bot.clickElements(demoSysImplEditor, new String[] { "actuator_data", "sd1" }, new String[] { "cpu2", "ba" });
+		bot.clickElementsMouse(demoSysImplEditor, new String[] { "actuator_data", "sd1" }, new String[] { "cpu2", "ba" });
 
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) bot.findEditPart(demoSysImplEditor, demoSysImpl)
 				.part();

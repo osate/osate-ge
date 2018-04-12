@@ -18,6 +18,7 @@ import org.osate.aadl2.FeatureConnection;
 import org.osate.ge.internal.graphiti.AgeFeatureProvider;
 import org.osate.ge.internal.ui.properties.AppearancePropertySection;
 import org.osate.ge.tests.AgeGefBot.AgeSWTBotGefEditor;
+import org.osate.ge.tests.AgeGefBot.ConnectionPoint;
 
 public class CreateConnectionTest {
 	private final AgeGefBot bot = new AgeGefBot();
@@ -56,13 +57,15 @@ public class CreateConnectionTest {
 		bot.executeContextMenuCommand(editor, abstractImplName, AgeGefBot.allFilters);
 
 		createSubcomponents(editor, AbstractSubcomponent.class, abstractImplName);
-
+		editor.setFocus();
 		// Show children of subcomponents
-		bot.clickElements(editor, new String[] { abstractImplName, ElementNames.abstractSubcomponentName },
+		bot.selectElements(editor, new String[] { abstractImplName, ElementNames.abstractSubcomponentName },
 				new String[] { abstractImplName, ElementNames.abstractSubcomponentName2 });
 		editor.clickContextMenu(AgeGefBot.allFilters);
 
 		final SWTBotGefEditPart subcomponent = editor.getEditPart(ElementNames.abstractSubcomponentName);
+		System.err.println(subcomponent + " subcomponent");
+		bot.sleep(5);
 		// Find in feature
 		final List<SWTBotGefEditPart> featureIn = bot.findChild(editor, subcomponent,
 				ElementNames.abstractFeatureNewName);
@@ -95,7 +98,7 @@ public class CreateConnectionTest {
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
 		// Rename
-		bot.renameConnection(editor, connectionEditPart, ElementNames.featureConnection);
+		bot.renameConnection(editor, connectionEditPart, ConnectionPoint.MIDDLE, ElementNames.featureConnection);
 
 		// Hide label
 		editor.select(ElementNames.featureConnection);
@@ -114,7 +117,7 @@ public class CreateConnectionTest {
 
 		bot.openPropertiesView(editor, ElementNames.abstractSubcomponentName);
 		bot.selectTabbedPropertySection("AADL");
-		bot.clickElements(editor, new String[] { ElementNames.abstractSubcomponentName },
+		bot.selectElements(editor, new String[] { ElementNames.abstractSubcomponentName },
 				new String[] { ElementNames.abstractSubcomponentName2 });
 		bot.clickButton("Choose...");
 		bot.clickTableOption(AgeGefBot.qualifiedName(ElementNames.packageName, ElementNames.abstractTypeName));

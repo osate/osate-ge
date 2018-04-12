@@ -1,5 +1,6 @@
 package org.osate.ge.tests;
 
+import org.eclipse.draw2d.Connection;
 import org.eclipse.graphiti.ui.platform.GraphitiConnectionEditPart;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefConnectionEditPart;
@@ -16,6 +17,7 @@ import org.osate.ge.internal.ui.editor.FlowContributionItem;
 import org.osate.ge.internal.ui.properties.AppearancePropertySection;
 import org.osate.ge.internal.util.StringUtil;
 import org.osate.ge.tests.AgeGefBot.AgeSWTBotGefEditor;
+import org.osate.ge.tests.AgeGefBot.ConnectionPoint;
 
 public class CreateFlowImplTest {
 	final AgeGefBot bot = new AgeGefBot();
@@ -35,10 +37,11 @@ public class CreateFlowImplTest {
 	@Test
 	public void createFlowImpl() {
 		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.resize(editor, new Point(600, 600), ElementNames.packageName);
+		bot.openProperties();
+		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
 		bot.createTypeAndImplementation(editor, new Point(50, 50), "impl2", "sys",
 				StringUtil.camelCaseToUser(SystemImplementation.class.getSimpleName()), ElementNames.packageName);
-		bot.resize(editor, new Point(250, 200), "sys");
+		bot.resizeEditPart(editor, new Point(250, 200), "sys");
 
 		bot.createToolItemAndRename(editor, DataPort.class, new Point(10, 30), "dp_in", "sys");
 		bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Input", "dp_in");
@@ -49,17 +52,15 @@ public class CreateFlowImplTest {
 		final String flowSinkToolItem = "Flow Sink Specification";
 		bot.createToolItem(editor, flowSinkToolItem, new Point(5, 5), "sys", "dp_in");
 
-
 		final SWTBotGefConnectionEditPart flowSink = bot.getNewConnectionEditPart(editor,
 				FlowSpecificationImpl.class).get(0);
 		editor.select(flowSink);
-		final GraphitiConnectionEditPart gcepSink = (GraphitiConnectionEditPart) flowSink.part();
-		bot.clickConnection(editor, gcepSink.getConnectionFigure());
-
+		final Connection flowSinkCon = ((GraphitiConnectionEditPart) flowSink.part()).getConnectionFigure();
+		bot.clickConnection(editor, flowSinkCon);
 		bot.selectTabbedPropertySection("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
-		bot.renameConnection(editor, flowSink, "fsink");
+		bot.renameConnection(editor, flowSink, ConnectionPoint.LAST, "fsink");
 
 		final String flowSourceToolItem = "Flow Source Specification";
 		bot.createToolItem(editor, flowSourceToolItem, new Point(5, 5), "sys", "dp_out");
@@ -67,13 +68,13 @@ public class CreateFlowImplTest {
 		final SWTBotGefConnectionEditPart flowSrc = bot.getNewConnectionEditPart(editor,
 				FlowSpecificationImpl.class).get(0);
 		editor.select(flowSrc);
-		final GraphitiConnectionEditPart gcepSrc = (GraphitiConnectionEditPart) flowSrc.part();
-		bot.clickConnection(editor, gcepSrc.getConnectionFigure());
+		final Connection gcepSrcCon = ((GraphitiConnectionEditPart) flowSrc.part()).getConnectionFigure();
+		bot.clickConnection(editor, gcepSrcCon);
 
 		bot.selectTabbedPropertySection("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
-		bot.renameConnection(editor, flowSrc, "fsrc");
+		bot.renameConnection(editor, flowSrc, ConnectionPoint.LAST, "fsrc");
 
 		bot.createImplementation(editor, StringUtil.camelCaseToUser(SystemImplementation.class.getSimpleName()), "sys",
 				"impl",
@@ -81,21 +82,23 @@ public class CreateFlowImplTest {
 
 		bot.openAssociatedDiagramFromContextMenu(editor, "sys.impl2");
 		final AgeSWTBotGefEditor implEditor = bot.getEditor(ElementNames.packageName + "_sys_impl2");
-		bot.resize(implEditor, new Point(600, 600), "sys.impl2");
+		bot.resizeEditPart(implEditor, new Point(600, 600), "sys.impl2");
 
 		bot.createToolItemAndRename(implEditor, SystemSubcomponent.class, new Point(250, 150), "ss1", "sys.impl2");
 		bot.createToolItemAndRename(implEditor, SystemSubcomponent.class, new Point(450, 450), "ss2", "sys.impl2");
 
 		bot.openPropertiesView(implEditor, "sys.impl2");
 		bot.selectTabbedPropertySection("AADL");
-		bot.clickElements(implEditor, new String[] { "ss1" }, new String[] { "ss2" });
+		implEditor.setFocus();
+		bot.selectElements(implEditor, new String[] { "ss1" }, new String[] { "ss2" });
 		bot.clickButton("Choose...");
 		bot.clickTableOption(AgeGefBot.qualifiedName(ElementNames.packageName, "sys"));
 		bot.clickButton("OK");
 
 		implEditor.activateTool(ToolTypes.getToolItem(FeatureConnection.class));
 		// Create Connection 1
-		bot.clickElements(implEditor, new String[] { "sys.impl2", "dp_in" }, new String[] { "ss1", "dp_in" });
+		bot.clickElement(implEditor, new String[] { "sys.impl2", "dp_in" });
+		bot.clickElement(implEditor, new String[] { "ss1", "dp_in" });
 		implEditor.activateDefaultTool();
 
 		bot.selectTabbedPropertySection("Appearance");
@@ -103,59 +106,75 @@ public class CreateFlowImplTest {
 				FeatureConnectionImpl.class).get(0);
 
 		implEditor.select(connectionEditPart);
-		final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) connectionEditPart.part();
-		bot.clickConnection(implEditor, gcep.getConnectionFigure());
+		final Connection featureCon = ((GraphitiConnectionEditPart) connectionEditPart.part()).getConnectionFigure();
+		bot.clickConnection(implEditor, featureCon);
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
-		bot.renameConnection(implEditor, connectionEditPart, ElementNames.featureConnection);
+		bot.renameConnection(implEditor, connectionEditPart, ConnectionPoint.MIDDLE,
+				ElementNames.featureConnection);
 
 		// Create Connection 2
 		implEditor.activateTool(ToolTypes.getToolItem(FeatureConnection.class));
-		bot.clickElements(implEditor, new String[] { "ss1", "dp_out" }, new String[] { "ss2", "dp_in" });
+		bot.clickElement(implEditor, new String[] { "ss1", "dp_out" });
+		bot.clickElement(implEditor, new String[] { "ss2", "dp_in" });
+
 		implEditor.activateDefaultTool();
 
 		final SWTBotGefConnectionEditPart connectionEditPart2 = bot.getNewConnectionEditPart(implEditor,
 				FeatureConnectionImpl.class).get(0);
 		implEditor.select(connectionEditPart2);
-		final GraphitiConnectionEditPart gcep2 = (GraphitiConnectionEditPart) connectionEditPart2.part();
-		bot.clickConnection(implEditor, gcep2.getConnectionFigure());
+		final Connection featureCon2 = ((GraphitiConnectionEditPart) connectionEditPart2.part()).getConnectionFigure();
+		bot.clickConnection(implEditor, featureCon2);
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
-		bot.renameConnection(implEditor, connectionEditPart2, ElementNames.featureConnection + "2");
+		bot.renameConnection(implEditor, connectionEditPart2, ConnectionPoint.MIDDLE,
+				ElementNames.featureConnection + "2");
 
 		// Create Connection 3
 		implEditor.activateTool(ToolTypes.getToolItem(FeatureConnection.class));
-		bot.clickElements(implEditor, new String[] { "ss2", "dp_out" }, new String[] { "sys.impl2", "dp_out" });
+		bot.clickElement(implEditor, new String[] { "ss2", "dp_out" });
+		bot.clickElement(implEditor, new String[] { "sys.impl2", "dp_out" });
+
 		implEditor.activateDefaultTool();
 
 		final SWTBotGefConnectionEditPart connectionEditPart3 = bot.getNewConnectionEditPart(implEditor,
 				FeatureConnectionImpl.class).get(0);
 		implEditor.select(connectionEditPart3);
-		final GraphitiConnectionEditPart gcep3 = (GraphitiConnectionEditPart) connectionEditPart3.part();
-		bot.clickConnection(implEditor, gcep3.getConnectionFigure());
+		final Connection featureCon3 = ((GraphitiConnectionEditPart) connectionEditPart3.part()).getConnectionFigure();
+		bot.clickConnection(implEditor, featureCon3);
 
 		bot.selectTabbedPropertySection("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
-		bot.renameConnection(implEditor, connectionEditPart3, ElementNames.featureConnection + "3");
+		bot.renameConnection(implEditor, connectionEditPart3, ConnectionPoint.MIDDLE,
+				ElementNames.featureConnection + "3");
 
-		bot.clickElements(implEditor, new String[] { "sys.impl2" });
+		bot.clickElement(implEditor, new String[] { "sys.impl2" });
 
 		bot.clickToolbarButtonWithTooltip("Create Flow Implementation");
 
 		// Drag dialog down and to the left so it is not covering diagram for element selection
 		bot.dragShellAwayFromEditor(implEditor, "Create Flow Implementation");
+		editor.setFocus();
+//		final GraphitiConnectionEditPart con = (GraphitiConnectionEditPart) bot
+//				.getConnectionEditParts(implEditor, "fsrc", "sys.impl2", "dp_out").get(0).part();
+		final SWTBotGefConnectionEditPart con = bot.getConnectionEditParts(implEditor, "fsrc", "sys.impl2", "dp_out")
+				.get(0);
+		implEditor.select(con);
+		bot.clickElement(implEditor, new String[] { "ss1" });
+		// implEditor.click(bot.getElements(implEditor, new String[] { "ss1" }).get(0));
 
-		final GraphitiConnectionEditPart con = (GraphitiConnectionEditPart) bot
-				.getConnectionEditParts(implEditor, "fsrc", "sys.impl2", "dp_out").get(0).part();
-		bot.clickConnection(implEditor, con.getConnectionFigure());
-		bot.clickElements(implEditor, new String[] { "ss1" });
+		// bot.clickConnection(implEditor, con.getConnectionFigure());
 
-		bot.clickConnection(implEditor, gcep2.getConnectionFigure());
-		bot.clickElements(implEditor, new String[] { "ss2" });
+		// bot.clickElements(implEditor, new String[] { "ss1" });
 
-		bot.clickConnection(implEditor, gcep3.getConnectionFigure());
-		bot.clickElements(implEditor, new String[] { "dp_out" });
+		// bot.clickConnection(implEditor, featureCon2);
+		implEditor.click(connectionEditPart2);
+		bot.clickElement(implEditor, new String[] { "ss2" });
+
+		// bot.clickConnection(implEditor, featureCon3);
+		implEditor.click(connectionEditPart3);
+		bot.clickElement(implEditor, new String[] { "dp_out" });
 
 		bot.setFocusShell("Create Flow Implementation");
 		bot.clickButton("OK");

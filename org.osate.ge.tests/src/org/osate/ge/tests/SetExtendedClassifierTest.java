@@ -40,7 +40,7 @@ public class SetExtendedClassifierTest {
 
 		final String implName = ElementNames.abstractTypeName + "." + ElementNames.abstractTypeName + 2;
 		bot.openPropertiesView(editor, ElementNames.packageName);
-		bot.clickElements(editor, new String[] { implName });
+		bot.clickElementsMouse(editor, new String[] { implName });
 		bot.selectTabbedPropertySection("AADL");
 		bot.clickButton("Choose...");
 		bot.clickButton("OK");
