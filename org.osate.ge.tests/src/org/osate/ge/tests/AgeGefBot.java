@@ -515,7 +515,9 @@ public class AgeGefBot {
 		editor.setFocus();
 		printWidgets();
 		clickElementsMouse(editor, elementName);
+		bot.viewByTitle("Properties").setFocus();
 		clickRadio(option);
+		editor.setFocus();
 	}
 
 	public void setElementOptionButtonInPropertiesView(final SWTBotGefEditor editor, final String tabTitle,
@@ -810,7 +812,6 @@ public class AgeGefBot {
 		swtGefEditPart.activateDirectEdit(BoHandlerDirectEditFeature.class);
 		editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
-		// swtGefEditPart.activateDirectEdit();
 	}
 
 //    public void renameElement(final SWTBotGefEditor editor,

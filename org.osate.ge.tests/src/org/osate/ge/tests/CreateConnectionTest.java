@@ -112,6 +112,7 @@ public class CreateConnectionTest {
 	}
 
 	private void createSubcomponents(final SWTBotGefEditor editor, final Class<?> clazz, final String parent) {
+		editor.setFocus();
 		bot.createToolItemAndRename(editor, clazz, new Point(200, 100), ElementNames.abstractSubcomponentName, parent);
 		bot.createToolItemAndRename(editor, clazz, new Point(120, 250), ElementNames.abstractSubcomponentName2, parent);
 
