@@ -35,7 +35,7 @@ import org.osate.ge.di.BuildCanonicalReference;
 import org.osate.ge.di.BuildRelativeReference;
 import org.osate.ge.di.Names;
 import org.osate.ge.internal.diagram.runtime.CanonicalBusinessObjectReference;
-import org.osate.ge.internal.model.PackageProxy;
+import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
 import org.osate.ge.internal.model.SubprogramCallOrder;
 import org.osate.ge.services.ReferenceBuilderService;
 
@@ -47,6 +47,10 @@ public class DeclarativeReferenceBuilder {
 		return new CanonicalBusinessObjectReference(buildPackageReferenceSegments(qualifiedName));
 	}
 
+	public static RelativeBusinessObjectReference buildPackageRelativeReference(final String qualifiedName) {
+		return new RelativeBusinessObjectReference(buildPackageReferenceSegments(qualifiedName));
+	}
+
 	public static String[] buildPackageReferenceSegments(final String qualifiedName) {
 		return new String[] { DeclarativeReferenceType.PACKAGE.getId(), qualifiedName };
 	}
@@ -55,9 +59,6 @@ public class DeclarativeReferenceBuilder {
 	public String[] getRelativeReference(final @Named(Names.BUSINESS_OBJECT) Object bo) {
 		if (bo instanceof AadlPackage) {
 			return buildPackageReferenceSegments(((AadlPackage) bo).getQualifiedName());
-		} else if(bo instanceof PackageProxy) {
-			// TODO: Consider whether reusing the reference is a good idea
-			return buildPackageReferenceSegments(((PackageProxy) bo).getName());
 		} else if (bo instanceof Classifier) {
 			return buildSimpleRelativeReference(DeclarativeReferenceType.CLASSIFIER.getId(), ((Classifier) bo));
 		} else if (bo instanceof Subcomponent) {
@@ -147,9 +148,7 @@ public class DeclarativeReferenceBuilder {
 	public String[] getReference(final @Named(Names.BUSINESS_OBJECT) Object bo,
 			final ReferenceBuilderService refBuilder) {
 		if (bo instanceof AadlPackage) {
-			return new String[] { DeclarativeReferenceType.PACKAGE.getId(), ((AadlPackage) bo).getQualifiedName() };
-		} else if (bo instanceof PackageProxy) {
-			return new String[] { DeclarativeReferenceType.PACKAGE.getId(), ((PackageProxy) bo).getName() };
+			return buildPackageReferenceSegments(((AadlPackage) bo).getQualifiedName());
 		} else if (bo instanceof Classifier) {
 			return new String[] { DeclarativeReferenceType.CLASSIFIER.getId(),
 					((Classifier) bo).getQualifiedName() };

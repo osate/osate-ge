@@ -9,7 +9,6 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.osate.aadl2.Aadl2Factory;
 import org.osate.aadl2.AadlPackage;
-import org.osate.ge.BusinessObjectUtil;
 import org.osate.ge.GraphicalConfiguration;
 import org.osate.ge.GraphicalConfigurationBuilder;
 import org.osate.ge.di.CanDelete;
@@ -22,7 +21,6 @@ import org.osate.ge.graphics.Graphic;
 import org.osate.ge.graphics.internal.FolderGraphicBuilder;
 import org.osate.ge.internal.di.DeleteRaw;
 import org.osate.ge.internal.di.InternalNames;
-import org.osate.ge.internal.model.PackageProxy;
 import org.osate.ge.internal.services.NamingService;
 import org.osate.ge.internal.services.ReferenceService;
 import org.osate.ge.internal.util.ScopedEMFIndexRetrieval;
@@ -31,8 +29,8 @@ public class PackageHandler {
 	private final Graphic graphic = FolderGraphicBuilder.create().build();
 
 	@IsApplicable
-	public boolean isApplicable(final @Named(Names.BUSINESS_OBJECT) Object bo) {
-		return bo instanceof AadlPackage || bo instanceof PackageProxy;
+	public boolean isApplicable(final @Named(Names.BUSINESS_OBJECT) AadlPackage pkg) {
+		return true;
 	}
 
 	@GetGraphicalConfiguration
@@ -43,18 +41,13 @@ public class PackageHandler {
 	}
 
 	@GetName
-	public String getName(final @Named(Names.BUSINESS_OBJECT) Object pkg) {
-		if (pkg instanceof AadlPackage) {
-			return ((AadlPackage) pkg).getQualifiedName();
-		} else if (pkg instanceof PackageProxy) {
-			return ((PackageProxy) pkg).getName();
-		} else {
-			throw new RuntimeException("Unexpected case");
-		}
+	public String getName(final @Named(Names.BUSINESS_OBJECT) AadlPackage pkg) {
+		return pkg.getQualifiedName();
 	}
 
 	@ValidateName
-	public String validateName(final @Named(Names.BUSINESS_OBJECT) Object pkg, final @Named(Names.NAME) String value,
+	public String validateName(final @Named(Names.BUSINESS_OBJECT) AadlPackage pkg,
+			final @Named(Names.NAME) String value,
 			final @Named(InternalNames.PROJECT) IProject project, final NamingService namingService) {
 		// If the name hasn't changed or has only changed case
 		final String qualifiedName = getName(pkg);
@@ -84,15 +77,12 @@ public class PackageHandler {
 	}
 
 	@CanDelete
-	public boolean canDelete(final @Named(Names.BUSINESS_OBJECT) Object bo, final ReferenceService refService) {
-		final AadlPackage pkg = BusinessObjectUtil.getPackage(bo, refService);
+	public boolean canDelete(final @Named(Names.BUSINESS_OBJECT) AadlPackage pkg, final ReferenceService refService) {
 		return pkg.eResource() != null && !pkg.eResource().getURI().isPlatformPlugin();
 	}
 
 	@DeleteRaw
-	public void delete(final @Named(Names.BUSINESS_OBJECT) Object bo, final ReferenceService refService) {
-		final AadlPackage pkg = BusinessObjectUtil.getPackage(bo, refService);
-
+	public void delete(final @Named(Names.BUSINESS_OBJECT) AadlPackage pkg, final ReferenceService refService) {
 		try {
 			((AadlPackage) pkg).eResource().delete(Collections.emptyMap());
 		} catch (final IOException e) {

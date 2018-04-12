@@ -8,6 +8,9 @@ import java.util.stream.Stream;
 import javax.inject.Named;
 
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IncrementalProjectBuilder;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
@@ -52,11 +55,12 @@ import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.di.Activate;
 import org.osate.ge.di.Names;
 import org.osate.ge.internal.businessObjectHandlers.ModeTransitionTriggerHandler;
-import org.osate.ge.internal.model.PackageProxy;
+import org.osate.ge.internal.model.BusinessObjectProxy;
 import org.osate.ge.internal.model.SubprogramCallOrder;
 import org.osate.ge.internal.model.Tag;
 import org.osate.ge.internal.services.ExtensionRegistryService;
 import org.osate.ge.internal.services.ReferenceService;
+import org.osate.ge.internal.services.impl.DeclarativeReferenceBuilder;
 import org.osate.ge.internal.util.AadlFeatureUtil;
 import org.osate.ge.internal.util.AadlHelper;
 import org.osate.ge.internal.util.AadlSubcomponentUtil;
@@ -74,26 +78,30 @@ public class AadlBusinessObjectProvider {
 		// An IProject is specified as the business object for contextless diagrams.
 		if (bo instanceof IProject) { // Special handling for project
 			final IProject project = (IProject) bo;
-			Stream.Builder<Object> packages = Stream.builder();
 
-			// final ProjectReferenceService projectReferenceService = refService.getProjectReferenceService(project);
-
-			for (final IEObjectDescription desc : ScopedEMFIndexRetrieval.getAllEObjectsByType(
-					project, Aadl2Factory.eINSTANCE.getAadl2Package().getAadlPackage())) {
-				final String pkgQualifiedName = desc.getQualifiedName().toString("::");
-				packages.add(new PackageProxy(pkgQualifiedName, project));
+			// Perform an incremental project build to ensure new packages are included.
+			try {
+				project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, new NullProgressMonitor());
+			} catch (CoreException e) {
+				throw new RuntimeException(e);
 			}
 
-			return packages.build();
+			Stream<Object> packages = getPackages(project);
+
+			// If no packages were found, assume that the project needs to be built. This can happen if the Eclipse process is forcefully terminated.
+			if (packages == null) {
+				try {
+					project.build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor());
+				} catch (CoreException e) {
+					throw new RuntimeException(e);
+				}
+
+				packages = getPackages(project);
+			}
+
+			return packages;
 		} else if (bo instanceof AadlPackage) {
 			return getChildren((AadlPackage)bo, extRegistryService);
-		} else if (bo instanceof PackageProxy) {
-			final AadlPackage pkg = ((PackageProxy) bo).resolve(refService);
-			if(pkg != null) {
-				// TODO: Remove
-				System.err.println("CHILDREN OF: " + pkg);
-				return getChildren(pkg, extRegistryService);
-			}
 		} else if(bo instanceof Classifier) {
 			return getChildren((Classifier)bo, true, extRegistryService);
 		} else if(bo instanceof FeatureGroup) {
@@ -126,6 +134,28 @@ public class AadlBusinessObjectProvider {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Returns null if no packages are found. This is needed so that it can be determined if the project needs to be rebuilt.
+	 * @param project
+	 */
+	private static Stream<Object> getPackages(final IProject project) {
+		Stream.Builder<Object> packages = null;
+
+		for (final IEObjectDescription desc : ScopedEMFIndexRetrieval.getAllEObjectsByType(project,
+				Aadl2Factory.eINSTANCE.getAadl2Package().getAadlPackage())) {
+			if (packages == null) {
+				packages = Stream.builder();
+			}
+
+			final String pkgQualifiedName = desc.getQualifiedName().toString("::");
+			packages.add(new BusinessObjectProxy(pkgQualifiedName, desc.getEClass(),
+					DeclarativeReferenceBuilder.buildPackageCanonicalReference(pkgQualifiedName),
+					DeclarativeReferenceBuilder.buildPackageRelativeReference(pkgQualifiedName)));
+		}
+
+		return packages == null ? null : packages.build();
 	}
 
 	// Declarative Model

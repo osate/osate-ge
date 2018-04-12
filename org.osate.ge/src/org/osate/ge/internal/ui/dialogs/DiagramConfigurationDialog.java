@@ -56,7 +56,6 @@ import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
 import org.osate.ge.internal.diagram.runtime.boTree.BusinessObjectNode;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
 import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
-import org.osate.ge.internal.model.PackageProxy;
 import org.osate.ge.internal.util.ContentFilterUtil;
 import org.osate.ge.internal.util.ManualBranchCache;
 
@@ -64,6 +63,9 @@ import com.google.common.collect.ImmutableSet;
 
 public class DiagramConfigurationDialog {
 	public interface Model {
+		boolean isProxy(Object bo);
+		Object resolve(Object bo);
+
 		Collection<Object> getChildBusinessObjects(final BusinessObjectContext boc);
 
 		RelativeBusinessObjectReference getRelativeBusinessObjectReference(final Object bo);
@@ -371,6 +373,7 @@ public class DiagramConfigurationDialog {
 				final List<BusinessObjectNode> selectedBoNodes = getSelectedBusinessObjectNodes();
 				final Set<ContentFilter> applicableContentFilters = new HashSet<>();
 				selectedBoNodes.forEach(boNode -> {
+					resolveIfProxy(boNode);
 					applicableContentFilters.addAll(model.getApplicableContentFilters(boNode.getBusinessObject()));
 				});
 				contentFiltersViewer.setInput(ImmutableSet.copyOf(applicableContentFilters));
@@ -638,6 +641,8 @@ public class DiagramConfigurationDialog {
 			final BusinessObjectNode node = (BusinessObjectNode) parentElement;
 
 			if (!populatedNodes.contains(node)) {
+				resolveIfProxy(node);
+
 				// Create new business object nodes as needed
 				for (final Object childBo : model.getChildBusinessObjects(node)) {
 					final RelativeBusinessObjectReference childRef = model.getRelativeBusinessObjectReference(childBo);
@@ -664,9 +669,8 @@ public class DiagramConfigurationDialog {
 		public boolean hasChildren(final Object element) {
 			final BusinessObjectNode node = (BusinessObjectNode) element;
 
-			// Package proxies always show as if they contain children to avoid needing to load the package and fetching children in cases where the package
-			// isn't used.
-			if (node.getBusinessObject() instanceof PackageProxy) {
+			// Proxies always show as if they contain children to avoid needing to load the actual object when it isn't being used.
+			if (model.isProxy(node.getBusinessObject())) {
 				return true;
 			}
 
@@ -772,6 +776,13 @@ public class DiagramConfigurationDialog {
 		return EnabledState.NOT_ENABLED;
 	}
 
+	private void resolveIfProxy(final BusinessObjectNode node) {
+		final Object resolvedObject = model.resolve(node.getBusinessObject());
+		if (resolvedObject != node.getBusinessObject()) {
+			node.setBusinessObject(resolvedObject);
+		}
+	}
+
 	/**
 	 * A null return value indicates that the dialog was canceled.
 	 * @param initialSelectionBoPath is an array of business objects which form a path to the node that should be selected. May be null
@@ -820,7 +831,6 @@ public class DiagramConfigurationDialog {
 		public boolean isApplicable(final Object bo) {
 			return true;
 		}
-
 	}
 
 	public static void main(String[] args) {
@@ -886,6 +896,16 @@ public class DiagramConfigurationDialog {
 			@Override
 			public Image getImage(final Object bo) {
 				return null;
+			}
+
+			@Override
+			public Object resolve(final Object bo) {
+				return bo;
+			}
+
+			@Override
+			public boolean isProxy(Object bo) {
+				return false;
 			}
 		};
 

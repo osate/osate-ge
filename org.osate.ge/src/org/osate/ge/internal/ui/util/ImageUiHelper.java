@@ -1,11 +1,12 @@
 package org.osate.ge.internal.ui.util;
 
+import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.graphiti.ui.services.GraphitiUi;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.osate.ge.internal.graphiti.AgeDiagramTypeProvider;
-import org.osate.ge.internal.model.PackageProxy;
+import org.osate.ge.internal.model.BusinessObjectProxy;
 import org.osate.ge.internal.util.ImageHelper;
 
 public class ImageUiHelper {
@@ -15,14 +16,16 @@ public class ImageUiHelper {
 	 * @return
 	 */
 	public static Image getImage(final Object bo) {
-		final String imageId;
+		final EClass eClass;
 		if (bo instanceof EObject) {
-			imageId = ImageHelper.getImage(((EObject) bo).eClass().getName());
-		} else if (bo instanceof PackageProxy) {
-			imageId = "org.osate.ge.AadlPackage";
+			eClass = ((EObject) bo).eClass();
+		} else if (bo instanceof BusinessObjectProxy) {
+			eClass = ((BusinessObjectProxy) bo).getEClass();
 		} else {
-			imageId = null;
+			eClass = null;
 		}
+
+		final String imageId = eClass == null ? null : ImageHelper.getImage(eClass.getName());
 
 		if (imageId == null) {
 			return null;

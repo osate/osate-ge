@@ -37,6 +37,7 @@ import org.osate.ge.internal.diagram.runtime.DiagramConfiguration;
 import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
 import org.osate.ge.internal.diagram.runtime.filtering.Filtering;
 import org.osate.ge.internal.model.AgePropertyValue;
+import org.osate.ge.internal.model.BusinessObjectProxy;
 import org.osate.ge.internal.model.PropertyValueGroup;
 import org.osate.ge.internal.query.Queryable;
 import org.osate.ge.internal.services.ExtensionService;
@@ -395,7 +396,14 @@ public class DefaultTreeUpdater implements TreeUpdater {
 			if (relativeReference != null) {
 				if (forcedRefs.contains(relativeReference) || Filtering.isFundamental(potentialBusinessObject)
 						|| passesAnyContentFilter(potentialBusinessObject, contentFilters)) {
-					results.put(relativeReference, potentialBusinessObject);
+					// Special handling of proxies. Only resolve them if they are needed
+					Object resolvedBo = potentialBusinessObject;
+					if(potentialBusinessObject instanceof BusinessObjectProxy) {
+						final BusinessObjectProxy proxy = (BusinessObjectProxy)potentialBusinessObject;
+						resolvedBo = proxy.resolve(refService);
+					}
+
+					results.put(relativeReference, resolvedBo);
 				}
 			}
 		}

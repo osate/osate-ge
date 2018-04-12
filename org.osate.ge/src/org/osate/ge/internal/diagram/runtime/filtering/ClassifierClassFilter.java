@@ -1,7 +1,7 @@
 package org.osate.ge.internal.diagram.runtime.filtering;
 
+import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.ComponentCategory;
-import org.osate.ge.BusinessObjectUtil;
 import org.osate.ge.ContentFilter;
 
 public abstract class ClassifierClassFilter implements ContentFilter {
@@ -12,7 +12,7 @@ public abstract class ClassifierClassFilter implements ContentFilter {
 
 	@Override
 	public boolean isApplicable(final Object bo) {
-		return BusinessObjectUtil.isPackage(bo);
+		return bo instanceof AadlPackage;
 	}
 
 	protected String categoryToSingularName(final ComponentCategory category) {
