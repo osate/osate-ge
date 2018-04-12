@@ -223,7 +223,7 @@ public class AgeGefBot {
 		waitUntilShellIsActive("Create Component Implementation");
 		bot.shell("Create Component Implementation").setFocus();
 		setText(elementName);
-		printWidgets();
+		// printWidgets();
 		clickRadio("Existing");
 		clickButton("...");
 		clickButton("OK");
@@ -515,8 +515,11 @@ public class AgeGefBot {
 
 	public void setElementOptionButtonInPropertiesView(final SWTBotGefEditor editor, final String tabTitle,
 			final String option, final String... elementName) {
+		printWidgets();
 		openPropertiesView(editor, elementName);
+		printWidgets();
 		selectElement(editor, elementName);
+		printWidgets();
 		selectTabbedPropertySection(tabTitle);
 		printWidgets();
 		// clickElementsMouse(editor, elementName);
