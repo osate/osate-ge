@@ -233,6 +233,7 @@ public class AgeGefBot {
 	}
 
 	private void printWidgets() {
+		System.err.println("ge.tests.widgets");
 		bot.widget(new BaseMatcher<Widget>() {
 			@Override
 			public boolean matches(Object item) {
@@ -517,8 +518,10 @@ public class AgeGefBot {
 		openPropertiesView(editor, elementName);
 		selectElement(editor, elementName);
 		selectTabbedPropertySection(tabTitle);
+		printWidgets();
 		// clickElementsMouse(editor, elementName);
 		editor.setFocus();
+		printWidgets();
 		clickButton(option);
 	}
 
