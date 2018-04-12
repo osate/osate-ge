@@ -506,10 +506,15 @@ public class AgeGefBot {
 
 	public void setElementOptionRadioInPropertiesView(final SWTBotGefEditor editor, final String tabTitle,
 			final String option, final String... elementName) {
+		printWidgets();
 		openPropertiesView(editor, elementName);
+		printWidgets();
 		selectElement(editor, elementName);
+		printWidgets();
 		selectTabbedPropertySection(tabTitle);
-		clickElementsMouse(editor, elementName);
+		editor.setFocus();
+		printWidgets();
+		// clickElementsMouse(editor, elementName);
 		clickRadio(option);
 	}
 
