@@ -522,11 +522,13 @@ public class AgeGefBot {
 	}
 
 	public void openPropertiesView(final SWTBotGefEditor editor, final String... elementName) {
+		bot.viewByTitle("Properties").setFocus();
 		editor.setFocus();
+
 		// doubleClickElement(editor, elementName[0]);
-		final SWTBotGefEditPart part = findEditPart(editor, elementName);
-		editor.click(part);
-		editor.doubleClick(findEditPart(editor, elementName));
+		// final SWTBotGefEditPart part = findEditPart(editor, elementName);
+		// editor.click(part);
+		// editor.doubleClick(findEditPart(editor, elementName));
 //        bot.sleep(3000);
 //        bot.waitUntil(new DefaultCondition() {
 //            @Override
