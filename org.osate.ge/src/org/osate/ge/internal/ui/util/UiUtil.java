@@ -14,6 +14,7 @@ import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.internal.diagram.runtime.AgeDiagram;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.diagram.runtime.DiagramNode;
+import org.osate.ge.internal.model.PackageProxy;
 import org.osate.ge.internal.model.Tag;
 import org.osate.ge.internal.services.ExtensionService;
 import org.osate.ge.internal.util.BusinessObjectContextHelper;
@@ -73,6 +74,8 @@ public class UiUtil {
 		final String prefix;
 		if (bo instanceof EObject) {
 			prefix = StringUtil.camelCaseToUser(((EObject) bo).eClass().getName()) + " ";
+		} else if (bo instanceof PackageProxy) {
+			prefix = "Aadl Package ";
 		} else if (bo instanceof Tag) {
 			prefix = "Misc ";
 		} else {

@@ -56,6 +56,7 @@ import org.osate.ge.internal.diagram.runtime.RelativeBusinessObjectReference;
 import org.osate.ge.internal.diagram.runtime.boTree.BusinessObjectNode;
 import org.osate.ge.internal.diagram.runtime.boTree.Completeness;
 import org.osate.ge.internal.diagram.runtime.types.CustomDiagramType;
+import org.osate.ge.internal.model.PackageProxy;
 import org.osate.ge.internal.util.ContentFilterUtil;
 import org.osate.ge.internal.util.ManualBranchCache;
 
@@ -662,6 +663,13 @@ public class DiagramConfigurationDialog {
 		@Override
 		public boolean hasChildren(final Object element) {
 			final BusinessObjectNode node = (BusinessObjectNode) element;
+
+			// Package proxies always show as if they contain children to avoid needing to load the package and fetching children in cases where the package
+			// isn't used.
+			if (node.getBusinessObject() instanceof PackageProxy) {
+				return true;
+			}
+
 			return getChildren(node).length != 0;
 		}
 	}

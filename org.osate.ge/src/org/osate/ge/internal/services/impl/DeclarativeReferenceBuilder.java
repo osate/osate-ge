@@ -35,6 +35,7 @@ import org.osate.ge.di.BuildCanonicalReference;
 import org.osate.ge.di.BuildRelativeReference;
 import org.osate.ge.di.Names;
 import org.osate.ge.internal.diagram.runtime.CanonicalBusinessObjectReference;
+import org.osate.ge.internal.model.PackageProxy;
 import org.osate.ge.internal.model.SubprogramCallOrder;
 import org.osate.ge.services.ReferenceBuilderService;
 
@@ -54,8 +55,10 @@ public class DeclarativeReferenceBuilder {
 	public String[] getRelativeReference(final @Named(Names.BUSINESS_OBJECT) Object bo) {
 		if (bo instanceof AadlPackage) {
 			return buildPackageReferenceSegments(((AadlPackage) bo).getQualifiedName());
-		}
-		if (bo instanceof Classifier) {
+		} else if(bo instanceof PackageProxy) {
+			// TODO: Consider whether reusing the reference is a good idea
+			return buildPackageReferenceSegments(((PackageProxy) bo).getName());
+		} else if (bo instanceof Classifier) {
 			return buildSimpleRelativeReference(DeclarativeReferenceType.CLASSIFIER.getId(), ((Classifier) bo));
 		} else if (bo instanceof Subcomponent) {
 			return buildSimpleRelativeReference(DeclarativeReferenceType.SUBCOMPONENT.getId(), ((Subcomponent) bo));
@@ -145,6 +148,8 @@ public class DeclarativeReferenceBuilder {
 			final ReferenceBuilderService refBuilder) {
 		if (bo instanceof AadlPackage) {
 			return new String[] { DeclarativeReferenceType.PACKAGE.getId(), ((AadlPackage) bo).getQualifiedName() };
+		} else if (bo instanceof PackageProxy) {
+			return new String[] { DeclarativeReferenceType.PACKAGE.getId(), ((PackageProxy) bo).getName() };
 		} else if (bo instanceof Classifier) {
 			return new String[] { DeclarativeReferenceType.CLASSIFIER.getId(),
 					((Classifier) bo).getQualifiedName() };

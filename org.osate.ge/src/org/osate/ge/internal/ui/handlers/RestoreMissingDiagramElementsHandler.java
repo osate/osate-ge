@@ -32,6 +32,7 @@ import org.osate.ge.internal.ui.dialogs.RestoreMissingDiagramElementsDialog;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 import org.osate.ge.internal.ui.util.UiUtil;
 import org.osate.ge.internal.util.BusinessObjectContextHelper;
+import org.osate.ge.internal.util.BusinessObjectContextUtil;
 import org.osate.ge.internal.util.BusinessObjectProviderHelper;
 import org.osgi.framework.FrameworkUtil;
 
@@ -83,24 +84,8 @@ public class RestoreMissingDiagramElementsHandler extends AbstractHandler {
 				final Collection<DiagramUpdater.GhostedElement> ghosts = diagramUpdater.getGhosts(parent);
 				if (!ghosts.isEmpty()) {
 					final BusinessObjectContext parentToUse;
-					if (parent.getParent() == null) {
-						// TODO: Cleanup. Share with DefaultTreeUpdater
-						parentToUse = new BusinessObjectContext() {
-							@Override
-							public Collection<? extends Queryable> getChildren() {
-								return Collections.emptyList();
-							}
-
-							@Override
-							public BusinessObjectContext getParent() {
-								return null;
-							}
-
-							@Override
-							public Object getBusinessObject() {
-								return projectProvider.getProject();
-							}
-						};
+					if (diagram.getConfiguration().getContextBoReference() == null && parent.getParent() == null) {
+						parentToUse = BusinessObjectContextUtil.getRootContextForProject(projectProvider);
 					} else {
 						parentToUse = parent;
 					}

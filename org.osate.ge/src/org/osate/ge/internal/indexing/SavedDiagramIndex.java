@@ -224,13 +224,14 @@ public class SavedDiagramIndex {
 				}
 
 				if ((context == null || contextBo != null) && rootReferenceNode != null) {
-					final BusinessObjectContext rootBoc = new SimpleUnqueryableBusinessObjectContext(null,
-							projectDiagramIndex.project);
+					final BusinessObjectContext rootBoc;
 					final Collection<Object> potentialChildBusinessObjects;
 					if (context == null) {
 						// Contextless diagrams can have multiple top level elements.
+						rootBoc = new SimpleUnqueryableBusinessObjectContext(null, projectDiagramIndex.project);
 						potentialChildBusinessObjects = bopHelper.getChildBusinessObjects(rootBoc);
 					} else if (contextBo != null) {
+						rootBoc = new SimpleUnqueryableBusinessObjectContext(null, null);
 						potentialChildBusinessObjects = Collections.singleton(contextBo);
 					} else {
 						throw new RuntimeException("Unexpected case");

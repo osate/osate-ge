@@ -52,12 +52,11 @@ import org.osate.ge.BusinessObjectContext;
 import org.osate.ge.di.Activate;
 import org.osate.ge.di.Names;
 import org.osate.ge.internal.businessObjectHandlers.ModeTransitionTriggerHandler;
+import org.osate.ge.internal.model.PackageProxy;
 import org.osate.ge.internal.model.SubprogramCallOrder;
 import org.osate.ge.internal.model.Tag;
 import org.osate.ge.internal.services.ExtensionRegistryService;
-import org.osate.ge.internal.services.ProjectReferenceService;
 import org.osate.ge.internal.services.ReferenceService;
-import org.osate.ge.internal.services.impl.DeclarativeReferenceBuilder;
 import org.osate.ge.internal.util.AadlFeatureUtil;
 import org.osate.ge.internal.util.AadlHelper;
 import org.osate.ge.internal.util.AadlSubcomponentUtil;
@@ -72,30 +71,29 @@ public class AadlBusinessObjectProvider {
 			final ExtensionRegistryService extRegistryService, final ReferenceService refService) {
 
 		final Object bo = boc.getBusinessObject();
-		// Disabled for now. A null business object is not supported. Retrieving packages will need to be reworked because Business Object Providers
-		// only have access to global services and not diagram specific services.
+		// An IProject is specified as the business object for contextless diagrams.
 		if (bo instanceof IProject) { // Special handling for project
 			final IProject project = (IProject) bo;
 			Stream.Builder<Object> packages = Stream.builder();
 
-			final ProjectReferenceService projectReferenceService = refService.getProjectReferenceService(project);
+			// final ProjectReferenceService projectReferenceService = refService.getProjectReferenceService(project);
 
 			for (final IEObjectDescription desc : ScopedEMFIndexRetrieval.getAllEObjectsByType(
 					project, Aadl2Factory.eINSTANCE.getAadl2Package().getAadlPackage())) {
-				// System.err.println("TEST: " + desc);
 				final String pkgQualifiedName = desc.getQualifiedName().toString("::");
-				final Object resolvedPackage = projectReferenceService
-						.resolve(DeclarativeReferenceBuilder.buildPackageCanonicalReference(pkgQualifiedName));
-				// System.err.println("MORE: " + pkgQualifiedName + " : " + resolvedPackage);
-				// TODO: Need to work with contributed packages?
-				if (resolvedPackage != null) {
-					packages.add(resolvedPackage);
-				}
+				packages.add(new PackageProxy(pkgQualifiedName, project));
 			}
 
 			return packages.build();
 		} else if (bo instanceof AadlPackage) {
 			return getChildren((AadlPackage)bo, extRegistryService);
+		} else if (bo instanceof PackageProxy) {
+			final AadlPackage pkg = ((PackageProxy) bo).resolve(refService);
+			if(pkg != null) {
+				// TODO: Remove
+				System.err.println("CHILDREN OF: " + pkg);
+				return getChildren(pkg, extRegistryService);
+			}
 		} else if(bo instanceof Classifier) {
 			return getChildren((Classifier)bo, true, extRegistryService);
 		} else if(bo instanceof FeatureGroup) {

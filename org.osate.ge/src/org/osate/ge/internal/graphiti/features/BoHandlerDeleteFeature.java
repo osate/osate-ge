@@ -8,6 +8,7 @@ import javax.inject.Inject;
 import org.eclipse.e4.core.contexts.ContextInjectionFactory;
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.graphiti.features.ICustomUndoRedoFeature;
 import org.eclipse.graphiti.features.IDeleteFeature;
@@ -93,22 +94,34 @@ public class BoHandlerDeleteFeature extends AbstractFeature implements IDeleteFe
 
 		final Object bo = de.getBusinessObject();
 
-		// Business object must be an EObject or an EmfContainerProvider
-		if(!(bo instanceof EObject || bo instanceof EmfContainerProvider)) {
+		final Object boHandler = de.getBusinessObjectHandler();
+		if (boHandler == null) {
+			return false;
+		}
+
+		if (!AnnotationUtil.hasMethodWithAnnotation(CanDelete.class, boHandler)) {
 			return false;
 		}
 
 		// Don't allow proxies.
-		if (bo instanceof EObject && ((EObject) bo).eIsProxy()) {
-			return false;
+		if (bo instanceof EObject) {
+			final EObject eobj = ((EObject) bo);
+			if(eobj.eIsProxy()) {
+				return false;
+			}
+
+			// Prevent deletion of resources which are part of plugins
+			final Resource res = eobj.eResource();
+			if (res != null && res.getURI().isPlatformPlugin()) {
+				return false;
+			}
 		}
 
 		final IEclipseContext childCtx = extService.createChildContext();
 		try {
 			childCtx.set(Names.BUSINESS_OBJECT, bo);
 			childCtx.set(Names.BUSINESS_OBJECT_CONTEXT, de);
-			final Object boHandler = de.getBusinessObjectHandler();
-			return boHandler == null ? false : (boolean)ContextInjectionFactory.invoke(boHandler, CanDelete.class, childCtx, false);
+			return (boolean) ContextInjectionFactory.invoke(boHandler, CanDelete.class, childCtx, false);
 		} finally {
 			childCtx.dispose();
 		}
