@@ -91,9 +91,9 @@ public class NewDiagramWizard extends Wizard implements INewWizard {
 			layout.numColumns = 1;
 
 			addButton("New Package", ContextType.NEW_PACKAGE);
-			addButton("Contextless", ContextType.CONTEXTLESS);
 			addButton("Existing Package", ContextType.EXISTING_PACKAGE);
 			addButton("Existing Classifier", ContextType.EXISTING_CLASSIFIER);
+			addButton("Contextless", ContextType.CONTEXTLESS);
 
 			setControl(container);
 

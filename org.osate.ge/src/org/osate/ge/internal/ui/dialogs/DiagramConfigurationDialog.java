@@ -777,9 +777,12 @@ public class DiagramConfigurationDialog {
 	}
 
 	private void resolveIfProxy(final BusinessObjectNode node) {
-		final Object resolvedObject = model.resolve(node.getBusinessObject());
-		if (resolvedObject != node.getBusinessObject()) {
+		if (model.isProxy(node.getBusinessObject())) {
+			final Object resolvedObject = model.resolve(node.getBusinessObject());
 			node.setBusinessObject(resolvedObject);
+
+			// Because the object was a proxy, it will not have had the appropriate default content filters assigned.
+			node.setContentFilters(model.getDefaultContentFilters(resolvedObject));
 		}
 	}
 

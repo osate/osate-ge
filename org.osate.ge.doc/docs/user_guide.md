@@ -94,22 +94,22 @@ Many of the operations in the graphical editor apply to multiple types of elemen
 ### Diagram Types
 When creating a diagram, a type must be specified. A diagram's type determines the default filters used by the contents of the diagram. It also determines which AADL properties are enabled by default. All diagram types are equally customizable. A diagram element's filters determines the child elements that are shown on the diagram.
 
-+-------------------+-----------------------------------------------+-------------------------------------------------------------------------+--------------------------------------------------+
-| Diagram Type      | Availability                                  | Filters                                                                 | Properties                                       |
-+===================+===============================================+=========================================================================+==================================================+
-| Custom            | Packages, Classifiers, and System Instances   | None                                                                    | None                                             |
-+-------------------+-----------------------------------------------+-------------------------------------------------------------------------+--------------------------------------------------+
-| Package           | Packages                                      | - Packages:  Classifiers                                                | None                                             |
-|                   |                                               | - Classifiers: Generalizations                                          |                                                  |
-+-------------------+-----------------------------------------------+-------------------------------------------------------------------------+--------------------------------------------------+
-| Structure         | Classifiers and System Instances              |- Classifiers: Features, Connections, Flow Specifications, Subcomponents | None                                             |
-|                   |                                               |- Subcomponents: Features, Connections, and Flow Specifications          |                                                  |
-+-------------------+-----------------------------------------------+-------------------------------------------------------------------------+--------------------------------------------------+
-| Mode              | Component Classifiers                         | - Classifiers: Modes and Mode Transitions                               | None                                             |
-+-------------------+-----------------------------------------------+-------------------------------------------------------------------------+--------------------------------------------------+
-| Processor Binding | Component Implementation and System Instances | - Classifiers: Systems, Processors, Virtual Processors,                 | Deployment_Properties::Actual_Processor_Binding  |
-|                   |                                               | - Devices, Threads, Thread Groups, and Processes                        |                                                  |
-+-------------------+-----------------------------------------------+-------------------------------------------------------------------------+--------------------------------------------------+
++-------------------+----------------------------------------------------------+-------------------------------------------------------------------------+--------------------------------------------------+
+| Diagram Type      | Availability                                             | Default Filters                                                         | Properties                                       |
++===================+==========================================================+=========================================================================+==================================================+
+| Custom            | Packages, Classifiers, System Instances, and Contextless | None                                                                    | None                                             |
++-------------------+----------------------------------------------------------+-------------------------------------------------------------------------+--------------------------------------------------+
+| Package           | Packages, Contextless                                    | - Packages:  Classifiers                                                | None                                             |
+|                   |                                                          | - Classifiers: Generalizations                                          |                                                  |
++-------------------+----------------------------------------------------------+-------------------------------------------------------------------------+--------------------------------------------------+
+| Structure         | Classifiers and System Instances                         |- Classifiers: Features, Connections, Flow Specifications, Subcomponents | None                                             |
+|                   |                                                          |- Subcomponents: Features, Connections, and Flow Specifications          |                                                  |
++-------------------+----------------------------------------------------------+-------------------------------------------------------------------------+--------------------------------------------------+
+| Mode              | Component Classifiers                                    | - Classifiers: Modes and Mode Transitions                               | None                                             |
++-------------------+----------------------------------------------------------+-------------------------------------------------------------------------+--------------------------------------------------+
+| Processor Binding | Component Implementation and System Instances            | - Classifiers: Systems, Processors, Virtual Processors,                 | Deployment_Properties::Actual_Processor_Binding  |
+|                   |                                                          | - Devices, Threads, Thread Groups, and Processes                        |                                                  |
++-------------------+----------------------------------------------------------+-------------------------------------------------------------------------+--------------------------------------------------+
 
 Table: Diagram Types {#tbl:diagram_types}
 

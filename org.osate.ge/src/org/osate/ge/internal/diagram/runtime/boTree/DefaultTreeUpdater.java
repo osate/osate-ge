@@ -56,7 +56,8 @@ import com.google.common.collect.Multimap;
  * A TreeUpdater which create a tree which contains which contains contains nodes based all
  * provided by registered business object providers. Nodes are removed or created based on is manual fields and the content filters.
  *
- * Diagrams which have a context business object specified will only contain the specified business object as a root.
+ * Diagrams which have a context business object specified will only contain the specified business object as a root. Diagrams which do not have a context
+ * may include any business objects which are returned by the business object providers when using the current IProject as the root business object context.
  */
 public class DefaultTreeUpdater implements TreeUpdater {
 	private class IdGenerator {
@@ -112,8 +113,8 @@ public class DefaultTreeUpdater implements TreeUpdater {
 			// Determine what business objects are required based on the diagram configuration
 			if (configuration.getContextBoReference() == null) {
 				// Get potential top level business objects from providers
-				// A simple business object context which is to designed for use as the root BOC for contextless diagrams. It has no parent and it has no
-				// business object.
+				// A simple business object context which is used as the root BOC for contextless diagrams. It has no parent and used the current
+				// project as the business object.
 				final BusinessObjectContext contextlessRootBoc = new BusinessObjectContext() {
 					@Override
 					public Collection<? extends Queryable> getChildren() {
