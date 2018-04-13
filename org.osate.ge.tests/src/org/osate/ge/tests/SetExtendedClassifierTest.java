@@ -26,7 +26,7 @@ public class SetExtendedClassifierTest {
 	@Test
 	public void setExtendedClassifier() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.resize(editor, new Point(600, 600), ElementNames.packageName);
+		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
 
 		bot.createToolItemAndRename(editor, AbstractType.class, new Point(40, 40), ElementNames.abstractTypeName,
 				ElementNames.packageName);
@@ -40,7 +40,8 @@ public class SetExtendedClassifierTest {
 
 		final String implName = ElementNames.abstractTypeName + "." + ElementNames.abstractTypeName + 2;
 		bot.openPropertiesView(editor, ElementNames.packageName);
-		bot.clickElementsMouse(editor, new String[] { implName });
+		bot.selectElements(editor, new String[] { implName });
+		// bot.clickElementsMouse(editor, new String[] { implName });
 		bot.selectTabbedPropertySection("AADL");
 		bot.clickButton("Choose...");
 		bot.clickButton("OK");

@@ -34,13 +34,13 @@ public class MoveShapeUsingKeysTest {
 	@Test
 	public void setFeatureDirection() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.resize(editor, new Point(600, 600), ElementNames.packageName);
+		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
 
 		// bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(25, 25));
 		// bot.renameElement(editor, ElementNames.abstractTypeName);
 		bot.createToolItemAndRename(editor, AbstractType.class, new Point(25, 25), ElementNames.abstractTypeName,
 				ElementNames.packageName);
-		bot.resize(editor, new Point(300, 300), ElementNames.abstractTypeName);
+		bot.resizeEditPart(editor, new Point(300, 300), ElementNames.abstractTypeName);
 
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart)editor.getSWTBotGefViewer().getEditPart(ElementNames.abstractTypeName).part();
 		final PictogramElement pe = gsep.getPictogramElement();

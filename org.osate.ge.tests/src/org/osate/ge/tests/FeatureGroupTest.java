@@ -33,14 +33,12 @@ public class FeatureGroupTest {
 	@Test
 	public void setFeatureClassifier() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.resize(editor, new Point(600, 600), ElementNames.packageName);
+		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
 
-		bot.createToolItemAndRename(editor, AbstractType.class, new Point(40, 40), ElementNames.abstractTypeName,
+		bot.createToolItemAndRename(editor, AbstractType.class, new Point(20, 20), ElementNames.abstractTypeName,
 				ElementNames.packageName);
 
-		bot.openAssociatedDiagramFromContextMenu(editor, ElementNames.abstractTypeName);
-
-		bot.resize(editor, new Point(200, 200), ElementNames.abstractTypeName);
+		bot.resizeEditPart(editor, new Point(200, 200), ElementNames.abstractTypeName);
 
 		bot.createToolItemAndRename(editor, FeatureGroup.class, new Point(30, 30), ElementNames.featureGroupName,
 				ElementNames.abstractTypeName);

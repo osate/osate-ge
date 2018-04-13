@@ -36,12 +36,12 @@ public class ModesTransitionTest {
 	@Test
 	public void createModes() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.resize(editor, new Point(600, 600), ElementNames.packageName);
+		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
 		editor.setFocus();
 
 		bot.createToolItemAndRename(editor, AbstractType.class, new Point(40, 40), ElementNames.abstractTypeName,
 				ElementNames.packageName);
-		bot.resize(editor, new Point(300, 300), ElementNames.abstractTypeName);
+		bot.resizeEditPart(editor, new Point(300, 300), ElementNames.abstractTypeName);
 
 		bot.createToolItemAndRename(editor, AbstractFeature.class, new Point(15, 15), ElementNames.abstractFeatureNewName,
 				ElementNames.abstractTypeName);

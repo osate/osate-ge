@@ -30,9 +30,9 @@ public class GoToTypeDiagramTest {
 	@Test
 	public void goToTypeDiagram() throws WidgetNotFoundException, ClassNotFoundException {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.resize(editor, new Point(600, 600), ElementNames.packageName);
+		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
 
-		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractType.class), new Point(25, 25),
+		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractType.class), new Point(30, 30),
 				ElementNames.packageName);
 		bot.waitUntilNewElementIsCreated(editor, AbstractTypeImpl.class);
 		bot.renameElement(editor, ElementNames.abstractTypeName);

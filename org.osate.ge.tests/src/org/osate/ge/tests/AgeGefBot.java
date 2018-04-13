@@ -641,52 +641,52 @@ public class AgeGefBot {
 		swtBotGefEditPart.resize(PositionConstants.SOUTH_WEST, newSize.x, newSize.y);
 	}
 
-	public void resize(final SWTBotGefEditor editor, final Point newSize, final String... editPartPath) {
-		final SWTBotGefEditPart swtBotGefEditPart = findEditPart(editor, editPartPath);
-		final Rectangle bounds = ((GraphitiShapeEditPart) swtBotGefEditPart.part()).getFigure().getBounds();
-		editor.select(swtBotGefEditPart);
-		swtBotGefEditPart.resize(PositionConstants.SOUTH_WEST, 600, 600);
-
-		// clickElements(editor, editPartPath);
-
-		// try {
-		// final Robot robot = new Robot();
-		final Display display = editor.getWidget().getDisplay();
-		display.syncExec(() -> {
-			// swtBotGefEditPart.resize(PositionConstants.SOUTH_WEST, 600, 600);
-
-			// final Point point = display
-			// .map(display.getFocusControl(), null, bounds.x, bounds.y);
-			// robot.setAutoDelay(500);
-			// robot.mouseMove(point.x, point.y);
-			// robot.mousePress(InputEvent.BUTTON1_MASK);
-			// robot.mouseRelease(InputEvent.BUTTON1_MASK);
-
-
-			// robot.mouseMove(point.x + 10, point.y + 10);
-			// robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-			// robot.mouseMove(point.x + 60, point.y + 60);
-			// robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
-			// swtBotGefEditPart.resize(PositionConstants.SOUTH_WEST, 600, 600);
+//	public void resize(final SWTBotGefEditor editor, final Point newSize, final String... editPartPath) {
+//		final SWTBotGefEditPart swtBotGefEditPart = findEditPart(editor, editPartPath);
+//		final Rectangle bounds = ((GraphitiShapeEditPart) swtBotGefEditPart.part()).getFigure().getBounds();
+//		editor.select(swtBotGefEditPart);
+//		swtBotGefEditPart.resize(PositionConstants.SOUTH_WEST, 600, 600);
 //
-//                final Point bottomRightCorner = new Point(point.x + bounds.width, point.y + bounds.height);
-//                robot.mouseMove(bottomRightCorner.x, bottomRightCorner.y);
+//		// clickElements(editor, editPartPath);
 //
-//                // robot.mousePress(InputEvent.BUTTON1_MASK);
+//		// try {
+//		// final Robot robot = new Robot();
+//		final Display display = editor.getWidget().getDisplay();
+//		display.syncExec(() -> {
+//			// swtBotGefEditPart.resize(PositionConstants.SOUTH_WEST, 600, 600);
 //
-//                final Point newLocation = new Point(newSize.x - bounds.width, newSize.y - bounds.height);
-//                robot.mouseMove(bottomRightCorner.x + newLocation.x, bottomRightCorner.y + newLocation.y);
-////                robot.mouseRelease(InputEvent.BUTTON1_MASK);
-////                robot.mouseMove(300, 300);
-		});
-		// } catch (final AWTException e) {
-
-		// }
-
-		bot.sleep(10000);
-		System.err.println("AAA");
-	}
+//			// final Point point = display
+//			// .map(display.getFocusControl(), null, bounds.x, bounds.y);
+//			// robot.setAutoDelay(500);
+//			// robot.mouseMove(point.x, point.y);
+//			// robot.mousePress(InputEvent.BUTTON1_MASK);
+//			// robot.mouseRelease(InputEvent.BUTTON1_MASK);
+//
+//
+//			// robot.mouseMove(point.x + 10, point.y + 10);
+//			// robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+//			// robot.mouseMove(point.x + 60, point.y + 60);
+//			// robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+//
+//			// swtBotGefEditPart.resize(PositionConstants.SOUTH_WEST, 600, 600);
+////
+////                final Point bottomRightCorner = new Point(point.x + bounds.width, point.y + bounds.height);
+////                robot.mouseMove(bottomRightCorner.x, bottomRightCorner.y);
+////
+////                // robot.mousePress(InputEvent.BUTTON1_MASK);
+////
+////                final Point newLocation = new Point(newSize.x - bounds.width, newSize.y - bounds.height);
+////                robot.mouseMove(bottomRightCorner.x + newLocation.x, bottomRightCorner.y + newLocation.y);
+//////                robot.mouseRelease(InputEvent.BUTTON1_MASK);
+//////                robot.mouseMove(300, 300);
+//		});
+//		// } catch (final AWTException e) {
+//
+//		// }
+//
+//		bot.sleep(10000);
+//		System.err.println("AAA");
+//	}
 
 	/*
 	 * int fromX = bounds.x;

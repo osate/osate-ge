@@ -7,7 +7,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.osate.aadl2.AbstractType;
-import org.osate.aadl2.impl.AbstractTypeImpl;
 
 public class OpenAssociatedDiagramTest {
 	private final AgeGefBot bot = new AgeGefBot();
@@ -19,11 +18,9 @@ public class OpenAssociatedDiagramTest {
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.resize(editor, new Point(600, 600), ElementNames.packageName);
-		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractType.class), new Point(25, 25),
+		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
+		bot.createToolItemAndRename(editor, AbstractType.class, new Point(45, 45), ElementNames.abstractTypeName,
 				ElementNames.packageName);
-		bot.waitUntilNewElementIsCreated(editor, AbstractTypeImpl.class);
-		bot.renameElement(editor, ElementNames.abstractTypeName);
 	}
 
 

@@ -21,7 +21,7 @@ public class SelectingDiagramElementContainerTest {
 		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractType.class), new Point(20, 20),
+		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractType.class), new Point(35, 35),
 				ElementNames.packageName);
 		bot.renameElement(editor, ElementNames.abstractTypeName);
 	}
