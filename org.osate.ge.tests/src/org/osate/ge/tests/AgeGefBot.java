@@ -512,7 +512,8 @@ public class AgeGefBot {
 		printWidgets();
 		openPropertiesView(editor, elementName);
 		printWidgets();
-		clickElement(editor, elementName);
+		selectElement(editor, elementName);
+		// clickElement(editor, elementName);
 		printWidgets();
 		selectTabbedPropertySection(tabTitle);
 		editor.setFocus();

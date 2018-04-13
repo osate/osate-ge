@@ -48,14 +48,12 @@ public class CreateConnectionTest {
 		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractFeature.class), new Point(100, 100),
 				ElementNames.abstractTypeName);
 		bot.renameElement(editor, ElementNames.abstractFeatureNewName2);
+		bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Output", ElementNames.abstractTypeName,
+				ElementNames.abstractFeatureNewName2);
 
 		final String abstractImplName = ElementNames.abstractTypeName + ".impl";
 		bot.resizeEditPart(editor, new Point(400, 400), abstractImplName);
-
-		bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Output", ElementNames.abstractTypeName,
-				ElementNames.abstractFeatureNewName2);
 		bot.executeContextMenuCommand(editor, abstractImplName, AgeGefBot.allFilters);
-
 		createSubcomponents(editor, AbstractSubcomponent.class, abstractImplName);
 		editor.setFocus();
 		// Show children of subcomponents
