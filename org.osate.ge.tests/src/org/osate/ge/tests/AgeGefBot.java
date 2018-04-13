@@ -516,9 +516,10 @@ public class AgeGefBot {
 		printWidgets();
 		clickElementsMouse(editor, elementName);
 		bot.viewByTitle("Properties").setFocus();
-		System.err.println(bot.activeView() + " activeView");
-		System.err.println(bot.activeView().bot().radio("Output") + " output");
-		clickRadio(option);
+		System.err.println(bot.activeView().getTitle() + " activeView");
+		System.err.println(bot.viewByTitle("Properties").getWidget() + " getWidget");
+		System.err.println(bot.activeView().bot().radio(option).click() + " output");
+		// clickRadio(option);
 		editor.setFocus();
 	}
 
