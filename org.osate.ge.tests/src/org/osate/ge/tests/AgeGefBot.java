@@ -51,6 +51,7 @@ import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.PlatformUI;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
+import org.hamcrest.Matcher;
 import org.junit.Assert;
 import org.osate.aadl2.AbstractImplementation;
 import org.osate.aadl2.AbstractType;
@@ -234,20 +235,22 @@ public class AgeGefBot {
 
 	private void printWidgets() {
 		System.err.println("ge.tests.widgets");
-		bot.widget(new BaseMatcher<Widget>() {
-			@Override
-			public boolean matches(Object item) {
-				System.err.println(item + " item");
-				return true;
-			}
-
-			@Override
-			public void describeTo(Description description) {
-				// TODO Auto-generated method stub
-
-			}
-		});
+		bot.widget(widgetPrinter);
 	}
+
+	private final Matcher<Widget> widgetPrinter = new BaseMatcher<Widget>() {
+		@Override
+		public boolean matches(Object item) {
+			System.err.println(item + " item");
+			return true;
+		}
+
+		@Override
+		public void describeTo(Description description) {
+			// TODO Auto-generated method stub
+
+		}
+	};
 
 	public void waitUntil(final ICondition condition, final long timeout) {
 		bot.waitUntil(condition, timeout);
@@ -518,6 +521,7 @@ public class AgeGefBot {
 		bot.viewByTitle("Properties").setFocus();
 		System.err.println(bot.activeView().getTitle() + " activeView");
 		System.err.println(bot.viewByTitle("Properties").getWidget() + " getWidget");
+		bot.activeView().bot().widget(widgetPrinter);
 		System.err.println(bot.activeView().bot().radio(option).click() + " output");
 		// clickRadio(option);
 		editor.setFocus();
