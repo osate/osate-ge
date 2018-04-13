@@ -43,7 +43,6 @@ public class CreateConnectionTest {
 		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractFeature.class), new Point(15, 15),
 				ElementNames.abstractTypeName);
 		bot.renameElement(editor, ElementNames.abstractFeatureNewName);
-		bot.openPropertiesView(editor, ElementNames.abstractTypeName);
 
 		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractFeature.class), new Point(100, 100),
 				ElementNames.abstractTypeName);
@@ -62,8 +61,6 @@ public class CreateConnectionTest {
 		editor.clickContextMenu(AgeGefBot.allFilters);
 
 		final SWTBotGefEditPart subcomponent = editor.getEditPart(ElementNames.abstractSubcomponentName);
-		System.err.println(subcomponent + " subcomponent");
-		bot.sleep(5);
 		// Find in feature
 		final List<SWTBotGefEditPart> featureIn = bot.findChild(editor, subcomponent,
 				ElementNames.abstractFeatureNewName);

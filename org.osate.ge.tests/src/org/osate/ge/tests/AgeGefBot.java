@@ -509,22 +509,13 @@ public class AgeGefBot {
 
 	public void setElementOptionRadioInPropertiesView(final SWTBotGefEditor editor, final String tabTitle,
 			final String option, final String... elementName) {
-		printWidgets();
 		openPropertiesView(editor, elementName);
-		printWidgets();
 		selectElement(editor, elementName);
-		// clickElement(editor, elementName);
-		printWidgets();
 		selectTabbedPropertySection(tabTitle);
-		editor.setFocus();
-		printWidgets();
+		selectElement(editor, elementName);
 		clickElementsMouse(editor, elementName);
 		bot.viewByTitle("Properties").setFocus();
-		System.err.println(bot.activeView().getTitle() + " activeView");
-		System.err.println(bot.viewByTitle("Properties").getWidget() + " getWidget");
-		bot.activeView().bot().widget(widgetPrinter);
-		System.err.println(bot.activeView().bot().radio(option).click() + " output");
-		// clickRadio(option);
+		bot.activeView().bot().radio(option).click();
 		editor.setFocus();
 	}
 
@@ -925,10 +916,12 @@ public class AgeGefBot {
 	}
 
 	public void clickElement(final SWTBotGefEditor editor, final String[] elementPath) {
+		editor.setFocus();
 		editor.click(findEditPart(editor, elementPath));
 	}
 
 	public void selectElement(final SWTBotGefEditor editor, final String[] elementPath) {
+		editor.setFocus();
 		editor.select(findEditPart(editor, elementPath));
 	}
 
@@ -960,12 +953,12 @@ public class AgeGefBot {
 				Point point = PlatformUI.getWorkbench().getDisplay()
 						.map(editor.getWidget().getDisplay().getFocusControl(), null, bounds.x, bounds.y);
 				// TODO enter needed?
-				robot.keyPress(KeyEvent.VK_ENTER);
-				robot.keyRelease(KeyEvent.VK_ENTER);
+				// robot.keyPress(KeyEvent.VK_ENTER);
+				// robot.keyRelease(KeyEvent.VK_ENTER);
 				robot.mouseMove(point.x - canvas.getHorizontalBar().getSelection() + 5,
 						point.y - canvas.getVerticalBar().getSelection() + 5);
-				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+				// robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+				// robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 				while (it.hasNext()) {
 					bounds = it.next().getFigure().getBounds();
 					point = PlatformUI.getWorkbench().getDisplay()
