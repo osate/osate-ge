@@ -794,6 +794,7 @@ public class AgeGefBot {
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) swtGefEditPart.part();
 		final ContainerShape cs = (ContainerShape) gsep.getPictogramElement();
 		final Shape labelShape = getLabelShape(cs);
+		editor.setFocus();
 		// editor.select(swtGefEditPart);
 		editor.click(swtGefEditPart);
 
