@@ -45,7 +45,7 @@ public class FeatureGroupTest {
 		bot.createToolItemAndRename(editor, FeatureGroupType.class, new Point(25, 250),
 				ElementNames.featureGroupTypeName, ElementNames.packageName);
 
-		bot.selectElement(editor, new String[] { ElementNames.featureGroupName });
+		bot.selectElement(editor, ElementNames.featureGroupName);
 		bot.openProperties();
 		bot.selectTabbedPropertySection("AADL");
 		bot.clickButton("Choose...");

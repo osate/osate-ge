@@ -37,34 +37,32 @@ public class ModesTransitionTest {
 		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
 		editor.setFocus();
 
+		// Create abstract type
 		bot.createToolItemAndRename(editor, AbstractType.class, new Point(40, 40), ElementNames.abstractTypeName,
 				ElementNames.packageName);
 		bot.resizeEditPart(editor, new Point(300, 300), ElementNames.abstractTypeName);
 
+		// Create feature
 		bot.createToolItemAndRename(editor, AbstractFeature.class, new Point(15, 15), ElementNames.abstractFeatureNewName,
 				ElementNames.abstractTypeName);
 
+		// Create mode
 		bot.createToolItemAndRename(editor, Mode.class, new Point(80, 90), ElementNames.mode,
 				ElementNames.abstractTypeName);
-
+		// Create mode
 		bot.createToolItemAndRename(editor, Mode.class, new Point(80, 200), ElementNames.mode2,
 				ElementNames.abstractTypeName);
 
-		editor.setFocus();
-//		final SWTBotGefEditPart abstractType = editor.getEditPart(ElementNames.abstractTypeName);
-//		final List<SWTBotGefEditPart> mode = bot.findChild(editor, abstractType,
-//				ElementNames.mode);
-
 		final SWTBotGefEditPart mode = bot.findEditPart(editor, ElementNames.abstractTypeName, ElementNames.mode);
-
-		// final List<SWTBotGefEditPart> mode2 = bot.findChild(editor, abstractType, ElementNames.mode2);
 		final SWTBotGefEditPart mode2 = bot.findEditPart(editor, ElementNames.abstractTypeName, ElementNames.mode2);
 
-		// Create connection
+		// editor.select(ElementNames.abstractTypeName);
+		bot.selectElement(editor, ElementNames.abstractTypeName);
+
+		// Create Mode Transition
 		editor.activateTool(ToolTypes.getToolItem(ModeTransition.class));
 		editor.click(mode2);
 		editor.click(mode);
-		bot.sleep(4);
 		bot.clickButton("OK");
 
 		final AgeDiagramEditor ageDiagramEditor = (AgeDiagramEditor) AgeGefBot.getAgeFeatureProvider(editor)

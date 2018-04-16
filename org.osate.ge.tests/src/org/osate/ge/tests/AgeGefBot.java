@@ -796,6 +796,7 @@ public class AgeGefBot {
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) swtGefEditPart.part();
 		final ContainerShape cs = (ContainerShape) gsep.getPictogramElement();
 		final Shape labelShape = getLabelShape(cs);
+		editor.select(swtGefEditPart);
 		editor.click(swtGefEditPart);
 
 		final GraphicsAlgorithm labelGA = labelShape.getGraphicsAlgorithm();
@@ -936,9 +937,11 @@ public class AgeGefBot {
 		}
 	}
 
-	public void selectElement(final SWTBotGefEditor editor, final String[] elementPath) {
+	public void selectElement(final SWTBotGefEditor editor, final String... elementPath) {
 		editor.setFocus();
 		editor.select(findEditPart(editor, elementPath));
+		// Pause for editor update on selection
+		sleep(3);
 	}
 
 	public void selectElements(final SWTBotGefEditor editor, final String[]... elementPaths) {

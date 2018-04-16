@@ -30,7 +30,7 @@ public class ElementAppearanceTest {
 	@Test
 	public void editAppearance() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.selectElement(editor, new String[] { ElementNames.abstractTypeName });
+		bot.selectElement(editor, ElementNames.abstractTypeName);
 		bot.openProperties();
 		bot.selectTabbedPropertySection("Appearance");
 

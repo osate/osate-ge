@@ -48,7 +48,7 @@ public class DemoSystemTest {
 	@Test
 	public void runDemoTest() {
 		final SWTBotGefEditor editor = bot.getEditor(hw);
-		bot.resize(editor, new Point(600, 600), hw);
+		bot.resizeEditPart(editor, new Point(600, 600), hw);
 		bot.createTypeAndImplementation(editor, new Point(50, 50), implName, hw,
 				ToolTypes.getToolItem(SystemImplementation.class), hw);
 
@@ -61,7 +61,7 @@ public class DemoSystemTest {
 
 		bot.createAADLPackage(projectName, sw);
 		final SWTBotGefEditor swEditor = bot.getEditor(sw);
-		bot.resize(swEditor, new Point(600, 600), sw);
+		bot.resizeEditPart(swEditor, new Point(600, 600), sw);
 		bot.createToolItemAndRename(swEditor, ProcessorType.class, new Point(20, 150), "sensor_fuser", sw);
 		bot.createToolItemAndRename(swEditor, ProcessorType.class, new Point(300, 150), "actuator_controller", sw);
 		bot.createTypeAndImplementation(swEditor, new Point(50, 50), implName, application,
@@ -69,7 +69,7 @@ public class DemoSystemTest {
 
 		bot.createAADLPackage(projectName, demo_system);
 		final SWTBotGefEditor demoTestEditor = bot.getEditor(demo_system);
-		bot.resize(demoTestEditor, new Point(600, 600), demo_system);
+		bot.resizeEditPart(demoTestEditor, new Point(600, 600), demo_system);
 		bot.createTypeAndImplementation(demoTestEditor, new Point(50, 50), implName, demo_system,
 				ToolTypes.getToolItem(SystemImplementation.class), demo_system);
 
@@ -79,7 +79,7 @@ public class DemoSystemTest {
 		final SWTBotGefEditor demoSysImplEditor = bot.getEditor(demo_system + "_" + demo_system + "_" + implName);
 		bot.clickElementsMouse(demoSysImplEditor, new String[] { demo_system + "." + implName });
 		bot.executeContextMenuCommand(demoSysImplEditor, demoSysImpl, "All Filters");
-		bot.resize(demoSysImplEditor, new Point(600, 600), demoSysImpl);
+		bot.resizeEditPart(demoSysImplEditor, new Point(600, 600), demoSysImpl);
 
 		final String swSc = "sw";
 		bot.createToolItemAndRename(demoSysImplEditor, SystemSubcomponent.class, new Point(50, 50), swSc, demoSysImpl);
@@ -96,7 +96,7 @@ public class DemoSystemTest {
 		demoTestEditor.click(demo_system);
 		bot.clickElementsMouse(demoSysImplEditor, new String[] { hwSc });
 		bot.executeContextMenuCommand(demoSysImplEditor, hwSc, "All Filters");
-		bot.resize(demoSysImplEditor, new Point(350, 350), hwSc);
+		bot.resizeEditPart(demoSysImplEditor, new Point(350, 350), hwSc);
 
 		// Create devices
 		bot.createToolItemAndRename(demoSysImplEditor, DeviceSubcomponent.class, new Point(20, 20), "sensor1", hwSc);
