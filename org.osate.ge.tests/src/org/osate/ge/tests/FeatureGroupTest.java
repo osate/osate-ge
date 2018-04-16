@@ -75,7 +75,7 @@ public class FeatureGroupTest {
 	}
 
 	public boolean setFeatureDirection(final SWTBotGefEditor editor, final PictogramElement pe) {
-		bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Input", ElementNames.featureGroupName);
+		// bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Input", ElementNames.featureGroupName);
 		final FeatureGroup fg = (FeatureGroup) AgeGefBot.getBusinessObject(editor, pe);
 		return fg.getDirection() == DirectionType.IN;
 	}

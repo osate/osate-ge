@@ -97,8 +97,8 @@ public class CreateFlowImplTest {
 
 		implEditor.activateTool(ToolTypes.getToolItem(FeatureConnection.class));
 		// Create Connection 1
-		bot.clickElement(implEditor, new String[] { "sys.impl2", "dp_in" });
-		bot.clickElement(implEditor, new String[] { "ss1", "dp_in" });
+		bot.clickElement(implEditor, "sys.impl2", "dp_in");
+		bot.clickElement(implEditor, "ss1", "dp_in");
 		implEditor.activateDefaultTool();
 
 		bot.selectTabbedPropertySection("Appearance");
@@ -115,8 +115,8 @@ public class CreateFlowImplTest {
 
 		// Create Connection 2
 		implEditor.activateTool(ToolTypes.getToolItem(FeatureConnection.class));
-		bot.clickElement(implEditor, new String[] { "ss1", "dp_out" });
-		bot.clickElement(implEditor, new String[] { "ss2", "dp_in" });
+		bot.clickElement(implEditor, "ss1", "dp_out");
+		bot.clickElement(implEditor, "ss2", "dp_in");
 
 		implEditor.activateDefaultTool();
 
@@ -132,8 +132,8 @@ public class CreateFlowImplTest {
 
 		// Create Connection 3
 		implEditor.activateTool(ToolTypes.getToolItem(FeatureConnection.class));
-		bot.clickElement(implEditor, new String[] { "ss2", "dp_out" });
-		bot.clickElement(implEditor, new String[] { "sys.impl2", "dp_out" });
+		bot.clickElement(implEditor, "ss2", "dp_out");
+		bot.clickElement(implEditor, "sys.impl2", "dp_out");
 
 		implEditor.activateDefaultTool();
 
@@ -149,7 +149,7 @@ public class CreateFlowImplTest {
 		bot.renameConnection(implEditor, connectionEditPart3, ConnectionPoint.MIDDLE,
 				ElementNames.featureConnection + "3");
 
-		bot.clickElement(implEditor, new String[] { "sys.impl2" });
+		bot.clickElement(implEditor, "sys.impl2");
 
 		bot.clickToolbarButtonWithTooltip("Create Flow Implementation");
 
@@ -161,7 +161,7 @@ public class CreateFlowImplTest {
 		final SWTBotGefConnectionEditPart con = bot.getConnectionEditParts(implEditor, "fsrc", "sys.impl2", "dp_out")
 				.get(0);
 		implEditor.select(con);
-		bot.clickElement(implEditor, new String[] { "ss1" });
+		bot.clickElement(implEditor, "ss1");
 		// implEditor.click(bot.getElements(implEditor, new String[] { "ss1" }).get(0));
 
 		// bot.clickConnection(implEditor, con.getConnectionFigure());
@@ -170,11 +170,11 @@ public class CreateFlowImplTest {
 
 		// bot.clickConnection(implEditor, featureCon2);
 		implEditor.click(connectionEditPart2);
-		bot.clickElement(implEditor, new String[] { "ss2" });
+		bot.clickElement(implEditor, "ss2");
 
 		// bot.clickConnection(implEditor, featureCon3);
 		implEditor.click(connectionEditPart3);
-		bot.clickElement(implEditor, new String[] { "dp_out" });
+		bot.clickElement(implEditor, "dp_out");
 
 		bot.setFocusShell("Create Flow Implementation");
 		bot.clickButton("OK");

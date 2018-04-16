@@ -40,6 +40,7 @@ public class CreateConnectionTest {
 	public void createConnection() {
 		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
 		bot.resizeEditPart(editor, new Point(150, 150), ElementNames.abstractTypeName);
+		bot.openProperties();
 		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractFeature.class), new Point(15, 15),
 				ElementNames.abstractTypeName);
 		bot.renameElement(editor, ElementNames.abstractFeatureNewName);
@@ -47,8 +48,10 @@ public class CreateConnectionTest {
 		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractFeature.class), new Point(100, 100),
 				ElementNames.abstractTypeName);
 		bot.renameElement(editor, ElementNames.abstractFeatureNewName2);
-		bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Output", ElementNames.abstractTypeName,
-				ElementNames.abstractFeatureNewName2);
+		bot.clickElement(editor, ElementNames.abstractFeatureNewName2);
+		bot.selectTabbedPropertySection("AADL");
+		bot.clickRadio("Output");
+
 
 		final String abstractImplName = ElementNames.abstractTypeName + ".impl";
 		bot.resizeEditPart(editor, new Point(400, 400), abstractImplName);

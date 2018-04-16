@@ -515,10 +515,8 @@ public class AgeGefBot {
 
 	public void setElementOptionRadioInPropertiesView(final SWTBotGefEditor editor, final String tabTitle,
 			final String option, final String... elementName) {
-		openPropertiesView(editor, elementName);
 		selectElement(editor, elementName);
 		selectTabbedPropertySection(tabTitle);
-		selectElement(editor, elementName);
 		clickElementsMouse(editor, elementName);
 		bot.viewByTitle("Properties").setFocus();
 		bot.activeView().bot().radio(option).click();
@@ -796,24 +794,24 @@ public class AgeGefBot {
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) swtGefEditPart.part();
 		final ContainerShape cs = (ContainerShape) gsep.getPictogramElement();
 		final Shape labelShape = getLabelShape(cs);
-		editor.select(swtGefEditPart);
+		// editor.select(swtGefEditPart);
 		editor.click(swtGefEditPart);
 
 		final GraphicsAlgorithm labelGA = labelShape.getGraphicsAlgorithm();
 		try {
 			final Robot robot = new Robot();
-			robot.setAutoDelay(100);
+			// robot.setAutoDelay(100);
 			editor.getWidget().getDisplay().asyncExec(() -> {
 				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
 				final Rectangle bounds = gsep.getFigure().getBounds();
 				final Point point = PlatformUI.getWorkbench().getDisplay()
 						.map(editor.getWidget().getDisplay().getFocusControl(), null, bounds.x, bounds.y);
-				robot.mouseMove(0, 0);
+				// robot.mouseMove(0, 0);
 				robot.mouseMove(
 						point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX() + labelGA.getWidth() / 2,
 						point.y - canvas.getVerticalBar().getSelection() + labelGA.getY() + labelGA.getHeight() / 2);
-				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+				// robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+				// robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 			});
 		} catch (AWTException e) {
 		}
@@ -926,7 +924,7 @@ public class AgeGefBot {
 		waitUntilElementExists(editor, typeName + "." + implName);
 	}
 
-	public void clickElement(final SWTBotGefEditor editor, final String[] elementPath) {
+	public void clickElement(final SWTBotGefEditor editor, final String... elementPath) {
 		editor.setFocus();
 		editor.click(findEditPart(editor, elementPath));
 	}

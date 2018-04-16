@@ -108,7 +108,7 @@ public class DemoSystemTest {
 		bot.createToolItemAndRename(demoSysImplEditor, BusAccess.class, new Point(80, 20), "ba_req", "sensor1");
 
 		bot.createToolItemAndRename(demoSysImplEditor, DataPort.class, new Point(20, 20), "dp_out", "sensor1");
-		bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Output", "dp_out");
+		// bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Output", "dp_out");
 		bot.createToolItemAndRename(demoSysImplEditor, DeviceSubcomponent.class, new Point(20, 200), "sensor2", swSc);
 		bot.executeContextMenuCommand(demoSysImplEditor, "sensor2", "All Filters");
 		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...", "sensor2");
@@ -116,7 +116,7 @@ public class DemoSystemTest {
 		bot.clickButton("OK");
 
 		bot.createToolItemAndRename(demoSysImplEditor, DataPort.class, new Point(20, 20), "dp_in", "sensor2");
-		bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Input", "dp_in");
+		// bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Input", "dp_in");
 
 		bot.createToolItemAndRename(demoSysImplEditor, ProcessorSubcomponent.class, new Point(20, 20), "cpu1",
 				demoSysImpl);
@@ -140,7 +140,7 @@ public class DemoSystemTest {
 
 		bot.createToolItemAndRename(demoSysImplEditor, FeatureGroup.class, new Point(5, 300), "actuator_data",
 				demoSysImpl);
-		bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Input", "actuator_data");
+		// bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Input", "actuator_data");
 		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...",
 				"actuator_data");
 		bot.clickTableOption(AgeGefBot.qualifiedName(hw, "sensor_data"));
@@ -149,8 +149,8 @@ public class DemoSystemTest {
 		bot.createToolItemAndRename(demoSysImplEditor, DataPort.class, new Point(5, 5), "sd1", "actuator_data");
 		bot.createToolItemAndRename(demoSysImplEditor, DataPort.class, new Point(5, 20), "sd2", "actuator_data");
 
-		bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Output", "sd1");
-		bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Output", "sd2");
+		// bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Output", "sd1");
+		// bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Output", "sd2");
 
 		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...", "ba");
 		bot.clickTableOption(AgeGefBot.qualifiedName(hw, "ethernet_switch"));
