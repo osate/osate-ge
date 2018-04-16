@@ -303,8 +303,8 @@ public class AgeGefBot {
 			final String newName, final String... editPathPath) {
 		final SWTBotGefEditPart editPart = editor
 				.editParts(new FindEditPart(getAgeFeatureProvider(editor), editPathPath)).get(0);
-		editor.click(editPart);
 		editor.select(editPart);
+		editor.click(editPart);
 		createToolItem(editor, ToolTypes.getToolItem(clazz), p, editPathPath);
 		waitUntilNewElementIsCreated(editor, clazz);
 		renameElement(editor, newName);
@@ -796,13 +796,13 @@ public class AgeGefBot {
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) swtGefEditPart.part();
 		final ContainerShape cs = (ContainerShape) gsep.getPictogramElement();
 		final Shape labelShape = getLabelShape(cs);
-		// editor.select(swtGefEditPart);
+		editor.select(swtGefEditPart);
 		editor.click(swtGefEditPart);
 
 		final GraphicsAlgorithm labelGA = labelShape.getGraphicsAlgorithm();
 		try {
 			final Robot robot = new Robot();
-			// robot.setAutoDelay(100);
+			robot.setAutoDelay(100);
 			editor.getWidget().getDisplay().asyncExec(() -> {
 				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
 				final Rectangle bounds = gsep.getFigure().getBounds();
@@ -812,6 +812,8 @@ public class AgeGefBot {
 				robot.mouseMove(
 						point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX() + labelGA.getWidth() / 2,
 						point.y - canvas.getVerticalBar().getSelection() + labelGA.getY() + labelGA.getHeight() / 2);
+				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 			});
 		} catch (AWTException e) {
 		}
