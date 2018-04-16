@@ -45,7 +45,12 @@ public class FeatureGroupTest {
 		bot.createToolItemAndRename(editor, FeatureGroupType.class, new Point(25, 250),
 				ElementNames.featureGroupTypeName, ElementNames.packageName);
 
-		bot.setElementOptionButtonInPropertiesView(editor, "AADL", "Choose...", ElementNames.featureGroupName);
+		bot.selectElement(editor, new String[] { ElementNames.featureGroupName });
+		bot.openProperties();
+		bot.selectTabbedPropertySection("AADL");
+		bot.clickButton("Choose...");
+
+		// bot.setElementOptionButtonInPropertiesView(editor, "AADL", "Choose...", ElementNames.featureGroupName);
 
 		final GraphitiShapeEditPart fgtGsep = (GraphitiShapeEditPart) bot
 				.findEditPart(editor, ElementNames.featureGroupTypeName).part();

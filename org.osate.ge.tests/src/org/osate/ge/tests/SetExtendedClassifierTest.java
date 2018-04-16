@@ -26,9 +26,11 @@ public class SetExtendedClassifierTest {
 	@Test
 	public void setExtendedClassifier() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		editor.setFocus();
+		editor.click(ElementNames.packageName);
 		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
 
-		bot.createToolItemAndRename(editor, AbstractType.class, new Point(40, 40), ElementNames.abstractTypeName,
+		bot.createToolItemAndRename(editor, AbstractType.class, new Point(60, 60), ElementNames.abstractTypeName,
 				ElementNames.packageName);
 
 		bot.createImplementation(editor, ToolTypes.getToolItem(AbstractImplementation.class),

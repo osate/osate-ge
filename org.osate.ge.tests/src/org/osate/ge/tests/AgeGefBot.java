@@ -290,17 +290,21 @@ public class AgeGefBot {
 
 	public void createToolItem(final SWTBotGefEditor editor, final String toolItem, final Point p,
 			final String... editPartPath) {
-		final GraphitiShapeEditPart parent = (GraphitiShapeEditPart) findEditPart(editor, editPartPath).part();
+		final SWTBotGefEditPart parent = findEditPart(editor, editPartPath);
 		editor.setFocus();
+		editor.click(parent);
 		editor.activateTool(toolItem);
-		final Rectangle rect = parent.getFigure().getBounds();
+		final Rectangle rect = ((GraphitiShapeEditPart) parent.part()).getFigure().getBounds();
 		editor.click(rect.x + p.x, rect.y + p.y);
 		editor.activateDefaultTool();
 	}
 
 	public void createToolItemAndRename(final SWTBotGefEditor editor, final Class<?> clazz, final Point p,
 			final String newName, final String... editPathPath) {
-		editor.select(editor.editParts(new FindEditPart(getAgeFeatureProvider(editor), editPathPath)));
+		final SWTBotGefEditPart editPart = editor
+				.editParts(new FindEditPart(getAgeFeatureProvider(editor), editPathPath)).get(0);
+		editor.click(editPart);
+		editor.select(editPart);
 		createToolItem(editor, ToolTypes.getToolItem(clazz), p, editPathPath);
 		waitUntilNewElementIsCreated(editor, clazz);
 		renameElement(editor, newName);
@@ -418,7 +422,9 @@ public class AgeGefBot {
 	public void openAssociatedDiagramFromContextMenu(final SWTBotGefEditor editor, final String elementName) {
 		final List<SWTBotGefEditPart> editPart = editor
 				.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName));
-		editor.select(editPart.get(0)).clickContextMenu("Associated Diagram");
+		editor.click(editPart.get(0));
+		sleep(4);
+		editor.clickContextMenu("Associated Diagram");
 		clickButton("Yes");
 		clickButton("OK");
 	}
@@ -795,11 +801,13 @@ public class AgeGefBot {
 		final GraphicsAlgorithm labelGA = labelShape.getGraphicsAlgorithm();
 		try {
 			final Robot robot = new Robot();
+			robot.setAutoDelay(100);
 			editor.getWidget().getDisplay().asyncExec(() -> {
 				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
 				final Rectangle bounds = gsep.getFigure().getBounds();
 				final Point point = PlatformUI.getWorkbench().getDisplay()
 						.map(editor.getWidget().getDisplay().getFocusControl(), null, bounds.x, bounds.y);
+				robot.mouseMove(0, 0);
 				robot.mouseMove(
 						point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX() + labelGA.getWidth() / 2,
 						point.y - canvas.getVerticalBar().getSelection() + labelGA.getY() + labelGA.getHeight() / 2);
@@ -807,7 +815,7 @@ public class AgeGefBot {
 		} catch (AWTException e) {
 		}
 
-		sleep(1);
+		sleep(2);
 		swtGefEditPart.activateDirectEdit(BoHandlerDirectEditFeature.class);
 		editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
@@ -918,6 +926,14 @@ public class AgeGefBot {
 	public void clickElement(final SWTBotGefEditor editor, final String[] elementPath) {
 		editor.setFocus();
 		editor.click(findEditPart(editor, elementPath));
+	}
+
+	public void resetMouse() {
+		try {
+			final Robot robot = new Robot();
+			robot.mouseMove(0, 0);
+		} catch (AWTException e) {
+		}
 	}
 
 	public void selectElement(final SWTBotGefEditor editor, final String[] elementPath) {

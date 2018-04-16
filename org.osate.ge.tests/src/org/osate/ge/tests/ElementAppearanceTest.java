@@ -30,7 +30,8 @@ public class ElementAppearanceTest {
 	@Test
 	public void editAppearance() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.openPropertiesView(editor, ElementNames.abstractTypeName);
+		bot.selectElement(editor, new String[] { ElementNames.abstractTypeName });
+		bot.openProperties();
 		bot.selectTabbedPropertySection("Appearance");
 
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) editor.getEditPart(ElementNames.abstractTypeName)

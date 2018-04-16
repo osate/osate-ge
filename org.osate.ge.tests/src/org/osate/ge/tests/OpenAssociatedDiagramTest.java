@@ -31,10 +31,11 @@ public class OpenAssociatedDiagramTest {
 
 	@Test
 	public void openAssociatedDiagram() {
-		bot.getEditor(ElementNames.packageName).select(ElementNames.abstractTypeName)
-				.clickContextMenu(AgeGefBot.associatedDiagram);
-		bot.clickButton("Yes");
-		bot.clickButton("OK");
+		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		// editor.setFocus();
+		// bot.clickElement(editor, new String[] { ElementNames.abstractTypeName });
+		bot.openAssociatedDiagramFromContextMenu(editor, ElementNames.abstractTypeName);
+		// editor.clickContextMenu(AgeGefBot.associatedDiagram);
 
 		Assert.assertTrue(bot.getEditor(ElementNames.packageName + "_" + ElementNames.abstractTypeName) != null);
 	}
