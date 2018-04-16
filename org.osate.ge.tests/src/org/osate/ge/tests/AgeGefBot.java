@@ -795,8 +795,8 @@ public class AgeGefBot {
 		final ContainerShape cs = (ContainerShape) gsep.getPictogramElement();
 		final Shape labelShape = getLabelShape(cs);
 		editor.setFocus();
-		// editor.select(swtGefEditPart);
 		editor.click(swtGefEditPart);
+		editor.select(swtGefEditPart);
 
 		final GraphicsAlgorithm labelGA = labelShape.getGraphicsAlgorithm();
 		try {
@@ -807,7 +807,7 @@ public class AgeGefBot {
 				final Rectangle bounds = gsep.getFigure().getBounds();
 				final Point point = PlatformUI.getWorkbench().getDisplay()
 						.map(editor.getWidget().getDisplay().getFocusControl(), null, bounds.x, bounds.y);
-				// robot.mouseMove(0, 0);
+				robot.mouseMove(0, 0);
 				robot.mouseMove(
 						point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX() + labelGA.getWidth() / 2,
 						point.y - canvas.getVerticalBar().getSelection() + labelGA.getY() + labelGA.getHeight() / 2);
