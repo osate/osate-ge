@@ -812,6 +812,8 @@ public class AgeGefBot {
 				robot.mouseMove(
 						point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX() + labelGA.getWidth() / 2,
 						point.y - canvas.getVerticalBar().getSelection() + labelGA.getY() + labelGA.getHeight() / 2);
+				robot.keyPress(KeyEvent.VK_F2);
+				robot.keyRelease(KeyEvent.VK_F2);
 				// robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
 				// robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 			});

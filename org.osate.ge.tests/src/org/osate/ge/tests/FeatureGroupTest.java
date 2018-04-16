@@ -34,6 +34,7 @@ public class FeatureGroupTest {
 	public void setFeatureClassifier() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
 		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
+		bot.openProperties();
 
 		bot.createToolItemAndRename(editor, AbstractType.class, new Point(20, 20), ElementNames.abstractTypeName,
 				ElementNames.packageName);
@@ -46,9 +47,9 @@ public class FeatureGroupTest {
 				ElementNames.featureGroupTypeName, ElementNames.packageName);
 
 		bot.selectElement(editor, ElementNames.featureGroupName);
-		bot.openProperties();
 		bot.selectTabbedPropertySection("AADL");
 		bot.clickButton("Choose...");
+
 
 		// bot.setElementOptionButtonInPropertiesView(editor, "AADL", "Choose...", ElementNames.featureGroupName);
 
@@ -75,7 +76,8 @@ public class FeatureGroupTest {
 	}
 
 	public boolean setFeatureDirection(final SWTBotGefEditor editor, final PictogramElement pe) {
-		// bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Input", ElementNames.featureGroupName);
+		bot.selectElement(editor, ElementNames.featureGroupName);
+		bot.clickRadio("Input");
 		final FeatureGroup fg = (FeatureGroup) AgeGefBot.getBusinessObject(editor, pe);
 		return fg.getDirection() == DirectionType.IN;
 	}
