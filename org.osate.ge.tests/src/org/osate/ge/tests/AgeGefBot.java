@@ -796,13 +796,13 @@ public class AgeGefBot {
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) swtGefEditPart.part();
 		final ContainerShape cs = (ContainerShape) gsep.getPictogramElement();
 		final Shape labelShape = getLabelShape(cs);
-		editor.select(swtGefEditPart);
+		// editor.select(swtGefEditPart);
 		editor.click(swtGefEditPart);
 
 		final GraphicsAlgorithm labelGA = labelShape.getGraphicsAlgorithm();
 		try {
 			final Robot robot = new Robot();
-			robot.setAutoDelay(100);
+			// robot.setAutoDelay(100);
 			editor.getWidget().getDisplay().asyncExec(() -> {
 				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
 				final Rectangle bounds = gsep.getFigure().getBounds();
@@ -812,13 +812,11 @@ public class AgeGefBot {
 				robot.mouseMove(
 						point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX() + labelGA.getWidth() / 2,
 						point.y - canvas.getVerticalBar().getSelection() + labelGA.getY() + labelGA.getHeight() / 2);
-				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 			});
 		} catch (AWTException e) {
 		}
 
-		sleep(2);
+		sleep(3);
 		swtGefEditPart.activateDirectEdit(BoHandlerDirectEditFeature.class);
 		editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
