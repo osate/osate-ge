@@ -40,6 +40,7 @@ import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefConnectionEditPart
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditPart;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.eclipse.swtbot.swt.finder.exceptions.WidgetNotFoundException;
+import org.eclipse.swtbot.swt.finder.keyboard.Keystrokes;
 import org.eclipse.swtbot.swt.finder.utils.SWTBotPreferences;
 import org.eclipse.swtbot.swt.finder.waits.Conditions;
 import org.eclipse.swtbot.swt.finder.waits.DefaultCondition;
@@ -797,12 +798,12 @@ public class AgeGefBot {
 		editor.setFocus();
 		editor.click(swtGefEditPart);
 		editor.select(swtGefEditPart);
-		sleep(3);
+		// sleep(3);
 
 		final GraphicsAlgorithm labelGA = labelShape.getGraphicsAlgorithm();
 		try {
 			final Robot robot = new Robot();
-			robot.setAutoDelay(100);
+			// robot.setAutoDelay(100);
 			editor.getWidget().getDisplay().asyncExec(() -> {
 				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
 				final Rectangle bounds = gsep.getFigure().getBounds();
@@ -812,14 +813,16 @@ public class AgeGefBot {
 				robot.mouseMove(
 						point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX() + labelGA.getWidth() / 2,
 						point.y - canvas.getVerticalBar().getSelection() + labelGA.getY() + labelGA.getHeight() / 2);
-				robot.keyPress(KeyEvent.VK_F2);
-				robot.keyRelease(KeyEvent.VK_F2);
+
+				// robot.keyPress(KeyEvent.VK_F2);
+				// robot.keyRelease(KeyEvent.VK_F2);
 				// robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
 				// robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 			});
 		} catch (AWTException e) {
 		}
 
+		bot.activeShell().pressShortcut(Keystrokes.F2);
 		sleep(3);
 		swtGefEditPart.activateDirectEdit(BoHandlerDirectEditFeature.class);
 		editor.directEditType(newName);
