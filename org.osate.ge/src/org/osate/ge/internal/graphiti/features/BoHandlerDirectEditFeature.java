@@ -93,6 +93,7 @@ public class BoHandlerDirectEditFeature extends AbstractDirectEditingFeature imp
 			final DiagramService diagramService, final ReferenceBuilderService referenceBuilderService,
 			final ModelChangeNotifier modelChangeNotifier) {
 		super(fp);
+		System.err.println("AAA");
 		this.graphitiService = Objects.requireNonNull(graphitiService, "graphitiService must not be null");
 		this.extService = Objects.requireNonNull(extService, "extService must not be null");
 		this.aadlModService = Objects.requireNonNull(aadlModService, "aadlModService must not be null");
