@@ -109,6 +109,7 @@ public class DefaultAadlResourceService implements AadlResourceService {
 	private ModelChangeNotifier.ChangeListener changeListener = new ModelChangeNotifier.ChangeListener() {
 		@Override
 		public void resourceChanged(final URI resourceUri) {
+			// Closing the resource immediate can cause problems if something is accessing the resource.
 			boolean resourceUnloaded = false;
 			for (final WeakPackageReference weakRef : elementUriToAadlPackageReference.values()) {
 				final SimpleAadlPackageReference pkgRef = weakRef.get();
