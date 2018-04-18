@@ -4,4 +4,4 @@ before_script:
 test:
     script: 
       - cd ~/oge_build_root/osate2-core/osate.releng/
-      - xvfb-run -s "-screen 0 1920x1080x24" mvn -Plocal -fae -Dtest=RenameClassifierTest clean integration-test
+      - xvfb-run mvn -Plocal -fae clean integration-test
