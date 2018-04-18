@@ -801,7 +801,7 @@ public class AgeGefBot {
 		final GraphicsAlgorithm labelGA = labelShape.getGraphicsAlgorithm();
 		try {
 			final Robot robot = new Robot();
-			robot.setAutoDelay(500);
+			robot.setAutoDelay(1000);
 			editor.getWidget().getDisplay().asyncExec(() -> {
 				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
 				final Rectangle bounds = gsep.getFigure().getBounds();
