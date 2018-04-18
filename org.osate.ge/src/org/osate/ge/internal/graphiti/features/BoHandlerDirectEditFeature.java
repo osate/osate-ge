@@ -107,8 +107,8 @@ public class BoHandlerDirectEditFeature extends AbstractDirectEditingFeature imp
 	public boolean canDirectEdit(final IDirectEditingContext context) {
 		System.err.println("can direct edit");
 		final DiagramElement de = graphitiService.getGraphitiAgeDiagram().getClosestDiagramElement(context.getPictogramElement());
-		System.err.println(de + " de");
 		if(de == null) {
+			System.err.println(de + " de");
 			return false;
 		}
 
