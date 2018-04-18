@@ -93,7 +93,7 @@ public class BoHandlerDirectEditFeature extends AbstractDirectEditingFeature imp
 			final DiagramService diagramService, final ReferenceBuilderService referenceBuilderService,
 			final ModelChangeNotifier modelChangeNotifier) {
 		super(fp);
-		System.err.println("AAA");
+		System.err.println("DirectEditFeature");
 		this.graphitiService = Objects.requireNonNull(graphitiService, "graphitiService must not be null");
 		this.extService = Objects.requireNonNull(extService, "extService must not be null");
 		this.aadlModService = Objects.requireNonNull(aadlModService, "aadlModService must not be null");
@@ -105,30 +105,37 @@ public class BoHandlerDirectEditFeature extends AbstractDirectEditingFeature imp
 
 	@Override
 	public boolean canDirectEdit(final IDirectEditingContext context) {
+		System.err.println("can direct edit");
 		final DiagramElement de = graphitiService.getGraphitiAgeDiagram().getClosestDiagramElement(context.getPictogramElement());
+		System.err.println(de + " de");
 		if(de == null) {
 			return false;
 		}
 
+		System.err.println(de.getBusinessObject() + " bo");
 		final Object bo = de.getBusinessObject();
 
 		// Only EObjects are supported at this time
 		if (!(bo instanceof EObject)) {
+			System.err.println("AAA");
 			return false;
 		}
 
 		final Object handler = de.getBusinessObjectHandler();
 		if(!AnnotationUtil.hasMethodWithAnnotation(ValidateName.class, handler)) {
+			System.err.println("BBB");
 			return false;
 		}
 
 		if (!AnnotationUtil.hasMethodWithAnnotation(Rename.class, handler) && getRenameRefactoring(bo) == null) {
+			System.err.println("CCCC");
 			return false;
 		}
 
 		// Ensure that the specified pictogram elmenet is a primary label unless the context contains a property specifying otherwise.
 		if (!Boolean.FALSE.equals(context.getProperty(PROPERTY_REQUIRE_PRIMARY_LABEL))) {
 			if (!ShapeNames.primaryLabelShapeName.equals(PropertyUtil.getName(context.getPictogramElement()))) {
+				System.err.println("DDDD");
 				return false;
 			}
 		}
@@ -140,6 +147,7 @@ public class BoHandlerDirectEditFeature extends AbstractDirectEditingFeature imp
 			childCtx.set(Names.BUSINESS_OBJECT_CONTEXT, de);
 			canRename = (boolean)ContextInjectionFactory.invoke(handler, CanRename.class, childCtx, true);
 			if(!canRename) {
+				System.err.println("EEE");
 				return false;
 			}
 		} finally {

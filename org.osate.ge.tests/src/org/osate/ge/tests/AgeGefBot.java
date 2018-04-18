@@ -61,6 +61,7 @@ import org.osate.aadl2.impl.NamedElementImpl;
 import org.osate.ge.internal.graphiti.AgeFeatureProvider;
 import org.osate.ge.internal.graphiti.ShapeNames;
 import org.osate.ge.internal.graphiti.diagram.PropertyUtil;
+import org.osate.ge.internal.graphiti.features.BoHandlerDirectEditFeature;
 import org.osate.ge.internal.ui.dialogs.ClassifierOperationDialog;
 
 public class AgeGefBot {
@@ -826,7 +827,7 @@ public class AgeGefBot {
 
 		sleep(3);
 		// bot.activeShell().pressShortcut(Keystrokes.F2);
-		// swtGefEditPart.activateDirectEdit(BoHandlerDirectEditFeature.class);
+		swtGefEditPart.activateDirectEdit(BoHandlerDirectEditFeature.class);
 		sleep(30);
 		// editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
