@@ -824,7 +824,7 @@ public class AgeGefBot {
 		// bot.activeShell().pressShortcut(Keystrokes.F2);
 		sleep(3);
 		swtGefEditPart.activateDirectEdit(BoHandlerDirectEditFeature.class);
-		editor.directEditType(newName);
+		// editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
 	}
 
