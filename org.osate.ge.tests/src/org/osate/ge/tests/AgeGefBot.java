@@ -790,6 +790,7 @@ public class AgeGefBot {
 	}
 
 	public void renameElement(final SWTBotGefEditor editor, final String newName) {
+		System.err.println("renameElementRunning");
 		final SWTBotGefEditPart swtGefEditPart = editor.editParts(new AgeGefBot.NewElementMatcher(editor)).get(0);
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) swtGefEditPart.part();
 		final ContainerShape cs = (ContainerShape) gsep.getPictogramElement();
