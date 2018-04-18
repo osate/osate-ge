@@ -61,7 +61,6 @@ import org.osate.aadl2.impl.NamedElementImpl;
 import org.osate.ge.internal.graphiti.AgeFeatureProvider;
 import org.osate.ge.internal.graphiti.ShapeNames;
 import org.osate.ge.internal.graphiti.diagram.PropertyUtil;
-import org.osate.ge.internal.graphiti.features.BoHandlerDirectEditFeature;
 import org.osate.ge.internal.ui.dialogs.ClassifierOperationDialog;
 
 public class AgeGefBot {
@@ -796,8 +795,8 @@ public class AgeGefBot {
 		final ContainerShape cs = (ContainerShape) gsep.getPictogramElement();
 		final Shape labelShape = getLabelShape(cs);
 		editor.setFocus();
-		// editor.click(swtGefEditPart);
-		// editor.select(swtGefEditPart);
+		editor.click(swtGefEditPart);
+		editor.select(swtGefEditPart);
 		// sleep(3);
 
 		final GraphicsAlgorithm labelGA = labelShape.getGraphicsAlgorithm();
@@ -819,17 +818,20 @@ public class AgeGefBot {
 				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
 				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-				robot.keyPress(KeyEvent.VK_F2);
-				robot.keyRelease(KeyEvent.VK_F2);
+				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+				// robot.keyPress(KeyEvent.VK_F2);
+				// robot.keyRelease(KeyEvent.VK_F2);
 			});
 		} catch (AWTException e) {
 		}
 
 		sleep(3);
 		// bot.activeShell().pressShortcut(Keystrokes.F2);
-		swtGefEditPart.activateDirectEdit(BoHandlerDirectEditFeature.class);
-		sleep(30);
-		// editor.directEditType(newName);
+		// swtGefEditPart.activateDirectEdit(BoHandlerDirectEditFeature.class);
+		// sleep(30);
+		editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
 	}
 
