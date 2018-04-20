@@ -2,7 +2,6 @@ package org.osate.ge.tests;
 
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditPart;
-import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -14,6 +13,7 @@ import org.osate.aadl2.ModeTransition;
 import org.osate.ge.internal.ui.editor.AgeDiagramEditor;
 import org.osate.ge.query.StandaloneQuery;
 import org.osate.ge.services.QueryService;
+import org.osate.ge.tests.AgeGefBot.AgeSWTBotGefEditor;
 
 public class ModesTransitionTest {
 	private final AgeGefBot bot = new AgeGefBot();
@@ -33,7 +33,7 @@ public class ModesTransitionTest {
 
 	@Test
 	public void createModes() {
-		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
 		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
 		editor.setFocus();
 

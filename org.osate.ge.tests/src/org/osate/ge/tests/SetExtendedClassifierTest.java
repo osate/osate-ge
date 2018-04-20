@@ -1,12 +1,12 @@
 package org.osate.ge.tests;
 
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.osate.aadl2.AbstractImplementation;
 import org.osate.aadl2.AbstractType;
+import org.osate.ge.tests.AgeGefBot.AgeSWTBotGefEditor;
 
 public class SetExtendedClassifierTest {
 	private final AgeGefBot bot = new AgeGefBot();
@@ -25,7 +25,7 @@ public class SetExtendedClassifierTest {
 
 	@Test
 	public void setExtendedClassifier() {
-		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
 		editor.setFocus();
 		editor.click(ElementNames.packageName);
 		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
@@ -41,9 +41,8 @@ public class SetExtendedClassifierTest {
 				ElementNames.packageName);
 
 		final String implName = ElementNames.abstractTypeName + "." + ElementNames.abstractTypeName + 2;
-		bot.openPropertiesView(editor, ElementNames.packageName);
+		bot.setFocusProperties();
 		bot.selectElements(editor, new String[] { implName });
-		// bot.clickElementsMouse(editor, new String[] { implName });
 		bot.selectTabbedPropertySection("AADL");
 		bot.clickButton("Choose...");
 		bot.clickButton("OK");

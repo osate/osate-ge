@@ -11,6 +11,7 @@ import org.junit.Test;
 import org.osate.aadl2.AadlPackage;
 import org.osate.aadl2.AbstractType;
 import org.osate.ge.internal.graphiti.AgeFeatureProvider;
+import org.osate.ge.tests.AgeGefBot.AgeSWTBotGefEditor;
 
 public class SelectingDiagramElementContainerTest {
 	private final AgeGefBot bot = new AgeGefBot();
@@ -20,10 +21,10 @@ public class SelectingDiagramElementContainerTest {
 		bot.maximize();
 		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
-		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractType.class), new Point(35, 35),
+
+		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		bot.createToolItemAndRename(editor, AbstractType.class, new Point(35, 35), ElementNames.abstractTypeName,
 				ElementNames.packageName);
-		bot.renameElement(editor, ElementNames.abstractTypeName);
 	}
 
 	@After

@@ -14,6 +14,7 @@ import org.osate.aadl2.DirectionType;
 import org.osate.aadl2.FeatureGroup;
 import org.osate.aadl2.FeatureGroupType;
 import org.osate.ge.internal.ui.properties.SetFeatureGroupInversePropertySection;
+import org.osate.ge.tests.AgeGefBot.AgeSWTBotGefEditor;
 
 public class FeatureGroupTest {
 	private final AgeGefBot bot = new AgeGefBot();
@@ -32,9 +33,9 @@ public class FeatureGroupTest {
 
 	@Test
 	public void setFeatureClassifier() {
-		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
 		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
-		bot.openProperties();
+		bot.setFocusProperties();
 
 		bot.createToolItemAndRename(editor, AbstractType.class, new Point(20, 20), ElementNames.abstractTypeName,
 				ElementNames.packageName);

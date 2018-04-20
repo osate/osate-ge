@@ -3,12 +3,12 @@ package org.osate.ge.tests;
 import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -50,6 +50,7 @@ import org.eclipse.swtbot.swt.finder.widgets.SWTBotTree;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.PlatformUI;
 import org.hamcrest.BaseMatcher;
+import org.hamcrest.CustomMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.junit.Assert;
@@ -65,7 +66,7 @@ import org.osate.ge.internal.ui.dialogs.ClassifierOperationDialog;
 
 public class AgeGefBot {
 	public static class AgeSWTBotGefEditor extends SWTBotGefEditor {
-		final Set<SWTBotGefConnectionEditPart> connectionEditParts = new HashSet<>();
+		private final Set<SWTBotGefConnectionEditPart> connectionEditParts = new HashSet<>();
 
 		public AgeSWTBotGefEditor(final IEditorReference reference, final SWTWorkbenchBot bot)
 				throws WidgetNotFoundException {
@@ -78,7 +79,7 @@ public class AgeGefBot {
 			return connectionEditParts.stream().collect(Collectors.toList());
 		}
 
-		public List<SWTBotGefConnectionEditPart> childConnections(final SWTBotGefEditPart editPart) {
+		private List<SWTBotGefConnectionEditPart> childConnections(final SWTBotGefEditPart editPart) {
 			connectionEditParts.clear();
 			findConnectionEditParts(editPart);
 			return connectionEditParts.stream().collect(Collectors.toList());
@@ -92,7 +93,12 @@ public class AgeGefBot {
 			addConnectionEditPart.accept(swtBotGefEditPart);
 		}
 
-		final Consumer<SWTBotGefEditPart> addConnectionEditPart = swtBotGefEditPart -> {
+		public List<SWTBotGefConnectionEditPart> editPartConnections(Matcher<? extends EditPart> matcher)
+				throws WidgetNotFoundException {
+			return allConnections();
+		}
+
+		private final Consumer<SWTBotGefEditPart> addConnectionEditPart = swtBotGefEditPart -> {
 			if (swtBotGefEditPart.part() instanceof AbstractGraphicalEditPart) {
 				final AbstractGraphicalEditPart agep = (AbstractGraphicalEditPart) swtBotGefEditPart.part();
 				for (final Object ob : agep.getTargetConnections()) {
@@ -111,6 +117,22 @@ public class AgeGefBot {
 	}
 
 	private static class AgeSWTGefBot extends SWTGefBot {
+		private final Robot robot;
+
+		public AgeSWTGefBot() {
+			robot = Objects.requireNonNull(getRobot(), "Robot cannot be null.");
+			robot.setAutoDelay(300);
+		}
+
+		private Robot getRobot() {
+			try {
+				return new Robot();
+			} catch (final AWTException e) {
+				e.printStackTrace();
+			}
+			return null;
+		}
+
 		@Override
 		protected SWTBotGefEditor createEditor(final IEditorReference reference, final SWTWorkbenchBot bot) {
 			return new AgeSWTBotGefEditor(reference, bot);
@@ -120,43 +142,34 @@ public class AgeGefBot {
 		public AgeSWTBotGefEditor gefEditor(String fileName) throws WidgetNotFoundException {
 			return (AgeSWTBotGefEditor) super.gefEditor(fileName);
 		}
+
+		public void mouseLeftClick(final int x, final int y) {
+			mouseMove(x, y);
+			mouseLeftClickPress();
+			mouseLeftClickRelease();
+		}
+
+		public void mouseLeftClickPress() {
+			robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+		}
+
+		public void mouseLeftClickRelease() {
+			robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+		}
+
+		public void mouseMove(int x, int y) {
+			robot.mouseMove(x, y);
+		}
+
+		public void setAutoDelay(int delay) {
+			robot.setAutoDelay(delay);
+		}
 	}
 
-	final private AgeSWTGefBot bot = new AgeSWTGefBot();
-
+	private final AgeSWTGefBot bot = new AgeSWTGefBot();
 	// Context menu options
 	final public static String associatedDiagram = "Associated Diagram";
 	final public static String allFilters = "All Filters";
-
-//    public void createNewProjectAndPackage(final String projectName, final String packageName) {
-//        closeWelcomePage();
-//        final SWTBotMenu newMenu = bot.menu("Other...", true).click();
-//        bot.tree().getTreeItem("AADL").expand().getNode("AADL Project").click();
-//        bot.button("Next >").click();
-//        bot.text().setText(projectName);
-//        bot.button("Finish").click();
-//
-//        if (!bot.activePerspective().getLabel().equals("AADL")) {
-//            // Open AADL Perspective Dialog
-//            bot.button("Open Perspective").click();
-//        }
-//
-//        // Create AADL Package
-//        newMenu.click();
-//        bot.tree().getTreeItem("AADL").expand().getNode("AADL Package").click();
-//        bot.button("Next >").click();
-//        bot.text().setText(packageName);
-//        bot.radio("Graphical Editor").click();
-//        bot.button("Finish").click();
-//        bot.button("OK").click();
-//
-//        // Close editor for open test
-//        bot.gefEditor(packageName + ".aadl_diagram").close();
-//
-//        bot.tree().expandNode(new String[] { projectName }).getNode(packageName + ".aadl")
-//                .click();
-//        bot.tree().contextMenu("Open").click();
-//    }
 
 	public void createNewProjectAndPackage(final String projectName, final String packageName) {
 		SWTBotPreferences.TIMEOUT = 15000;
@@ -175,7 +188,6 @@ public class AgeGefBot {
 		// Create AADL Package
 		createAADLPackage(projectName, packageName);
 
-
 		// Close editor for open test
 		bot.gefEditor(packageName + ".aadl_diagram").close();
 
@@ -186,9 +198,9 @@ public class AgeGefBot {
 	public void createAADLPackage(final String projectName, final String packageName) {
 		bot.tree().select(projectName).contextMenu("AADL Package").click();
 		bot.text().setText(packageName);
-		bot.radio("Diagram Editor").click();
-		bot.button("Finish").click();
-		bot.button("OK").click();
+		clickRadio("Diagram Editor");
+		clickButton("Finish");
+		clickButton("OK");
 	}
 
 	public void closeWelcomePage() {
@@ -203,6 +215,10 @@ public class AgeGefBot {
 		bot.button(text).click();
 	}
 
+	public void clickRadio(final String text) {
+		bot.radio(text).click();
+	}
+
 	public void clickTableOption(final String text) {
 		bot.table().getTableItem(text).click();
 	}
@@ -210,10 +226,6 @@ public class AgeGefBot {
 	// TODO: treeNot used rightnow
 	public void clickTreeOption(final String text) {
 		bot.tree().getTreeItem(text).click();
-	}
-
-	public void clickRadio(final String text) {
-		bot.radio(text).click();
 	}
 
 	public void createImplementation(final SWTBotGefEditor editor, final String toolType, final String typeName,
@@ -261,13 +273,6 @@ public class AgeGefBot {
 		final SWTBotShell shell = bot.activeShell();
 		bot.button("OK").click();
 		bot.waitUntil(Conditions.shellCloses(shell));
-		// bot.saveAllEditors();
-		// bot.closeAllEditors();
-		// bot.perspectiveByLabel("Resource").activate();
-	}
-
-	public List<? extends SWTBotEditor> getEditors() {
-		return bot.editors();
 	}
 
 	public void openDiagram(final String[] nodePath, final String fileName) {
@@ -298,30 +303,88 @@ public class AgeGefBot {
 		editor.activateDefaultTool();
 	}
 
-	public void createToolItemAndRename(final SWTBotGefEditor editor, final Class<?> clazz, final Point p,
+	public void createToolItemAndRename(final AgeSWTBotGefEditor editor, final Class<?> clazz, final Point p,
 			final String newName, final String... editPathPath) {
 		final SWTBotGefEditPart editPart = editor
 				.editParts(new FindEditPart(getAgeFeatureProvider(editor), editPathPath)).get(0);
 		editor.select(editPart);
 		editor.click(editPart);
 		createToolItem(editor, ToolTypes.getToolItem(clazz), p, editPathPath);
-		waitUntilNewElementIsCreated(editor, clazz);
-		renameElement(editor, newName);
+		final SWTBotGefEditPart newEditPart = getNewElement(editor, clazz);
+		renameElement(editor, newEditPart, newName);
 	}
 
-	public void waitUntilNewElementIsCreated(final SWTBotGefEditor editor, final Class<?> clazz) {
-		waitUntil(new DefaultCondition() {
-			@Override
-			public String getFailureMessage() {
-				return clazz + " not created";
-			};
-
-			@Override
-			public boolean test() throws Exception {
-				return !editor.editParts(new NewElementMatcher(editor)).isEmpty();
-			};
-		}, 5000);
+	public SWTBotGefEditPart getNewElement(final AgeSWTBotGefEditor editor, final Class<?> clazz) {
+		final NewElementCondition newElementCondition = new NewElementCondition(editor, new NewElementMatcher(editor),
+				clazz);
+		waitUntil(newElementCondition, 5000);
+		return newElementCondition.getNewElementEditPart();
 	}
+
+	public SWTBotGefConnectionEditPart getNewConnection(final AgeSWTBotGefEditor editor, final Class<?> clazz) {
+		final NewConnectionCondition newConnectionCondition = new NewConnectionCondition(editor,
+				new NewElementMatcher(editor), clazz);
+		waitUntil(newConnectionCondition, 5000);
+		return newConnectionCondition.getNewConnectionEditPart();
+	}
+
+	private class NewElementCondition extends DefaultCondition {
+		private final Class<?> clazz;
+		private final AgeSWTBotGefEditor editor;
+		private final Matcher<EditPart> editPartMatcher;
+		private List<SWTBotGefEditPart> editParts;
+
+		private NewElementCondition(final AgeSWTBotGefEditor editor, final Matcher<EditPart> matcher,
+				final Class<?> clazz) {
+			this.editor = editor;
+			this.editPartMatcher = matcher;
+			this.clazz = clazz;
+		}
+
+		@Override
+		public String getFailureMessage() {
+			return clazz + " was not created.";
+		};
+
+		@Override
+		public boolean test() throws Exception {
+			editParts = editor.editParts(editPartMatcher);
+			return !editParts.isEmpty();
+		};
+
+		private SWTBotGefEditPart getNewElementEditPart() {
+			return editParts.get(0);
+		}
+		}
+
+	private class NewConnectionCondition extends DefaultCondition {
+		private final Class<?> clazz;
+		private final AgeSWTBotGefEditor editor;
+		private final Matcher<EditPart> editPartMatcher;
+		private List<SWTBotGefConnectionEditPart> editParts;
+
+		private NewConnectionCondition(final AgeSWTBotGefEditor editor, final Matcher<EditPart> matcher,
+				final Class<?> clazz) {
+			this.editor = editor;
+			this.editPartMatcher = matcher;
+			this.clazz = clazz;
+		}
+
+		@Override
+		public String getFailureMessage() {
+			return clazz + " was not created.";
+		};
+
+		@Override
+		public boolean test() throws Exception {
+			editParts = editor.editPartConnections(editPartMatcher);
+			return !editParts.isEmpty();
+		};
+
+		private SWTBotGefConnectionEditPart getNewConnectionEditPart() {
+			return editParts.get(0);
+			}
+		}
 
 	public List<SWTBotGefConnectionEditPart> getNewConnectionEditPart(final AgeSWTBotGefEditor editor,
 			final Class<?> clazz) {
@@ -388,11 +451,12 @@ public class AgeGefBot {
 		return bot.activeEditor().getTitle().equalsIgnoreCase(title + ".aadl_diagram");
 	}
 
-	public static class NewElementMatcher extends BaseMatcher<EditPart> {
+	public static class NewElementMatcher extends CustomMatcher<EditPart> {
 		final private CharSequence charSeq = "new_";
 		final private AgeFeatureProvider ageFeatureProvider;
 
 		public NewElementMatcher(final SWTBotGefEditor editor) {
+			super("New Element Matcher");
 			this.ageFeatureProvider = getAgeFeatureProvider(editor);
 		}
 
@@ -405,24 +469,18 @@ public class AgeGefBot {
 				if (element instanceof NamedElement && gsep.isActive()) {
 					final NamedElement namedElement = (NamedElement) element;
 					return namedElement.getName().contains(charSeq);
+					}
 				}
-			}
 
 			return false;
 		}
-
-		@Override
-		public void describeTo(Description description) {
-		}
 	}
 
-	// TODO cmd needed? click buttons probably different for other diagram opening types.
-	// hard code "Associated Diagram" and change method name
 	public void openAssociatedDiagramFromContextMenu(final SWTBotGefEditor editor, final String elementName) {
 		final List<SWTBotGefEditPart> editPart = editor
 				.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName));
 		editor.click(editPart.get(0));
-		sleep(4);
+		sleep(2);
 		editor.clickContextMenu("Associated Diagram");
 		clickButton("Yes");
 		clickButton("OK");
@@ -472,22 +530,14 @@ public class AgeGefBot {
 		selectControl((Control) widget);
 	}
 
-	public void selectControl(final Control widget) {
-		try {
-			final Robot robot = new Robot();
-			robot.setAutoDelay(25);
-			final Display display = PlatformUI.getWorkbench().getDisplay();
-			display.syncExec(() -> {
-				final Control c = widget;
-				final Point point = display.map(c.getParent(), null, c.getLocation().x, c.getLocation().y);
-				robot.mouseMove(point.x, point.y);
-				robot.delay(2000);
-				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-			});
-		} catch (AWTException e) {
-			e.printStackTrace();
-		}
+	public void selectControl(final Control c) {
+		bot.setAutoDelay(25);
+		final Display display = PlatformUI.getWorkbench().getDisplay();
+		display.syncExec(() -> {
+			final Point point = display.map(c.getParent(), null, c.getLocation().x, c.getLocation().y);
+			bot.mouseLeftClick(point.x, point.y);
+		});
+		bot.setAutoDelay(300);
 	}
 
 	public class SelectControlMatcher extends BaseMatcher<Widget> {
@@ -495,7 +545,7 @@ public class AgeGefBot {
 
 		public SelectControlMatcher(final String controlName) {
 			this.controlName = controlName;
-		}
+			}
 
 		@Override
 		public boolean matches(final Object item) {
@@ -513,52 +563,28 @@ public class AgeGefBot {
 	}
 
 	public void setElementOptionRadioInPropertiesView(final SWTBotGefEditor editor, final String tabTitle,
-			final String option, final String... elementName) {
-		selectElement(editor, elementName);
-		selectTabbedPropertySection(tabTitle);
-		clickElementsMouse(editor, elementName);
-		bot.viewByTitle("Properties").setFocus();
-		bot.activeView().bot().radio(option).click();
+			final String option, final String... elementPath) {
 		editor.setFocus();
+		final SWTBotGefEditPart editPart = findEditPart(editor, elementPath);
+		editor.click(editPart);
+		editor.select(editPart);
+		bot.viewByTitle("Properties").setFocus();
+		selectTabbedPropertySection(tabTitle);
+		clickRadio(option);
 	}
 
 	public void setElementOptionButtonInPropertiesView(final SWTBotGefEditor editor, final String tabTitle,
-			final String option, final String... elementName) {
-		printWidgets();
-		openPropertiesView(editor, elementName);
-		printWidgets();
-		selectElement(editor, elementName);
-		printWidgets();
-		selectTabbedPropertySection(tabTitle);
-		printWidgets();
-		// clickElementsMouse(editor, elementName);
+			final String option, final String... elementPath) {
 		editor.setFocus();
-		printWidgets();
+		final SWTBotGefEditPart editPart = findEditPart(editor, elementPath);
+		editor.click(editPart);
+		editor.select(editPart);
+		setFocusProperties();
+		selectTabbedPropertySection(tabTitle);
 		clickButton(option);
 	}
 
-	public void openPropertiesView(final SWTBotGefEditor editor, final String... elementName) {
-		openProperties();
-		editor.setFocus();
-		// doubleClickElement(editor, elementName[0]);
-		//final SWTBotGefEditPart part = findEditPart(editor, elementName);
-		//editor.click(part);
-		//editor.doubleClick(findEditPart(editor, elementName));
-//        bot.sleep(3000);
-//        bot.waitUntil(new DefaultCondition() {
-//            @Override
-//            public boolean test() throws Exception {
-//                return getActiveView().getTitle().equalsIgnoreCase("Properties");
-//            };
-//
-//            @Override
-//            public String getFailureMessage() {
-//                return "view not opened";
-//            };
-//        }, 5000);
-	}
-
-	public void openProperties() {
+	public void setFocusProperties() {
 		bot.viewByTitle("Properties").setFocus();
 	}
 
@@ -577,18 +603,18 @@ public class AgeGefBot {
 
 		@Override
 		public void describeTo(final Description description) {
-		}
+			}
 
 		@Override
 		public boolean matches(final Object item) {
 			if (item instanceof GraphitiShapeEditPart) {
 				final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) item;
-				final Object element = ageFeatureProvider
+					final Object element = ageFeatureProvider
 						.getBusinessObjectForPictogramElement(gsep.getPictogramElement());
-				if (element instanceof NamedElementImpl) {
-					final NamedElementImpl namedElement = (NamedElementImpl) element;
-					return editPartName.contains(namedElement.getName());
-				}
+					if (element instanceof NamedElementImpl) {
+						final NamedElementImpl namedElement = (NamedElementImpl) element;
+						return editPartName.contains(namedElement.getName());
+					}
 			} else if (item instanceof AbstractGraphicalEditPart) {
 				final AbstractGraphicalEditPart agep = (AbstractGraphicalEditPart) item;
 				for (final Object ob : agep.getTargetConnections()) {
@@ -639,65 +665,10 @@ public class AgeGefBot {
 	public void resizeEditPart(final SWTBotGefEditor editor, final Point newSize, final String... editPartPath) {
 		editor.setFocus();
 		final SWTBotGefEditPart swtBotGefEditPart = findEditPart(editor, editPartPath);
-		editor.click(swtBotGefEditPart);
+		// editor.click(swtBotGefEditPart);
 		editor.select(swtBotGefEditPart);
 		swtBotGefEditPart.resize(PositionConstants.SOUTH_WEST, newSize.x, newSize.y);
 	}
-
-//	public void resize(final SWTBotGefEditor editor, final Point newSize, final String... editPartPath) {
-//		final SWTBotGefEditPart swtBotGefEditPart = findEditPart(editor, editPartPath);
-//		final Rectangle bounds = ((GraphitiShapeEditPart) swtBotGefEditPart.part()).getFigure().getBounds();
-//		editor.select(swtBotGefEditPart);
-//		swtBotGefEditPart.resize(PositionConstants.SOUTH_WEST, 600, 600);
-//
-//		// clickElements(editor, editPartPath);
-//
-//		// try {
-//		// final Robot robot = new Robot();
-//		final Display display = editor.getWidget().getDisplay();
-//		display.syncExec(() -> {
-//			// swtBotGefEditPart.resize(PositionConstants.SOUTH_WEST, 600, 600);
-//
-//			// final Point point = display
-//			// .map(display.getFocusControl(), null, bounds.x, bounds.y);
-//			// robot.setAutoDelay(500);
-//			// robot.mouseMove(point.x, point.y);
-//			// robot.mousePress(InputEvent.BUTTON1_MASK);
-//			// robot.mouseRelease(InputEvent.BUTTON1_MASK);
-//
-//
-//			// robot.mouseMove(point.x + 10, point.y + 10);
-//			// robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-//			// robot.mouseMove(point.x + 60, point.y + 60);
-//			// robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-//
-//			// swtBotGefEditPart.resize(PositionConstants.SOUTH_WEST, 600, 600);
-////
-////                final Point bottomRightCorner = new Point(point.x + bounds.width, point.y + bounds.height);
-////                robot.mouseMove(bottomRightCorner.x, bottomRightCorner.y);
-////
-////                // robot.mousePress(InputEvent.BUTTON1_MASK);
-////
-////                final Point newLocation = new Point(newSize.x - bounds.width, newSize.y - bounds.height);
-////                robot.mouseMove(bottomRightCorner.x + newLocation.x, bottomRightCorner.y + newLocation.y);
-//////                robot.mouseRelease(InputEvent.BUTTON1_MASK);
-//////                robot.mouseMove(300, 300);
-//		});
-//		// } catch (final AWTException e) {
-//
-//		// }
-//
-//		bot.sleep(10000);
-//		System.err.println("AAA");
-//	}
-
-	/*
-	 * int fromX = bounds.x;
-	 * int fromY = bounds.y + bounds.height;
-	 * int toX = bounds.x + bounds.width - newSize.x;
-	 * int toY = bounds.y + newSize.y;
-	 * // editor.getSWTBotGefViewer().drag(fromX, fromY, toX, toY);
-	 */
 
 	public SWTBotGefEditPart getEditPart(final SWTBotGefEditor editor, final String elementName) {
 		return editor.editParts(new FindEditPart(getAgeFeatureProvider(editor), elementName)).get(0);
@@ -710,32 +681,6 @@ public class AgeGefBot {
 
 	public static Object getBusinessObject(final SWTBotGefEditor editor, final PictogramElement pe) {
 		return getAgeFeatureProvider(editor).getBusinessObjectForPictogramElement(pe);
-	}
-
-	private void doubleClickElement(final SWTBotGefEditor editor, final String... elementName) {
-		editor.setFocus();
-		final SWTBotGefEditPart element = findEditPart(editor, elementName);
-		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) element.part();
-		try {
-			final Robot robot = new Robot();
-			editor.getWidget().getDisplay().asyncExec(() -> {
-				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
-				final Rectangle bounds = gsep.getFigure().getBounds();
-				final Point point = PlatformUI.getWorkbench().getDisplay().map(canvas, null, bounds.x, bounds.y);
-
-				robot.mouseMove(point.x - canvas.getHorizontalBar().getSelection() + 10,
-						point.y - canvas.getVerticalBar().getSelection() + 10);
-				// Double click
-				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-			});
-
-			robot.mouseMove(300, 300);
-		} catch (final AWTException e) {
-			throw new RuntimeException(e);
-		}
 	}
 
 	public SWTBotGefEditPart findEditPart(final SWTBotGefEditor editor, final String... editPartPath) {
@@ -752,24 +697,18 @@ public class AgeGefBot {
 	public void clickConnection(final SWTBotGefEditor editor, final Connection connection) {
 		editor.setFocus();
 		final org.eclipse.draw2d.geometry.Point midPoint = connection.getPoints().getMidpoint();
-		try {
-			final Robot robot = new Robot();
-			editor.getWidget().getDisplay().asyncExec(() -> {
-				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
-				final Point point = PlatformUI.getWorkbench().getDisplay().map(canvas, null, midPoint.x, midPoint.y);
+		final java.awt.Point renameLocation = new java.awt.Point();
+		final Display display = editor.getWidget().getDisplay();
+		display.syncExec(() -> {
+			final FigureCanvas canvas = (FigureCanvas) display.getFocusControl();
+			final Point point = PlatformUI.getWorkbench().getDisplay().map(canvas, null, midPoint.x, midPoint.y);
+			renameLocation.x = point.x - canvas.getHorizontalBar().getSelection();
+			renameLocation.y = point.y - canvas.getVerticalBar().getSelection();
+		});
 
-				robot.mouseMove(point.x - canvas.getHorizontalBar().getSelection(),
-						point.y - canvas.getVerticalBar().getSelection());
-
-				// Click
-				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-			});
-
-			robot.mouseMove(300, 300);
-		} catch (final AWTException e) {
-			throw new RuntimeException(e);
-		}
+		// Click
+		bot.setAutoDelay(300);
+		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
 	}
 
 	public void clickButtonWithId(final String id) {
@@ -788,80 +727,40 @@ public class AgeGefBot {
 		bot.checkBoxWithId(id).click();
 	}
 
-	public void renameElement(final SWTBotGefEditor editor, final String newName) {
-		System.err.println("renameElementRunning");
-		final SWTBotGefEditPart swtGefEditPart = editor.editParts(new AgeGefBot.NewElementMatcher(editor)).get(0);
-		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) swtGefEditPart.part();
-		final ContainerShape cs = (ContainerShape) gsep.getPictogramElement();
-		final Shape labelShape = getLabelShape(cs);
-		editor.setFocus();
-		editor.click(swtGefEditPart);
-		editor.select(swtGefEditPart);
-		// sleep(3);
-
-		final GraphicsAlgorithm labelGA = labelShape.getGraphicsAlgorithm();
-		try {
-			final Robot robot = new Robot();
-			robot.setAutoDelay(300);
-			editor.getWidget().getDisplay().asyncExec(() -> {
-				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
-				final Rectangle bounds = gsep.getFigure().getBounds();
-				final Point point = PlatformUI.getWorkbench().getDisplay()
-						.map(editor.getWidget().getDisplay().getFocusControl(), null, bounds.x, bounds.y);
-				robot.mouseMove(0, 0);
-				robot.mouseMove(
-						point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX() + labelGA.getWidth() / 2,
-						point.y - canvas.getVerticalBar().getSelection() + labelGA.getY() + labelGA.getHeight() / 2);
-
-				// robot.keyPress(KeyEvent.VK_F2);
-				// robot.keyRelease(KeyEvent.VK_F2);
-				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
-				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
-				// robot.keyPress(KeyEvent.VK_F2);
-				// robot.keyRelease(KeyEvent.VK_F2);
-			});
-		} catch (AWTException e) {
-		}
-
-		sleep(3);
-		// bot.activeShell().pressShortcut(Keystrokes.F2);
-		// swtGefEditPart.activateDirectEdit(BoHandlerDirectEditFeature.class);
-		// sleep(30);
+	public void renameElement(final SWTBotGefEditor editor, final SWTBotGefEditPart newEditPart, final String newName) {
+		final java.awt.Point renameLocation = new java.awt.Point();
+		setRenameLocation(editor, newEditPart, renameLocation);
+		bot.setAutoDelay(300);
+		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
+		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
+		sleep(2);
 		editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
 	}
 
-//    public void renameElement(final SWTBotGefEditor editor,
-//            final String newName) {
-//        final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) editor
-//                .editParts(new AgeGefBot.NewElementMatcher(editor)).get(0).part();
-//        final SWTBotGefEditPart swtGefEditPart = editor.editParts(new AgeGefBot.NewElementMatcher(editor)).get(0);
-//        editor.select(swtGefEditPart);
-//        swtGefEditPart.activateDirectEdit(BoHandlerDirectEditFeature.class);
-//        editor.directEditType("AAA");
-//
-//        final ContainerShape cs = (ContainerShape) gsep.getPictogramElement();
-//        final Shape labelShape = getLabelShape(cs);
-//
-//        final GraphicsAlgorithm labelGA = labelShape.getGraphicsAlgorithm();
-//
-//        RenameHelper.renameElement(editor, newName,
-//                new Point(labelGA.getX() + labelGA.getWidth() / 2, labelGA.getY() + labelGA.getHeight() / 2));
-//        waitUntilElementExists(editor, newName);
-//    }
+	private void setRenameLocation(final SWTBotGefEditor editor, final SWTBotGefEditPart newEditPart,
+			final java.awt.Point renameLocation) {
+		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) newEditPart.part();
+		final ContainerShape cs = (ContainerShape) gsep.getPictogramElement();
+		final GraphicsAlgorithm labelGA = getLabelShape(cs).getGraphicsAlgorithm();
+		editor.setFocus();
+		editor.select(newEditPart);
 
-	public void selectNewElement(final SWTBotGefEditor editor) {
-		final SWTBotGefEditPart gsep = editor.editParts(new AgeGefBot.NewElementMatcher(editor)).get(0);
-		editor.select(gsep);
+		final Display display = editor.getWidget().getDisplay();
+		editor.getWidget().getDisplay().syncExec(() -> {
+			final FigureCanvas canvas = (FigureCanvas) display.getFocusControl();
+			final Rectangle bounds = gsep.getFigure().getBounds();
+			final Point point = PlatformUI.getWorkbench().getDisplay().map(display.getFocusControl(), null, bounds.x,
+					bounds.y);
+			renameLocation.x = point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX()
+					+ labelGA.getWidth() / 2;
+			renameLocation.y = point.y - canvas.getVerticalBar().getSelection() + labelGA.getY()
+					+ labelGA.getHeight() / 2;
+		});
 	}
 
 	public void renameConnection(final SWTBotGefEditor editor, final SWTBotGefConnectionEditPart conEditPart,
-			final ConnectionPoint connectionPoint,
-			final String newName) {
+			final ConnectionPoint connectionPoint, final String newName) {
 		editor.setFocus();
 		editor.select(conEditPart);
 		final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) conEditPart.part();
@@ -896,8 +795,8 @@ public class AgeGefBot {
 		for (final ConnectionDecorator cd : ffc.getConnectionDecorators()) {
 			if (ShapeNames.primaryLabelShapeName.equalsIgnoreCase(PropertyUtil.getName(cd))) {
 				return cd;
+				}
 			}
-		}
 
 		return null;
 	}
@@ -906,21 +805,21 @@ public class AgeGefBot {
 		for (final Shape shape : cs.getChildren()) {
 			if (ShapeNames.primaryLabelShapeName.equalsIgnoreCase(PropertyUtil.getName(shape))) {
 				return shape;
+				}
 			}
-		}
 
 		return null;
 	}
 
 	public void createAbstractTypeAndImplementation(final String packageName) {
-		final SWTBotGefEditor editor = getEditor(packageName);
+		final AgeSWTBotGefEditor editor = getEditor(packageName);
 		editor.setFocus();
 		editor.click(packageName);
 		resizeEditPart(editor, new Point(600, 600), packageName);
-		clickElementsMouse(editor, new String[] { packageName });
+		// clickElementsMouse(editor, new String[] { packageName });
 		createToolItem(editor, ToolTypes.getToolItem(AbstractType.class), new Point(25, 25), ElementNames.packageName);
-		waitUntilNewElementIsCreated(editor, AbstractTypeImpl.class);
-		renameElement(editor, ElementNames.abstractTypeName);
+		final SWTBotGefEditPart newEditPart = getNewElement(editor, AbstractTypeImpl.class);
+		renameElement(editor, newEditPart, ElementNames.abstractTypeName);
 		waitUntilElementExists(editor, ElementNames.abstractTypeName);
 		createImplementation(editor, ToolTypes.getToolItem(AbstractImplementation.class), ElementNames.abstractTypeName,
 				"impl", new Point(100, 200), packageName);
@@ -967,82 +866,83 @@ public class AgeGefBot {
 		editor.select(editParts);
 	}
 
-	public void clickElementsMouse(final SWTBotGefEditor editor, final String[]... elementPaths) {
-		editor.setFocus();
-		final List<GraphitiShapeEditPart> gseps = new ArrayList<>();
+	public void clickElements(final SWTBotGefEditor editor, final String[]... elementPaths) {
 		for (final String[] elementPath : elementPaths) {
-			gseps.add((GraphitiShapeEditPart) findEditPart(editor, elementPath).part());
-		}
-
-		try {
-			final Robot robot = new Robot();
-			robot.setAutoDelay(50);
-
-			editor.getWidget().getDisplay().asyncExec(() -> {
-				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
-				final Iterator<GraphitiShapeEditPart> it = gseps.iterator();
-				Rectangle bounds = it.next().getFigure().getBounds();
-				Point point = PlatformUI.getWorkbench().getDisplay()
-						.map(editor.getWidget().getDisplay().getFocusControl(), null, bounds.x, bounds.y);
-				// TODO enter needed?
-				// robot.keyPress(KeyEvent.VK_ENTER);
-				// robot.keyRelease(KeyEvent.VK_ENTER);
-				robot.mouseMove(point.x - canvas.getHorizontalBar().getSelection() + 5,
-						point.y - canvas.getVerticalBar().getSelection() + 5);
-				// robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-				// robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-				while (it.hasNext()) {
-					bounds = it.next().getFigure().getBounds();
-					point = PlatformUI.getWorkbench().getDisplay()
-							.map(editor.getWidget().getDisplay().getFocusControl(), null, bounds.x, bounds.y);
-					robot.keyPress(KeyEvent.VK_CONTROL);
-					robot.mouseMove(point.x - canvas.getHorizontalBar().getSelection() + 5,
-							point.y - canvas.getVerticalBar().getSelection() + 5);
-					robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-					robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-					robot.keyRelease(KeyEvent.VK_CONTROL);
-				}
-			});
-
-			robot.mouseMove(300, 300);
-		} catch (AWTException e) {
-			e.printStackTrace();
+			editor.click(findEditPart(editor, elementPath));
 		}
 	}
+
+	// public void clickElementsMouse(final SWTBotGefEditor editor, final String[]... elementPaths) {
+	// editor.setFocus();
+	// final List<GraphitiShapeEditPart> gseps = new ArrayList<>();
+	// for (final String[] elementPath : elementPaths) {
+	// gseps.add((GraphitiShapeEditPart) findEditPart(editor, elementPath).part());
+	// }
+	//
+	// try {
+	// final Robot robot = new Robot();
+	// robot.setAutoDelay(50);
+	//
+	// editor.getWidget().getDisplay().asyncExec(() -> {
+	// final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
+	// final Iterator<GraphitiShapeEditPart> it = gseps.iterator();
+	// Rectangle bounds = it.next().getFigure().getBounds();
+	// Point point = PlatformUI.getWorkbench().getDisplay()
+	// .map(editor.getWidget().getDisplay().getFocusControl(), null, bounds.x, bounds.y);
+	// // TODO enter needed?
+	// // robot.keyPress(KeyEvent.VK_ENTER);
+	// // robot.keyRelease(KeyEvent.VK_ENTER);
+	// robot.mouseMove(point.x - canvas.getHorizontalBar().getSelection() + 5,
+	// point.y - canvas.getVerticalBar().getSelection() + 5);
+	// // robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+	// // robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+	// while (it.hasNext()) {
+	// bounds = it.next().getFigure().getBounds();
+	// point = PlatformUI.getWorkbench().getDisplay()
+	// .map(editor.getWidget().getDisplay().getFocusControl(), null, bounds.x, bounds.y);
+	// robot.keyPress(KeyEvent.VK_CONTROL);
+	// robot.mouseMove(point.x - canvas.getHorizontalBar().getSelection() + 5,
+	// point.y - canvas.getVerticalBar().getSelection() + 5);
+	// robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+	// robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+	// robot.keyRelease(KeyEvent.VK_CONTROL);
+	// }
+	// });
+	//
+	// robot.mouseMove(300, 300);
+	// } catch (AWTException e) {
+	// e.printStackTrace();
+	// }
+	// }
 
 	public static String qualifiedName(final String projectName, final String classifierName) {
 		return projectName + "::" + classifierName;
-	}
+		}
 
 	public SWTBotToolbarButton getToolbarButtonWithTooltip(final String tooltip) {
 		return bot.toolbarButtonWithTooltip(tooltip);
-	}
+		}
 
 	public void clickToolbarButtonWithTooltip(final String tooltip) {
 		bot.toolbarButtonWithTooltip(tooltip).click();
-	}
+		}
 
 	// Drag dialog down and to the left
-	public void dragShellAwayFromEditor(final AgeSWTBotGefEditor implEditor, final String shellTitle) {
-		try {
-			final Robot robot = new Robot();
-			robot.setAutoDelay(50);
-			final Display display = Display.getDefault();
-			display.syncExec(() -> {
-				final int y = implEditor.getWidget().getDisplay().getActiveShell().getBounds().height;
-				final Shell shell = bot.shell(shellTitle).widget;
-				shell.setFocus();
-				final org.eclipse.swt.graphics.Rectangle outer = shell.getBounds();
-				final org.eclipse.swt.graphics.Rectangle inner = shell.getClientArea();
-				robot.mouseMove(outer.x + outer.width / 2, outer.y + (outer.height - inner.height) / 2);
-				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-				robot.mouseMove(outer.width / 2, y / 2 - outer.height / 2);
-				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-			});
-
-		} catch (AWTException e) {
-			e.printStackTrace();
-		}
+	public void dragShellAwayFromEditor(final AgeSWTBotGefEditor editor, final String shellTitle) {
+		bot.setAutoDelay(50);
+		final Display display = editor.getWidget().getDisplay();
+		display.syncExec(() -> {
+			final int y = display.getActiveShell().getBounds().height;
+			final Shell shell = bot.shell(shellTitle).widget;
+			shell.setFocus();
+			final org.eclipse.swt.graphics.Rectangle outer = shell.getBounds();
+			final org.eclipse.swt.graphics.Rectangle inner = shell.getClientArea();
+			bot.mouseMove(outer.x + outer.width / 2, outer.y + (outer.height - inner.height) / 2);
+			bot.mouseLeftClickPress();
+			bot.mouseMove(outer.width / 2, y / 2 - outer.height / 2);
+			bot.mouseLeftClickRelease();
+		});
+		bot.setAutoDelay(300);
 	}
 
 	public void setFocusShell(final String string) {
@@ -1070,5 +970,14 @@ public class AgeGefBot {
 		};
 
 		public abstract org.eclipse.draw2d.geometry.Point getValue(final GraphitiConnectionEditPart gcep);
+			}
+
+	public void setElementOptionComboInPropertiesView(final AgeSWTBotGefEditor editor,
+			final SWTBotGefConnectionEditPart connectionEditPart, final String tab, final String comboId,
+			final String selection) {
+		editor.select(connectionEditPart);
+		selectTabbedPropertySection("Appearance");
+		bot.viewByTitle("Properties").setFocus();
+		clickCombo(comboId, selection);
 	}
 }

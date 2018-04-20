@@ -3,14 +3,13 @@ package org.osate.ge.tests;
 import static org.junit.Assert.assertTrue;
 
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.eclipse.swtbot.swt.finder.exceptions.WidgetNotFoundException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.osate.aadl2.AbstractImplementation;
 import org.osate.aadl2.AbstractType;
-import org.osate.aadl2.impl.AbstractTypeImpl;
+import org.osate.ge.tests.AgeGefBot.AgeSWTBotGefEditor;
 
 public class GoToTypeDiagramTest {
 	private final AgeGefBot bot = new AgeGefBot();
@@ -29,14 +28,11 @@ public class GoToTypeDiagramTest {
 
 	@Test
 	public void goToTypeDiagram() throws WidgetNotFoundException, ClassNotFoundException {
-		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
 		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
 
-		bot.createToolItem(editor, ToolTypes.getToolItem(AbstractType.class), new Point(30, 30),
+		bot.createToolItemAndRename(editor, AbstractType.class, new Point(30, 30), ElementNames.abstractTypeName,
 				ElementNames.packageName);
-		bot.waitUntilNewElementIsCreated(editor, AbstractTypeImpl.class);
-		bot.renameElement(editor, ElementNames.abstractTypeName);
-		bot.waitUntilElementExists(editor, ElementNames.abstractTypeName);
 
 		bot.createImplementation(editor, ToolTypes.getToolItem(AbstractImplementation.class),
 				ElementNames.abstractTypeName, "impl", new Point(100, 100), ElementNames.packageName);

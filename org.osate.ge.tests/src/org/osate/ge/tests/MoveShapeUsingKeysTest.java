@@ -10,11 +10,11 @@ import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
 import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.ui.platform.GraphitiShapeEditPart;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.osate.aadl2.AbstractType;
+import org.osate.ge.tests.AgeGefBot.AgeSWTBotGefEditor;
 
 public class MoveShapeUsingKeysTest {
 	private final AgeGefBot bot = new AgeGefBot();
@@ -33,7 +33,7 @@ public class MoveShapeUsingKeysTest {
 
 	@Test
 	public void setFeatureDirection() {
-		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
 		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
 
 		// bot.createToolItem(editor, ElementNames.packageName, ToolTypes.abstractType, new Point(25, 25));
