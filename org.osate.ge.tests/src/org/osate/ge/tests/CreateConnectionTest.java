@@ -21,7 +21,7 @@ public class CreateConnectionTest {
 		bot.maximize();
 		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
-		bot.createAbstractTypeAndImplementation(ElementNames.packageName);
+		bot.createAbstractTypeAndImplementation(ElementNames.packageName, new Point(30, 30));
 	}
 
 	@After
@@ -33,7 +33,7 @@ public class CreateConnectionTest {
 	public void createConnection() {
 		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
 		bot.resizeEditPart(editor, new Point(150, 150), ElementNames.abstractTypeName);
-		bot.setFocusProperties();
+		bot.openPropertiesView();
 
 		bot.createToolItemAndRename(editor, AbstractFeature.class, new Point(15, 15),
 				ElementNames.abstractFeatureNewName, ElementNames.abstractTypeName);
@@ -75,9 +75,6 @@ public class CreateConnectionTest {
 		// Show connection label for renaming
 		bot.setElementOptionComboInPropertiesView(editor, connectionEditPart, "Appearance",
 				AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
-		// editor.select(connectionEditPart);
-		// bot.selectTabbedPropertySection("Appearance");
-		// bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
 		// Rename
 		bot.renameConnection(editor, connectionEditPart, ConnectionPoint.MIDDLE, ElementNames.featureConnection);
@@ -93,10 +90,9 @@ public class CreateConnectionTest {
 		bot.createToolItemAndRename(editor, clazz, new Point(200, 100), ElementNames.abstractSubcomponentName, parent);
 		bot.createToolItemAndRename(editor, clazz, new Point(120, 250), ElementNames.abstractSubcomponentName2, parent);
 
-		bot.selectTabbedPropertySection("AADL");
-		bot.selectElements(editor, new String[] { ElementNames.abstractSubcomponentName },
+		bot.setElementOptionButtonInPropertiesView(editor, "AADL", "Choose...",
+				new String[] { ElementNames.abstractSubcomponentName },
 				new String[] { ElementNames.abstractSubcomponentName2 });
-		bot.clickButton("Choose...");
 		bot.clickTableOption(AgeGefBot.qualifiedName(ElementNames.packageName, ElementNames.abstractTypeName));
 		bot.clickButton("OK");
 	}

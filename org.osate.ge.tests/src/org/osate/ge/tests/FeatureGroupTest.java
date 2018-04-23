@@ -35,7 +35,7 @@ public class FeatureGroupTest {
 	public void setFeatureClassifier() {
 		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
 		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
-		bot.setFocusProperties();
+		bot.openPropertiesView();
 
 		bot.createToolItemAndRename(editor, AbstractType.class, new Point(20, 20), ElementNames.abstractTypeName,
 				ElementNames.packageName);

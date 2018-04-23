@@ -16,7 +16,7 @@ import org.junit.runners.Suite.SuiteClasses;
 		 GoToTypeDiagramTest.class, DeletingClassifierTest.class, SelectingDiagramElementContainerTest.class,
 		 PerformDiagramLayoutTest.class, CreateConnectionTest.class, SetExtendedClassifierTest.class,
 		 FeatureGroupTest.class, ModesTransitionTest.class, MoveShapeUsingKeysTest.class, ElementAppearanceTest.class,
-		 CreateFlowImplTest.class
+		CreateFlowImplTest.class, DemoSystemTest.class
 })
 public class AllTests {
 	//TODO set up and tear down?

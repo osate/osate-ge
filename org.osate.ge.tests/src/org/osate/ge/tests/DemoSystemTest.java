@@ -50,7 +50,7 @@ public class DemoSystemTest {
 	public void runDemoTest() {
 		final AgeSWTBotGefEditor editor = bot.getEditor(hw);
 		bot.resizeEditPart(editor, new Point(600, 600), hw);
-		bot.createTypeAndImplementation(editor, new Point(50, 50), implName, hw,
+		bot.createTypeAndImplementation(editor, new Point(25, 25), implName, hw,
 				ToolTypes.getToolItem(SystemImplementation.class), hw);
 
 		bot.createToolItemAndRename(editor, ProcessorType.class, new Point(20, 150), cpu, hw);
@@ -79,34 +79,32 @@ public class DemoSystemTest {
 		bot.openAssociatedDiagramFromContextMenu(demoTestEditor, demoSysImpl);
 
 		final AgeSWTBotGefEditor demoSysImplEditor = bot.getEditor(demo_system + "_" + demo_system + "_" + implName);
-		// bot.clickElementsMouse(demoSysImplEditor, new String[] { demo_system + "." + implName });
 		bot.clickElement(demoSysImplEditor, demo_system + "." + implName);
 		bot.executeContextMenuCommand(demoSysImplEditor, demoSysImpl, "All Filters");
 		bot.resizeEditPart(demoSysImplEditor, new Point(600, 600), demoSysImpl);
 
-		bot.setFocusProperties();
-		
+		bot.openPropertiesView();
+
 		final String swSc = "sw";
 		bot.createToolItemAndRename(demoSysImplEditor, SystemSubcomponent.class, new Point(50, 50), swSc, demoSysImpl);
-		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...", swSc);
+		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...", new String[] { swSc });
 		bot.clickTableOption(AgeGefBot.qualifiedName(sw, application + "." + implName));
 		bot.clickButton("OK");
 
 		final String hwSc = "hw";
 		bot.createToolItemAndRename(demoSysImplEditor, SystemSubcomponent.class, new Point(50, 150), hwSc, demoSysImpl);
-		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...", hwSc);
+		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...", new String[] { hwSc });
 		bot.clickTableOption(AgeGefBot.qualifiedName(hw, hw + "." + implName));
 		bot.clickButton("OK");
 
 		demoTestEditor.click(demo_system);
-		// bot.clickElementsMouse(demoSysImplEditor, new String[] { hwSc });
 		bot.executeContextMenuCommand(demoSysImplEditor, hwSc, "All Filters");
 		bot.resizeEditPart(demoSysImplEditor, new Point(350, 350), hwSc);
 
 		// Create devices
 		bot.createToolItemAndRename(demoSysImplEditor, DeviceSubcomponent.class, new Point(20, 20), "sensor1", hwSc);
 		bot.executeContextMenuCommand(demoSysImplEditor, "sensor1", "All Filters");
-		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...", "sensor1");
+		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...", new String[] { "sensor1" });
 		bot.clickTableOption(AgeGefBot.qualifiedName(hw, "sensor"));
 		bot.clickButton("OK");
 
@@ -116,7 +114,7 @@ public class DemoSystemTest {
 		bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Output", "dp_out");
 		bot.createToolItemAndRename(demoSysImplEditor, DeviceSubcomponent.class, new Point(20, 200), "sensor2", swSc);
 		bot.executeContextMenuCommand(demoSysImplEditor, "sensor2", "All Filters");
-		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...", "sensor2");
+		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...", new String[] { "sensor2" });
 		bot.clickTableOption(AgeGefBot.qualifiedName(hw, "actuator"));
 		bot.clickButton("OK");
 
@@ -128,10 +126,8 @@ public class DemoSystemTest {
 		bot.createToolItemAndRename(demoSysImplEditor, ProcessorSubcomponent.class, new Point(400, 20), "cpu2",
 				demoSysImpl);
 
-		bot.setFocusProperties();
 		bot.selectTabbedPropertySection("AADL");
 		bot.selectElements(demoSysImplEditor, new String[] { "cpu1" }, new String[] { "cpu2" });
-		// bot.clickElementsMouse(demoSysImplEditor, new String[] { "cpu1" }, new String[] { "cpu2" });
 		bot.clickButton("Choose...");
 		bot.clickTableOption(AgeGefBot.qualifiedName(hw, cpu));
 		bot.clickButton("OK");
@@ -140,15 +136,14 @@ public class DemoSystemTest {
 		bot.createToolItemAndRename(demoSysImplEditor, BusSubcomponent.class, new Point(400, 400), "ethernet_switch",
 				demoSysImpl);
 		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...",
-				"ethernet_switch");
+				new String[] { "ethernet_switch" });
 		bot.clickTableOption(AgeGefBot.qualifiedName(hw, "ethernet_switch"));
 		bot.clickButton("OK");
 
 		bot.createToolItemAndRename(demoSysImplEditor, FeatureGroup.class, new Point(5, 300), "actuator_data",
 				demoSysImpl);
-		// bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Input", "actuator_data");
 		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...",
-				"actuator_data");
+				new String[] { "actuator_data" });
 		bot.clickTableOption(AgeGefBot.qualifiedName(hw, "sensor_data"));
 		bot.clickButton("OK");
 
@@ -158,7 +153,7 @@ public class DemoSystemTest {
 		bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Output", "sd1");
 		bot.setElementOptionRadioInPropertiesView(demoSysImplEditor, "AADL", "Output", "sd2");
 
-		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...", "ba");
+		bot.setElementOptionButtonInPropertiesView(demoSysImplEditor, "AADL", "Choose...", new String[] { "ba" });
 		bot.clickTableOption(AgeGefBot.qualifiedName(hw, "ethernet_switch"));
 		bot.clickButton("OK");
 

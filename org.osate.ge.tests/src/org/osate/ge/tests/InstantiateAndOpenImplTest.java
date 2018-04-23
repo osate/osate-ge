@@ -1,5 +1,6 @@
 package org.osate.ge.tests;
 
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.eclipse.swtbot.swt.finder.waits.DefaultCondition;
 import org.eclipse.swtbot.swt.finder.widgets.SWTBotTreeItem;
@@ -15,7 +16,6 @@ public class InstantiateAndOpenImplTest {
 		ageBot.maximize();
 		ageBot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		ageBot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
-		ageBot.createAbstractTypeAndImplementation(ElementNames.packageName);
 	}
 
 	@After
@@ -25,13 +25,18 @@ public class InstantiateAndOpenImplTest {
 
 	@Test
 	public void instantiateImplTest() {
+		createAndInstantiate(new Point(30, 30));
+	}
+
+	public void createAndInstantiate(final Point p) {
+		ageBot.createAbstractTypeAndImplementation(ElementNames.packageName, p);
 		ageBot.getEditor(ElementNames.packageName).select(ElementNames.abstractTypeName + ".impl")
 				.clickContextMenu("Instantiate");
 	}
 
 	@Test
 	public void openImplTest() {
-		instantiateImplTest();
+		createAndInstantiate(new Point(45, 45));
 		final SWTBotGefEditor editor = ageBot.getEditor(ElementNames.packageName);
 		editor.setFocus();
 

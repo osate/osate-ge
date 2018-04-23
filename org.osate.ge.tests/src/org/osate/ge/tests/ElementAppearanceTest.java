@@ -3,6 +3,7 @@ package org.osate.ge.tests;
 import static org.junit.Assert.assertTrue;
 
 import org.eclipse.graphiti.ui.platform.GraphitiShapeEditPart;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Before;
@@ -19,7 +20,7 @@ public class ElementAppearanceTest {
 		bot.maximize();
 		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
-		bot.createAbstractTypeAndImplementation(ElementNames.packageName);
+		bot.createAbstractTypeAndImplementation(ElementNames.packageName, new Point(25, 25));
 	}
 
 	@After
@@ -31,7 +32,6 @@ public class ElementAppearanceTest {
 	public void editAppearance() {
 		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
 		bot.selectElement(editor, ElementNames.abstractTypeName);
-		bot.setFocusProperties();
 		bot.selectTabbedPropertySection("Appearance");
 
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) editor.getEditPart(ElementNames.abstractTypeName)

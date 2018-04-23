@@ -3,6 +3,7 @@ package org.osate.ge.tests;
 import java.util.List;
 
 import org.eclipse.gef.EditPart;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditPart;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
@@ -19,7 +20,7 @@ public class DeletingClassifierTest {
 		bot.maximize();
 		bot.createNewProjectAndPackage(ElementNames.projectName, ElementNames.packageName);
 		bot.openDiagram(new String[] { ElementNames.projectName }, ElementNames.packageName);
-		bot.createAbstractTypeAndImplementation(ElementNames.packageName);
+		bot.createAbstractTypeAndImplementation(ElementNames.packageName, new Point(25, 25));
 	}
 
 	@After

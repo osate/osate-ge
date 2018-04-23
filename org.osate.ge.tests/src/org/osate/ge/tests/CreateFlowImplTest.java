@@ -37,7 +37,7 @@ public class CreateFlowImplTest {
 	@Test
 	public void createFlowImpl() {
 		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
-		bot.setFocusProperties();
+		bot.openPropertiesView();
 		bot.resizeEditPart(editor, new Point(600, 600), ElementNames.packageName);
 		bot.createTypeAndImplementation(editor, new Point(50, 50), "impl2", "sys",
 				StringUtil.camelCaseToUser(SystemImplementation.class.getSimpleName()), ElementNames.packageName);
@@ -87,7 +87,7 @@ public class CreateFlowImplTest {
 		bot.createToolItemAndRename(implEditor, SystemSubcomponent.class, new Point(250, 150), "ss1", "sys.impl2");
 		bot.createToolItemAndRename(implEditor, SystemSubcomponent.class, new Point(450, 450), "ss2", "sys.impl2");
 
-		bot.setFocusProperties();
+		bot.openPropertiesView();
 		bot.selectTabbedPropertySection("AADL");
 		implEditor.setFocus();
 		bot.selectElements(implEditor, new String[] { "ss1" }, new String[] { "ss2" });
