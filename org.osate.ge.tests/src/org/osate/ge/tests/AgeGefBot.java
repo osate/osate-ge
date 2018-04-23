@@ -920,13 +920,13 @@ public class AgeGefBot {
 		};
 
 		public abstract org.eclipse.draw2d.geometry.Point getValue(final GraphitiConnectionEditPart gcep);
-			}
+	}
 
 	public void setElementOptionComboInPropertiesView(final AgeSWTBotGefEditor editor,
 			final SWTBotGefConnectionEditPart connectionEditPart, final String tab, final String comboId,
 			final String selection) {
-		editor.click(connectionEditPart);
 		editor.select(connectionEditPart);
+		clickConnection(editor, ((GraphitiConnectionEditPart) connectionEditPart.part()).getConnectionFigure());
 		selectTabbedPropertySection("Appearance");
 		clickCombo(comboId, selection);
 	}

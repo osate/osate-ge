@@ -1,5 +1,7 @@
 package org.osate.ge.tests;
 
+import org.eclipse.draw2d.Connection;
+import org.eclipse.graphiti.ui.platform.GraphitiConnectionEditPart;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefConnectionEditPart;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditPart;
@@ -69,12 +71,13 @@ public class CreateConnectionTest {
 		editor.click(featureIn);
 		editor.activateDefaultTool();
 
-		final SWTBotGefConnectionEditPart connectionEditPart = bot.getNewConnection(editor,
-				FeatureConnectionImpl.class);
-
-		// Show connection label for renaming
-		bot.setElementOptionComboInPropertiesView(editor, connectionEditPart, "Appearance",
-				AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
+		final SWTBotGefConnectionEditPart connectionEditPart = bot
+				.getNewConnectionEditPart(editor, FeatureConnectionImpl.class).get(0);
+		editor.select(connectionEditPart);
+		final Connection con = ((GraphitiConnectionEditPart) connectionEditPart.part()).getConnectionFigure();
+		bot.clickConnection(editor, con);
+		bot.selectTabbedPropertySection("Appearance");
+		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
 		// Rename
 		bot.renameConnection(editor, connectionEditPart, ConnectionPoint.MIDDLE, ElementNames.featureConnection);

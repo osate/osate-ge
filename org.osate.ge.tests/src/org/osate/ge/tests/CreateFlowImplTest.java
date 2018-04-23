@@ -44,7 +44,7 @@ public class CreateFlowImplTest {
 		bot.resizeEditPart(editor, new Point(250, 200), "sys");
 
 		bot.createToolItemAndRename(editor, DataPort.class, new Point(10, 30), "dp_in", "sys");
-		bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Input", "dp_in");
+		bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Input", "sys", "dp_in");
 
 		bot.createToolItemAndRename(editor, DataPort.class, new Point(190, 100), "dp_out", "sys");
 		bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Output", "dp_out");
