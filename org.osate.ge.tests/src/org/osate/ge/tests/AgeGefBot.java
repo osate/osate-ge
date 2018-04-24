@@ -579,7 +579,23 @@ public class AgeGefBot {
 	}
 
 	public void openPropertiesView() {
+		bot.widgets(new PrintWidgetMatcher());
+		// TODO try show()?
 		bot.viewByTitle("Properties").setFocus();
+		bot.widgets(new PrintWidgetMatcher());
+	}
+
+	private class PrintWidgetMatcher extends CustomMatcher<Widget> {
+		public PrintWidgetMatcher() {
+			super("Print Widget Matcher");
+			System.err.println("<Printing Widgets>");
+		}
+
+		@Override
+		public boolean matches(Object item) {
+			System.err.println(item + " item");
+			return true;
+		}
 	}
 
 	public static AgeFeatureProvider getAgeFeatureProvider(final SWTBotGefEditor editor) {
