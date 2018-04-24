@@ -28,6 +28,7 @@ import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.ui.platform.GraphitiConnectionEditPart;
 import org.eclipse.graphiti.ui.platform.GraphitiShapeEditPart;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -584,12 +585,16 @@ public class AgeGefBot {
 	private class PrintWidgetMatcher extends CustomMatcher<Widget> {
 		public PrintWidgetMatcher(final String id) {
 			super("Print Widget Matcher");
-			System.err.println("<Printing Widgets> id:" + id);
+			System.err.println("<Printing Widgets> id : " + id);
 		}
 
 		@Override
 		public boolean matches(Object item) {
 			System.err.println(item + " item");
+			if (item instanceof Combo) {
+				final Combo combo = (Combo) item;
+				System.err.println(combo.getData("org.eclipse.swtbot.widget.key"));
+			}
 			return true;
 		}
 	}
@@ -727,8 +732,9 @@ public class AgeGefBot {
 
 	public void clickCombo(final String id, final String selection) {
 		bot.viewByTitle("Properties").setFocus();
-		//bot.viewByTitle("Properties").bot().comboBoxWithId(id).setSelection(selection);
-		bot.comboBoxWithId(id).setSelection(selection);
+		bot.widgets(new PrintWidgetMatcher("CCC"));
+		bot.viewByTitle("Properties").bot().comboBoxWithId(id).setSelection(selection);
+		// bot.comboBoxWithId(id).setSelection(selection);
 	}
 
 	public void clickCheckBoxWithId(final String id) {
