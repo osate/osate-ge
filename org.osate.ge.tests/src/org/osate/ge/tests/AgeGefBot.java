@@ -726,8 +726,8 @@ public class AgeGefBot {
 	}
 
 	public void clickCombo(final String id, final String selection) {
+		bot.viewByTitle("Properties").bot().widgets(new PrintWidgetMatcher());
 		bot.viewByTitle("Properties").bot().comboBoxWithId(id).setSelection(selection);
-		;
 		// bot.comboBoxWithId(id).setSelection(selection);
 	}
 
