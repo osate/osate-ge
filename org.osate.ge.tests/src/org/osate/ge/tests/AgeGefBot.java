@@ -238,20 +238,6 @@ public class AgeGefBot {
 		waitUntilElementExists(editor, typeName + "." + elementName);
 	}
 
-	private final Matcher<Widget> widgetPrinter = new BaseMatcher<Widget>() {
-		@Override
-		public boolean matches(Object item) {
-			System.err.println(item + " item");
-			return true;
-		}
-
-		@Override
-		public void describeTo(Description description) {
-			// TODO Auto-generated method stub
-
-		}
-	};
-
 	public void waitUntil(final ICondition condition, final long timeout) {
 		bot.waitUntil(condition, timeout);
 	}
@@ -560,6 +546,16 @@ public class AgeGefBot {
 		editor.select(editPart);
 		selectTabbedPropertySection(tabTitle);
 		clickRadio(option);
+	}
+
+	public void setElementOptionComboInPropertiesView(final AgeSWTBotGefEditor editor, final String tabTitle,
+			final String comboId, final String selection, final String... elementPath) {
+		editor.setFocus();
+		final SWTBotGefEditPart editPart = findEditPart(editor, elementPath);
+		editor.click(editPart);
+		editor.select(editPart);
+		selectTabbedPropertySection(tabTitle);
+		clickCombo(comboId, selection);
 	}
 
 	public void setElementOptionButtonInPropertiesView(final AgeSWTBotGefEditor editor, final String tabTitle,
@@ -938,7 +934,7 @@ public class AgeGefBot {
 		public abstract org.eclipse.draw2d.geometry.Point getValue(final GraphitiConnectionEditPart gcep);
 	}
 
-	public void setElementOptionComboInPropertiesView(final AgeSWTBotGefEditor editor,
+	public void setConnectionOptionComboInPropertiesView(final AgeSWTBotGefEditor editor,
 			final SWTBotGefConnectionEditPart connectionEditPart, final String tab, final String comboId,
 			final String selection) {
 		editor.select(connectionEditPart);

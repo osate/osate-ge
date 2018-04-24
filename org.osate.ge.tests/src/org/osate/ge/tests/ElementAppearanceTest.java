@@ -4,13 +4,13 @@ import static org.junit.Assert.assertTrue;
 
 import org.eclipse.graphiti.ui.platform.GraphitiShapeEditPart;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.osate.ge.internal.diagram.runtime.DiagramElement;
 import org.osate.ge.internal.ui.editor.AgeDiagramBehavior;
 import org.osate.ge.internal.ui.properties.AppearancePropertySection;
+import org.osate.ge.tests.AgeGefBot.AgeSWTBotGefEditor;
 
 public class ElementAppearanceTest {
 	private final AgeGefBot bot = new AgeGefBot();
@@ -30,7 +30,7 @@ public class ElementAppearanceTest {
 
 	@Test
 	public void editAppearance() {
-		final SWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
+		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
 		bot.selectElement(editor, ElementNames.abstractTypeName);
 		bot.selectTabbedPropertySection("Appearance");
 
@@ -41,24 +41,29 @@ public class ElementAppearanceTest {
 		final DiagramElement de = ageDiagramBehavior.getGraphitiAgeDiagram()
 				.getDiagramElement(gsep.getPictogramElement());
 
-		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Hide");
+		bot.setElementOptionComboInPropertiesView(editor, "Appearance",
+				AppearancePropertySection.primaryLabelVisibilityCombo, "Hide", ElementNames.abstractTypeName);
 		assertTrue(!de.getStyle().getPrimaryLabelVisible());
 
 		final Double fontSize = de.getStyle().getFontSize();
-		bot.clickCombo(AppearancePropertySection.fontSizeCombo, "Large");
+		bot.setElementOptionComboInPropertiesView(editor, "Appearance", AppearancePropertySection.fontSizeCombo,
+				"Large", ElementNames.abstractTypeName);
 		assertTrue(de.getStyle().getFontSize() != fontSize);
 
 		assertTrue(de.getStyle().getOutlineColor() == null);
+		bot.openPropertiesView();
 		bot.clickButtonWithId(AppearancePropertySection.outlineColorId);
 		bot.clickButtonIndexWithId(AppearancePropertySection.presetColorId, 0);
 		assertTrue(de.getStyle().getOutlineColor() != null);
 
 		assertTrue(de.getStyle().getFontColor() == null);
+		bot.openPropertiesView();
 		bot.clickButtonWithId(AppearancePropertySection.fontColorId);
 		bot.clickButtonIndexWithId(AppearancePropertySection.presetColorId, 1);
 		assertTrue(de.getStyle().getFontColor() != null);
 
 		assertTrue(de.getStyle().getBackgroundColor() == null);
+		bot.openPropertiesView();
 		bot.clickButtonWithId(AppearancePropertySection.backgroundColorId);
 		bot.clickButtonIndexWithId(AppearancePropertySection.presetColorId, 2);
 		assertTrue(de.getStyle().getBackgroundColor() != null);
