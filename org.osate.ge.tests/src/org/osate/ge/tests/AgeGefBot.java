@@ -575,16 +575,16 @@ public class AgeGefBot {
 	}
 
 	public void openPropertiesView() {
-		bot.widgets(new PrintWidgetMatcher());
+		bot.widgets(new PrintWidgetMatcher("AAA"));
 		// TODO try show()?
 		bot.viewByTitle("Properties").setFocus();
-		bot.widgets(new PrintWidgetMatcher());
+		bot.widgets(new PrintWidgetMatcher("BBB"));
 	}
 
 	private class PrintWidgetMatcher extends CustomMatcher<Widget> {
-		public PrintWidgetMatcher() {
+		public PrintWidgetMatcher(final String id) {
 			super("Print Widget Matcher");
-			System.err.println("<Printing Widgets>");
+			System.err.println("<Printing Widgets> id:" + id);
 		}
 
 		@Override
@@ -726,7 +726,7 @@ public class AgeGefBot {
 	}
 
 	public void clickCombo(final String id, final String selection) {
-		bot.viewByTitle("Properties").bot().widgets(new PrintWidgetMatcher());
+		bot.viewByTitle("Properties").bot().widgets(new PrintWidgetMatcher("CCC"));
 		bot.viewByTitle("Properties").bot().comboBoxWithId(id).setSelection(selection);
 		// bot.comboBoxWithId(id).setSelection(selection);
 	}
