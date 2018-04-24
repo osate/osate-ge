@@ -505,6 +505,7 @@ public class AgeGefBot {
 		final Widget widget = getWidget(widgetName);
 		Assert.assertTrue("widget is not a control", widget instanceof Control);
 		selectControl((Control) widget);
+		// TODO editor.setfocus here?
 	}
 
 	public void selectControl(final Control c) {
@@ -546,6 +547,7 @@ public class AgeGefBot {
 		editor.click(editPart);
 		editor.select(editPart);
 		selectTabbedPropertySection(tabTitle);
+		editor.setFocus();
 		clickRadio(option);
 	}
 
@@ -557,8 +559,8 @@ public class AgeGefBot {
 		editor.select(editPart);
 		selectTabbedPropertySection(tabTitle);
 		editor.setFocus();
-		editor.click(editPart);
-		editor.select(editPart);
+		// editor.click(editPart);
+		// editor.select(editPart);
 		clickCombo(comboId, selection);
 	}
 
@@ -568,6 +570,7 @@ public class AgeGefBot {
 		clickElements(editor, elementPath);
 		selectElements(editor, elementPath);
 		selectTabbedPropertySection(tabTitle);
+		editor.setFocus();
 		clickButton(option);
 //		editor.setFocus();
 //		final SWTBotGefEditPart editPart = findEditPart(editor, elementPath);
@@ -951,6 +954,7 @@ public class AgeGefBot {
 		editor.select(connectionEditPart);
 		clickConnection(editor, ((GraphitiConnectionEditPart) connectionEditPart.part()).getConnectionFigure());
 		selectTabbedPropertySection("Appearance");
+		editor.setFocus();
 		clickCombo(comboId, selection);
 	}
 }
