@@ -825,6 +825,7 @@ public class AgeGefBot {
 		final GraphicsAlgorithm labelGA = getLabelShape(cs).getGraphicsAlgorithm();
 		editor.setFocus();
 		editor.select(newEditPart);
+		editor.click(newEditPart);
 
 		final Display display = editor.getWidget().getDisplay();
 		editor.getWidget().getDisplay().syncExec(() -> {
