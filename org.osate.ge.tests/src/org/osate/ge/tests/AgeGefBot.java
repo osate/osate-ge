@@ -291,12 +291,18 @@ public class AgeGefBot {
 
 	public void createToolItemAndRename(final AgeSWTBotGefEditor editor, final Class<?> clazz, final Point p,
 			final String newName, final String... editPathPath) {
+		System.err.println("AAA");
 		final SWTBotGefEditPart editPart = editor
 				.editParts(new FindEditPart(getAgeFeatureProvider(editor), editPathPath)).get(0);
+		System.err.println("BBB");
 		editor.select(editPart);
+		System.err.println("CCC");
 		editor.click(editPart);
+		System.err.println("DDD");
 		createToolItem(editor, ToolTypes.getToolItem(clazz), p, editPathPath);
+		System.err.println("EEE");
 		final SWTBotGefEditPart newEditPart = getNewElement(editor, clazz);
+		System.err.println("FFF");
 		renameElement(editor, newEditPart, newName);
 	}
 
