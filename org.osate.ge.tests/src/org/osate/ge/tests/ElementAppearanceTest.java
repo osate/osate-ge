@@ -32,6 +32,7 @@ public class ElementAppearanceTest {
 	public void editAppearance() {
 		final AgeSWTBotGefEditor editor = bot.getEditor(ElementNames.packageName);
 		bot.selectElement(editor, ElementNames.abstractTypeName);
+		bot.openPropertiesView();
 		// bot.selectTabbedPropertySection("Appearance");
 
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) editor.getEditPart(ElementNames.abstractTypeName)

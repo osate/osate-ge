@@ -511,6 +511,7 @@ public class AgeGefBot {
 
 	public void selectTabbedPropertySection(final String widgetName) {
 		// openPropertiesView();
+
 		final Widget widget = getWidget(widgetName);
 		Assert.assertTrue("widget is not a control", widget instanceof Control);
 		selectControl((Control) widget);
