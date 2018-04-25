@@ -27,11 +27,13 @@ import org.eclipse.graphiti.mm.pictograms.PictogramElement;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.ui.platform.GraphitiConnectionEditPart;
 import org.eclipse.graphiti.ui.platform.GraphitiShapeEditPart;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 import org.eclipse.swtbot.eclipse.finder.SWTWorkbenchBot;
@@ -55,7 +57,6 @@ import org.hamcrest.BaseMatcher;
 import org.hamcrest.CustomMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.junit.Assert;
 import org.osate.aadl2.AbstractImplementation;
 import org.osate.aadl2.AbstractType;
 import org.osate.aadl2.NamedElement;
@@ -513,19 +514,25 @@ public class AgeGefBot {
 		// openPropertiesView();
 
 		final Widget widget = getWidget(widgetName);
-		Assert.assertTrue("widget is not a control", widget instanceof Control);
-		selectControl((Control) widget);
+		final Display display = PlatformUI.getWorkbench().getDisplay();
+		display.syncExec(() -> {
+			widget.notifyListeners(SWT.MouseUp, createEvent(widget, display));
+		});
+
+		// Assert.assertTrue("widget is not a control", widget instanceof Control);
+		//selectControl((Control) widget);
 		// TODO editor.setfocus here?
 	}
 
 	public void selectControl(final Control c) {
+		// c.notifyListeners(eventType, event);
 		System.err.println(c + " select_control");
 		bot.setAutoDelay(25);
 		final Display display = PlatformUI.getWorkbench().getDisplay();
-		display.syncExec(() -> {
-			final Point point = display.map(c.getParent(), null, c.getLocation().x, c.getLocation().y);
-			bot.mouseLeftClick(point.x + 4, point.y + 4);
-		});
+		// display.syncExec(() -> {
+		// final Point point = display.map(c.getParent(), null, c.getLocation().x, c.getLocation().y);
+		// bot.mouseLeftClick(point.x + 4, point.y + 4);
+		// });
 		bot.setAutoDelay(300);
 	}
 
@@ -536,10 +543,15 @@ public class AgeGefBot {
 			this.controlName = controlName;
 		}
 
+// TODO cleanup
 		@Override
 		public boolean matches(final Object item) {
 			final Widget widget = (Widget) item;
 			if (!widget.isDisposed()) {
+				if (widget.toString().equalsIgnoreCase(controlName)) {
+					// widget.notifyListeners(SWT.MouseUp, createEvent(widget, Display.getDefault()));
+				}
+
 				return widget.toString().equalsIgnoreCase(controlName);
 			}
 
@@ -549,6 +561,18 @@ public class AgeGefBot {
 		@Override
 		public void describeTo(org.hamcrest.Description description) {
 		};
+	}
+
+	private void notify(final Widget widget, final int eventType) {
+		createEvent(widget, Display.getDefault());
+	}
+
+	protected Event createEvent(final Widget widget, final Display display) {
+		Event event = new Event();
+		event.time = (int) System.currentTimeMillis();
+		event.widget = widget;
+		event.display = display;
+		return event;
 	}
 
 	public void setElementOptionRadioInPropertiesView(final SWTBotGefEditor editor, final String tabTitle,
@@ -562,6 +586,7 @@ public class AgeGefBot {
 		editor.setFocus();
 		editor.click(editPart);
 		editor.select(editPart);
+
 		bot.widgets(new PrintWidgetMatcher("DDD"));
 		clickRadio(option);
 	}

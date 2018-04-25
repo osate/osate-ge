@@ -43,7 +43,7 @@ public class CreateConnectionTest {
 				ElementNames.abstractFeatureNewName2, ElementNames.abstractTypeName);
 
 		bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Output", ElementNames.abstractFeatureNewName2);
-
+		bot.sleep(5);
 		final String abstractImplName = ElementNames.abstractTypeName + ".impl";
 		bot.resizeEditPart(editor, new Point(400, 400), abstractImplName);
 		bot.executeContextMenuCommand(editor, abstractImplName, AgeGefBot.allFilters);
