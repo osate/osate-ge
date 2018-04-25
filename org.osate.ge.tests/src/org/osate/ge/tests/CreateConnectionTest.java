@@ -96,6 +96,8 @@ public class CreateConnectionTest {
 	private void createSubcomponents(final AgeSWTBotGefEditor editor, final Class<?> clazz, final String parent) {
 		System.err.println("create subcomponents");
 		editor.setFocus();
+		editor.select(ElementNames.packageName);
+		editor.click(ElementNames.packageName);
 		System.err.println("create subcomponents before 1");
 		bot.createToolItemAndRename(editor, clazz, new Point(200, 100), ElementNames.abstractSubcomponentName, parent);
 		System.err.println("create subcomponents before 2");
