@@ -803,12 +803,18 @@ public class AgeGefBot {
 
 	public void renameElement(final SWTBotGefEditor editor, final SWTBotGefEditPart newEditPart, final String newName) {
 		final java.awt.Point renameLocation = new java.awt.Point();
+		System.err.println("set rename location");
 		setRenameLocation(editor, newEditPart, renameLocation);
+		System.err.println(renameLocation + " renameLocation");
 		bot.setAutoDelay(300);
+		System.err.println("mouse 1");
 		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
+		System.err.println("mouse 2");
 		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
 		sleep(2);
+		System.err.println("before direct edit");
 		editor.directEditType(newName);
+		System.err.println("after direct edit");
 		waitUntilElementExists(editor, newName);
 	}
 
