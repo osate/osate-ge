@@ -519,11 +519,12 @@ public class AgeGefBot {
 	}
 
 	public void selectControl(final Control c) {
+		System.err.println(c + " select_control");
 		bot.setAutoDelay(25);
 		final Display display = PlatformUI.getWorkbench().getDisplay();
 		display.syncExec(() -> {
 			final Point point = display.map(c.getParent(), null, c.getLocation().x, c.getLocation().y);
-			bot.mouseLeftClick(point.x, point.y);
+			bot.mouseLeftClick(point.x + 4, point.y + 4);
 		});
 		bot.setAutoDelay(300);
 	}
@@ -557,9 +558,11 @@ public class AgeGefBot {
 		editor.click(editPart);
 		editor.select(editPart);
 		selectTabbedPropertySection(tabTitle);
+		bot.widgets(new PrintWidgetMatcher("CCC"));
 		editor.setFocus();
 		editor.click(editPart);
 		editor.select(editPart);
+		bot.widgets(new PrintWidgetMatcher("DDD"));
 		clickRadio(option);
 	}
 
