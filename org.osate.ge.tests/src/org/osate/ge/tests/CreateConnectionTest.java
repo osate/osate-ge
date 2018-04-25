@@ -49,7 +49,31 @@ public class CreateConnectionTest {
 		bot.executeContextMenuCommand(editor, abstractImplName, AgeGefBot.allFilters);
 		System.err.println("After before create subcomponents");
 
-		createSubcomponents(editor, AbstractSubcomponent.class, abstractImplName);
+		// createSubcomponents(editor, AbstractSubcomponent.class, abstractImplName);
+		System.err.println("create subcomponents");
+		// editor.setFocus();
+		// editor.select(ElementNames.packageName);
+		// editor.click(ElementNames.packageName);
+		System.err.println("create subcomponents before 1");
+		bot.createToolItemAndRename(editor, AbstractSubcomponent.class, new Point(200, 100),
+				ElementNames.abstractSubcomponentName, abstractImplName);
+		System.err.println("create subcomponents before 2");
+		bot.createToolItemAndRename(editor, AbstractSubcomponent.class, new Point(120, 250),
+				ElementNames.abstractSubcomponentName2, abstractImplName);
+		System.err.println("create subcomponents before choose...");
+		bot.setElementOptionButtonInPropertiesView(editor, "AADL", "Choose...",
+				new String[] { ElementNames.abstractSubcomponentName },
+				new String[] { ElementNames.abstractSubcomponentName2 });
+		System.err.println("before shell focus");
+		bot.setFocusShell("Select a Classifier");
+		System.err.println("create subcomponents before table option");
+
+		bot.clickTableOption(AgeGefBot.qualifiedName(ElementNames.packageName, ElementNames.abstractTypeName));
+		System.err.println("create subcomponents before ok");
+		bot.clickButton("OK");
+		System.err.println("before set focus");
+		editor.setFocus();
+		System.err.println("create subcomponents ending");
 		System.err.println("After Create subcomponents");
 
 		// Show children of subcomponents
