@@ -589,6 +589,7 @@ public class AgeGefBot {
 
 		bot.widgets(new PrintWidgetMatcher("DDD"));
 		clickRadio(option);
+		System.err.println("after radio click");
 	}
 
 	public void setElementOptionComboInPropertiesView(final AgeSWTBotGefEditor editor, final String tabTitle,

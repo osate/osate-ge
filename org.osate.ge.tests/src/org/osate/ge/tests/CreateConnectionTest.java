@@ -43,12 +43,14 @@ public class CreateConnectionTest {
 				ElementNames.abstractFeatureNewName2, ElementNames.abstractTypeName);
 
 		bot.setElementOptionRadioInPropertiesView(editor, "AADL", "Output", ElementNames.abstractFeatureNewName2);
-		bot.sleep(5);
+		System.err.println("After Set Element");
 		final String abstractImplName = ElementNames.abstractTypeName + ".impl";
 		bot.resizeEditPart(editor, new Point(400, 400), abstractImplName);
 		bot.executeContextMenuCommand(editor, abstractImplName, AgeGefBot.allFilters);
+		System.err.println("After before create subcomponents");
 
 		createSubcomponents(editor, AbstractSubcomponent.class, abstractImplName);
+		System.err.println("After Create subcomponents");
 
 		// Show children of subcomponents
 		bot.selectElements(editor, new String[] { abstractImplName, ElementNames.abstractSubcomponentName },
@@ -64,7 +66,7 @@ public class CreateConnectionTest {
 		// Find out feature
 		final SWTBotGefEditPart featureOut = bot.findChild(editor, subcomponent2, ElementNames.abstractFeatureNewName2)
 				.get(0);
-
+		System.err.println("create connection");
 		// Create connection
 		editor.activateTool("Feature Connection");
 		editor.click(featureOut);
@@ -79,6 +81,7 @@ public class CreateConnectionTest {
 		bot.selectTabbedPropertySection("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
+		System.err.println("rename connection");
 		// Rename
 		bot.renameConnection(editor, connectionEditPart, ConnectionPoint.MIDDLE, ElementNames.featureConnection);
 
@@ -86,6 +89,8 @@ public class CreateConnectionTest {
 		editor.select(ElementNames.featureConnection);
 		bot.selectTabbedPropertySection("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Hide");
+		System.err.println("Hide");
+
 	}
 
 	private void createSubcomponents(final AgeSWTBotGefEditor editor, final Class<?> clazz, final String parent) {
