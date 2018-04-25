@@ -548,6 +548,8 @@ public class AgeGefBot {
 		editor.select(editPart);
 		selectTabbedPropertySection(tabTitle);
 		editor.setFocus();
+		editor.click(editPart);
+		editor.select(editPart);
 		clickRadio(option);
 	}
 
@@ -559,6 +561,8 @@ public class AgeGefBot {
 		editor.select(editPart);
 		selectTabbedPropertySection(tabTitle);
 		editor.setFocus();
+		editor.click(editPart);
+		editor.select(editPart);
 		// editor.click(editPart);
 		// editor.select(editPart);
 		clickCombo(comboId, selection);
@@ -571,6 +575,8 @@ public class AgeGefBot {
 		selectElements(editor, elementPath);
 		selectTabbedPropertySection(tabTitle);
 		editor.setFocus();
+		clickElements(editor, elementPath);
+		selectElements(editor, elementPath);
 		clickButton(option);
 //		editor.setFocus();
 //		final SWTBotGefEditPart editPart = findEditPart(editor, elementPath);
@@ -955,6 +961,8 @@ public class AgeGefBot {
 		clickConnection(editor, ((GraphitiConnectionEditPart) connectionEditPart.part()).getConnectionFigure());
 		selectTabbedPropertySection("Appearance");
 		editor.setFocus();
+		editor.select(connectionEditPart);
+
 		clickCombo(comboId, selection);
 	}
 }
