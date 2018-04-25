@@ -36,6 +36,7 @@ import org.osate.aadl2.NamedElement;
 import org.osate.ge.BusinessObjectSelection;
 import org.osate.ge.internal.ui.dialogs.ElementSelectionDialog;
 import org.osate.ge.internal.ui.util.InternalPropertySectionUtil;
+import org.osate.ge.internal.ui.util.UiUtil;
 import org.osate.ge.internal.util.AadlHelper;
 import org.osate.ge.internal.util.ScopedEMFIndexRetrieval;
 import org.osate.ge.ui.properties.PropertySectionUtil;
@@ -71,6 +72,7 @@ public class SetExtendedClassifierPropertySection extends AbstractPropertySectio
 
 		chooseBtn = InternalPropertySectionUtil.createButton(getWidgetFactory(), container, null,
 				setExtendedClassifierListener, "Choose...", SWT.PUSH);
+		chooseBtn.setData(UiUtil.AUTOMATED_SWTBOT_TESTING_KEY, "org.osate.ge.properties.SetExtendedClassifier");
 
 		fd = new FormData();
 		fd.left = new FormAttachment(extendedClassifier, ITabbedPropertyConstants.HSPACE);

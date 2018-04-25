@@ -2,8 +2,6 @@ package org.osate.ge.tests;
 
 import static org.junit.Assert.assertTrue;
 
-import java.awt.AWTException;
-import java.awt.Robot;
 import java.awt.event.KeyEvent;
 
 import org.eclipse.graphiti.mm.algorithms.GraphicsAlgorithm;
@@ -47,21 +45,19 @@ public class MoveShapeUsingKeysTest {
 		final int beforeY = gaBefore.getY();
 		editor.getSWTBotGefViewer().select(ElementNames.abstractTypeName);
 
-		try {
-			final Robot robot = new Robot();
-			robot.setAutoDelay(25);
-			robot.keyPress(KeyEvent.VK_PERIOD);
+		// Enable move shape mode
+		bot.keyPress(KeyEvent.VK_PERIOD);
 
-			for(int i = 0; i < 10; i++) {
-				robot.keyPress(KeyEvent.VK_DOWN);
-				robot.keyRelease(KeyEvent.VK_DOWN);
-			}
-
-			robot.keyPress(KeyEvent.VK_ENTER);
-			robot.keyRelease(KeyEvent.VK_ENTER);
-		} catch (AWTException e) {
-			e.printStackTrace();
+		// Move shape down
+		for (int i = 0; i < 10; i++) {
+			bot.keyPress(KeyEvent.VK_DOWN);
+			bot.keyRelease(KeyEvent.VK_DOWN);
 		}
+
+		// Stop move shape mode
+		bot.keyRelease(KeyEvent.VK_PERIOD);
+		// bot.keyPress(KeyEvent.VK_ENTER);
+		// bot.keyRelease(KeyEvent.VK_ENTER);
 
 		final GraphicsAlgorithm gaAfter = pe.getGraphicsAlgorithm();
 		assertTrue(beforeX != gaAfter.getX() || beforeY != gaAfter.getY());

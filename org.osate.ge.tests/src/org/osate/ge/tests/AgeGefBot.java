@@ -28,6 +28,7 @@ import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.ui.platform.GraphitiConnectionEditPart;
 import org.eclipse.graphiti.ui.platform.GraphitiShapeEditPart;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
@@ -164,6 +165,14 @@ public class AgeGefBot {
 
 		public void setAutoDelay(int delay) {
 			robot.setAutoDelay(delay);
+		}
+
+		public void keyPress(final int key) {
+			robot.keyPress(key);
+		}
+
+		public void keyRelease(final int key) {
+			robot.keyRelease(key);
 		}
 	}
 
@@ -501,7 +510,7 @@ public class AgeGefBot {
 	}
 
 	public void selectTabbedPropertySection(final String widgetName) {
-		openPropertiesView();
+		// openPropertiesView();
 		final Widget widget = getWidget(widgetName);
 		Assert.assertTrue("widget is not a control", widget instanceof Control);
 		selectControl((Control) widget);
@@ -523,7 +532,7 @@ public class AgeGefBot {
 
 		public SelectControlMatcher(final String controlName) {
 			this.controlName = controlName;
-			}
+		}
 
 		@Override
 		public boolean matches(final Object item) {
@@ -606,6 +615,9 @@ public class AgeGefBot {
 			if (item instanceof Combo) {
 				final Combo combo = (Combo) item;
 				System.err.println(combo.getData("org.eclipse.swtbot.widget.key"));
+			} else if (item instanceof Button) {
+				final Button button = (Button) item;
+				System.err.println(button.getData("org.eclipse.swtbot.widget.key"));
 			}
 			return true;
 		}
@@ -866,14 +878,6 @@ public class AgeGefBot {
 		editor.click(findEditPart(editor, elementPath));
 	}
 
-	public void resetMouse() {
-		try {
-			final Robot robot = new Robot();
-			robot.mouseMove(0, 0);
-		} catch (AWTException e) {
-		}
-	}
-
 	public void selectElement(final SWTBotGefEditor editor, final String... elementPath) {
 		editor.setFocus();
 		editor.select(findEditPart(editor, elementPath));
@@ -964,5 +968,13 @@ public class AgeGefBot {
 		editor.select(connectionEditPart);
 
 		clickCombo(comboId, selection);
+	}
+
+	public void keyPress(final int key) {
+		bot.keyPress(key);
+	}
+
+	public void keyRelease(final int key) {
+		bot.keyRelease(key);
 	}
 }
