@@ -1,9 +1,13 @@
 before_script: 
     - python3 ./gitlab-ci/prepare_to_run_tests.py ~/oge_build_root/
-    - DISPLAY=:1.0
-    - export DISPLAY=:1.0
+    - vncserver :42 -localhost -nolisten tcp
+    - DISPLAY=:42.0
+    - export DISPLAY
       
 test:
     script: 
       - cd ~/oge_build_root/osate2-core/osate.releng/
-      - mvn -Plocal -fae -Dtest=CreateConnectionTest integration-test
+      - mvn -Plocal -fae clean integration-test
+      
+after_script:
+      - vncserver -kill :42
