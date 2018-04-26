@@ -1,7 +1,7 @@
 before_script: 
     - python3 ./gitlab-ci/prepare_to_run_tests.py ~/oge_build_root/
     - DISPLAY=:1.0
-    - export DISPLAY
+    - export DISPLAY=:1.0
       
 test:
     script: 
