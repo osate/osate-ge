@@ -588,12 +588,12 @@ public class AgeGefBot {
 		editor.click(editPart);
 		editor.select(editPart);
 		selectTabbedPropertySection(tabTitle);
-		bot.widgets(new PrintWidgetMatcher("CCC"));
+		// bot.widgets(new PrintWidgetMatcher("CCC"));
 		editor.setFocus();
 		editor.click(editPart);
 		editor.select(editPart);
 
-		bot.widgets(new PrintWidgetMatcher("DDD"));
+		// bot.widgets(new PrintWidgetMatcher("DDD"));
 		clickRadio(option);
 		System.err.println("after radio click");
 	}
@@ -633,10 +633,10 @@ public class AgeGefBot {
 	}
 
 	public void openPropertiesView() {
-		bot.widgets(new PrintWidgetMatcher("AAA"));
+		// bot.widgets(new PrintWidgetMatcher("AAA"));
 		// TODO try show()?
 		bot.viewByTitle("Properties").setFocus();
-		bot.widgets(new PrintWidgetMatcher("BBB"));
+		// bot.widgets(new PrintWidgetMatcher("BBB"));
 	}
 
 	private class PrintWidgetMatcher extends CustomMatcher<Widget> {
@@ -792,7 +792,7 @@ public class AgeGefBot {
 
 	public void clickCombo(final String id, final String selection) {
 		bot.viewByTitle("Properties").setFocus();
-		bot.widgets(new PrintWidgetMatcher("CCC"));
+		// bot.widgets(new PrintWidgetMatcher("CCC"));
 		// bot.viewByTitle("Properties").bot().comboBoxWithId(id).setSelection(selection);
 		bot.comboBoxWithId(id).setSelection(selection);
 	}
