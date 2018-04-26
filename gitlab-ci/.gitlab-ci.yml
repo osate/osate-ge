@@ -4,4 +4,8 @@ before_script:
 test:
     script: 
       - cd ~/oge_build_root/osate2-core/osate.releng/
-      - xvfb-run mvn -Plocal -fae -Dtest=CreateConnectionTest integration-test
+      - vncserver :42 -localhost -nolisten tcp
+      - DISPLAY=:42.0
+      - export DISPLAY
+      - mvn -Plocal -fae -Dtest=CreateConnectionTest integration-test
+      - vncserver -kill :42
