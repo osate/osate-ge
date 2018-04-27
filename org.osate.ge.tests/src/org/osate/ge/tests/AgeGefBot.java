@@ -806,10 +806,10 @@ public class AgeGefBot {
 	}
 
 	public void renameElement(final SWTBotGefEditor editor, final SWTBotGefEditPart newEditPart, final String newName) {
-		final java.awt.Point renameLocation = new java.awt.Point();
-		mouseSelectElement(editor, newEditPart);
-		setRenameLocation(editor, newEditPart, renameLocation);
 		bot.setAutoDelay(300);
+		mouseSelectElement(editor, newEditPart);
+		final java.awt.Point renameLocation = new java.awt.Point();
+		setRenameLocation(editor, newEditPart, renameLocation);
 		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
 		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
 		editor.directEditType(newName);
@@ -831,16 +831,11 @@ public class AgeGefBot {
 			final Rectangle bounds = gsep.getFigure().getBounds();
 			final Point point = PlatformUI.getWorkbench().getDisplay().map(display.getFocusControl(), null, bounds.x,
 					bounds.y);
-
-			System.err.println(canvas.getHorizontalBar().getSelection() + " horizontalbbb");
-			System.err.println(canvas.getVerticalBar().getSelection() + " verticalbbb");
-
 			final Point p = new Point(point.x - canvas.getHorizontalBar().getSelection(),
 					point.y - canvas.getVerticalBar().getSelection());
 			renameLocation.x = p.x + labelGA.getX() + labelGA.getWidth() / 2;
 			renameLocation.y = p.y + labelGA.getY() + labelGA.getHeight() / 2;
 		});
-		bot.sleep(5000);
 	}
 
 	private void mouseSelectElement(final SWTBotGefEditor editor, final SWTBotGefEditPart newEditPart) {
