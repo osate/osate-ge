@@ -12,9 +12,18 @@
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 	
+	
+	
 	<profiles>
 		<profile>
 			<id>geometry</id>
+			<repositories>
+				<repository>
+					<id>swtbot</id>
+					<url>http://download.eclipse.org/technology/swtbot/releases/latest</url>
+					<layout>p2</layout>
+				</repository>
+			</repositories>
 			<build>
 				<plugins>
 					<plugin>
