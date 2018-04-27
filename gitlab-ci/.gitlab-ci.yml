@@ -1,6 +1,6 @@
 before_script: 
     - python3 ./gitlab-ci/prepare_to_run_tests.py ~/oge_build_root/
-    - vncserver :42 -localhost -nolisten tcp
+    - vncserver :42 -geometry 1920x1080 -localhost -nolisten tcp
     - DISPLAY=:42.0
     - export DISPLAY
       
