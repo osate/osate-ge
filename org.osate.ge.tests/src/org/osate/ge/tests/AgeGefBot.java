@@ -285,24 +285,28 @@ public class AgeGefBot {
 		editor.click(parent);
 		editor.activateTool(toolItem);
 		final Rectangle rect = ((GraphitiShapeEditPart) parent.part()).getFigure().getBounds();
-		editor.click(rect.x + p.x, rect.y + p.y);
+		editor.setFocus();
+		// Value to hold scrollbar selections: Point(Vertical, Horizontal)
+		java.awt.Point scrollbarValues = new java.awt.Point();
+		final Display display = editor.getWidget().getDisplay();
+		display.syncExec(() -> {
+			final FigureCanvas canvas = (FigureCanvas) display.getFocusControl();
+			scrollbarValues.x = canvas.getHorizontalBar().getSelection();
+			scrollbarValues.y = canvas.getVerticalBar().getSelection();
+		});
+		editor.click(rect.x + p.x - scrollbarValues.x, rect.y + p.y - scrollbarValues.y);
 		editor.activateDefaultTool();
 	}
 
 	public void createToolItemAndRename(final AgeSWTBotGefEditor editor, final Class<?> clazz, final Point p,
 			final String newName, final String... editPathPath) {
-		System.err.println("AAA");
 		final SWTBotGefEditPart editPart = editor
 				.editParts(new FindEditPart(getAgeFeatureProvider(editor), editPathPath)).get(0);
-		System.err.println("BBB");
 		editor.select(editPart);
-		System.err.println("CCC");
 		editor.click(editPart);
-		System.err.println("DDD");
 		createToolItem(editor, ToolTypes.getToolItem(clazz), p, editPathPath);
-		System.err.println("EEE");
 		final SWTBotGefEditPart newEditPart = getNewElement(editor, clazz);
-		System.err.println("FFF");
+
 		renameElement(editor, newEditPart, newName);
 	}
 
@@ -803,18 +807,12 @@ public class AgeGefBot {
 
 	public void renameElement(final SWTBotGefEditor editor, final SWTBotGefEditPart newEditPart, final String newName) {
 		final java.awt.Point renameLocation = new java.awt.Point();
-		System.err.println("set rename location");
+		mouseSelectElement(editor, newEditPart);
 		setRenameLocation(editor, newEditPart, renameLocation);
-		System.err.println(renameLocation + " renameLocation");
 		bot.setAutoDelay(300);
-		System.err.println("mouse 1");
 		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
-		System.err.println("mouse 2");
 		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
-		sleep(2);
-		System.err.println("before direct edit");
 		editor.directEditType(newName);
-		System.err.println("after direct edit");
 		waitUntilElementExists(editor, newName);
 	}
 
@@ -829,14 +827,34 @@ public class AgeGefBot {
 
 		final Display display = editor.getWidget().getDisplay();
 		editor.getWidget().getDisplay().syncExec(() -> {
-			final FigureCanvas canvas = (FigureCanvas) display.getFocusControl();
+			final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
 			final Rectangle bounds = gsep.getFigure().getBounds();
 			final Point point = PlatformUI.getWorkbench().getDisplay().map(display.getFocusControl(), null, bounds.x,
 					bounds.y);
-			renameLocation.x = point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX()
-					+ labelGA.getWidth() / 2;
-			renameLocation.y = point.y - canvas.getVerticalBar().getSelection() + labelGA.getY()
-					+ labelGA.getHeight() / 2;
+
+			System.err.println(canvas.getHorizontalBar().getSelection() + " horizontalbbb");
+			System.err.println(canvas.getVerticalBar().getSelection() + " verticalbbb");
+
+			final Point p = new Point(point.x - canvas.getHorizontalBar().getSelection(),
+					point.y - canvas.getVerticalBar().getSelection());
+			renameLocation.x = p.x + labelGA.getX() + labelGA.getWidth() / 2;
+			renameLocation.y = p.y + labelGA.getY() + labelGA.getHeight() / 2;
+		});
+		bot.sleep(5000);
+	}
+
+	private void mouseSelectElement(final SWTBotGefEditor editor, final SWTBotGefEditPart newEditPart) {
+		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) newEditPart.part();
+		editor.setFocus();
+
+		final Display display = editor.getWidget().getDisplay();
+		editor.getWidget().getDisplay().syncExec(() -> {
+			final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
+			final Rectangle bounds = gsep.getFigure().getBounds();
+			final Point point = PlatformUI.getWorkbench().getDisplay().map(display.getFocusControl(), null, bounds.x,
+					bounds.y);
+			bot.mouseLeftClick(point.x - canvas.getHorizontalBar().getSelection() + 3,
+					point.y - canvas.getVerticalBar().getSelection() + 3);
 		});
 	}
 

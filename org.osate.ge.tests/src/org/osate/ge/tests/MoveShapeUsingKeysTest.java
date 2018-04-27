@@ -56,8 +56,8 @@ public class MoveShapeUsingKeysTest {
 
 		// Stop move shape mode
 		bot.keyRelease(KeyEvent.VK_PERIOD);
-		// bot.keyPress(KeyEvent.VK_ENTER);
-		// bot.keyRelease(KeyEvent.VK_ENTER);
+		bot.keyPress(KeyEvent.VK_ENTER);
+		bot.keyRelease(KeyEvent.VK_ENTER);
 
 		final GraphicsAlgorithm gaAfter = pe.getGraphicsAlgorithm();
 		assertTrue(beforeX != gaAfter.getX() || beforeY != gaAfter.getY());
