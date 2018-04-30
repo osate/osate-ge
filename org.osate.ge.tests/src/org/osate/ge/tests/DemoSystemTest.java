@@ -126,7 +126,7 @@ public class DemoSystemTest {
 		bot.createToolItemAndRename(demoSysImplEditor, ProcessorSubcomponent.class, new Point(400, 20), "cpu2",
 				demoSysImpl);
 
-		bot.selectTabbedPropertySection("AADL");
+		bot.selectWidget("AADL");
 		bot.selectElements(demoSysImplEditor, new String[] { "cpu1" }, new String[] { "cpu2" });
 		bot.clickButton("Choose...");
 		bot.clickTableOption(AgeGefBot.qualifiedName(hw, cpu));

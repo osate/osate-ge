@@ -48,7 +48,7 @@ public class FeatureGroupTest {
 				ElementNames.featureGroupTypeName, ElementNames.packageName);
 
 		bot.selectElement(editor, ElementNames.featureGroupName);
-		bot.selectTabbedPropertySection("AADL");
+		bot.selectWidget("AADL");
 		bot.clickButton("Choose...");
 
 

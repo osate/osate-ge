@@ -29,9 +29,6 @@ import org.eclipse.graphiti.ui.platform.GraphitiConnectionEditPart;
 import org.eclipse.graphiti.ui.platform.GraphitiShapeEditPart;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
@@ -121,10 +118,11 @@ public class AgeGefBot {
 
 	private static class AgeSWTGefBot extends SWTGefBot {
 		private final Robot robot;
+		private final int defaultDelay = 300;
 
 		public AgeSWTGefBot() {
 			robot = Objects.requireNonNull(getRobot(), "Robot cannot be null.");
-			robot.setAutoDelay(300);
+			robot.setAutoDelay(defaultDelay);
 		}
 
 		private Robot getRobot() {
@@ -185,6 +183,7 @@ public class AgeGefBot {
 	public void createNewProjectAndPackage(final String projectName, final String packageName) {
 		SWTBotPreferences.TIMEOUT = 15000;
 		closeWelcomePage();
+		// Create project
 		bot.menu("Other...", true).click();
 		bot.tree().getTreeItem("AADL").expand().getNode("AADL Project").click();
 		bot.button("Next >").click();
@@ -206,20 +205,21 @@ public class AgeGefBot {
 		bot.tree().contextMenu("Open").click();
 	}
 
-	public void createAADLPackage(final String projectName, final String packageName) {
-		bot.tree().select(projectName).contextMenu("AADL Package").click();
-		bot.text().setText(packageName);
-		clickRadio("Diagram Editor");
-		clickButton("Finish");
-		clickButton("OK");
-	}
-
+	// Close welcome page if necessary
 	public void closeWelcomePage() {
 		for (final SWTBotView view : bot.views()) {
 			if (view.getTitle().equals("Welcome")) {
 				view.close();
 			}
 		}
+	}
+
+	public void createAADLPackage(final String projectName, final String packageName) {
+		bot.tree().select(projectName).contextMenu("AADL Package").click();
+		bot.text().setText(packageName);
+		clickRadio("Diagram Editor");
+		clickButton("Finish");
+		clickButton("OK");
 	}
 
 	public void clickButton(final String text) {
@@ -356,7 +356,7 @@ public class AgeGefBot {
 		private SWTBotGefEditPart getNewElementEditPart() {
 			return editParts.get(0);
 		}
-		}
+	}
 
 	private class NewConnectionCondition extends DefaultCondition {
 		private final Class<?> clazz;
@@ -522,67 +522,20 @@ public class AgeGefBot {
 	}
 
 	public Widget getWidget(final String name) {
-		return bot.widget(new SelectControlMatcher(name));
+		return bot.widget(new WidgetMatcher(name));
 	}
 
-	public void selectTabbedPropertySection(final String widgetName) {
-		// openPropertiesView();
-
+	// Select widget by sending SWT.MouseUp event
+	public void selectWidget(final String widgetName) {
 		final Widget widget = getWidget(widgetName);
 		final Display display = PlatformUI.getWorkbench().getDisplay();
+		// Notify widget of selection
 		display.syncExec(() -> {
 			widget.notifyListeners(SWT.MouseUp, createEvent(widget, display));
 		});
-
-		// Assert.assertTrue("widget is not a control", widget instanceof Control);
-		//selectControl((Control) widget);
-		// TODO editor.setfocus here?
 	}
 
-	public void selectControl(final Control c) {
-		// c.notifyListeners(eventType, event);
-		System.err.println(c + " select_control");
-		bot.setAutoDelay(25);
-		final Display display = PlatformUI.getWorkbench().getDisplay();
-		// display.syncExec(() -> {
-		// final Point point = display.map(c.getParent(), null, c.getLocation().x, c.getLocation().y);
-		// bot.mouseLeftClick(point.x + 4, point.y + 4);
-		// });
-		bot.setAutoDelay(300);
-	}
-
-	public class SelectControlMatcher extends BaseMatcher<Widget> {
-		final String controlName;
-
-		public SelectControlMatcher(final String controlName) {
-			this.controlName = controlName;
-		}
-
-// TODO cleanup
-		@Override
-		public boolean matches(final Object item) {
-			final Widget widget = (Widget) item;
-			if (!widget.isDisposed()) {
-				if (widget.toString().equalsIgnoreCase(controlName)) {
-					// widget.notifyListeners(SWT.MouseUp, createEvent(widget, Display.getDefault()));
-				}
-
-				return widget.toString().equalsIgnoreCase(controlName);
-			}
-
-			return false;
-		};
-
-		@Override
-		public void describeTo(org.hamcrest.Description description) {
-		};
-	}
-
-	private void notify(final Widget widget, final int eventType) {
-		createEvent(widget, Display.getDefault());
-	}
-
-	protected Event createEvent(final Widget widget, final Display display) {
+	private Event createEvent(final Widget widget, final Display display) {
 		Event event = new Event();
 		event.time = (int) System.currentTimeMillis();
 		event.widget = widget;
@@ -590,21 +543,39 @@ public class AgeGefBot {
 		return event;
 	}
 
+	// Matching available widgets to widget wanted
+	public class WidgetMatcher extends CustomMatcher<Widget> {
+		final String widgetId;
+
+		public WidgetMatcher(final String widgetId) {
+			super("Finding: widgetId");
+			this.widgetId = widgetId;
+		}
+
+		@Override
+		public boolean matches(final Object item) {
+			final Widget widget = (Widget) item;
+			if (!widget.isDisposed()) {
+				return widget.toString().equalsIgnoreCase(widgetId);
+			}
+
+			return false;
+		};
+	}
+
+
 	public void setElementOptionRadioInPropertiesView(final SWTBotGefEditor editor, final String tabTitle,
 			final String option, final String... elementPath) {
 		editor.setFocus();
 		final SWTBotGefEditPart editPart = findEditPart(editor, elementPath);
 		editor.click(editPart);
 		editor.select(editPart);
-		selectTabbedPropertySection(tabTitle);
-		// bot.widgets(new PrintWidgetMatcher("CCC"));
+		selectWidget(tabTitle);
 		editor.setFocus();
 		editor.click(editPart);
 		editor.select(editPart);
 
-		// bot.widgets(new PrintWidgetMatcher("DDD"));
 		clickRadio(option);
-		System.err.println("after radio click");
 	}
 
 	public void setElementOptionComboInPropertiesView(final AgeSWTBotGefEditor editor, final String tabTitle,
@@ -613,12 +584,10 @@ public class AgeGefBot {
 		final SWTBotGefEditPart editPart = findEditPart(editor, elementPath);
 		editor.click(editPart);
 		editor.select(editPart);
-		selectTabbedPropertySection(tabTitle);
+		selectWidget(tabTitle);
 		editor.setFocus();
 		editor.click(editPart);
 		editor.select(editPart);
-		// editor.click(editPart);
-		// editor.select(editPart);
 		clickCombo(comboId, selection);
 	}
 
@@ -627,45 +596,15 @@ public class AgeGefBot {
 		editor.setFocus();
 		clickElements(editor, elementPath);
 		selectElements(editor, elementPath);
-		selectTabbedPropertySection(tabTitle);
+		selectWidget(tabTitle);
 		editor.setFocus();
 		clickElements(editor, elementPath);
 		selectElements(editor, elementPath);
 		clickButton(option);
-//		editor.setFocus();
-//		final SWTBotGefEditPart editPart = findEditPart(editor, elementPath);
-//		editor.click(editPart);
-//		editor.select(editPart);
-//		openPropertiesView();
-//		selectTabbedPropertySection(tabTitle);
-//		clickButton(option);
 	}
 
 	public void openPropertiesView() {
-		// bot.widgets(new PrintWidgetMatcher("AAA"));
-		// TODO try show()?
 		bot.viewByTitle("Properties").setFocus();
-		// bot.widgets(new PrintWidgetMatcher("BBB"));
-	}
-
-	private class PrintWidgetMatcher extends CustomMatcher<Widget> {
-		public PrintWidgetMatcher(final String id) {
-			super("Print Widget Matcher");
-			System.err.println("<Printing Widgets> id : " + id);
-		}
-
-		@Override
-		public boolean matches(Object item) {
-			System.err.println(item + " item");
-			if (item instanceof Combo) {
-				final Combo combo = (Combo) item;
-				System.err.println(combo.getData("org.eclipse.swtbot.widget.key"));
-			} else if (item instanceof Button) {
-				final Button button = (Button) item;
-				System.err.println(button.getData("org.eclipse.swtbot.widget.key"));
-			}
-			return true;
-		}
 	}
 
 	public static AgeFeatureProvider getAgeFeatureProvider(final SWTBotGefEditor editor) {
@@ -727,8 +666,7 @@ public class AgeGefBot {
 		}
 	}
 
-	public void showEditor(final SWTBotGefEditor editor) {
-		editor.show();
+	public void showEditor(final String editorName) {
 		bot.waitUntil(new DefaultCondition() {
 			@Override
 			public String getFailureMessage() {
@@ -737,6 +675,8 @@ public class AgeGefBot {
 
 			@Override
 			public boolean test() throws Exception {
+				final SWTBotGefEditor editor = getEditor(editorName);
+				editor.show();
 				return getActiveEditor().getTitle().equalsIgnoreCase(editor.getTitle());
 			};
 		}, 10000);
@@ -786,8 +726,8 @@ public class AgeGefBot {
 			renameLocation.y = point.y - canvas.getVerticalBar().getSelection();
 		});
 
-		// Click
-		bot.setAutoDelay(300);
+		// Click connection
+		bot.setAutoDelay(bot.defaultDelay);
 		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
 	}
 
@@ -811,7 +751,7 @@ public class AgeGefBot {
 	}
 
 	public void renameElement(final SWTBotGefEditor editor, final SWTBotGefEditPart newEditPart, final String newName) {
-		bot.setAutoDelay(300);
+		bot.setAutoDelay(bot.defaultDelay);
 		mouseSelectElement(editor, newEditPart);
 		final java.awt.Point renameLocation = new java.awt.Point();
 		setRenameLocation(editor, newEditPart, renameLocation);
@@ -862,17 +802,18 @@ public class AgeGefBot {
 			final ConnectionPoint connectionPoint, final String newName) {
 		editor.setFocus();
 		editor.select(conEditPart);
-		final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) conEditPart.part();
 
+		final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) conEditPart.part();
+		// Find label
 		final ConnectionDecorator cd = getLabelShape((FreeFormConnection) gcep.getPictogramElement());
-		final GraphicsAlgorithm labelGA = cd.getGraphicsAlgorithm();
 		final java.awt.Point conLblLocation = new java.awt.Point();
-		setLabelLocation(editor, labelGA, connectionPoint.getValue(gcep), conLblLocation);
-		bot.setAutoDelay(300);
+		setLabelLocation(editor, cd.getGraphicsAlgorithm(), connectionPoint.getValue(gcep), conLblLocation);
+		bot.setAutoDelay(bot.defaultDelay);
 		bot.mouseLeftClick(conLblLocation.x, conLblLocation.y);
 		bot.mouseLeftClick(conLblLocation.x, conLblLocation.y);
 
 		sleep(2);
+		// Rename
 		editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
 	}
@@ -891,6 +832,7 @@ public class AgeGefBot {
 		});
 	}
 
+	// Find connection label connection decorator
 	private ConnectionDecorator getLabelShape(final FreeFormConnection ffc) {
 		for (final ConnectionDecorator cd : ffc.getConnectionDecorators()) {
 			if (ShapeNames.primaryLabelShapeName.equalsIgnoreCase(PropertyUtil.getName(cd))) {
@@ -901,6 +843,7 @@ public class AgeGefBot {
 		return null;
 	}
 
+	// Find element label shape
 	private static Shape getLabelShape(final ContainerShape cs) {
 		for (final Shape shape : cs.getChildren()) {
 			if (ShapeNames.primaryLabelShapeName.equalsIgnoreCase(PropertyUtil.getName(shape))) {
@@ -947,6 +890,7 @@ public class AgeGefBot {
 		sleep(3);
 	}
 
+	// Select multiple elements
 	public void selectElements(final SWTBotGefEditor editor, final String[]... elementPaths) {
 		editor.setFocus();
 		final List<SWTBotGefEditPart> editParts = new ArrayList<>();
@@ -957,6 +901,7 @@ public class AgeGefBot {
 		editor.select(editParts);
 	}
 
+	// Click elements one at a time
 	public void clickElements(final SWTBotGefEditor editor, final String[]... elementPaths) {
 		for (final String[] elementPath : elementPaths) {
 			editor.click(findEditPart(editor, elementPath));
@@ -989,7 +934,7 @@ public class AgeGefBot {
 			bot.mouseLeftClickPress();
 			bot.mouseMove(outer.width / 2, y / 2 - outer.height / 2);
 			bot.mouseLeftClickRelease();
-			bot.setAutoDelay(300);
+			bot.setAutoDelay(bot.defaultDelay);
 		});
 	}
 
@@ -1025,7 +970,7 @@ public class AgeGefBot {
 			final String selection) {
 		editor.select(connectionEditPart);
 		clickConnection(editor, ((GraphitiConnectionEditPart) connectionEditPart.part()).getConnectionFigure());
-		selectTabbedPropertySection("Appearance");
+		selectWidget("Appearance");
 		editor.setFocus();
 		editor.select(connectionEditPart);
 

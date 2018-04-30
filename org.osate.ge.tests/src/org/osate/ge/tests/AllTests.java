@@ -4,7 +4,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-// TODO fix assert statements
 @RunWith(Suite.class)
 @SuiteClasses({
 		OpenElementPackageDiagramTest.class, CreateFlowImplTest.class, InstantiateAndOpenImplTest.class,
@@ -15,5 +14,4 @@ import org.junit.runners.Suite.SuiteClasses;
 		MoveShapeUsingKeysTest.class, ElementAppearanceTest.class,
 })
 public class AllTests {
-	//TODO set up and tear down?
 }

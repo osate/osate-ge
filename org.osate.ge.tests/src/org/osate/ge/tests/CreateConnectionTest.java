@@ -75,7 +75,7 @@ public class CreateConnectionTest {
 		editor.select(connectionEditPart);
 		final Connection con = ((GraphitiConnectionEditPart) connectionEditPart.part()).getConnectionFigure();
 		bot.clickConnection(editor, con);
-		bot.selectTabbedPropertySection("Appearance");
+		bot.selectWidget("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
 		// Rename
@@ -83,7 +83,7 @@ public class CreateConnectionTest {
 
 		// Hide label
 		editor.select(ElementNames.featureConnection);
-		bot.selectTabbedPropertySection("Appearance");
+		bot.selectWidget("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Hide");
 
 	}

@@ -57,7 +57,7 @@ public class CreateFlowImplTest {
 		editor.select(flowSink);
 		final Connection flowSinkCon = ((GraphitiConnectionEditPart) flowSink.part()).getConnectionFigure();
 		bot.clickConnection(editor, flowSinkCon);
-		bot.selectTabbedPropertySection("Appearance");
+		bot.selectWidget("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
 		bot.renameConnection(editor, flowSink, ConnectionPoint.LAST, "fsink");
@@ -71,7 +71,7 @@ public class CreateFlowImplTest {
 		final Connection gcepSrcCon = ((GraphitiConnectionEditPart) flowSrc.part()).getConnectionFigure();
 		bot.clickConnection(editor, gcepSrcCon);
 
-		bot.selectTabbedPropertySection("Appearance");
+		bot.selectWidget("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
 		bot.renameConnection(editor, flowSrc, ConnectionPoint.LAST, "fsrc");
@@ -88,7 +88,7 @@ public class CreateFlowImplTest {
 		bot.createToolItemAndRename(implEditor, SystemSubcomponent.class, new Point(450, 450), "ss2", "sys.impl2");
 
 		bot.openPropertiesView();
-		bot.selectTabbedPropertySection("AADL");
+		bot.selectWidget("AADL");
 		implEditor.setFocus();
 		bot.selectElements(implEditor, new String[] { "ss1" }, new String[] { "ss2" });
 		bot.clickButton("Choose...");
@@ -101,7 +101,7 @@ public class CreateFlowImplTest {
 		bot.clickElement(implEditor, "ss1", "dp_in");
 		implEditor.activateDefaultTool();
 
-		bot.selectTabbedPropertySection("Appearance");
+		bot.selectWidget("Appearance");
 		final SWTBotGefConnectionEditPart connectionEditPart = bot.getNewConnectionEditPart(implEditor,
 				FeatureConnectionImpl.class).get(0);
 
@@ -143,7 +143,7 @@ public class CreateFlowImplTest {
 		final Connection featureCon3 = ((GraphitiConnectionEditPart) connectionEditPart3.part()).getConnectionFigure();
 		bot.clickConnection(implEditor, featureCon3);
 
-		bot.selectTabbedPropertySection("Appearance");
+		bot.selectWidget("Appearance");
 		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Show");
 
 		bot.renameConnection(implEditor, connectionEditPart3, ConnectionPoint.MIDDLE,

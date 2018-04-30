@@ -30,12 +30,14 @@ public class OpenElementPackageDiagramTest {
 		final AgeSWTBotGefEditor pkgDiagramEditor = bot.getEditor(ElementNames.packageName);
 		bot.createToolItemAndRename(pkgDiagramEditor, AbstractType.class, new Point(20, 20),
 				ElementNames.abstractTypeName, ElementNames.packageName);
+		// Open another diagram and close package
 		bot.openAssociatedDiagramFromContextMenu(pkgDiagramEditor, ElementNames.abstractTypeName);
 		pkgDiagramEditor.saveAndClose();
 
 		final SWTBotGefEditor associatedDiagramEditor = bot.getEditor(ElementNames.packageName + "_" + ElementNames.abstractTypeName);
+		// Re-open package diagram
 		associatedDiagramEditor.select(ElementNames.abstractTypeName).clickContextMenu("Package Diagram");
-		bot.sleep(3);
+		bot.showEditor(ElementNames.packageName);
 		assertTrue(bot.isActiveEditor(ElementNames.packageName));
 	}
 }
