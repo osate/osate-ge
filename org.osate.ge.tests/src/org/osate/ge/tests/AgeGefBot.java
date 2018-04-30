@@ -121,7 +121,7 @@ public class AgeGefBot {
 
 		public AgeSWTGefBot() {
 			robot = Objects.requireNonNull(getRobot(), "Robot cannot be null.");
-			robot.setAutoDelay(300);
+			robot.setAutoDelay(700);
 		}
 
 		private Robot getRobot() {
@@ -726,7 +726,7 @@ public class AgeGefBot {
 		});
 
 		// Click connection
-		bot.setAutoDelay(500);
+		bot.setAutoDelay(700);
 		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
 	}
 
@@ -811,7 +811,7 @@ public class AgeGefBot {
 		final ConnectionDecorator cd = getLabelShape((FreeFormConnection) gcep.getPictogramElement());
 		final java.awt.Point conLblLocation = new java.awt.Point();
 		setLabelLocation(editor, cd.getGraphicsAlgorithm(), connectionPoint.getValue(gcep), conLblLocation);
-		bot.setAutoDelay(300);
+		bot.setAutoDelay(700);
 		bot.mouseLeftClick(conLblLocation.x, conLblLocation.y);
 		bot.mouseLeftClick(conLblLocation.x, conLblLocation.y);
 
@@ -937,7 +937,7 @@ public class AgeGefBot {
 			bot.mouseLeftClickPress();
 			bot.mouseMove(outer.width / 2, y / 2 - outer.height / 2);
 			bot.mouseLeftClickRelease();
-			bot.setAutoDelay(300);
+			bot.setAutoDelay(600);
 		});
 	}
 
