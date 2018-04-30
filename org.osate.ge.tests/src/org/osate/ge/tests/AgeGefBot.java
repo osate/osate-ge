@@ -118,11 +118,10 @@ public class AgeGefBot {
 
 	private static class AgeSWTGefBot extends SWTGefBot {
 		private final Robot robot;
-		private final int defaultDelay = 300;
 
 		public AgeSWTGefBot() {
 			robot = Objects.requireNonNull(getRobot(), "Robot cannot be null.");
-			robot.setAutoDelay(defaultDelay);
+			robot.setAutoDelay(300);
 		}
 
 		private Robot getRobot() {
@@ -727,7 +726,7 @@ public class AgeGefBot {
 		});
 
 		// Click connection
-		bot.setAutoDelay(bot.defaultDelay);
+		bot.setAutoDelay(500);
 		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
 	}
 
@@ -751,14 +750,14 @@ public class AgeGefBot {
 	}
 
 	public void renameElement(final SWTBotGefEditor editor, final SWTBotGefEditPart newEditPart, final String newName) {
-		bot.setAutoDelay(bot.defaultDelay);
+		bot.setAutoDelay(700);
 		mouseSelectElement(editor, newEditPart);
 		editor.select(newEditPart);
 		editor.click(newEditPart);
 		final java.awt.Point renameLocation = new java.awt.Point();
 		setRenameLocation(editor, newEditPart, renameLocation);
-		System.err.println(renameLocation + " renameLocation");
-
+		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
+		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
 		editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
 	}
@@ -773,7 +772,7 @@ public class AgeGefBot {
 		editor.click(newEditPart);
 
 		final Display display = editor.getWidget().getDisplay();
-		editor.getWidget().getDisplay().syncExec(() -> {
+		display.syncExec(() -> {
 			final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
 			final Rectangle bounds = gsep.getFigure().getBounds();
 			final Point point = PlatformUI.getWorkbench().getDisplay().map(display.getFocusControl(), null, bounds.x,
@@ -783,8 +782,7 @@ public class AgeGefBot {
 			renameLocation.x = p.x + labelGA.getX() + labelGA.getWidth() / 2;
 			renameLocation.y = p.y + labelGA.getY() + labelGA.getHeight() / 2;
 
-			bot.mouseLeftClick(renameLocation.x + 1, renameLocation.y + 1);
-			bot.mouseLeftClick(renameLocation.x + 2, renameLocation.y + 2);
+
 		});
 	}
 
@@ -813,7 +811,7 @@ public class AgeGefBot {
 		final ConnectionDecorator cd = getLabelShape((FreeFormConnection) gcep.getPictogramElement());
 		final java.awt.Point conLblLocation = new java.awt.Point();
 		setLabelLocation(editor, cd.getGraphicsAlgorithm(), connectionPoint.getValue(gcep), conLblLocation);
-		bot.setAutoDelay(bot.defaultDelay);
+		bot.setAutoDelay(300);
 		bot.mouseLeftClick(conLblLocation.x, conLblLocation.y);
 		bot.mouseLeftClick(conLblLocation.x, conLblLocation.y);
 
@@ -939,7 +937,7 @@ public class AgeGefBot {
 			bot.mouseLeftClickPress();
 			bot.mouseMove(outer.width / 2, y / 2 - outer.height / 2);
 			bot.mouseLeftClickRelease();
-			bot.setAutoDelay(bot.defaultDelay);
+			bot.setAutoDelay(300);
 		});
 	}
 
