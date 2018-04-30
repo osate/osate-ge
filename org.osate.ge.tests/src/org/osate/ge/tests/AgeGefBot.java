@@ -755,8 +755,10 @@ public class AgeGefBot {
 		mouseSelectElement(editor, newEditPart);
 		final java.awt.Point renameLocation = new java.awt.Point();
 		setRenameLocation(editor, newEditPart, renameLocation);
-		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
-		bot.mouseLeftClick(renameLocation.x, renameLocation.y);
+		editor.select(newEditPart);
+		editor.click(newEditPart);
+		bot.mouseLeftClick(renameLocation.x + 1, renameLocation.y + 1);
+		bot.mouseLeftClick(renameLocation.x + 2, renameLocation.y + 2);
 		editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
 	}
