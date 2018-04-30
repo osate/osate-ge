@@ -753,12 +753,12 @@ public class AgeGefBot {
 	public void renameElement(final SWTBotGefEditor editor, final SWTBotGefEditPart newEditPart, final String newName) {
 		bot.setAutoDelay(bot.defaultDelay);
 		mouseSelectElement(editor, newEditPart);
-		final java.awt.Point renameLocation = new java.awt.Point();
-		setRenameLocation(editor, newEditPart, renameLocation);
 		editor.select(newEditPart);
 		editor.click(newEditPart);
-		bot.mouseLeftClick(renameLocation.x + 1, renameLocation.y + 1);
-		bot.mouseLeftClick(renameLocation.x + 2, renameLocation.y + 2);
+		final java.awt.Point renameLocation = new java.awt.Point();
+		setRenameLocation(editor, newEditPart, renameLocation);
+		System.err.println(renameLocation + " renameLocation");
+
 		editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
 	}
@@ -782,6 +782,9 @@ public class AgeGefBot {
 					point.y - canvas.getVerticalBar().getSelection());
 			renameLocation.x = p.x + labelGA.getX() + labelGA.getWidth() / 2;
 			renameLocation.y = p.y + labelGA.getY() + labelGA.getHeight() / 2;
+
+			bot.mouseLeftClick(renameLocation.x + 1, renameLocation.y + 1);
+			bot.mouseLeftClick(renameLocation.x + 2, renameLocation.y + 2);
 		});
 	}
 
