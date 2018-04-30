@@ -7,7 +7,7 @@ before_script:
 test:
     script: 
       - cd ~/oge_build_root/osate2-core/osate.releng/
-      - mvn -P local,noTest -fae clean integration-test
+      - mvn -P local -fae clean integration-test
       
 after_script:
       - vncserver -kill :42
