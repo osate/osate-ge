@@ -7,16 +7,12 @@ import org.junit.runners.Suite.SuiteClasses;
 // TODO fix assert statements
 @RunWith(Suite.class)
 @SuiteClasses({
-		OpenAssociatedDiagramTest.class// , OpenElementPackageDiagramTest.class
-		// CreateFlowImplTest.class,
-		// CreateConnectionTest.class
-		// InstantiateAndOpenImplTest.class
-		// CreateNewAADLPackageTest.class, OpenExistingAADLModelTest.class, RenameClassifierTest.class,
-		// OpenAssociatedDiagramTest.class, OpenElementPackageDiagramTest.class, InstantiateAndOpenImplTest.class,
-		// GoToTypeDiagramTest.class, DeletingClassifierTest.class, SelectingDiagramElementContainerTest.class,
-		// PerformDiagramLayoutTest.class, CreateConnectionTest.class, SetExtendedClassifierTest.class,
-		// FeatureGroupTest.class, ModesTransitionTest.class, MoveShapeUsingKeysTest.class, ElementAppearanceTest.class,
-		// CreateFlowImplTest.class// , DemoSystemTest.class
+		OpenElementPackageDiagramTest.class, CreateFlowImplTest.class, InstantiateAndOpenImplTest.class,
+		CreateNewAADLPackageTest.class, OpenExistingAADLModelTest.class, RenameClassifierTest.class,
+		OpenAssociatedDiagramTest.class, GoToTypeDiagramTest.class, DeletingClassifierTest.class,
+		SelectingDiagramElementContainerTest.class, PerformDiagramLayoutTest.class, CreateConnectionTest.class,
+		SetExtendedClassifierTest.class, FeatureGroupTest.class, ModesTransitionTest.class,
+		MoveShapeUsingKeysTest.class, ElementAppearanceTest.class,
 })
 public class AllTests {
 	//TODO set up and tear down?

@@ -282,20 +282,25 @@ public class AgeGefBot {
 			final String... editPartPath) {
 		final SWTBotGefEditPart parent = findEditPart(editor, editPartPath);
 		editor.setFocus();
-		editor.click(parent);
+		// editor.click(parent);
+		mouseSelectElement(editor, parent);
 		editor.activateTool(toolItem);
 		final Rectangle rect = ((GraphitiShapeEditPart) parent.part()).getFigure().getBounds();
-		editor.setFocus();
 		// Value to hold scrollbar selections: Point(Vertical, Horizontal)
 		java.awt.Point scrollbarValues = new java.awt.Point();
+		getScrollBarValues(editor, scrollbarValues);
+		editor.click(rect.x + p.x - scrollbarValues.x, rect.y + p.y - scrollbarValues.y);
+		editor.activateDefaultTool();
+	}
+
+	private void getScrollBarValues(SWTBotGefEditor editor, java.awt.Point scrollbarValues) {
+		editor.setFocus();
 		final Display display = editor.getWidget().getDisplay();
 		display.syncExec(() -> {
 			final FigureCanvas canvas = (FigureCanvas) display.getFocusControl();
 			scrollbarValues.x = canvas.getHorizontalBar().getSelection();
 			scrollbarValues.y = canvas.getVerticalBar().getSelection();
 		});
-		editor.click(rect.x + p.x - scrollbarValues.x, rect.y + p.y - scrollbarValues.y);
-		editor.activateDefaultTool();
 	}
 
 	public void createToolItemAndRename(final AgeSWTBotGefEditor editor, final Class<?> clazz, final Point p,
@@ -838,13 +843,13 @@ public class AgeGefBot {
 		});
 	}
 
-	private void mouseSelectElement(final SWTBotGefEditor editor, final SWTBotGefEditPart newEditPart) {
-		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) newEditPart.part();
+	private void mouseSelectElement(final SWTBotGefEditor editor, final SWTBotGefEditPart editPart) {
+		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) editPart.part();
 		editor.setFocus();
 
 		final Display display = editor.getWidget().getDisplay();
-		editor.getWidget().getDisplay().syncExec(() -> {
-			final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
+		display.syncExec(() -> {
+			final FigureCanvas canvas = (FigureCanvas) display.getFocusControl();
 			final Rectangle bounds = gsep.getFigure().getBounds();
 			final Point point = PlatformUI.getWorkbench().getDisplay().map(display.getFocusControl(), null, bounds.x,
 					bounds.y);
@@ -861,28 +866,29 @@ public class AgeGefBot {
 
 		final ConnectionDecorator cd = getLabelShape((FreeFormConnection) gcep.getPictogramElement());
 		final GraphicsAlgorithm labelGA = cd.getGraphicsAlgorithm();
-		// Select connection label for rename
-		try {
-			final Robot robot = new Robot();
-			editor.getWidget().getDisplay().asyncExec(() -> {
-				final FigureCanvas canvas = (FigureCanvas) editor.getWidget().getDisplay().getFocusControl();
-				final org.eclipse.draw2d.geometry.Point refPoint = connectionPoint.getValue(gcep);
-				final Point point = PlatformUI.getWorkbench().getDisplay()
-						.map(editor.getWidget().getDisplay().getFocusControl(), null, refPoint.x, refPoint.y);
-				robot.mouseMove(
-						point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX() + labelGA.getWidth() / 2,
-						point.y - canvas.getVerticalBar().getSelection() + labelGA.getY() + labelGA.getHeight() / 2);
-				robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-				robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-			});
-		} catch (AWTException e) {
-		}
+		final java.awt.Point conLblLocation = new java.awt.Point();
+		setLabelLocation(editor, labelGA, connectionPoint.getValue(gcep), conLblLocation);
+		bot.setAutoDelay(300);
+		bot.mouseLeftClick(conLblLocation.x, conLblLocation.y);
+		bot.mouseLeftClick(conLblLocation.x, conLblLocation.y);
 
-		sleep(1);
-		final SWTBotGefEditPart cdEditPart = editor.selectedEditParts().get(0);
-		cdEditPart.activateDirectEdit();
+		sleep(2);
 		editor.directEditType(newName);
 		waitUntilElementExists(editor, newName);
+	}
+
+	private void setLabelLocation(SWTBotGefEditor editor, GraphicsAlgorithm labelGA,
+			org.eclipse.draw2d.geometry.Point relativeLabelLocation, java.awt.Point conLblLocation) {
+		final Display display = editor.getWidget().getDisplay();
+		display.syncExec(() -> {
+			final FigureCanvas canvas = (FigureCanvas) display.getFocusControl();
+			final Point point = PlatformUI.getWorkbench().getDisplay()
+					.map(display.getFocusControl(), null, relativeLabelLocation.x, relativeLabelLocation.y);
+			conLblLocation.x = point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX()
+					+ labelGA.getWidth() / 2;
+			conLblLocation.y = point.y - canvas.getVerticalBar().getSelection() + labelGA.getY()
+					+ labelGA.getHeight() / 2;
+		});
 	}
 
 	private ConnectionDecorator getLabelShape(final FreeFormConnection ffc) {

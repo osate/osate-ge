@@ -24,7 +24,6 @@ public class OpenAssociatedDiagramTest {
 				ElementNames.packageName);
 	}
 
-
 	@After
 	public void tearDown() {
 		bot.deleteProject(ElementNames.projectName);
