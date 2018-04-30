@@ -35,6 +35,7 @@ public class OpenElementPackageDiagramTest {
 
 		final SWTBotGefEditor associatedDiagramEditor = bot.getEditor(ElementNames.packageName + "_" + ElementNames.abstractTypeName);
 		associatedDiagramEditor.select(ElementNames.abstractTypeName).clickContextMenu("Package Diagram");
+		bot.sleep(3);
 		assertTrue(bot.isActiveEditor(ElementNames.packageName));
 	}
 }
