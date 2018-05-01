@@ -89,6 +89,7 @@ public class CreateConnectionTest {
 
 //		final SWTBotGefConnectionEditPart connectionEditPart = bot
 //				.getNewConnectionEditPart(editor, FeatureConnectionImpl.class).get(0);
+		bot.mouseSelectElement(editor, featureOut);
 		final SWTBotGefConnectionEditPart connectionEditPart = bot.getNewConnection(editor,
 				FeatureConnectionImpl.class);
 		editor.select(connectionEditPart);
