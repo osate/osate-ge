@@ -80,11 +80,13 @@ public class CreateConnectionTest {
 		editor.click(ElementNames.abstractSubcomponentName);
 
 		editor.activateTool("Feature Connection");
-		editor.click(featureOut);
-		editor.click(featureIn);
+		System.err.println(editor.getActiveTool() + " activeTool");
+		bot.mouseSelectElement(editor, featureOut);
+		bot.mouseSelectElement(editor, featureIn);
+		// editor.click(featureOut);
+		// editor.click(featureIn);
 		editor.activateDefaultTool();
 
-		bot.sleep(50);
 
 		final SWTBotGefConnectionEditPart connectionEditPart = bot
 				.getNewConnectionEditPart(editor, FeatureConnectionImpl.class).get(0);

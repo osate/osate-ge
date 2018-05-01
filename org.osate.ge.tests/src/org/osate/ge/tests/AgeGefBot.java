@@ -145,33 +145,33 @@ public class AgeGefBot {
 			return (AgeSWTBotGefEditor) super.gefEditor(fileName);
 		}
 
-		public void mouseLeftClick(final int x, final int y) {
+		private void mouseLeftClick(final int x, final int y) {
 			mouseMove(x, y);
 			mouseLeftClickPress();
 			mouseLeftClickRelease();
 		}
 
-		public void mouseLeftClickPress() {
+		private void mouseLeftClickPress() {
 			robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
 		}
 
-		public void mouseLeftClickRelease() {
+		private void mouseLeftClickRelease() {
 			robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 		}
 
-		public void mouseMove(int x, int y) {
+		private void mouseMove(int x, int y) {
 			robot.mouseMove(x, y);
 		}
 
-		public void setAutoDelay(int delay) {
+		private void setAutoDelay(int delay) {
 			robot.setAutoDelay(delay);
 		}
 
-		public void keyPress(final int key) {
+		private void keyPress(final int key) {
 			robot.keyPress(key);
 		}
 
-		public void keyRelease(final int key) {
+		private void keyRelease(final int key) {
 			robot.keyRelease(key);
 		}
 	}
@@ -791,7 +791,7 @@ public class AgeGefBot {
 		});
 	}
 
-	private void mouseSelectElement(final SWTBotGefEditor editor, final SWTBotGefEditPart editPart) {
+	public void mouseSelectElement(final SWTBotGefEditor editor, final SWTBotGefEditPart editPart) {
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) editPart.part();
 		editor.setFocus();
 
