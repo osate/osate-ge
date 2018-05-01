@@ -55,6 +55,8 @@ public class CreateConnectionTest {
 				new String[] { abstractImplName, ElementNames.abstractSubcomponentName2 });
 		editor.clickContextMenu(AgeGefBot.allFilters);
 
+		bot.sleep(4);
+
 		final SWTBotGefEditPart subcomponent = editor.getEditPart(ElementNames.abstractSubcomponentName);
 		// Find in feature
 		final SWTBotGefEditPart featureIn = bot.findChild(editor, subcomponent, ElementNames.abstractFeatureNewName)
