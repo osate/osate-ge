@@ -7,6 +7,3 @@ test:
     script: 
       - cd ~/oge_build_root/osate2-core/osate.releng/
       - mvn -P local,ge-tests -fae -Dtest=CreateConnectionTest integration-test
-      
-after_script:
-      - vncserver -kill :42
