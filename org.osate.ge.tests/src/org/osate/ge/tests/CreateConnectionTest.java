@@ -76,6 +76,7 @@ public class CreateConnectionTest {
 		System.err.println(featureOut + " foundFeatureOut");
 		// Create connection
 		editor.setFocus();
+		bot.mouseSelectElement(editor, featureOut);
 		editor.select(ElementNames.abstractSubcomponentName);
 		editor.click(ElementNames.abstractSubcomponentName);
 
