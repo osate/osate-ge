@@ -393,6 +393,7 @@ public class AgeGefBot {
 			final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) editPart.part();
 			final Object bo = ageFeatureProvider.getBusinessObjectForPictogramElement(gcep.getPictogramElement());
 			if (bo.getClass() == clazz) {
+				System.err.println(bo + " bo");
 				return ((NamedElement) bo).getName().contains("new_");
 			}
 
