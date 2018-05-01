@@ -49,6 +49,7 @@ public class CreateConnectionTest {
 		bot.executeContextMenuCommand(editor, abstractImplName, AgeGefBot.allFilters);
 
 		createSubcomponents(editor, AbstractSubcomponent.class, abstractImplName);
+		editor.setFocus();
 
 		// Show children of subcomponents
 		bot.selectElements(editor, new String[] { abstractImplName, ElementNames.abstractSubcomponentName },
@@ -57,15 +58,22 @@ public class CreateConnectionTest {
 
 		bot.sleep(4);
 
-		final SWTBotGefEditPart subcomponent = editor.getEditPart(ElementNames.abstractSubcomponentName);
+		// final SWTBotGefEditPart subcomponent = editor.getEditPart(ElementNames.abstractSubcomponentName);
 		// Find in feature
-		final SWTBotGefEditPart featureIn = bot.findChild(editor, subcomponent, ElementNames.abstractFeatureNewName)
-				.get(0);
+		// final SWTBotGefEditPart featureIn = bot.findChild(editor, subcomponent, ElementNames.abstractFeatureNewName)
+		// .get(0);
 
-		final SWTBotGefEditPart subcomponent2 = editor.getEditPart(ElementNames.abstractSubcomponentName2);
-		// Find out feature
-		final SWTBotGefEditPart featureOut = bot.findChild(editor, subcomponent2, ElementNames.abstractFeatureNewName2)
-				.get(0);
+		final SWTBotGefEditPart featureIn = bot.findEditPart(editor, ElementNames.abstractSubcomponentName,
+				ElementNames.abstractFeatureNewName);
+		System.err.println(featureIn + " foundFeatureIn");
+
+//		final SWTBotGefEditPart subcomponent2 = editor.getEditPart(ElementNames.abstractSubcomponentName2);
+//		// Find out feature
+//		final SWTBotGefEditPart featureOut = bot.findChild(editor, subcomponent2, ElementNames.abstractFeatureNewName2)
+//				.get(0);
+		final SWTBotGefEditPart featureOut = bot.findEditPart(editor, ElementNames.abstractSubcomponentName2,
+				ElementNames.abstractFeatureNewName2);
+		System.err.println(featureOut + " foundFeatureOut");
 		// Create connection
 		editor.activateTool("Feature Connection");
 		editor.click(featureOut);

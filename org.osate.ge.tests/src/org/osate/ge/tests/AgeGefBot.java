@@ -99,6 +99,7 @@ public class AgeGefBot {
 		}
 
 		private final Consumer<SWTBotGefEditPart> addConnectionEditPart = swtBotGefEditPart -> {
+			System.err.println(swtBotGefEditPart.part() + " element");
 			if (swtBotGefEditPart.part() instanceof AbstractGraphicalEditPart) {
 				final AbstractGraphicalEditPart agep = (AbstractGraphicalEditPart) swtBotGefEditPart.part();
 				for (final Object ob : agep.getTargetConnections()) {
