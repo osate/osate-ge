@@ -331,7 +331,7 @@ public class AgeGefBot {
 	public SWTBotGefConnectionEditPart getNewConnection(final AgeSWTBotGefEditor editor, final Class<?> clazz) {
 		final NewConnectionCondition newConnectionCondition = new NewConnectionCondition(editor,
 				new NewElementMatcher(editor), clazz);
-		waitUntil(newConnectionCondition, 5000);
+		waitUntil(newConnectionCondition, 10000);
 		return newConnectionCondition.getNewConnectionEditPart();
 	}
 
