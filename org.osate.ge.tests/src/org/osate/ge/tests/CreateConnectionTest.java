@@ -81,15 +81,15 @@ public class CreateConnectionTest {
 
 		editor.activateTool("Feature Connection");
 		System.err.println(editor.getActiveTool() + " activeTool");
-		bot.mouseSelectElement(editor, featureOut);
-		bot.mouseSelectElement(editor, featureIn);
-		// editor.click(featureOut);
-		// editor.click(featureIn);
+		editor.click(featureOut);
+		editor.click(featureIn);
 		editor.activateDefaultTool();
 
 
-		final SWTBotGefConnectionEditPart connectionEditPart = bot
-				.getNewConnectionEditPart(editor, FeatureConnectionImpl.class).get(0);
+//		final SWTBotGefConnectionEditPart connectionEditPart = bot
+//				.getNewConnectionEditPart(editor, FeatureConnectionImpl.class).get(0);
+		final SWTBotGefConnectionEditPart connectionEditPart = bot.getNewConnection(editor,
+				FeatureConnectionImpl.class);
 		editor.select(connectionEditPart);
 		final Connection con = ((GraphitiConnectionEditPart) connectionEditPart.part()).getConnectionFigure();
 		bot.clickConnection(editor, con);

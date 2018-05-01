@@ -93,9 +93,16 @@ public class AgeGefBot {
 			addConnectionEditPart.accept(swtBotGefEditPart);
 		}
 
-		public List<SWTBotGefConnectionEditPart> editPartConnections(Matcher<? extends EditPart> matcher)
+		public List<SWTBotGefConnectionEditPart> editPartConnections(final Matcher<? extends EditPart> matcher)
 				throws WidgetNotFoundException {
-			return allConnections();
+			final List<SWTBotGefConnectionEditPart> matches = new ArrayList<>();
+			for (final SWTBotGefConnectionEditPart c : allConnections()) {
+				if (matcher.matches(c.part())) {
+					matches.add(c);
+				}
+			}
+
+			return matches;
 		}
 
 		private final Consumer<SWTBotGefEditPart> addConnectionEditPart = swtBotGefEditPart -> {
@@ -103,14 +110,12 @@ public class AgeGefBot {
 				final AbstractGraphicalEditPart agep = (AbstractGraphicalEditPart) swtBotGefEditPart.part();
 				for (final Object ob : agep.getTargetConnections()) {
 					if (ob instanceof GraphitiConnectionEditPart) {
-						System.err.println("AAAA");
 						connectionEditParts.add(createEditPart((GraphitiConnectionEditPart) ob));
 					}
 				}
 
 				for (final Object ob : agep.getSourceConnections()) {
 					if (ob instanceof GraphitiConnectionEditPart) {
-						System.err.println("BBBB");
 						connectionEditParts.add(createEditPart((GraphitiConnectionEditPart) ob));
 					}
 				}
@@ -395,7 +400,6 @@ public class AgeGefBot {
 		return editor.allConnections().stream().filter(editPart -> {
 			final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) editPart.part();
 			final Object bo = ageFeatureProvider.getBusinessObjectForPictogramElement(gcep.getPictogramElement());
-			System.err.println(bo + " bo");
 			if (bo.getClass() == clazz) {
 				return ((NamedElement) bo).getName().contains("new_");
 			}
@@ -413,7 +417,6 @@ public class AgeGefBot {
 			final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) editPart.part();
 			final Object bo = ageFeatureProvider.getBusinessObjectForPictogramElement(gcep.getPictogramElement());
 			if (bo instanceof NamedElement) {
-				System.err.println(bo);
 				return ((NamedElement) bo).getName().equalsIgnoreCase(connectionName);
 			}
 
@@ -459,6 +462,7 @@ public class AgeGefBot {
 	public static class NewElementMatcher extends CustomMatcher<EditPart> {
 		final private CharSequence charSeq = "new_";
 		final private AgeFeatureProvider ageFeatureProvider;
+		final private Class<?> clazz = GraphitiConnectionEditPart.class;
 
 		public NewElementMatcher(final SWTBotGefEditor editor) {
 			super("New Element Matcher");
@@ -474,8 +478,16 @@ public class AgeGefBot {
 				if (element instanceof NamedElement && gsep.isActive()) {
 					final NamedElement namedElement = (NamedElement) element;
 					return namedElement.getName().contains(charSeq);
-					}
 				}
+			} else if (item instanceof GraphitiConnectionEditPart) {
+				final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) item;
+				final Object element = ageFeatureProvider
+						.getBusinessObjectForPictogramElement(gcep.getPictogramElement());
+				if (element instanceof NamedElement && gcep.isActive()) {
+					final NamedElement namedElement = (NamedElement) element;
+					return namedElement.getName().contains(charSeq);
+				}
+			}
 
 			return false;
 		}
