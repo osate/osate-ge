@@ -99,17 +99,18 @@ public class AgeGefBot {
 		}
 
 		private final Consumer<SWTBotGefEditPart> addConnectionEditPart = swtBotGefEditPart -> {
-			System.err.println(swtBotGefEditPart.part() + " element");
 			if (swtBotGefEditPart.part() instanceof AbstractGraphicalEditPart) {
 				final AbstractGraphicalEditPart agep = (AbstractGraphicalEditPart) swtBotGefEditPart.part();
 				for (final Object ob : agep.getTargetConnections()) {
 					if (ob instanceof GraphitiConnectionEditPart) {
+						System.err.println("AAAA");
 						connectionEditParts.add(createEditPart((GraphitiConnectionEditPart) ob));
 					}
 				}
 
 				for (final Object ob : agep.getSourceConnections()) {
 					if (ob instanceof GraphitiConnectionEditPart) {
+						System.err.println("BBBB");
 						connectionEditParts.add(createEditPart((GraphitiConnectionEditPart) ob));
 					}
 				}
@@ -389,6 +390,7 @@ public class AgeGefBot {
 
 	public List<SWTBotGefConnectionEditPart> getNewConnectionEditPart(final AgeSWTBotGefEditor editor,
 			final Class<?> clazz) {
+		editor.setFocus();
 		final AgeFeatureProvider ageFeatureProvider = getAgeFeatureProvider(editor);
 		return editor.allConnections().stream().filter(editPart -> {
 			final GraphitiConnectionEditPart gcep = (GraphitiConnectionEditPart) editPart.part();

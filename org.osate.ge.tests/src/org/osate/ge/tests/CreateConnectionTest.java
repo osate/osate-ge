@@ -75,10 +75,16 @@ public class CreateConnectionTest {
 				ElementNames.abstractFeatureNewName2);
 		System.err.println(featureOut + " foundFeatureOut");
 		// Create connection
+		editor.setFocus();
+		editor.select(ElementNames.abstractSubcomponentName);
+		editor.click(ElementNames.abstractSubcomponentName);
+
 		editor.activateTool("Feature Connection");
 		editor.click(featureOut);
 		editor.click(featureIn);
 		editor.activateDefaultTool();
+
+		bot.sleep(50);
 
 		final SWTBotGefConnectionEditPart connectionEditPart = bot
 				.getNewConnectionEditPart(editor, FeatureConnectionImpl.class).get(0);
