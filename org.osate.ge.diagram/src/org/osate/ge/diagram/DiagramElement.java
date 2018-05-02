@@ -4,8 +4,10 @@ package org.osate.ge.diagram;
 
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.NotificationChain;
+
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.InternalEObject;
+
 import org.eclipse.emf.ecore.impl.ENotificationImpl;
 
 /**
@@ -390,9 +392,8 @@ public class DiagramElement extends DiagramNode {
 	public void setId(Long newId) {
 		Long oldId = id;
 		id = newId;
-		if (eNotificationRequired()) {
+		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__ID, oldId, id));
-		}
 	}
 
 	/**
@@ -423,11 +424,7 @@ public class DiagramElement extends DiagramNode {
 		bo = newBo;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__BO, oldBo, newBo);
-			if (msgs == null) {
-				msgs = notification;
-			} else {
-				msgs.add(notification);
-			}
+			if (msgs == null) msgs = notification; else msgs.add(notification);
 		}
 		return msgs;
 	}
@@ -443,20 +440,15 @@ public class DiagramElement extends DiagramNode {
 	public void setBo(RelativeBusinessObjectReference newBo) {
 		if (newBo != bo) {
 			NotificationChain msgs = null;
-			if (bo != null) {
+			if (bo != null)
 				msgs = ((InternalEObject)bo).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__BO, null, msgs);
-			}
-			if (newBo != null) {
+			if (newBo != null)
 				msgs = ((InternalEObject)newBo).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__BO, null, msgs);
-			}
 			msgs = basicSetBo(newBo, msgs);
-			if (msgs != null) {
-				msgs.dispatch();
-			}
+			if (msgs != null) msgs.dispatch();
 		}
-		else if (eNotificationRequired()) {
+		else if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__BO, newBo, newBo));
-		}
 	}
 
 	/**
@@ -489,9 +481,8 @@ public class DiagramElement extends DiagramNode {
 	public void setManual(boolean newManual) {
 		boolean oldManual = manual;
 		manual = newManual;
-		if (eNotificationRequired()) {
+		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__MANUAL, oldManual, manual));
-		}
 	}
 
 	/**
@@ -522,9 +513,8 @@ public class DiagramElement extends DiagramNode {
 	public void setAutoContentsFilter(String newAutoContentsFilter) {
 		String oldAutoContentsFilter = autoContentsFilter;
 		autoContentsFilter = newAutoContentsFilter;
-		if (eNotificationRequired()) {
+		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__AUTO_CONTENTS_FILTER, oldAutoContentsFilter, autoContentsFilter));
-		}
 	}
 
 	/**
@@ -555,11 +545,7 @@ public class DiagramElement extends DiagramNode {
 		position = newPosition;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__POSITION, oldPosition, newPosition);
-			if (msgs == null) {
-				msgs = notification;
-			} else {
-				msgs.add(notification);
-			}
+			if (msgs == null) msgs = notification; else msgs.add(notification);
 		}
 		return msgs;
 	}
@@ -575,20 +561,15 @@ public class DiagramElement extends DiagramNode {
 	public void setPosition(Point newPosition) {
 		if (newPosition != position) {
 			NotificationChain msgs = null;
-			if (position != null) {
+			if (position != null)
 				msgs = ((InternalEObject)position).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__POSITION, null, msgs);
-			}
-			if (newPosition != null) {
+			if (newPosition != null)
 				msgs = ((InternalEObject)newPosition).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__POSITION, null, msgs);
-			}
 			msgs = basicSetPosition(newPosition, msgs);
-			if (msgs != null) {
-				msgs.dispatch();
-			}
+			if (msgs != null) msgs.dispatch();
 		}
-		else if (eNotificationRequired()) {
+		else if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__POSITION, newPosition, newPosition));
-		}
 	}
 
 	/**
@@ -619,11 +600,7 @@ public class DiagramElement extends DiagramNode {
 		size = newSize;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__SIZE, oldSize, newSize);
-			if (msgs == null) {
-				msgs = notification;
-			} else {
-				msgs.add(notification);
-			}
+			if (msgs == null) msgs = notification; else msgs.add(notification);
 		}
 		return msgs;
 	}
@@ -639,20 +616,15 @@ public class DiagramElement extends DiagramNode {
 	public void setSize(Dimension newSize) {
 		if (newSize != size) {
 			NotificationChain msgs = null;
-			if (size != null) {
+			if (size != null)
 				msgs = ((InternalEObject)size).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__SIZE, null, msgs);
-			}
-			if (newSize != null) {
+			if (newSize != null)
 				msgs = ((InternalEObject)newSize).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__SIZE, null, msgs);
-			}
 			msgs = basicSetSize(newSize, msgs);
-			if (msgs != null) {
-				msgs.dispatch();
-			}
+			if (msgs != null) msgs.dispatch();
 		}
-		else if (eNotificationRequired()) {
+		else if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__SIZE, newSize, newSize));
-		}
 	}
 
 	/**
@@ -684,9 +656,8 @@ public class DiagramElement extends DiagramNode {
 	public void setDockArea(String newDockArea) {
 		String oldDockArea = dockArea;
 		dockArea = newDockArea;
-		if (eNotificationRequired()) {
+		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__DOCK_AREA, oldDockArea, dockArea));
-		}
 	}
 
 	/**
@@ -717,11 +688,7 @@ public class DiagramElement extends DiagramNode {
 		bendpoints = newBendpoints;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__BENDPOINTS, oldBendpoints, newBendpoints);
-			if (msgs == null) {
-				msgs = notification;
-			} else {
-				msgs.add(notification);
-			}
+			if (msgs == null) msgs = notification; else msgs.add(notification);
 		}
 		return msgs;
 	}
@@ -737,20 +704,15 @@ public class DiagramElement extends DiagramNode {
 	public void setBendpoints(BendpointList newBendpoints) {
 		if (newBendpoints != bendpoints) {
 			NotificationChain msgs = null;
-			if (bendpoints != null) {
+			if (bendpoints != null)
 				msgs = ((InternalEObject)bendpoints).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__BENDPOINTS, null, msgs);
-			}
-			if (newBendpoints != null) {
+			if (newBendpoints != null)
 				msgs = ((InternalEObject)newBendpoints).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__BENDPOINTS, null, msgs);
-			}
 			msgs = basicSetBendpoints(newBendpoints, msgs);
-			if (msgs != null) {
-				msgs.dispatch();
-			}
+			if (msgs != null) msgs.dispatch();
 		}
-		else if (eNotificationRequired()) {
+		else if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__BENDPOINTS, newBendpoints, newBendpoints));
-		}
 	}
 
 	/**
@@ -780,11 +742,7 @@ public class DiagramElement extends DiagramNode {
 		primaryLabelPosition = newPrimaryLabelPosition;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_POSITION, oldPrimaryLabelPosition, newPrimaryLabelPosition);
-			if (msgs == null) {
-				msgs = notification;
-			} else {
-				msgs.add(notification);
-			}
+			if (msgs == null) msgs = notification; else msgs.add(notification);
 		}
 		return msgs;
 	}
@@ -800,20 +758,15 @@ public class DiagramElement extends DiagramNode {
 	public void setPrimaryLabelPosition(Point newPrimaryLabelPosition) {
 		if (newPrimaryLabelPosition != primaryLabelPosition) {
 			NotificationChain msgs = null;
-			if (primaryLabelPosition != null) {
+			if (primaryLabelPosition != null)
 				msgs = ((InternalEObject)primaryLabelPosition).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_POSITION, null, msgs);
-			}
-			if (newPrimaryLabelPosition != null) {
+			if (newPrimaryLabelPosition != null)
 				msgs = ((InternalEObject)newPrimaryLabelPosition).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_POSITION, null, msgs);
-			}
 			msgs = basicSetPrimaryLabelPosition(newPrimaryLabelPosition, msgs);
-			if (msgs != null) {
-				msgs.dispatch();
-			}
+			if (msgs != null) msgs.dispatch();
 		}
-		else if (eNotificationRequired()) {
+		else if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_POSITION, newPrimaryLabelPosition, newPrimaryLabelPosition));
-		}
 	}
 
 	/**
@@ -845,9 +798,8 @@ public class DiagramElement extends DiagramNode {
 	public void setBackground(String newBackground) {
 		String oldBackground = background;
 		background = newBackground;
-		if (eNotificationRequired()) {
+		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__BACKGROUND, oldBackground, background));
-		}
 	}
 
 	/**
@@ -879,9 +831,8 @@ public class DiagramElement extends DiagramNode {
 	public void setOutline(String newOutline) {
 		String oldOutline = outline;
 		outline = newOutline;
-		if (eNotificationRequired()) {
+		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__OUTLINE, oldOutline, outline));
-		}
 	}
 
 	/**
@@ -913,9 +864,8 @@ public class DiagramElement extends DiagramNode {
 	public void setFontColor(String newFontColor) {
 		String oldFontColor = fontColor;
 		fontColor = newFontColor;
-		if (eNotificationRequired()) {
+		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__FONT_COLOR, oldFontColor, fontColor));
-		}
 	}
 
 	/**
@@ -947,9 +897,8 @@ public class DiagramElement extends DiagramNode {
 	public void setFontSize(Double newFontSize) {
 		Double oldFontSize = fontSize;
 		fontSize = newFontSize;
-		if (eNotificationRequired()) {
+		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__FONT_SIZE, oldFontSize, fontSize));
-		}
 	}
 
 	/**
@@ -981,9 +930,8 @@ public class DiagramElement extends DiagramNode {
 	public void setLineWidth(Double newLineWidth) {
 		Double oldLineWidth = lineWidth;
 		lineWidth = newLineWidth;
-		if (eNotificationRequired()) {
+		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__LINE_WIDTH, oldLineWidth, lineWidth));
-		}
 	}
 
 	/**
@@ -1015,9 +963,8 @@ public class DiagramElement extends DiagramNode {
 	public void setPrimaryLabelVisible(Boolean newPrimaryLabelVisible) {
 		Boolean oldPrimaryLabelVisible = primaryLabelVisible;
 		primaryLabelVisible = newPrimaryLabelVisible;
-		if (eNotificationRequired()) {
+		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__PRIMARY_LABEL_VISIBLE, oldPrimaryLabelVisible, primaryLabelVisible));
-		}
 	}
 
 	/**
@@ -1049,9 +996,8 @@ public class DiagramElement extends DiagramNode {
 	public void setImage(String newImage) {
 		String oldImage = image;
 		image = newImage;
-		if (eNotificationRequired()) {
+		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__IMAGE, oldImage, image));
-		}
 	}
 
 	/**
@@ -1083,9 +1029,8 @@ public class DiagramElement extends DiagramNode {
 	public void setShowAsImage(Boolean newShowAsImage) {
 		Boolean oldShowAsImage = showAsImage;
 		showAsImage = newShowAsImage;
-		if (eNotificationRequired()) {
+		if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__SHOW_AS_IMAGE, oldShowAsImage, showAsImage));
-		}
 	}
 
 	/**
@@ -1116,11 +1061,7 @@ public class DiagramElement extends DiagramNode {
 		contentFilters = newContentFilters;
 		if (eNotificationRequired()) {
 			ENotificationImpl notification = new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, oldContentFilters, newContentFilters);
-			if (msgs == null) {
-				msgs = notification;
-			} else {
-				msgs.add(notification);
-			}
+			if (msgs == null) msgs = notification; else msgs.add(notification);
 		}
 		return msgs;
 	}
@@ -1136,20 +1077,15 @@ public class DiagramElement extends DiagramNode {
 	public void setContentFilters(ContentFilters newContentFilters) {
 		if (newContentFilters != contentFilters) {
 			NotificationChain msgs = null;
-			if (contentFilters != null) {
+			if (contentFilters != null)
 				msgs = ((InternalEObject)contentFilters).eInverseRemove(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, null, msgs);
-			}
-			if (newContentFilters != null) {
+			if (newContentFilters != null)
 				msgs = ((InternalEObject)newContentFilters).eInverseAdd(this, EOPPOSITE_FEATURE_BASE - DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, null, msgs);
-			}
 			msgs = basicSetContentFilters(newContentFilters, msgs);
-			if (msgs != null) {
-				msgs.dispatch();
-			}
+			if (msgs != null) msgs.dispatch();
 		}
-		else if (eNotificationRequired()) {
+		else if (eNotificationRequired())
 			eNotify(new ENotificationImpl(this, Notification.SET, DiagramPackage.DIAGRAM_ELEMENT__CONTENT_FILTERS, newContentFilters, newContentFilters));
-		}
 	}
 
 	/**
@@ -1411,9 +1347,7 @@ public class DiagramElement extends DiagramNode {
 	 */
 	@Override
 	public String toString() {
-		if (eIsProxy()) {
-			return super.toString();
-		}
+		if (eIsProxy()) return super.toString();
 
 		StringBuffer result = new StringBuffer(super.toString());
 		result.append(" (id: ");

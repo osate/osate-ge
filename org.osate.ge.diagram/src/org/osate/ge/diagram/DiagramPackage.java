@@ -7,7 +7,9 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EDataType;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
+
 import org.eclipse.emf.ecore.impl.EPackageImpl;
+
 import org.eclipse.emf.ecore.xml.type.XMLTypePackage;
 
 /**
@@ -868,9 +870,7 @@ public class DiagramPackage extends EPackageImpl {
 	 * @generated
 	 */
 	public static DiagramPackage init() {
-		if (isInited) {
-			return (DiagramPackage)EPackage.Registry.INSTANCE.getEPackage(DiagramPackage.eNS_URI);
-		}
+		if (isInited) return (DiagramPackage)EPackage.Registry.INSTANCE.getEPackage(DiagramPackage.eNS_URI);
 
 		// Obtain or create and register package
 		DiagramPackage theDiagramPackage = (DiagramPackage)(EPackage.Registry.INSTANCE.get(eNS_URI) instanceof DiagramPackage ? EPackage.Registry.INSTANCE.get(eNS_URI) : new DiagramPackage());
@@ -1514,9 +1514,7 @@ public class DiagramPackage extends EPackageImpl {
 	 * @generated
 	 */
 	public void createPackageContents() {
-		if (isCreated) {
-			return;
-		}
+		if (isCreated) return;
 		isCreated = true;
 
 		// Create classes and their features
@@ -1596,9 +1594,7 @@ public class DiagramPackage extends EPackageImpl {
 	 * @generated
 	 */
 	public void initializePackageContents() {
-		if (isInitialized) {
-			return;
-		}
+		if (isInitialized) return;
 		isInitialized = true;
 
 		// Initialize package
