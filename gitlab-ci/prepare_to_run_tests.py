@@ -23,7 +23,7 @@ repos = [
 	Repo('https://github.com/osate/osate2-core.git', default_branch),
 	Repo('https://github.com/OpenAADL/osate2-ocarina.git', 'master'),
 	Repo('https://github.com/osate/osate2-plugins.git', default_branch),
-	Repo('https://github.com/smaccm/smaccm.git', 'c5f338d6087ef7fa8a67824f9c12f517c6c0b548'),	
+	Repo('https://github.com/smaccm/smaccm.git', default_branch),	
 	]
 
 # Command Line Arguments
