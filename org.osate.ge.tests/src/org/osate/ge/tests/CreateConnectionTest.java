@@ -56,39 +56,24 @@ public class CreateConnectionTest {
 				new String[] { abstractImplName, ElementNames.abstractSubcomponentName2 });
 		editor.clickContextMenu(AgeGefBot.allFilters);
 
-		bot.sleep(4);
-
-		// final SWTBotGefEditPart subcomponent = editor.getEditPart(ElementNames.abstractSubcomponentName);
-		// Find in feature
-		// final SWTBotGefEditPart featureIn = bot.findChild(editor, subcomponent, ElementNames.abstractFeatureNewName)
-		// .get(0);
+		bot.sleep(3);
 
 		final SWTBotGefEditPart featureIn = bot.findEditPart(editor, ElementNames.abstractSubcomponentName,
 				ElementNames.abstractFeatureNewName);
-		System.err.println(featureIn + " foundFeatureIn");
-
-//		final SWTBotGefEditPart subcomponent2 = editor.getEditPart(ElementNames.abstractSubcomponentName2);
-//		// Find out feature
-//		final SWTBotGefEditPart featureOut = bot.findChild(editor, subcomponent2, ElementNames.abstractFeatureNewName2)
-//				.get(0);
 		final SWTBotGefEditPart featureOut = bot.findEditPart(editor, ElementNames.abstractSubcomponentName2,
 				ElementNames.abstractFeatureNewName2);
-		System.err.println(featureOut + " foundFeatureOut");
+
 		// Create connection
 		editor.setFocus();
 		bot.mouseSelectElement(editor, featureOut);
 		editor.select(ElementNames.abstractSubcomponentName);
 		editor.click(ElementNames.abstractSubcomponentName);
-
 		editor.activateTool("Feature Connection");
-		System.err.println(editor.getActiveTool() + " activeTool");
+
 		editor.click(featureOut);
 		editor.click(featureIn);
 		editor.activateDefaultTool();
 
-
-//		final SWTBotGefConnectionEditPart connectionEditPart = bot
-//				.getNewConnectionEditPart(editor, FeatureConnectionImpl.class).get(0);
 		bot.mouseSelectElement(editor, featureOut);
 		final SWTBotGefConnectionEditPart connectionEditPart = bot.getNewConnection(editor,
 				FeatureConnectionImpl.class);
@@ -100,12 +85,6 @@ public class CreateConnectionTest {
 
 		// Rename
 		bot.renameConnection(editor, connectionEditPart, ConnectionPoint.MIDDLE, ElementNames.featureConnection);
-
-		// Hide label
-		editor.select(ElementNames.featureConnection);
-		bot.selectWidget("Appearance");
-		bot.clickCombo(AppearancePropertySection.primaryLabelVisibilityCombo, "Hide");
-
 	}
 
 	private void createSubcomponents(final AgeSWTBotGefEditor editor, final Class<?> clazz, final String parent) {
@@ -120,6 +99,5 @@ public class CreateConnectionTest {
 
 		bot.clickTableOption(AgeGefBot.qualifiedName(ElementNames.packageName, ElementNames.abstractTypeName));
 		bot.clickButton("OK");
-		editor.setFocus();
 	}
 }

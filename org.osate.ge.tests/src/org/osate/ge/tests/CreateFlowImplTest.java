@@ -156,23 +156,15 @@ public class CreateFlowImplTest {
 		// Drag dialog down and to the left so it is not covering diagram for element selection
 		bot.dragShellAwayFromEditor(implEditor, "Create Flow Implementation");
 		editor.setFocus();
-//		final GraphitiConnectionEditPart con = (GraphitiConnectionEditPart) bot
-//				.getConnectionEditParts(implEditor, "fsrc", "sys.impl2", "dp_out").get(0).part();
+
 		final SWTBotGefConnectionEditPart con = bot.getConnectionEditParts(implEditor, "fsrc", "sys.impl2", "dp_out")
 				.get(0);
 		implEditor.select(con);
 		bot.clickElement(implEditor, "ss1");
-		// implEditor.click(bot.getElements(implEditor, new String[] { "ss1" }).get(0));
 
-		// bot.clickConnection(implEditor, con.getConnectionFigure());
-
-		// bot.clickElements(implEditor, new String[] { "ss1" });
-
-		// bot.clickConnection(implEditor, featureCon2);
 		implEditor.click(connectionEditPart2);
 		bot.clickElement(implEditor, "ss2");
 
-		// bot.clickConnection(implEditor, featureCon3);
 		implEditor.click(connectionEditPart3);
 		bot.clickElement(implEditor, "dp_out");
 

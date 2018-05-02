@@ -2,7 +2,6 @@ package org.osate.ge.tests;
 
 import java.util.List;
 
-import org.eclipse.gef.EditPart;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditPart;
 import org.eclipse.swtbot.eclipse.gef.finder.widgets.SWTBotGefEditor;
@@ -10,7 +9,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.osate.aadl2.impl.AbstractImplementationImpl;
 
 public class DeletingClassifierTest {
 	private final AgeGefBot bot = new AgeGefBot();
@@ -34,9 +32,8 @@ public class DeletingClassifierTest {
 		editor.select(ElementNames.abstractTypeName + ".impl").clickContextMenu("Delete");
 		bot.clickButton("Yes");
 		editor.save();
-		final List<SWTBotGefEditPart> list = editor.editParts(new Helper.NewElementMatcher<EditPart>(editor,
-				ElementNames.abstractTypeName + ".impl",
-				AbstractImplementationImpl.class));
+		final List<SWTBotGefEditPart> list = editor.editParts(new AgeGefBot.FindEditPart(
+				AgeGefBot.getAgeFeatureProvider(editor), ElementNames.abstractTypeName + ".impl"));
 		Assert.assertTrue(list.isEmpty());
 	}
 }

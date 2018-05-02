@@ -73,12 +73,14 @@ public class AgeGefBot {
 			super(reference, bot);
 		}
 
+		// Find all connections of editor
 		public List<SWTBotGefConnectionEditPart> allConnections() {
 			connectionEditParts.clear();
 			findConnectionEditParts(this.rootEditPart());
 			return connectionEditParts.stream().collect(Collectors.toList());
 		}
 
+		// Find connections of an edit part
 		private List<SWTBotGefConnectionEditPart> childConnections(final SWTBotGefEditPart editPart) {
 			connectionEditParts.clear();
 			findConnectionEditParts(editPart);
@@ -240,6 +242,7 @@ public class AgeGefBot {
 		bot.table().getTableItem(text).click();
 	}
 
+	// Create an implementation when a type already exists
 	public void createImplementation(final SWTBotGefEditor editor, final String toolType, final String typeName,
 			final String elementName, final Point point, final String... parentName) {
 		editor.setFocus();
@@ -288,7 +291,6 @@ public class AgeGefBot {
 			final String... editPartPath) {
 		final SWTBotGefEditPart parent = findEditPart(editor, editPartPath);
 		editor.setFocus();
-		// editor.click(parent);
 		mouseSelectElement(editor, parent);
 		editor.activateTool(toolItem);
 		final Rectangle rect = ((GraphitiShapeEditPart) parent.part()).getFigure().getBounds();
@@ -321,6 +323,7 @@ public class AgeGefBot {
 		renameElement(editor, newEditPart, newName);
 	}
 
+	// Find new element
 	public SWTBotGefEditPart getNewElement(final AgeSWTBotGefEditor editor, final Class<?> clazz) {
 		final NewElementCondition newElementCondition = new NewElementCondition(editor, new NewElementMatcher(editor),
 				clazz);
@@ -328,10 +331,11 @@ public class AgeGefBot {
 		return newElementCondition.getNewElementEditPart();
 	}
 
+	// Find new connection
 	public SWTBotGefConnectionEditPart getNewConnection(final AgeSWTBotGefEditor editor, final Class<?> clazz) {
 		final NewConnectionCondition newConnectionCondition = new NewConnectionCondition(editor,
 				new NewElementMatcher(editor), clazz);
-		waitUntil(newConnectionCondition, 10000);
+		waitUntil(newConnectionCondition, 5000);
 		return newConnectionCondition.getNewConnectionEditPart();
 	}
 
@@ -462,7 +466,6 @@ public class AgeGefBot {
 	public static class NewElementMatcher extends CustomMatcher<EditPart> {
 		final private CharSequence charSeq = "new_";
 		final private AgeFeatureProvider ageFeatureProvider;
-		final private Class<?> clazz = GraphitiConnectionEditPart.class;
 
 		public NewElementMatcher(final SWTBotGefEditor editor) {
 			super("New Element Matcher");
@@ -701,7 +704,7 @@ public class AgeGefBot {
 	public void resizeEditPart(final SWTBotGefEditor editor, final Point newSize, final String... editPartPath) {
 		editor.setFocus();
 		final SWTBotGefEditPart swtBotGefEditPart = findEditPart(editor, editPartPath);
-		// editor.click(swtBotGefEditPart);
+		editor.click(swtBotGefEditPart);
 		editor.select(swtBotGefEditPart);
 		swtBotGefEditPart.resize(PositionConstants.SOUTH_WEST, newSize.x, newSize.y);
 	}
@@ -719,6 +722,7 @@ public class AgeGefBot {
 		return getAgeFeatureProvider(editor).getBusinessObjectForPictogramElement(pe);
 	}
 
+	// Drill down edit parts to find desired edit part
 	public SWTBotGefEditPart findEditPart(final SWTBotGefEditor editor, final String... editPartPath) {
 		final AgeFeatureProvider ageFeatureProvider = getAgeFeatureProvider(editor);
 		final Iterator<String> it = Arrays.asList(editPartPath).iterator();
@@ -730,6 +734,11 @@ public class AgeGefBot {
 		return editPartFound;
 	}
 
+	/**
+	 * Use robot mouse to click a connection
+	 * @param editor
+	 * @param connection
+	 */
 	public void clickConnection(final SWTBotGefEditor editor, final Connection connection) {
 		editor.setFocus();
 		final org.eclipse.draw2d.geometry.Point midPoint = connection.getPoints().getMidpoint();
@@ -757,7 +766,6 @@ public class AgeGefBot {
 
 	public void clickCombo(final String id, final String selection) {
 		bot.viewByTitle("Properties").setFocus();
-		// bot.widgets(new PrintWidgetMatcher("CCC"));
 		// bot.viewByTitle("Properties").bot().comboBoxWithId(id).setSelection(selection);
 		bot.comboBoxWithId(id).setSelection(selection);
 	}
@@ -779,6 +787,12 @@ public class AgeGefBot {
 		waitUntilElementExists(editor, newName);
 	}
 
+	/**
+	 * Find location of an edit part's name label.  Mouse has to be hovering over label for rename.
+	 * @param editor
+	 * @param newEditPart
+	 * @param renameLocation
+	 */
 	private void setRenameLocation(final SWTBotGefEditor editor, final SWTBotGefEditPart newEditPart,
 			final java.awt.Point renameLocation) {
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) newEditPart.part();
@@ -794,15 +808,19 @@ public class AgeGefBot {
 			final Rectangle bounds = gsep.getFigure().getBounds();
 			final Point point = PlatformUI.getWorkbench().getDisplay().map(display.getFocusControl(), null, bounds.x,
 					bounds.y);
-			final Point p = new Point(point.x - canvas.getHorizontalBar().getSelection(),
-					point.y - canvas.getVerticalBar().getSelection());
-			renameLocation.x = p.x + labelGA.getX() + labelGA.getWidth() / 2;
-			renameLocation.y = p.y + labelGA.getY() + labelGA.getHeight() / 2;
-
-
+			renameLocation.x = point.x - canvas.getHorizontalBar().getSelection() + labelGA.getX()
+					+ labelGA.getWidth() / 2;
+			renameLocation.y = point.y - canvas.getVerticalBar().getSelection() + labelGA.getY()
+					+ labelGA.getHeight() / 2;
 		});
 	}
 
+	/**
+	 * Use robot to click element.  Using mouse to click has a different effect than editor.click(editpart) and editor.select(editpart).
+	 * This method will bring selected element into full view on canvas.
+	 * @param editor
+	 * @param editPart
+	 */
 	public void mouseSelectElement(final SWTBotGefEditor editor, final SWTBotGefEditPart editPart) {
 		final GraphitiShapeEditPart gsep = (GraphitiShapeEditPart) editPart.part();
 		editor.setFocus();
@@ -838,6 +856,13 @@ public class AgeGefBot {
 		waitUntilElementExists(editor, newName);
 	}
 
+	/**
+	 * Find location of connection label.  Mouse must be hovering over label for rename.
+	 * @param editor
+	 * @param labelGA
+	 * @param relativeLabelLocation
+	 * @param conLblLocation
+	 */
 	private void setLabelLocation(SWTBotGefEditor editor, GraphicsAlgorithm labelGA,
 			org.eclipse.draw2d.geometry.Point relativeLabelLocation, java.awt.Point conLblLocation) {
 		final Display display = editor.getWidget().getDisplay();
@@ -940,7 +965,7 @@ public class AgeGefBot {
 		bot.toolbarButtonWithTooltip(tooltip).click();
 	}
 
-	// Drag dialog down and to the left
+	// Drag dialog down and to the left. This can be used to move a shell out of canvas for element selection.
 	public void dragShellAwayFromEditor(final AgeSWTBotGefEditor editor, final String shellTitle) {
 		final Display display = editor.getWidget().getDisplay();
 		display.syncExec(() -> {
@@ -962,6 +987,9 @@ public class AgeGefBot {
 		bot.shell(title).setFocus();
 	}
 
+	/**
+	 * Return a connection point.  Used for label reference.
+	 */
 	public enum ConnectionPoint {
 		FIRST {
 			@Override
