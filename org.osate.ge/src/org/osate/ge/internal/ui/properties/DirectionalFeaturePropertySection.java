@@ -26,6 +26,7 @@ import org.osate.aadl2.DirectedFeature;
 import org.osate.aadl2.DirectionType;
 import org.osate.aadl2.FeatureGroup;
 import org.osate.ge.BusinessObjectSelection;
+import org.osate.ge.internal.ui.util.UiUtil;
 import org.osate.ge.ui.properties.PropertySectionUtil;
 
 public class DirectionalFeaturePropertySection extends AbstractPropertySection {
@@ -83,6 +84,7 @@ public class DirectionalFeaturePropertySection extends AbstractPropertySection {
 
 		outBtn = getWidgetFactory().createButton(directionContainer, "Output", SWT.RADIO);
 		outBtn.setData(DirectionType.OUT);
+		outBtn.setData(UiUtil.AUTOMATED_SWTBOT_TESTING_KEY, "org.osate.ge.properties.feature_direction_output");
 		outBtn.addSelectionListener(directionSelectionListener);
 
 		inOutBtn = getWidgetFactory().createButton(directionContainer, "Bidirectional", SWT.RADIO);
