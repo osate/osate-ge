@@ -51,9 +51,6 @@ public class FeatureGroupTest {
 		bot.selectWidget("AADL");
 		bot.clickButton("Choose...");
 
-
-		// bot.setElementOptionButtonInPropertiesView(editor, "AADL", "Choose...", ElementNames.featureGroupName);
-
 		final GraphitiShapeEditPart fgtGsep = (GraphitiShapeEditPart) bot
 				.findEditPart(editor, ElementNames.featureGroupTypeName).part();
 		final FeatureGroupType fgt = (FeatureGroupType) AgeGefBot.getBusinessObject(editor,
